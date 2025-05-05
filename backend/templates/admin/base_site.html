@@ -1,0 +1,29 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Planify Admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        <img src="{% static 'img/logo.png' %}" height="40px" style="margin-right: 10px;">
+        {{ site_header|default:_('Planify Admin') }}
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+<style>
+    :root {
+        --primary: #2196F3;
+        --secondary: #1976D2;
+        --accent: #FF4081;
+        --primary-fg: #fff;
+        --body-fg: #333;
+        --body-bg: #fff;
+        --header-color: #fff;
+    }
+</style>
+{% endblock %}
