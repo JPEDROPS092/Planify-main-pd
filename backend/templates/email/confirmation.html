@@ -1,0 +1,17 @@
+{% load i18n %}
+
+{% block subject %}
+{% trans "Confirmação de conta no Planify" %}
+{% endblock subject %}
+
+{% block text_body %}
+{% trans "Sua conta foi criada e está pronta para uso!" %}
+
+{% trans "Obrigado por se registrar no Planify." %}
+{% endblock text_body %}
+
+{% block html_body %}
+<p>{% trans "Sua conta foi criada e está pronta para uso!" %}</p>
+
+<p>{% trans "Obrigado por se registrar no Planify." %}</p>
+{% endblock html_body %}

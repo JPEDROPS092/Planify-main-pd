@@ -2,13 +2,13 @@
   <NuxtLayout name="dashboard">
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold tracking-tight">Projetos</h1>
-        <button @click="openNewProjectModal" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700">
+        <h1 class="text-2xl font-bold tracking-tight">Tarefas</h1>
+        <button @click="openNewTaskModal" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2">
             <path d="M5 12h14"></path>
             <path d="M12 5v14"></path>
           </svg>
-          Novo Projeto
+          Nova Tarefa
         </button>
       </div>
 
@@ -18,7 +18,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar projetos..."
+            placeholder="Buscar tarefas..."
             class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-3 top-2.5 h-4 w-4 text-gray-400">
@@ -31,11 +31,9 @@
           class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Todos os status</option>
-          <option value="PLANEJADO">Planejado</option>
+          <option value="A_FAZER">A Fazer</option>
           <option value="EM_ANDAMENTO">Em Andamento</option>
-          <option value="PAUSADO">Pausado</option>
-          <option value="CONCLUIDO">Concluído</option>
-          <option value="CANCELADO">Cancelado</option>
+          <option value="FEITO">Feito</option>
         </select>
         <select
           v-model="priorityFilter"
@@ -45,6 +43,15 @@
           <option value="BAIXA">Baixa</option>
           <option value="MEDIA">Média</option>
           <option value="ALTA">Alta</option>
+        </select>
+        <select
+          v-model="projectFilter"
+          class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">Todos os projetos</option>
+          <option v-for="project in projects" :key="project.id" :value="project.id">
+            {{ project.titulo }}
+          </option>
         </select>
       </div>
 
@@ -56,95 +63,110 @@
       <!-- Error state -->
       <div v-else-if="error" class="rounded-md bg-red-50 p-4 text-red-700">
         <p>{{ error }}</p>
-        <button @click="fetchProjects" class="mt-2 text-sm font-medium underline">Tentar novamente</button>
+        <button @click="fetchTasks" class="mt-2 text-sm font-medium underline">Tentar novamente</button>
       </div>
 
       <!-- Empty state -->
-      <div v-else-if="filteredProjects.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
+      <div v-else-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-12 w-12 text-gray-400">
-          <path d="M3 3v18h18"></path>
-          <path d="M7 12v5"></path>
-          <path d="m14 7 3-3 3 3"></path>
-          <path d="M7 19h5"></path>
-          <path d="M19 15v4"></path>
-          <path d="M11 12v5"></path>
-          <path d="M14 12v5"></path>
+          <rect width="8" height="8" x="3" y="3" rx="2"></rect>
+          <rect width="8" height="8" x="13" y="3" rx="2"></rect>
+          <rect width="8" height="8" x="3" y="13" rx="2"></rect>
+          <rect width="8" height="8" x="13" y="13" rx="2"></rect>
         </svg>
-        <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhum projeto encontrado</h3>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhuma tarefa encontrada</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {{ projects.length === 0 ? 'Comece criando seu primeiro projeto.' : 'Nenhum projeto corresponde aos filtros aplicados.' }}
+          {{ tasks.length === 0 ? 'Comece criando sua primeira tarefa.' : 'Nenhuma tarefa corresponde aos filtros aplicados.' }}
         </p>
         <button
-          v-if="projects.length === 0"
-          @click="openNewProjectModal"
+          v-if="tasks.length === 0"
+          @click="openNewTaskModal"
           class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2">
             <path d="M5 12h14"></path>
             <path d="M12 5v14"></path>
           </svg>
-          Criar Projeto
+          Criar Tarefa
         </button>
       </div>
 
-      <!-- Project list -->
-      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div
-          v-for="project in filteredProjects"
-          :key="project.id"
-          class="flex flex-col rounded-lg border bg-white shadow-sm transition-all hover:shadow-md"
-        >
-          <div class="p-4">
-            <div class="flex items-center justify-between">
-              <span
-                :class="{
-                  'bg-yellow-100 text-yellow-800': project.status === 'PLANEJADO',
-                  'bg-blue-100 text-blue-800': project.status === 'EM_ANDAMENTO',
-                  'bg-orange-100 text-orange-800': project.status === 'PAUSADO',
-                  'bg-green-100 text-green-800': project.status === 'CONCLUIDO',
-                  'bg-red-100 text-red-800': project.status === 'CANCELADO',
-                }"
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-              >
-                {{ getStatusLabel(project.status) }}
-              </span>
-              <span
-                :class="{
-                  'bg-green-100 text-green-800': project.prioridade === 'BAIXA',
-                  'bg-yellow-100 text-yellow-800': project.prioridade === 'MEDIA',
-                  'bg-red-100 text-red-800': project.prioridade === 'ALTA',
-                }"
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-              >
-                {{ getPriorityLabel(project.prioridade) }}
-              </span>
-            </div>
-            <h3 class="mt-2 text-lg font-semibold text-gray-900">{{ project.titulo }}</h3>
-            <p class="mt-1 line-clamp-2 text-sm text-gray-500">{{ project.descricao }}</p>
-            <div class="mt-4 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-gray-400">
-                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
-                  <line x1="16" x2="16" y1="2" y2="6"></line>
-                  <line x1="8" x2="8" y1="2" y2="6"></line>
-                  <line x1="3" x2="21" y1="10" y2="10"></line>
-                </svg>
-                <span class="text-xs text-gray-500">
-                  {{ formatDate(project.data_inicio) }} - {{ formatDate(project.data_fim) }}
-                </span>
-              </div>
-              <button
-                @click="viewProject(project.id)"
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Ver detalhes
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
-                  <path d="M5 12h14"></path>
-                  <path d="m12 5 7 7-7 7"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
+      <!-- Task list -->
+      <div v-else>
+        <div class="overflow-hidden rounded-lg border bg-white shadow">
+          <table class="w-full border-collapse text-left">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Título</th>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Projeto</th>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Status</th>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Prioridade</th>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Prazo</th>
+                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="task in filteredTasks" :key="task.id" class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm">
+                  <div class="font-medium text-gray-900">{{ task.titulo }}</div>
+                  <div class="mt-1 line-clamp-1 text-xs text-gray-500">{{ task.descricao }}</div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">
+                  {{ getProjectName(task.projeto) }}
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <span
+                    :class="{
+                      'bg-yellow-100 text-yellow-800': task.status === 'A_FAZER',
+                      'bg-blue-100 text-blue-800': task.status === 'EM_ANDAMENTO',
+                      'bg-green-100 text-green-800': task.status === 'FEITO',
+                    }"
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  >
+                    {{ getStatusLabel(task.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <span
+                    :class="{
+                      'bg-green-100 text-green-800': task.prioridade === 'BAIXA',
+                      'bg-yellow-100 text-yellow-800': task.prioridade === 'MEDIA',
+                      'bg-red-100 text-red-800': task.prioridade === 'ALTA',
+                    }"
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  >
+                    {{ getPriorityLabel(task.prioridade) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">
+                  {{ formatDate(task.data_termino) }}
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <div class="flex items-center space-x-2">
+                    <button
+                      @click="viewTask(task.id)"
+                      class="rounded-md p-1 text-blue-600 hover:bg-blue-50"
+                      title="Ver detalhes"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                    <button
+                      @click="editTask(task)"
+                      class="rounded-md p-1 text-gray-600 hover:bg-gray-100"
+                      title="Editar"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -156,7 +178,7 @@
           class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 text-sm font-medium text-gray-700 disabled:opacity-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-            <path d="M15 18-6-6 6-6"></path>
+            <path d="m15 18-6-6 6-6"></path>
           </svg>
         </button>
         <div v-for="page in paginationRange" :key="page" class="inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium"
@@ -171,29 +193,29 @@
           class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 text-sm font-medium text-gray-700 disabled:opacity-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-            <path d="M9 18 15 12 9 6"></path>
+            <path d="m9 18 6-6-6-6"></path>
           </svg>
         </button>
       </div>
 
-      <!-- Modal para novo projeto -->
-      <div v-if="showNewProjectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <!-- Modal para nova tarefa -->
+      <div v-if="showTaskModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium">Novo Projeto</h3>
-            <button @click="showNewProjectModal = false" class="rounded-full p-1 hover:bg-gray-100">
+            <h3 class="text-lg font-medium">{{ editingTask ? 'Editar Tarefa' : 'Nova Tarefa' }}</h3>
+            <button @click="showTaskModal = false" class="rounded-full p-1 hover:bg-gray-100">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                 <path d="M18 6 6 18"></path>
                 <path d="m6 6 12 12"></path>
               </svg>
             </button>
           </div>
-          <form @submit.prevent="createProject" class="mt-4 space-y-4">
+          <form @submit.prevent="saveTask" class="mt-4 space-y-4">
             <div>
               <label for="titulo" class="block text-sm font-medium text-gray-700">Título</label>
               <input
                 id="titulo"
-                v-model="newProject.titulo"
+                v-model="taskForm.titulo"
                 type="text"
                 required
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -203,28 +225,41 @@
               <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
               <textarea
                 id="descricao"
-                v-model="newProject.descricao"
+                v-model="taskForm.descricao"
                 rows="3"
                 required
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               ></textarea>
+            </div>
+            <div>
+              <label for="projeto" class="block text-sm font-medium text-gray-700">Projeto</label>
+              <select
+                id="projeto"
+                v-model="taskForm.projeto"
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option v-for="project in projects" :key="project.id" :value="project.id">
+                  {{ project.titulo }}
+                </option>
+              </select>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label for="data_inicio" class="block text-sm font-medium text-gray-700">Data de Início</label>
                 <input
                   id="data_inicio"
-                  v-model="newProject.data_inicio"
+                  v-model="taskForm.data_inicio"
                   type="date"
                   required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label for="data_fim" class="block text-sm font-medium text-gray-700">Data de Término</label>
+                <label for="data_termino" class="block text-sm font-medium text-gray-700">Data de Término</label>
                 <input
-                  id="data_fim"
-                  v-model="newProject.data_fim"
+                  id="data_termino"
+                  v-model="taskForm.data_termino"
                   type="date"
                   required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -236,22 +271,20 @@
                 <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
                 <select
                   id="status"
-                  v-model="newProject.status"
+                  v-model="taskForm.status"
                   required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="PLANEJADO">Planejado</option>
+                  <option value="A_FAZER">A Fazer</option>
                   <option value="EM_ANDAMENTO">Em Andamento</option>
-                  <option value="PAUSADO">Pausado</option>
-                  <option value="CONCLUIDO">Concluído</option>
-                  <option value="CANCELADO">Cancelado</option>
+                  <option value="FEITO">Feito</option>
                 </select>
               </div>
               <div>
                 <label for="prioridade" class="block text-sm font-medium text-gray-700">Prioridade</label>
                 <select
                   id="prioridade"
-                  v-model="newProject.prioridade"
+                  v-model="taskForm.prioridade"
                   required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
@@ -264,18 +297,18 @@
             <div class="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
-                @click="showNewProjectModal = false"
+                @click="showTaskModal = false"
                 class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                :disabled="creatingProject"
+                :disabled="saving"
                 class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
               >
-                <span v-if="creatingProject" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                {{ creatingProject ? 'Criando...' : 'Criar Projeto' }}
+                <span v-if="saving" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                {{ saving ? 'Salvando...' : (editingTask ? 'Salvar' : 'Criar') }}
               </button>
             </div>
           </form>
@@ -298,6 +331,7 @@ const route = useRoute()
 const { $api } = useNuxtApp()
 
 // Estado
+const tasks = ref([])
 const projects = ref([])
 const loading = ref(true)
 const error = ref(null)
@@ -306,30 +340,34 @@ const totalPages = ref(1)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
-const showNewProjectModal = ref(false)
-const creatingProject = ref(false)
+const projectFilter = ref('')
+const showTaskModal = ref(false)
+const saving = ref(false)
+const editingTask = ref(null)
 
-// Formulário de novo projeto
-const newProject = ref({
+// Formulário de tarefa
+const taskForm = ref({
   titulo: '',
   descricao: '',
+  projeto: '',
+  status: 'A_FAZER',
+  prioridade: 'MEDIA',
   data_inicio: new Date().toISOString().split('T')[0],
-  data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-  status: 'PLANEJADO',
-  prioridade: 'MEDIA'
+  data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 })
 
-// Filtrar projetos
-const filteredProjects = computed(() => {
-  return projects.value.filter(project => {
+// Filtrar tarefas
+const filteredTasks = computed(() => {
+  return tasks.value.filter(task => {
     const matchesSearch = searchQuery.value === '' || 
-      project.titulo.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (project.descricao && project.descricao.toLowerCase().includes(searchQuery.value.toLowerCase()))
+      task.titulo.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (task.descricao && task.descricao.toLowerCase().includes(searchQuery.value.toLowerCase()))
     
-    const matchesStatus = statusFilter.value === '' || project.status === statusFilter.value
-    const matchesPriority = priorityFilter.value === '' || project.prioridade === priorityFilter.value
+    const matchesStatus = statusFilter.value === '' || task.status === statusFilter.value
+    const matchesPriority = priorityFilter.value === '' || task.prioridade === priorityFilter.value
+    const matchesProject = projectFilter.value === '' || task.projeto === parseInt(projectFilter.value)
     
-    return matchesSearch && matchesStatus && matchesPriority
+    return matchesSearch && matchesStatus && matchesPriority && matchesProject
   })
 })
 
@@ -361,39 +399,40 @@ const paginationRange = computed(() => {
 // Verificar se há um parâmetro na URL para abrir o modal
 onBeforeMount(() => {
   if (route.query.new === 'true') {
-    showNewProjectModal.value = true
+    showTaskModal.value = true
   }
 })
 
 // Escutar evento global para abrir o modal
 onMounted(() => {
-  window.addEventListener('open-new-project-modal', () => {
-    showNewProjectModal.value = true
+  window.addEventListener('open-new-task-modal', () => {
+    showTaskModal.value = true
   })
   
-  // Buscar projetos
+  // Buscar dados iniciais
   fetchProjects()
+  fetchTasks()
   
   return () => {
-    window.removeEventListener('open-new-project-modal', () => {
-      showNewProjectModal.value = true
+    window.removeEventListener('open-new-task-modal', () => {
+      showTaskModal.value = true
     })
   }
 })
 
-// Buscar projetos
-const fetchProjects = async () => {
+// Buscar tarefas
+const fetchTasks = async () => {
   loading.value = true
   error.value = null
   
   try {
-    const response = await $api.get('/api/projects/', {
+    const response = await $api.get('/api/tasks/', {
       params: {
         page: currentPage.value
       }
     })
     
-    projects.value = response.data.results || response.data
+    tasks.value = response.data.results || response.data
     
     // Configurar paginação se disponível
     if (response.data.count !== undefined) {
@@ -402,10 +441,20 @@ const fetchProjects = async () => {
       totalPages.value = Math.ceil(count / pageSize)
     }
   } catch (err) {
-    console.error('Erro ao buscar projetos:', err)
-    error.value = 'Não foi possível carregar os projetos. Por favor, tente novamente.'
+    console.error('Erro ao buscar tarefas:', err)
+    error.value = 'Não foi possível carregar as tarefas. Por favor, tente novamente.'
   } finally {
     loading.value = false
+  }
+}
+
+// Buscar projetos
+const fetchProjects = async () => {
+  try {
+    const response = await $api.get('/api/projects/')
+    projects.value = response.data.results || response.data
+  } catch (err) {
+    console.error('Erro ao buscar projetos:', err)
   }
 }
 
@@ -425,11 +474,9 @@ const formatDate = (dateString) => {
 // Obter label do status
 const getStatusLabel = (status) => {
   const statusMap = {
-    'PLANEJADO': 'Planejado',
+    'A_FAZER': 'A Fazer',
     'EM_ANDAMENTO': 'Em Andamento',
-    'PAUSADO': 'Pausado',
-    'CONCLUIDO': 'Concluído',
-    'CANCELADO': 'Cancelado'
+    'FEITO': 'Feito'
   }
   return statusMap[status] || status
 }
@@ -444,48 +491,72 @@ const getPriorityLabel = (priority) => {
   return priorityMap[priority] || priority
 }
 
-// Abrir modal de novo projeto
-const openNewProjectModal = () => {
-  showNewProjectModal.value = true
+// Obter nome do projeto
+const getProjectName = (projectId) => {
+  const project = projects.value.find(p => p.id === projectId)
+  return project ? project.titulo : 'Projeto não encontrado'
 }
 
-// Criar novo projeto
-const createProject = async () => {
-  creatingProject.value = true
+// Abrir modal de nova tarefa
+const openNewTaskModal = () => {
+  editingTask.value = null
+  taskForm.value = {
+    titulo: '',
+    descricao: '',
+    projeto: projects.value.length > 0 ? projects.value[0].id : '',
+    status: 'A_FAZER',
+    prioridade: 'MEDIA',
+    data_inicio: new Date().toISOString().split('T')[0],
+    data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  }
+  showTaskModal.value = true
+}
+
+// Editar tarefa
+const editTask = (task) => {
+  editingTask.value = task
+  taskForm.value = {
+    titulo: task.titulo,
+    descricao: task.descricao,
+    projeto: task.projeto,
+    status: task.status,
+    prioridade: task.prioridade,
+    data_inicio: task.data_inicio,
+    data_fim: task.data_fim
+  }
+  showTaskModal.value = true
+}
+
+// Salvar tarefa
+const saveTask = async () => {
+  saving.value = true
   
   try {
-    await $api.post('/api/projects/', newProject.value)
-    
-    // Resetar form e fechar modal
-    newProject.value = {
-      titulo: '',
-      descricao: '',
-      data_inicio: new Date().toISOString().split('T')[0],
-      data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'PLANEJADO',
-      prioridade: 'MEDIA'
+    if (editingTask.value) {
+      await $api.put(`/api/tasks/${editingTask.value.id}/`, taskForm.value)
+    } else {
+      await $api.post('/api/tasks/', taskForm.value)
     }
-    showNewProjectModal.value = false
     
-    // Recarregar projetos
-    await fetchProjects()
+    showTaskModal.value = false
+    await fetchTasks()
   } catch (err) {
-    console.error('Erro ao criar projeto:', err)
-    alert('Não foi possível criar o projeto. Por favor, tente novamente.')
+    console.error('Erro ao salvar tarefa:', err)
+    alert('Não foi possível salvar a tarefa. Por favor, tente novamente.')
   } finally {
-    creatingProject.value = false
+    saving.value = false
   }
 }
 
-// Ver detalhes do projeto
-const viewProject = (id) => {
-  router.push(`/projetos/${id}`)
+// Ver detalhes da tarefa
+const viewTask = (id) => {
+  router.push(`/tarefas/${id}`)
 }
 
 // Observar mudanças nos filtros e página
-watch([currentPage, searchQuery, statusFilter, priorityFilter], () => {
-  if (searchQuery.value === '' && statusFilter.value === '' && priorityFilter.value === '') {
-    fetchProjects()
+watch([currentPage, searchQuery, statusFilter, priorityFilter, projectFilter], () => {
+  if (searchQuery.value === '' && statusFilter.value === '' && priorityFilter.value === '' && projectFilter.value === '') {
+    fetchTasks()
   }
 })
 </script>

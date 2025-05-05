@@ -1,0 +1,23 @@
+{% load i18n %}
+
+{% block subject %}
+{% trans "Ativação de conta no Planify" %}
+{% endblock subject %}
+
+{% block text_body %}
+{% trans "Você está recebendo este e-mail porque precisa finalizar o processo de ativação da sua conta no Planify." %}
+
+{% trans "Por favor, acesse o link abaixo para ativar sua conta:" %}
+{{ protocol }}://{{ domain }}/{{ url|safe }}
+
+{% trans "Obrigado por usar nosso site!" %}
+{% endblock text_body %}
+
+{% block html_body %}
+<p>{% trans "Você está recebendo este e-mail porque precisa finalizar o processo de ativação da sua conta no Planify." %}</p>
+
+<p>{% trans "Por favor, acesse o link abaixo para ativar sua conta:" %}</p>
+<p><a href="{{ protocol }}://{{ domain }}/{{ url|safe }}">{{ protocol }}://{{ domain }}/{{ url|safe }}</a></p>
+
+<p>{% trans "Obrigado por usar nosso site!" %}</p>
+{% endblock html_body %}

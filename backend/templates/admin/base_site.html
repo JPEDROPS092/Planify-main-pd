@@ -6,24 +6,74 @@
 {% block branding %}
 <h1 id="site-name">
     <a href="{% url 'admin:index' %}">
-        <img src="{% static 'img/logo.png' %}" height="40px" style="margin-right: 10px;">
-        {{ site_header|default:_('Planify Admin') }}
+        <span style="color: #f7f9fa;">Planify</span> - Sistema de Gestão de Projetos
     </a>
 </h1>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
-
-{% block extrahead %}
+{% block extrastyle %}
+{{ block.super }}
 <style>
     :root {
-        --primary: #2196F3;
-        --secondary: #1976D2;
-        --accent: #FF4081;
+        --primary: #2980b9;
+        --secondary: #ffffff;
+        --accent: #1abc9c;
         --primary-fg: #fff;
         --body-fg: #333;
         --body-bg: #fff;
         --header-color: #fff;
+        --header-branding-color: var(--accent);
+        --header-bg: var(--primary);
+        --header-link-color: var(--primary-fg);
+    }
+    
+    #header {
+        background: var(--primary);
+        color: var(--header-color);
+    }
+    
+    #branding h1 {
+        color: var(--header-color);
+    }
+    
+    .module h2, .module caption, .inline-group h2 {
+        background: var(--primary);
+    }
+    
+    div.breadcrumbs {
+        background: var(--secondary);
+    }
+    
+    a:link, a:visited {
+        color: var(--primary);
+    }
+    
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: var(--primary);
+    }
+    
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--secondary);
+    }
+    
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: var(--accent);
+    }
+    
+    .button.default:hover, input[type=submit].default:hover {
+        background: var(--secondary);
+    }
+    
+    .dashboard .module table th {
+        background: var(--secondary);
+    }
+    
+    .selector-chosen h2 {
+        background: var(--primary) !important;
+    }
+    
+    .paginator a:link, .paginator a:visited {
+        background: var(--primary) !important;
     }
 </style>
 {% endblock %}

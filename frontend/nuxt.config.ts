@@ -8,9 +8,14 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@pinia/nuxt'
   ],
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light'
+  },
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8001'
+      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000'
     }
   },
   app: {

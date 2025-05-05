@@ -6,24 +6,41 @@ def get_all_fields(model):
 
 @admin.register(Projeto)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = get_all_fields(Projeto)
-    list_filter = get_all_fields(Projeto)
-    search_fields = ['name', 'description']
+    list_display = ['titulo', 'status', 'prioridade', 'data_inicio', 'data_fim', 'criado_por', 'arquivado']
+    list_filter = ['status', 'prioridade', 'arquivado']
+    search_fields = ['titulo', 'descricao']
+    date_hierarchy = 'data_inicio'
+    readonly_fields = ['criado_em', 'atualizado_em']
+    fieldsets = [
+        ('Informações Básicas', {'fields': ['titulo', 'descricao', 'status', 'prioridade', 'arquivado']}),
+        ('Datas', {'fields': ['data_inicio', 'data_fim']}),
+        ('Metadados', {'fields': ['criado_por', 'criado_em', 'atualizado_em']}),
+    ]
 
 @admin.register(MembroProjeto)
 class ProjectMemberAdmin(admin.ModelAdmin):
-    list_display = get_all_fields(MembroProjeto)
-    list_filter = get_all_fields(MembroProjeto)
-    search_fields = ['project__name', 'user__username']
+    list_display = ['projeto', 'usuario', 'papel', 'data_entrada']
+    list_filter = ['papel', 'data_entrada']
+    search_fields = ['projeto__titulo', 'usuario__username', 'usuario__email']
+    autocomplete_fields = ['projeto', 'usuario']
 
 @admin.register(HistoricoStatusProjeto)
 class ProjectStatusHistoryAdmin(admin.ModelAdmin):
-    list_display = get_all_fields(HistoricoStatusProjeto)
-    list_filter = get_all_fields(HistoricoStatusProjeto)
-    search_fields = ['project__name', 'previous_status', 'new_status']
+    list_display = ['projeto', 'status_anterior', 'novo_status', 'alterado_por', 'alterado_em']
+    list_filter = ['status_anterior', 'novo_status', 'alterado_em']
+    search_fields = ['projeto__titulo']
+    readonly_fields = ['alterado_em']
+    autocomplete_fields = ['projeto', 'alterado_por']
 
 @admin.register(Sprint)
 class SprintAdmin(admin.ModelAdmin):
-    list_display = get_all_fields(Sprint)
-    list_filter = get_all_fields(Sprint)
-    search_fields = ['project__name', 'name']
+    list_display = ['nome', 'projeto', 'status', 'data_inicio', 'data_fim', 'criado_por']
+    list_filter = ['status', 'data_inicio', 'data_fim']
+    search_fields = ['nome', 'projeto__titulo', 'descricao']
+    date_hierarchy = 'data_inicio'
+    autocomplete_fields = ['projeto', 'criado_por']
+    fieldsets = [
+        ('Informações Básicas', {'fields': ['nome', 'descricao', 'projeto', 'status']}),
+        ('Datas', {'fields': ['data_inicio', 'data_fim']}),
+        ('Metadados', {'fields': ['criado_por']}),
+    ]

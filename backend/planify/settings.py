@@ -167,14 +167,21 @@ SIMPLE_JWT = {
 DJOSER = {
     'LOGIN_FIELD': 'username',
     'USER_CREATE_PASSWORD_RETYPE': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
-    'SEND_CONFIRMATION_EMAIL': True,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
+    'SEND_CONFIRMATION_EMAIL': False,
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': True,
+    'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {},
+    'EMAIL': {
+        'activation': 'users.email.ActivationEmail',
+        'confirmation': 'users.email.ConfirmationEmail',
+        'password_reset': 'users.email.PasswordResetEmail',
+        'password_changed_confirmation': 'users.email.PasswordChangedConfirmationEmail',
+    },
+    'ACTIVATION_REQUIRED': False,
 }
 
 # CORS settings

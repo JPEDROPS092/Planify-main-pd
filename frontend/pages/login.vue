@@ -11,15 +11,15 @@
         <form @submit.prevent="handleLogin">
           <div class="grid gap-4">
             <div class="grid gap-2">
-              <label for="email" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Email
+              <label for="username" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Nome de usuário
               </label>
               <input
-                id="email"
-                v-model="email"
-                type="email"
+                id="username"
+                v-model="username"
+                type="text"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="nome@exemplo.com"
+                placeholder="seu_usuario"
                 required
               />
             </div>
@@ -40,9 +40,16 @@
                 required
               />
             </div>
-            <Button type="submit" :disabled="isLoading">
+            <button 
+              type="submit" 
+              class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+              :disabled="isLoading"
+            >
               {{ isLoading ? 'Entrando...' : 'Entrar' }}
-            </Button>
+            </button>
+            <div v-if="error" class="text-red-500 text-sm text-center">
+              {{ error }}
+            </div>
           </div>
         </form>
         <div class="relative">
@@ -66,22 +73,21 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useNuxtApp } from '#app'
 
-const email = ref('')
+const { $api } = useNuxtApp()
+const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const error = ref('')
-const router = useRouter()
 
 const handleLogin = async () => {
   isLoading.value = true
   error.value = ''
   
   try {
-    const response = await axios.post('http://localhost:8001/api/auth/token/', {
-      email: email.value,
+    const response = await $api.post('/api/auth/token/', {
+      username: username.value,
       password: password.value
     })
     
@@ -90,7 +96,7 @@ const handleLogin = async () => {
       localStorage.setItem('auth_token', response.data.access)
       
       // Redirecionar para a página inicial
-      window.location.href = '/projetos'
+      navigateTo('/projetos')
     }
   } catch (err) {
     console.error('Erro ao fazer login:', err)
