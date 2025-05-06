@@ -46,8 +46,13 @@
 
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 transition-transform duration-300 ease-in-out"
-      :class="{ '-translate-x-full': !isSidebarOpen && isMobile, 'translate-x-0': isSidebarOpen || !isMobile }"
+      class="fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 transition-transform duration-300 ease-in-out"
+      :class="{ 
+        '-translate-x-full': !isSidebarOpen && isMobile, 
+        'translate-x-0': isSidebarOpen || !isMobile,
+        'w-72': !isSidebarCollapsed,
+        'w-20': isSidebarCollapsed && !isMobile
+      }"
     >
       <!-- Logo -->
       <div class="flex h-16 items-center justify-between border-b px-6">
@@ -60,30 +65,45 @@
               <path d="M22 9c-4.29 0-7.14-2.33-10-7 5.71 0 10 4.67 10 7Z"></path>
             </svg>
           </div>
-          <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Planify</span>
+          <span v-if="!isSidebarCollapsed || isMobile" class="text-xl font-bold text-blue-600 dark:text-blue-400">Planify</span>
         </NuxtLink>
         
         <!-- Theme toggle button (desktop) -->
-        <button 
-          @click="toggleTheme" 
-          class="hidden md:flex p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-yellow-400"
-        >
-          <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" x2="12" y1="1" y2="3"></line>
-            <line x1="12" x2="12" y1="21" y2="23"></line>
-            <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
-            <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
-            <line x1="1" x2="3" y1="12" y2="12"></line>
-            <line x1="21" x2="23" y1="12" y2="12"></line>
-            <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
-            <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        </button>
+        <div class="flex items-center">
+          <button 
+            @click="toggleTheme" 
+            class="hidden md:flex p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-yellow-400"
+          >
+            <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" x2="12" y1="1" y2="3"></line>
+              <line x1="12" x2="12" y1="21" y2="23"></line>
+              <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+              <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+              <line x1="1" x2="3" y1="12" y2="12"></line>
+              <line x1="21" x2="23" y1="12" y2="12"></line>
+              <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+              <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
       </div>
+
+      <!-- Toggle sidebar button -->
+      <button 
+        @click="toggleSidebar" 
+        class="absolute -right-3 top-20 hidden h-6 w-6 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-600 shadow-sm hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 md:flex"
+      >
+        <svg v-if="isSidebarCollapsed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
 
       <!-- User Profile -->
       <div class="border-b border-gray-200 dark:border-gray-800 px-6 py-4">
@@ -96,7 +116,7 @@
               {{ unreadNotifications > 9 ? '9+' : unreadNotifications }}
             </div>
           </div>
-          <div class="flex-1">
+          <div v-if="!isSidebarCollapsed || isMobile" class="flex-1">
             <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
           </div>
@@ -122,7 +142,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Notificações
+                <span v-if="!isSidebarCollapsed || isMobile">Notificações</span>
                 <span v-if="unreadNotifications > 0" class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-medium text-white">
                   {{ unreadNotifications > 9 ? '9+' : unreadNotifications }}
                 </span>
@@ -134,7 +154,7 @@
                   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                Perfil
+                <span v-if="!isSidebarCollapsed || isMobile">Perfil</span>
               </button>
               <button 
                 class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
@@ -143,7 +163,7 @@
                   <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                Configurações
+                <span v-if="!isSidebarCollapsed || isMobile">Configurações</span>
               </button>
               <button 
                 @click="logout" 
@@ -152,9 +172,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                   <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                  <line x1="21" x2="9" y1="12" y2="12"></line>
                 </svg>
-                Sair
+                <span v-if="!isSidebarCollapsed || isMobile">Sair</span>
               </button>
             </div>
           </div>
@@ -162,12 +182,13 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 overflow-auto py-6 px-3">
+      <nav class="flex-1 overflow-y-auto p-4">
         <div class="space-y-1">
-          <NuxtLink
-            to="/dashboard"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+          <!-- Dashboard -->
+          <NuxtLink 
+            to="/dashboard" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/dashboard') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
               <rect width="7" height="9" x="3" y="3" rx="1"></rect>
@@ -175,148 +196,136 @@
               <rect width="7" height="9" x="14" y="12" rx="1"></rect>
               <rect width="7" height="5" x="3" y="16" rx="1"></rect>
             </svg>
-            Dashboard
+            <span v-if="!isSidebarCollapsed || isMobile">Dashboard</span>
           </NuxtLink>
-          <NuxtLink
-            to="/projetos"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Projetos -->
+          <NuxtLink 
+            to="/projetos" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/projetos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-              <path d="M3 3v18h18"></path>
-              <path d="M7 12v5"></path>
-              <path d="m14 7 3-3 3 3"></path>
-              <path d="M7 19h5"></path>
-              <path d="M19 15v4"></path>
-              <path d="M11 12v5"></path>
-              <path d="M14 12v5"></path>
+              <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"></path>
+              <path d="M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8"></path>
+              <path d="M15 2v5h5"></path>
             </svg>
-            Projetos
+            <span v-if="!isSidebarCollapsed || isMobile">Projetos</span>
           </NuxtLink>
-          <NuxtLink
-            to="/tarefas"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Tarefas -->
+          <NuxtLink 
+            to="/tarefas" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/tarefas') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-              <rect width="8" height="8" x="3" y="3" rx="2"></rect>
-              <rect width="8" height="8" x="13" y="3" rx="2"></rect>
-              <rect width="8" height="8" x="3" y="13" rx="2"></rect>
-              <rect width="8" height="8" x="13" y="13" rx="2"></rect>
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <path d="m9 12 2 2 4-4"></path>
             </svg>
-            Tarefas
+            <span v-if="!isSidebarCollapsed || isMobile">Tarefas</span>
           </NuxtLink>
-          <NuxtLink
-            to="/equipes"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Equipes -->
+          <NuxtLink 
+            to="/equipes" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/equipes') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
-              <path d="M22 9c-4.29 0-7.14-2.33-10-7 5.71 0 10 4.67 10 7Z"></path>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            Equipes
+            <span v-if="!isSidebarCollapsed || isMobile">Equipes</span>
           </NuxtLink>
-          <NuxtLink
-            to="/documentos"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-            Documentos
-          </NuxtLink>
-          <NuxtLink
-            to="/riscos"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Riscos -->
+          <NuxtLink 
+            to="/riscos" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/riscos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
               <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
               <line x1="12" x2="12" y1="9" y2="13"></line>
               <line x1="12" x2="12.01" y1="17" y2="17"></line>
             </svg>
-            Riscos
+            <span v-if="!isSidebarCollapsed || isMobile">Riscos</span>
           </NuxtLink>
-          <NuxtLink
-            to="/custos"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Custos -->
+          <NuxtLink 
+            to="/custos" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/custos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
               <path d="M12 18V6"></path>
             </svg>
-            Custos
+            <span v-if="!isSidebarCollapsed || isMobile">Custos</span>
           </NuxtLink>
-          <NuxtLink
-            to="/comunicacoes"
-            class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
-            active-class="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-            @click="isMobile && (isSidebarOpen = false)"
+
+          <!-- Comunicações -->
+          <NuxtLink 
+            to="/comunicacoes" 
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="$route.path.startsWith('/comunicacoes') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            Comunicações
+            <span v-if="!isSidebarCollapsed || isMobile">Comunicações</span>
           </NuxtLink>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-6 space-y-1">
+          <h3 class="px-3 text-xs font-medium uppercase text-gray-500 dark:text-gray-400" v-if="!isSidebarCollapsed || isMobile">Ações Rápidas</h3>
           
-          <div class="py-2 my-2 border-t border-gray-200 dark:border-gray-700"></div>
-          
-          <div class="px-4 py-2">
-            <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Atalhos
-            </h2>
-          </div>
-          
+          <!-- Novo Projeto -->
           <button 
             @click="openNewProjectModal" 
-            class="flex w-full items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-green-600">
-              <path d="M5 12h14"></path>
-              <path d="M12 5v14"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" x2="12" y1="18" y2="12"></line>
+              <line x1="9" x2="15" y1="15" y2="15"></line>
             </svg>
-            Novo Projeto
+            <span v-if="!isSidebarCollapsed || isMobile">Novo Projeto</span>
           </button>
           
+          <!-- Nova Tarefa -->
           <button 
             @click="openNewTaskModal" 
-            class="flex w-full items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-blue-600">
-              <path d="M11 12H3"></path>
-              <path d="M16 6H3"></path>
-              <path d="M16 18H3"></path>
-              <path d="M18 9v6"></path>
-              <path d="M21 12h-6"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <path d="M12 8v8"></path>
+              <path d="M8 12h8"></path>
             </svg>
-            Nova Tarefa
+            <span v-if="!isSidebarCollapsed || isMobile">Nova Tarefa</span>
           </button>
         </div>
       </nav>
 
       <!-- Footer -->
       <div class="mt-auto border-t p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-        <p>Planify &copy; {{ new Date().getFullYear() }}</p>
-        <button @click="logout" class="mt-2 text-xs text-red-600 hover:underline">Sair da conta</button>
+        <p v-if="!isSidebarCollapsed || isMobile">Planify &copy; {{ new Date().getFullYear() }}</p>
+        <p v-else class="text-center">&copy;</p>
       </div>
     </aside>
 
     <!-- Main Content -->
     <main 
       class="transition-all duration-300 ease-in-out min-h-screen p-4 sm:p-6 md:p-8"
-      :class="{ 'ml-0': !isSidebarOpen && isMobile, 'ml-72': isSidebarOpen || !isMobile }"
+      :class="{ 'ml-0': !isSidebarOpen && isMobile, 'ml-72': isSidebarOpen || !isMobile, 'ml-20': isSidebarCollapsed && !isMobile }"
     >
       <slot />
     </main>
@@ -337,6 +346,7 @@ const isMobile = ref(false)
 const isDropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const isDarkMode = ref(false)
+const isSidebarCollapsed = ref(false)
 
 // Verificar se o usuário está autenticado
 const isLoggedIn = computed(() => {
@@ -471,6 +481,11 @@ const initializeDropdown = () => {
 const logout = () => {
   localStorage.removeItem('auth_token')
   router.push('/login')
+}
+
+// Toggle sidebar
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
 // Funções para abrir modais
