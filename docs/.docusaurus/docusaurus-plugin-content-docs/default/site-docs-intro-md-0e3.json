@@ -1,0 +1,20 @@
+{
+  "unversionedId": "intro",
+  "id": "intro",
+  "title": "Introdução ao Planify",
+  "description": "O Planify é um sistema web completo para gerenciamento de projetos de Pesquisa e Desenvolvimento (P&D), desenvolvido com Django REST Framework no backend e Nuxt.js com Material UI no frontend.",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/intro",
+  "permalink": "/docs/intro",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "next": {
+    "title": "Instalação",
+    "permalink": "/docs/getting-started/installation"
+  }
+}

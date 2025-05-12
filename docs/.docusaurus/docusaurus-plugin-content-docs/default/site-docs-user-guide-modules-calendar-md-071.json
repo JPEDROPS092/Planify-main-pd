@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/modules/calendar",
+  "id": "user-guide/modules/calendar",
+  "title": "Módulo de Calendário",
+  "description": "O Módulo de Calendário do Planify oferece uma visualização temporal completa de todos os eventos, prazos e marcos relacionados aos seus projetos de P&D. Esta seção explica como utilizar o calendário para planejar, acompanhar e coordenar atividades de forma eficiente.",
+  "source": "@site/docs/user-guide/modules/calendar.md",
+  "sourceDirName": "user-guide/modules",
+  "slug": "/user-guide/modules/calendar",
+  "permalink": "/docs/user-guide/modules/calendar",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/modules/calendar.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 8,
+  "frontMatter": {
+    "sidebar_position": 8
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Módulo de Comunicações",
+    "permalink": "/docs/user-guide/modules/communications"
+  },
+  "next": {
+    "title": "Backlog do Projeto Planify",
+    "permalink": "/docs/backlog"
+  }
+}

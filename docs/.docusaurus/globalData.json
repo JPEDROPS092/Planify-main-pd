@@ -1,0 +1,108 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "intro",
+          "docs": [
+            {
+              "id": "backlog",
+              "path": "/docs/backlog",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/configuration",
+              "path": "/docs/getting-started/configuration",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/installation",
+              "path": "/docs/getting-started/installation",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "getting-started/quick-start",
+              "path": "/docs/getting-started/quick-start",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "intro",
+              "path": "/docs/intro",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/authentication",
+              "path": "/docs/user-guide/authentication",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/dashboard",
+              "path": "/docs/user-guide/dashboard",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/calendar",
+              "path": "/docs/user-guide/modules/calendar",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/communications",
+              "path": "/docs/user-guide/modules/communications",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/costs",
+              "path": "/docs/user-guide/modules/costs",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/documents",
+              "path": "/docs/user-guide/modules/documents",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/projects",
+              "path": "/docs/user-guide/modules/projects",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/risks",
+              "path": "/docs/user-guide/modules/risks",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/tasks",
+              "path": "/docs/user-guide/modules/tasks",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/modules/teams",
+              "path": "/docs/user-guide/modules/teams",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "user-guide/overview",
+              "path": "/docs/user-guide/overview",
+              "sidebar": "tutorialSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorialSidebar": {
+              "link": {
+                "path": "/docs/intro",
+                "label": "intro"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/modules/tasks",
+  "id": "user-guide/modules/tasks",
+  "title": "Módulo de Tarefas",
+  "description": "O Módulo de Tarefas do Planify permite gerenciar todas as atividades necessárias para a execução bem-sucedida dos seus projetos. Esta seção explica como criar, organizar e acompanhar tarefas de forma eficiente.",
+  "source": "@site/docs/user-guide/modules/tasks.md",
+  "sourceDirName": "user-guide/modules",
+  "slug": "/user-guide/modules/tasks",
+  "permalink": "/docs/user-guide/modules/tasks",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/modules/tasks.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Módulo de Projetos",
+    "permalink": "/docs/user-guide/modules/projects"
+  },
+  "next": {
+    "title": "Módulo de Equipes",
+    "permalink": "/docs/user-guide/modules/teams"
+  }
+}

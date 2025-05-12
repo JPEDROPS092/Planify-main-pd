@@ -1,0 +1,27 @@
+{
+  "unversionedId": "getting-started/configuration",
+  "id": "getting-started/configuration",
+  "title": "Configuração",
+  "description": "Após a instalação do Planify, você precisará configurar o sistema de acordo com as necessidades da sua organização. Este guia aborda as principais configurações disponíveis.",
+  "source": "@site/docs/getting-started/configuration.md",
+  "sourceDirName": "getting-started",
+  "slug": "/getting-started/configuration",
+  "permalink": "/docs/getting-started/configuration",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/getting-started/configuration.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Instalação",
+    "permalink": "/docs/getting-started/installation"
+  },
+  "next": {
+    "title": "Guia Rápido",
+    "permalink": "/docs/getting-started/quick-start"
+  }
+}

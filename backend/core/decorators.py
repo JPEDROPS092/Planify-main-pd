@@ -3,7 +3,7 @@ Decoradores personalizados para as views da API.
 """
 from functools import wraps
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drf_yasg.utils import swagger_auto_schema
+from rest_framework.schemas.coreapi import AutoSchema
 
 def swagger_public_schema(view_func):
     """
@@ -16,7 +16,7 @@ def swagger_public_schema(view_func):
         is_swagger = False
         if request.META.get('HTTP_REFERER'):
             referer = request.META.get('HTTP_REFERER')
-            if 'swagger' in referer or 'redoc' in referer or 'api-docs' in referer:
+            if 'swagger' in referer or 'redoc' in referer or 'api-docs' in referer or 'schema' in referer:
                 is_swagger = True
         
         # Se for do Swagger/ReDoc, permite acesso sem autenticação
@@ -29,8 +29,23 @@ def swagger_public_schema(view_func):
     
     return wrapper
 
-def swagger_schema_with_examples(**kwargs):
+def swagger_schema_with_examples(method='get', operation_description=None, manual_parameters=None, responses=None):
     """
-    Decorador para adicionar exemplos de requisição e resposta à documentação do Swagger/ReDoc.
+    Decorador para adicionar exemplos e descrições à documentação da API usando DRF.
+    Substitui o swagger_auto_schema do drf-yasg.
     """
-    return swagger_auto_schema(**kwargs)
+    class CustomAutoSchema(AutoSchema):
+        def get_link(self, path, method, base_url):
+            link = super().get_link(path, method, base_url)
+            
+            # Adicionar descrição da operação
+            if operation_description:
+                link.description = operation_description
+                
+            return link
+    
+    def decorator(view_func):
+        view_func.schema = CustomAutoSchema()
+        return view_func
+    
+    return decorator

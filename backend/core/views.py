@@ -5,8 +5,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 
 from projects.models import Projeto
 from tasks.models import Tarefa
@@ -16,15 +14,15 @@ from .decorators import swagger_schema_with_examples
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def api_documentation(request):
+def documentacao_api(request):
     """
     Redireciona para a documentação da API.
     """
-    return redirect('schema-swagger-ui')
+    return redirect('openapi-schema')
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def health_check(request):
+def checagem_saude(request):
     """
     Endpoint para verificar se a API está funcionando
     """
@@ -32,79 +30,96 @@ def health_check(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def health_check_original(request):
+def checagem_saude_original(request):
     """
     Endpoint simples para verificar se a API está funcionando.
     Não requer autenticação.
     """
-    return Response(
-        {
-            "status": "online",
-            "message": "API está funcionando corretamente"
-        },
-        status=status.HTTP_200_OK
-    )
+    return Response({
+        "status": "online",
+        "versao": "1.0",
+        "ambiente": "desenvolvimento",
+        "data_hora": timezone.now().isoformat()
+    })
 
-@swagger_auto_schema(
+# Aliases para manter compatibilidade com código existente
+api_documentation = documentacao_api
+health_check = checagem_saude
+health_check_original = checagem_saude_original
+
+@swagger_schema_with_examples(
     method='get',
     operation_description="Endpoint para obter dados do dashboard",
     responses={
-        200: openapi.Response(
-            description="Dados do dashboard",
-            examples={
+        200: {
+            'description': "Dados do dashboard",
+            'examples': {
                 "application/json": {
-                    'total_projects': 5,
-                    'total_tasks': 15,
-                    'total_teams': 3,
-                    'recent_activities': [
-                        {'type': 'project', 'action': 'created', 'name': 'Projeto A'},
-                        {'type': 'task', 'action': 'completed', 'name': 'Tarefa 1'},
-                        {'type': 'team', 'action': 'updated', 'name': 'Equipe X'}
+                    'total_projetos': 5,
+                    'total_tarefas': 15,
+                    'tarefas_por_status': [
+                        {'status': 'Pendente', 'count': 5},
+                        {'status': 'Em Andamento', 'count': 7},
+                        {'status': 'Concluída', 'count': 3}
                     ]
                 }
             }
-        )
+        }
     }
 )
 @api_view(['GET'])
-@permission_classes([AllowAny])
-def dashboard_overview(request):
+def visao_geral_dashboard(request):
     """
     Endpoint para obter dados do dashboard
     """
+    total_projetos = Projeto.objects.count()
+    total_tarefas = Tarefa.objects.count()
+    tarefas_por_status = Tarefa.objects.values('status').annotate(count=Count('id'))
+    
+    # Converter os status para nomes mais amigáveis
+    status_map = {
+        'A_FAZER': 'Pendente',
+        'EM_ANDAMENTO': 'Em Andamento',
+        'FEITO': 'Concluída',
+        'BLOQUEADA': 'Bloqueada',
+        'CANCELADA': 'Cancelada'
+    }
+    
+    tarefas_por_status_formatted = [
+        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+        for item in tarefas_por_status
+    ]
+    
     data = {
-        'total_projects': 5,
-        'total_tasks': 15,
-        'total_teams': 3,
-        'recent_activities': [
-            {'type': 'project', 'action': 'created', 'name': 'Projeto A'},
-            {'type': 'task', 'action': 'completed', 'name': 'Tarefa 1'},
-            {'type': 'team', 'action': 'updated', 'name': 'Equipe X'}
-        ]
+        'total_projetos': total_projetos,
+        'total_tarefas': total_tarefas,
+        'tarefas_por_status': tarefas_por_status_formatted
     }
     return Response(data)
 
-@swagger_auto_schema(
+dashboard_overview = visao_geral_dashboard
+
+@swagger_schema_with_examples(
     method='get',
     operation_description="Retorna métricas específicas de um projeto",
     manual_parameters=[
-        openapi.Parameter(
-            'project_id',
-            openapi.IN_PATH,
-            description="ID do projeto",
-            type=openapi.TYPE_INTEGER,
-            required=True
-        )
+        {
+            'name': 'project_id',
+            'in': 'path',
+            'description': "ID do projeto",
+            'type': 'integer',
+            'required': True
+        }
     ],
     responses={
-        200: openapi.Response(
-            description="Métricas do projeto",
-            examples={
+        200: {
+            'description': "Métricas do projeto",
+            'examples': {
                 "application/json": {
                     'tarefas_por_status': [
-                        {'status': 'A_FAZER', 'count': 5},
-                        {'status': 'EM_ANDAMENTO', 'count': 3},
-                        {'status': 'FEITO', 'count': 7}
+                        {'status': 'Pendente', 'count': 5},
+                        {'status': 'Em Andamento', 'count': 3},
+                        {'status': 'Concluída', 'count': 7}
                     ],
                     'progresso': 46.67,
                     'riscos_ativos': 2,
@@ -112,20 +127,20 @@ def dashboard_overview(request):
                     'dias_restantes': 30
                 }
             }
-        ),
-        404: openapi.Response(
-            description="Projeto não encontrado",
-            examples={
+        },
+        404: {
+            'description': "Projeto não encontrado",
+            'examples': {
                 "application/json": {
                     "error": "Projeto não encontrado"
                 }
             }
-        )
+        }
     }
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def project_metrics(request, project_id):
+def metricas_projeto(request, project_id):
     """
     Retorna métricas específicas de um projeto.
     """
@@ -158,27 +173,43 @@ def project_metrics(request, project_id):
     # Dias restantes
     dias_restantes = (projeto.data_fim - timezone.now()).days if projeto.data_fim > timezone.now() else 0
     
+    # Converter os status para nomes mais amigáveis
+    status_map = {
+        'A_FAZER': 'Pendente',
+        'EM_ANDAMENTO': 'Em Andamento',
+        'FEITO': 'Concluída',
+        'BLOQUEADA': 'Bloqueada',
+        'CANCELADA': 'Cancelada'
+    }
+    
+    tarefas_por_status_formatted = [
+        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+        for item in tarefas_por_status
+    ]
+    
     return Response({
-        'tarefas_por_status': tarefas_por_status,
+        'tarefas_por_status': tarefas_por_status_formatted,
         'progresso': progresso,
         'riscos_ativos': riscos_ativos,
         'custos_totais': custos_totais['total'] or 0,
         'dias_restantes': dias_restantes
     })
 
-@swagger_auto_schema(
+project_metrics = metricas_projeto
+
+@swagger_schema_with_examples(
     method='get',
     operation_description="Retorna dados específicos para o dashboard do usuário",
     responses={
-        200: openapi.Response(
-            description="Dados do dashboard do usuário",
-            examples={
+        200: {
+            'description': "Dados do dashboard do usuário",
+            'examples': {
                 "application/json": {
                     'projetos_gerenciados': 2,
                     'tarefas_por_status': [
-                        {'status': 'A_FAZER', 'count': 3},
-                        {'status': 'EM_ANDAMENTO', 'count': 2},
-                        {'status': 'FEITO', 'count': 5}
+                        {'status': 'Pendente', 'count': 3},
+                        {'status': 'Em Andamento', 'count': 2},
+                        {'status': 'Concluída', 'count': 5}
                     ],
                     'tarefas_atrasadas': 1,
                     'proximas_tarefas': [
@@ -190,11 +221,11 @@ def project_metrics(request, project_id):
                     ]
                 }
             }
-        )
+        }
     }
 )
 @api_view(['GET'])
-def user_dashboard(request):
+def dashboard_usuario(request):
     """
     Retorna dados específicos para o dashboard do usuário.
     """
@@ -218,9 +249,25 @@ def user_dashboard(request):
         data_inicio__gte=timezone.now()
     ).order_by('data_inicio')[:5].values('titulo', 'data_inicio', 'projeto__titulo')
     
+    # Converter os status para nomes mais amigáveis
+    status_map = {
+        'A_FAZER': 'Pendente',
+        'EM_ANDAMENTO': 'Em Andamento',
+        'FEITO': 'Concluída',
+        'BLOQUEADA': 'Bloqueada',
+        'CANCELADA': 'Cancelada'
+    }
+    
+    tarefas_por_status_formatted = [
+        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+        for item in tarefas_por_status
+    ]
+    
     return Response({
         'projetos_gerenciados': projetos_gerenciados,
-        'tarefas_por_status': tarefas_por_status,
+        'tarefas_por_status': tarefas_por_status_formatted,
         'tarefas_atrasadas': tarefas_atrasadas,
         'proximas_tarefas': proximas_tarefas
     })
+
+user_dashboard = dashboard_usuario

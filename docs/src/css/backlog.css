@@ -1,0 +1,150 @@
+/* Progress Bars */
+.progress-container {
+  margin: 2rem 0;
+}
+
+.progress-item {
+  margin-bottom: 1rem;
+}
+
+.progress-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  height: 20px;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #4a6baf 0%, #2a3f6a 100%);
+  border-radius: 10px;
+}
+
+.progress-text {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+/* Priority Boxes */
+.priority-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.priority-item {
+  flex: 1;
+  min-width: 250px;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.priority-high {
+  border-left: 5px solid #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.priority-medium {
+  border-left: 5px solid #ffc107;
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.priority-low {
+  border-left: 5px solid #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.priority-item h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  margin: 2rem 0;
+  padding-left: 2rem;
+}
+
+.timeline:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(to bottom, #4a6baf 0%, #2a3f6a 100%);
+  border-radius: 2px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.timeline-badge {
+  position: absolute;
+  left: -2.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #4a6baf;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.timeline-content {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-content h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #4a6baf;
+}
+
+/* Dark mode adjustments */
+html[data-theme='dark'] .progress-bar {
+  background-color: #2d333b;
+}
+
+html[data-theme='dark'] .priority-high {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+html[data-theme='dark'] .priority-medium {
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+html[data-theme='dark'] .priority-low {
+  background-color: rgba(40, 167, 69, 0.2);
+}
+
+html[data-theme='dark'] .timeline-content {
+  background-color: #2d333b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .priority-container {
+    flex-direction: column;
+  }
+  
+  .priority-item {
+    width: 100%;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "unversionedId": "getting-started/quick-start",
+  "id": "getting-started/quick-start",
+  "title": "Guia Rápido",
+  "description": "Este guia rápido irá ajudá-lo a começar a usar o Planify em poucos minutos, mostrando as principais funcionalidades e fluxos de trabalho.",
+  "source": "@site/docs/getting-started/quick-start.md",
+  "sourceDirName": "getting-started",
+  "slug": "/getting-started/quick-start",
+  "permalink": "/docs/getting-started/quick-start",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/getting-started/quick-start.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Configuração",
+    "permalink": "/docs/getting-started/configuration"
+  },
+  "next": {
+    "title": "Visão Geral do Guia do Usuário",
+    "permalink": "/docs/user-guide/overview"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/modules/documents",
+  "id": "user-guide/modules/documents",
+  "title": "Módulo de Documentos",
+  "description": "O Módulo de Documentos do Planify permite gerenciar, organizar e compartilhar todos os arquivos e documentos relacionados aos seus projetos de P&D. Esta seção explica como utilizar as ferramentas de gerenciamento documental para manter a informação organizada e acessível.",
+  "source": "@site/docs/user-guide/modules/documents.md",
+  "sourceDirName": "user-guide/modules",
+  "slug": "/user-guide/modules/documents",
+  "permalink": "/docs/user-guide/modules/documents",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/modules/documents.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 6,
+  "frontMatter": {
+    "sidebar_position": 6
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Módulo de Custos",
+    "permalink": "/docs/user-guide/modules/costs"
+  },
+  "next": {
+    "title": "Módulo de Comunicações",
+    "permalink": "/docs/user-guide/modules/communications"
+  }
+}

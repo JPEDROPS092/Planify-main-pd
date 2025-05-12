@@ -1,20 +1,13 @@
 from django.urls import path
-from .views import (
-    health_check,
-    health_check_original,
-    dashboard_overview,
-    project_metrics,
-    user_dashboard,
-    api_documentation,
-)
+from . import views
 
 app_name = 'core'
 
 urlpatterns = [
-    path('', api_documentation, name='api-documentation'),
-    path('health-check/', health_check, name='health-check'),
-    path('health-check/original/', health_check_original, name='health-check-original'),
-    path('dashboard/overview/', dashboard_overview, name='dashboard-overview'),
-    path('dashboard/project/<int:project_id>/', project_metrics, name='project-metrics'),
-    path('dashboard/user/', user_dashboard, name='user-dashboard'),
+    path('', views.documentacao_api, name='api-root'),
+    path('saude/', views.checagem_saude, name='checagem-saude'),
+    path('saude/detalhes/', views.checagem_saude_original, name='checagem-saude-detalhes'),
+    path('dashboard/', views.visao_geral_dashboard, name='visao-geral-dashboard'),
+    path('projetos/<int:project_id>/metricas/', views.metricas_projeto, name='metricas-projeto'),
+    path('usuario/dashboard/', views.dashboard_usuario, name='dashboard-usuario'),
 ]

@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/modules/risks",
+  "id": "user-guide/modules/risks",
+  "title": "Módulo de Riscos",
+  "description": "O Módulo de Riscos do Planify permite identificar, avaliar e gerenciar de forma proativa os riscos associados aos seus projetos de P&D. Esta seção explica como utilizar as ferramentas de gerenciamento de riscos para minimizar ameaças e maximizar oportunidades.",
+  "source": "@site/docs/user-guide/modules/risks.md",
+  "sourceDirName": "user-guide/modules",
+  "slug": "/user-guide/modules/risks",
+  "permalink": "/docs/user-guide/modules/risks",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/modules/risks.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Módulo de Equipes",
+    "permalink": "/docs/user-guide/modules/teams"
+  },
+  "next": {
+    "title": "Módulo de Custos",
+    "permalink": "/docs/user-guide/modules/costs"
+  }
+}

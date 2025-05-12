@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/dashboard",
+  "id": "user-guide/dashboard",
+  "title": "Dashboard",
+  "description": "O Dashboard do Planify é o centro de controle personalizado que oferece uma visão geral do seu trabalho e projetos. Esta página explica como navegar e personalizar seu dashboard para maximizar sua produtividade.",
+  "source": "@site/docs/user-guide/dashboard.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/dashboard",
+  "permalink": "/docs/user-guide/dashboard",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/dashboard.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Autenticação e Perfil de Usuário",
+    "permalink": "/docs/user-guide/authentication"
+  },
+  "next": {
+    "title": "Módulo de Projetos",
+    "permalink": "/docs/user-guide/modules/projects"
+  }
+}

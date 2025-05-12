@@ -1,0 +1,24 @@
+{% extends "rest_framework/base.html" %}
+
+{% block title %}Documentação da API Planify{% endblock %}
+
+{% block branding %}
+<a class="navbar-brand" rel="nofollow" href="#">
+    Documentação da API Planify
+</a>
+{% endblock %}
+
+{% block bootstrap_navbar_variant %}navbar-dark bg-primary{% endblock %}
+
+{% block description %}
+<div class="container my-4">
+    <h2>API do Sistema Planify para Gerenciamento de Projetos</h2>
+    <p class="lead">
+        Esta documentação fornece informações sobre os endpoints disponíveis na API Planify,
+        incluindo os métodos HTTP suportados, parâmetros necessários e exemplos de respostas.
+    </p>
+    <div class="alert alert-info">
+        <strong>Nota:</strong> Todos os endpoints requerem autenticação, exceto quando explicitamente indicado.
+    </div>
+</div>
+{% endblock %}

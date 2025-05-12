@@ -1,0 +1,240 @@
+{
+  "pluginId": "default",
+  "version": "current",
+  "label": "Next",
+  "banner": null,
+  "badge": false,
+  "noIndex": false,
+  "className": "docs-version-current",
+  "isLast": true,
+  "docsSidebars": {
+    "tutorialSidebar": [
+      {
+        "type": "category",
+        "label": "Introdução",
+        "items": [
+          {
+            "type": "link",
+            "label": "Introdução ao Planify",
+            "href": "/docs/intro",
+            "docId": "intro"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "category",
+        "label": "Primeiros Passos",
+        "items": [
+          {
+            "type": "link",
+            "label": "Instalação",
+            "href": "/docs/getting-started/installation",
+            "docId": "getting-started/installation"
+          },
+          {
+            "type": "link",
+            "label": "Configuração",
+            "href": "/docs/getting-started/configuration",
+            "docId": "getting-started/configuration"
+          },
+          {
+            "type": "link",
+            "label": "Guia Rápido",
+            "href": "/docs/getting-started/quick-start",
+            "docId": "getting-started/quick-start"
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "category",
+        "label": "Guia do Usuário",
+        "items": [
+          {
+            "type": "link",
+            "label": "Visão Geral do Guia do Usuário",
+            "href": "/docs/user-guide/overview",
+            "docId": "user-guide/overview"
+          },
+          {
+            "type": "link",
+            "label": "Autenticação e Perfil de Usuário",
+            "href": "/docs/user-guide/authentication",
+            "docId": "user-guide/authentication"
+          },
+          {
+            "type": "link",
+            "label": "Dashboard",
+            "href": "/docs/user-guide/dashboard",
+            "docId": "user-guide/dashboard"
+          },
+          {
+            "type": "category",
+            "label": "Módulos",
+            "items": [
+              {
+                "type": "link",
+                "label": "Módulo de Projetos",
+                "href": "/docs/user-guide/modules/projects",
+                "docId": "user-guide/modules/projects"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Tarefas",
+                "href": "/docs/user-guide/modules/tasks",
+                "docId": "user-guide/modules/tasks"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Equipes",
+                "href": "/docs/user-guide/modules/teams",
+                "docId": "user-guide/modules/teams"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Riscos",
+                "href": "/docs/user-guide/modules/risks",
+                "docId": "user-guide/modules/risks"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Custos",
+                "href": "/docs/user-guide/modules/costs",
+                "docId": "user-guide/modules/costs"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Documentos",
+                "href": "/docs/user-guide/modules/documents",
+                "docId": "user-guide/modules/documents"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Comunicações",
+                "href": "/docs/user-guide/modules/communications",
+                "docId": "user-guide/modules/communications"
+              },
+              {
+                "type": "link",
+                "label": "Módulo de Calendário",
+                "href": "/docs/user-guide/modules/calendar",
+                "docId": "user-guide/modules/calendar"
+              }
+            ],
+            "collapsed": true,
+            "collapsible": true
+          }
+        ],
+        "collapsed": true,
+        "collapsible": true
+      },
+      {
+        "type": "link",
+        "label": "Backlog do Projeto",
+        "href": "/docs/backlog",
+        "docId": "backlog"
+      }
+    ]
+  },
+  "docs": {
+    "backlog": {
+      "id": "backlog",
+      "title": "Backlog do Projeto Planify",
+      "description": "Este documento apresenta o backlog completo do Planify, detalhando o que já foi implementado e o que ainda precisa ser feito para finalizar a aplicação.",
+      "sidebar": "tutorialSidebar"
+    },
+    "getting-started/configuration": {
+      "id": "getting-started/configuration",
+      "title": "Configuração",
+      "description": "Após a instalação do Planify, você precisará configurar o sistema de acordo com as necessidades da sua organização. Este guia aborda as principais configurações disponíveis.",
+      "sidebar": "tutorialSidebar"
+    },
+    "getting-started/installation": {
+      "id": "getting-started/installation",
+      "title": "Instalação",
+      "description": "Este guia irá ajudá-lo a instalar o Planify em seu ambiente de desenvolvimento ou produção.",
+      "sidebar": "tutorialSidebar"
+    },
+    "getting-started/quick-start": {
+      "id": "getting-started/quick-start",
+      "title": "Guia Rápido",
+      "description": "Este guia rápido irá ajudá-lo a começar a usar o Planify em poucos minutos, mostrando as principais funcionalidades e fluxos de trabalho.",
+      "sidebar": "tutorialSidebar"
+    },
+    "intro": {
+      "id": "intro",
+      "title": "Introdução ao Planify",
+      "description": "O Planify é um sistema web completo para gerenciamento de projetos de Pesquisa e Desenvolvimento (P&D), desenvolvido com Django REST Framework no backend e Nuxt.js com Material UI no frontend.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/authentication": {
+      "id": "user-guide/authentication",
+      "title": "Autenticação e Perfil de Usuário",
+      "description": "O sistema de autenticação do Planify garante a segurança e o controle de acesso às funcionalidades da plataforma. Esta seção explica como gerenciar sua conta, autenticação e perfil de usuário.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/dashboard": {
+      "id": "user-guide/dashboard",
+      "title": "Dashboard",
+      "description": "O Dashboard do Planify é o centro de controle personalizado que oferece uma visão geral do seu trabalho e projetos. Esta página explica como navegar e personalizar seu dashboard para maximizar sua produtividade.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/calendar": {
+      "id": "user-guide/modules/calendar",
+      "title": "Módulo de Calendário",
+      "description": "O Módulo de Calendário do Planify oferece uma visualização temporal completa de todos os eventos, prazos e marcos relacionados aos seus projetos de P&D. Esta seção explica como utilizar o calendário para planejar, acompanhar e coordenar atividades de forma eficiente.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/communications": {
+      "id": "user-guide/modules/communications",
+      "title": "Módulo de Comunicações",
+      "description": "O Módulo de Comunicações do Planify fornece ferramentas integradas para facilitar a comunicação entre membros da equipe, compartilhar informações e manter todos atualizados sobre o progresso dos projetos. Esta seção explica como utilizar os recursos de comunicação para melhorar a colaboração.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/costs": {
+      "id": "user-guide/modules/costs",
+      "title": "Módulo de Custos",
+      "description": "O Módulo de Custos do Planify permite planejar, monitorar e controlar os aspectos financeiros dos seus projetos de P&D. Esta seção explica como gerenciar orçamentos, registrar despesas e gerar relatórios financeiros detalhados.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/documents": {
+      "id": "user-guide/modules/documents",
+      "title": "Módulo de Documentos",
+      "description": "O Módulo de Documentos do Planify permite gerenciar, organizar e compartilhar todos os arquivos e documentos relacionados aos seus projetos de P&D. Esta seção explica como utilizar as ferramentas de gerenciamento documental para manter a informação organizada e acessível.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/projects": {
+      "id": "user-guide/modules/projects",
+      "title": "Módulo de Projetos",
+      "description": "O Módulo de Projetos é o coração do Planify, permitindo criar, gerenciar e monitorar projetos de P&D de forma eficiente. Esta seção explica todas as funcionalidades disponíveis para o gerenciamento de projetos.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/risks": {
+      "id": "user-guide/modules/risks",
+      "title": "Módulo de Riscos",
+      "description": "O Módulo de Riscos do Planify permite identificar, avaliar e gerenciar de forma proativa os riscos associados aos seus projetos de P&D. Esta seção explica como utilizar as ferramentas de gerenciamento de riscos para minimizar ameaças e maximizar oportunidades.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/tasks": {
+      "id": "user-guide/modules/tasks",
+      "title": "Módulo de Tarefas",
+      "description": "O Módulo de Tarefas do Planify permite gerenciar todas as atividades necessárias para a execução bem-sucedida dos seus projetos. Esta seção explica como criar, organizar e acompanhar tarefas de forma eficiente.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/modules/teams": {
+      "id": "user-guide/modules/teams",
+      "title": "Módulo de Equipes",
+      "description": "O Módulo de Equipes do Planify permite organizar e gerenciar os membros da sua organização em grupos de trabalho eficientes. Esta seção explica como criar, configurar e administrar equipes para otimizar a colaboração nos projetos.",
+      "sidebar": "tutorialSidebar"
+    },
+    "user-guide/overview": {
+      "id": "user-guide/overview",
+      "title": "Visão Geral do Guia do Usuário",
+      "description": "Bem-vindo ao Guia do Usuário do Planify! Este guia fornece informações detalhadas sobre como utilizar todas as funcionalidades do sistema de gerenciamento de projetos de P&D.",
+      "sidebar": "tutorialSidebar"
+    }
+  }
+}

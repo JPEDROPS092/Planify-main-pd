@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/authentication",
+  "id": "user-guide/authentication",
+  "title": "Autenticação e Perfil de Usuário",
+  "description": "O sistema de autenticação do Planify garante a segurança e o controle de acesso às funcionalidades da plataforma. Esta seção explica como gerenciar sua conta, autenticação e perfil de usuário.",
+  "source": "@site/docs/user-guide/authentication.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/authentication",
+  "permalink": "/docs/user-guide/authentication",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/authentication.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Visão Geral do Guia do Usuário",
+    "permalink": "/docs/user-guide/overview"
+  },
+  "next": {
+    "title": "Dashboard",
+    "permalink": "/docs/user-guide/dashboard"
+  }
+}

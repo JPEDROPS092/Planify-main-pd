@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/modules/projects",
+  "id": "user-guide/modules/projects",
+  "title": "Módulo de Projetos",
+  "description": "O Módulo de Projetos é o coração do Planify, permitindo criar, gerenciar e monitorar projetos de P&D de forma eficiente. Esta seção explica todas as funcionalidades disponíveis para o gerenciamento de projetos.",
+  "source": "@site/docs/user-guide/modules/projects.md",
+  "sourceDirName": "user-guide/modules",
+  "slug": "/user-guide/modules/projects",
+  "permalink": "/docs/user-guide/modules/projects",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/modules/projects.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Dashboard",
+    "permalink": "/docs/user-guide/dashboard"
+  },
+  "next": {
+    "title": "Módulo de Tarefas",
+    "permalink": "/docs/user-guide/modules/tasks"
+  }
+}

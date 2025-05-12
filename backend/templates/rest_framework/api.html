@@ -1,0 +1,24 @@
+{% extends "rest_framework/base.html" %}
+
+{% block title %}API Planify{% endblock %}
+
+{% block branding %}
+<a class="navbar-brand" rel="nofollow" href="/">
+    API Planify <span class="version">v1.0</span>
+</a>
+{% endblock %}
+
+{% block bootstrap_navbar_variant %}navbar-dark bg-primary{% endblock %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'api-root' %}">API</a></li>
+    {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+        {% if forloop.last %}
+            <li class="breadcrumb-item active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+        {% else %}
+            <li class="breadcrumb-item"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+        {% endif %}
+    {% endfor %}
+</ul>
+{% endblock %}

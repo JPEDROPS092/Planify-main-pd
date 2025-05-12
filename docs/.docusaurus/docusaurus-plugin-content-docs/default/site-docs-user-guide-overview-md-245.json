@@ -1,0 +1,27 @@
+{
+  "unversionedId": "user-guide/overview",
+  "id": "user-guide/overview",
+  "title": "Visão Geral do Guia do Usuário",
+  "description": "Bem-vindo ao Guia do Usuário do Planify! Este guia fornece informações detalhadas sobre como utilizar todas as funcionalidades do sistema de gerenciamento de projetos de P&D.",
+  "source": "@site/docs/user-guide/overview.md",
+  "sourceDirName": "user-guide",
+  "slug": "/user-guide/overview",
+  "permalink": "/docs/user-guide/overview",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/user-guide/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Guia Rápido",
+    "permalink": "/docs/getting-started/quick-start"
+  },
+  "next": {
+    "title": "Autenticação e Perfil de Usuário",
+    "permalink": "/docs/user-guide/authentication"
+  }
+}

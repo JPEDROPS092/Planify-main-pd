@@ -1,0 +1,23 @@
+{
+  "unversionedId": "backlog",
+  "id": "backlog",
+  "title": "Backlog do Projeto Planify",
+  "description": "Este documento apresenta o backlog completo do Planify, detalhando o que já foi implementado e o que ainda precisa ser feito para finalizar a aplicação.",
+  "source": "@site/docs/backlog.md",
+  "sourceDirName": ".",
+  "slug": "/backlog",
+  "permalink": "/docs/backlog",
+  "draft": false,
+  "editUrl": "https://github.com/seu-usuario/Planify/tree/main/docs/docs/backlog.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Módulo de Calendário",
+    "permalink": "/docs/user-guide/modules/calendar"
+  }
+}
