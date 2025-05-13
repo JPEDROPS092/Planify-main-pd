@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-background font-sans antialiased">
+    <!-- Componente de notificações -->
+    <NotificationContainer />
+    
     <main class="container mx-auto py-6 px-4 md:px-6">
       <slot />
     </main>
@@ -14,5 +17,12 @@
 </template>
 
 <script setup lang="ts">
+import NotificationContainer from '~/components/ui/NotificationContainer.vue'
+
 // Layout padrão
+const { checkAuth } = useAuth()
+
+onMounted(async () => {
+  await checkAuth()
+})
 </script>

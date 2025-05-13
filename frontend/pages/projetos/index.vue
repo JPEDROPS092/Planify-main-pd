@@ -133,16 +133,39 @@
                   {{ formatDate(project.data_inicio) }} - {{ formatDate(project.data_fim) }}
                 </span>
               </div>
-              <button
-                @click="viewProject(project.id)"
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Ver detalhes
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
-                  <path d="M5 12h14"></path>
-                  <path d="m12 5 7 7-7 7"></path>
-                </svg>
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="openEditProjectModal(project)"
+                  class="inline-flex items-center justify-center rounded-md p-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  title="Editar projeto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                    <path d="m15 5 4 4"></path>
+                  </svg>
+                </button>
+                <button
+                  @click="deleteProject(project.id)"
+                  class="inline-flex items-center justify-center rounded-md p-1 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+                  title="Excluir projeto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                </button>
+                <button
+                  @click="viewProject(project.id)"
+                  class="inline-flex items-center justify-center rounded-md text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Ver detalhes
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
+                    <path d="M5 12h14"></path>
+                    <path d="m12 5 7 7-7 7"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -181,23 +204,24 @@
         <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-medium">Novo Projeto</h3>
-            <button @click="showNewProjectModal = false" class="rounded-full p-1 hover:bg-gray-100">
+            <button @click="showNewProjectModal = false" class="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                 <path d="M18 6 6 18"></path>
                 <path d="m6 6 12 12"></path>
               </svg>
             </button>
           </div>
-          <form @submit.prevent="createProject" class="mt-4 space-y-4">
+          <div class="mt-4 space-y-4">
             <div>
               <label for="titulo" class="block text-sm font-medium text-gray-700">Título</label>
               <input
                 id="titulo"
                 v-model="newProject.titulo"
                 type="text"
-                required
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.titulo }"
               />
+              <p v-if="formErrors.titulo" class="mt-1 text-xs text-red-500">{{ formErrors.titulo }}</p>
             </div>
             <div>
               <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
@@ -205,9 +229,10 @@
                 id="descricao"
                 v-model="newProject.descricao"
                 rows="3"
-                required
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.descricao }"
               ></textarea>
+              <p v-if="formErrors.descricao" class="mt-1 text-xs text-red-500">{{ formErrors.descricao }}</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -216,9 +241,10 @@
                   id="data_inicio"
                   v-model="newProject.data_inicio"
                   type="date"
-                  required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.data_inicio }"
                 />
+                <p v-if="formErrors.data_inicio" class="mt-1 text-xs text-red-500">{{ formErrors.data_inicio }}</p>
               </div>
               <div>
                 <label for="data_fim" class="block text-sm font-medium text-gray-700">Data de Término</label>
@@ -226,9 +252,10 @@
                   id="data_fim"
                   v-model="newProject.data_fim"
                   type="date"
-                  required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.data_fim }"
                 />
+                <p v-if="formErrors.data_fim" class="mt-1 text-xs text-red-500">{{ formErrors.data_fim }}</p>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -237,7 +264,6 @@
                 <select
                   id="status"
                   v-model="newProject.status"
-                  required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="PLANEJADO">Planejado</option>
@@ -252,7 +278,6 @@
                 <select
                   id="prioridade"
                   v-model="newProject.prioridade"
-                  required
                   class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="BAIXA">Baixa</option>
@@ -261,79 +286,268 @@
                 </select>
               </div>
             </div>
-            <div class="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                @click="showNewProjectModal = false"
-                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                :disabled="creatingProject"
-                class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
-              >
-                <span v-if="creatingProject" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                {{ creatingProject ? 'Criando...' : 'Criar Projeto' }}
-              </button>
+            <div>
+              <label for="orcamento" class="block text-sm font-medium text-gray-700">Orçamento (R$)</label>
+              <input
+                id="orcamento"
+                v-model="newProject.orcamento"
+                type="number"
+                min="0"
+                step="0.01"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
             </div>
-          </form>
+            <div>
+              <label for="gerente" class="block text-sm font-medium text-gray-700">Gerente do Projeto</label>
+              <select
+                id="gerente"
+                v-model="newProject.gerente"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option :value="null">Selecione um gerente</option>
+                <option v-for="user in users" :key="user.id" :value="user.id">
+                  {{ user.full_name || user.username }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              @click="showNewProjectModal = false"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="createProject"
+              :disabled="isSubmitting"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              <span v-if="isSubmitting" class="flex items-center">
+                <svg class="mr-2 h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Criando...
+              </span>
+              <span v-else>Criar Projeto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para editar projeto -->
+      <div v-if="showEditProjectModal && editingProject" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium">Editar Projeto</h3>
+            <button @click="showEditProjectModal = false" class="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-4 space-y-4">
+            <div>
+              <label for="edit_titulo" class="block text-sm font-medium text-gray-700">Título</label>
+              <input
+                id="edit_titulo"
+                v-model="editingProject.titulo"
+                type="text"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.titulo }"
+              />
+              <p v-if="formErrors.titulo" class="mt-1 text-xs text-red-500">{{ formErrors.titulo }}</p>
+            </div>
+            <div>
+              <label for="edit_descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
+              <textarea
+                id="edit_descricao"
+                v-model="editingProject.descricao"
+                rows="3"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.descricao }"
+              ></textarea>
+              <p v-if="formErrors.descricao" class="mt-1 text-xs text-red-500">{{ formErrors.descricao }}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="edit_data_inicio" class="block text-sm font-medium text-gray-700">Data de Início</label>
+                <input
+                  id="edit_data_inicio"
+                  v-model="editingProject.data_inicio"
+                  type="date"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.data_inicio }"
+                />
+                <p v-if="formErrors.data_inicio" class="mt-1 text-xs text-red-500">{{ formErrors.data_inicio }}</p>
+              </div>
+              <div>
+                <label for="edit_data_fim" class="block text-sm font-medium text-gray-700">Data de Término</label>
+                <input
+                  id="edit_data_fim"
+                  v-model="editingProject.data_fim"
+                  type="date"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.data_fim }"
+                />
+                <p v-if="formErrors.data_fim" class="mt-1 text-xs text-red-500">{{ formErrors.data_fim }}</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="edit_status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select
+                  id="edit_status"
+                  v-model="editingProject.status"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="PLANEJADO">Planejado</option>
+                  <option value="EM_ANDAMENTO">Em Andamento</option>
+                  <option value="PAUSADO">Pausado</option>
+                  <option value="CONCLUIDO">Concluído</option>
+                  <option value="CANCELADO">Cancelado</option>
+                </select>
+              </div>
+              <div>
+                <label for="edit_prioridade" class="block text-sm font-medium text-gray-700">Prioridade</label>
+                <select
+                  id="edit_prioridade"
+                  v-model="editingProject.prioridade"
+                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="BAIXA">Baixa</option>
+                  <option value="MEDIA">Média</option>
+                  <option value="ALTA">Alta</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label for="edit_orcamento" class="block text-sm font-medium text-gray-700">Orçamento (R$)</label>
+              <input
+                id="edit_orcamento"
+                v-model="editingProject.orcamento"
+                type="number"
+                min="0"
+                step="0.01"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="edit_gerente" class="block text-sm font-medium text-gray-700">Gerente do Projeto</label>
+              <select
+                id="edit_gerente"
+                v-model="editingProject.gerente"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option :value="null">Selecione um gerente</option>
+                <option v-for="user in users" :key="user.id" :value="user.id">
+                  {{ user.full_name || user.username }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              @click="showEditProjectModal = false"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="updateProject"
+              :disabled="isSubmitting"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              <span v-if="isSubmitting" class="flex items-center">
+                <svg class="mr-2 h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Salvando...
+              </span>
+              <span v-else>Salvar Alterações</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-
-definePageMeta({
-  middleware: ['auth']
-})
+import { useProjectService } from '~/services/projectService'
+import type { Project } from '~/services/projectService'
+import { useUserService } from '~/services/userService'
+import { useNotification } from '~/composables/useNotification'
 
 const router = useRouter()
 const route = useRoute()
-const { $api } = useNuxtApp()
+const projectService = useProjectService()
+const userService = useUserService()
+const notification = useNotification()
 
 // Estado
 const projects = ref([])
-const loading = ref(true)
+const loading = ref(false)
 const error = ref(null)
-const currentPage = ref(1)
-const totalPages = ref(1)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
-const showNewProjectModal = ref(false)
-const creatingProject = ref(false)
+const currentPage = ref(1)
+const totalPages = ref(1)
+const itemsPerPage = ref(9)
+const totalItems = ref(0)
 
-// Formulário de novo projeto
+// Estado do formulário de novo projeto
+const showNewProjectModal = ref(false)
 const newProject = ref({
   titulo: '',
   descricao: '',
-  data_inicio: new Date().toISOString().split('T')[0],
-  data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  data_inicio: '',
+  data_fim: '',
   status: 'PLANEJADO',
-  prioridade: 'MEDIA'
+  prioridade: 'MEDIA',
 })
+const formErrors = ref({})
+const isSubmitting = ref(false)
 
-// Filtrar projetos
+// Estado para edição de projeto
+const showEditProjectModal = ref(false)
+const editingProject = ref(null)
+
+// Lista de usuários para seleção de gerente
+const users = ref([])
+const loadingUsers = ref(false)
+
+// Projetos filtrados
 const filteredProjects = computed(() => {
+  if (!searchQuery.value && !statusFilter.value && !priorityFilter.value) {
+    return projects.value
+  }
+
   return projects.value.filter(project => {
-    const matchesSearch = searchQuery.value === '' || 
-      project.titulo.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (project.descricao && project.descricao.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    const matchesSearch = searchQuery.value 
+      ? project.titulo.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
+        project.descricao.toLowerCase().includes(searchQuery.value.toLowerCase())
+      : true
     
-    const matchesStatus = statusFilter.value === '' || project.status === statusFilter.value
-    const matchesPriority = priorityFilter.value === '' || project.prioridade === priorityFilter.value
+    const matchesStatus = statusFilter.value 
+      ? project.status === statusFilter.value
+      : true
+    
+    const matchesPriority = priorityFilter.value 
+      ? project.prioridade === priorityFilter.value
+      : true
     
     return matchesSearch && matchesStatus && matchesPriority
   })
 })
 
-// Paginação
+// Range de páginas para paginação
 const paginationRange = computed(() => {
   const range = []
   const maxVisiblePages = 5
@@ -358,54 +572,74 @@ const paginationRange = computed(() => {
   return range
 })
 
-// Verificar se há um parâmetro na URL para abrir o modal
-onBeforeMount(() => {
-  if (route.query.new === 'true') {
-    showNewProjectModal.value = true
-  }
-})
-
-// Escutar evento global para abrir o modal
-onMounted(() => {
-  window.addEventListener('open-new-project-modal', () => {
-    showNewProjectModal.value = true
-  })
-  
-  // Buscar projetos
-  fetchProjects()
-  
-  return () => {
-    window.removeEventListener('open-new-project-modal', () => {
-      showNewProjectModal.value = true
-    })
-  }
-})
-
-// Buscar projetos
+// Buscar projetos do servidor
 const fetchProjects = async () => {
   loading.value = true
   error.value = null
   
   try {
-    const response = await $api.get('/api/projects/', {
-      params: {
-        page: currentPage.value
-      }
-    })
+    const params = {
+      page: currentPage.value,
+      page_size: itemsPerPage.value
+    }
     
-    projects.value = response.data.results || response.data
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
     
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    if (priorityFilter.value) {
+      params.priority = priorityFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    const response = await projectService.getAll(params)
+    
+    // Verificar se a resposta tem formato de paginação ou é uma lista simples
+    if (response.results && response.count !== undefined) {
+      projects.value = response.results
+      totalItems.value = response.count
+      totalPages.value = Math.ceil(response.count / itemsPerPage.value)
+    } else {
+      projects.value = response
+      totalItems.value = response.length
+      totalPages.value = 1
     }
   } catch (err) {
     console.error('Erro ao buscar projetos:', err)
     error.value = 'Não foi possível carregar os projetos. Por favor, tente novamente.'
+    notification.error('Erro ao carregar projetos', { 
+      title: 'Erro',
+      duration: 5000
+    })
   } finally {
     loading.value = false
+  }
+}
+
+// Buscar usuários para seleção de gerente
+const fetchUsers = async () => {
+  loadingUsers.value = true
+  
+  try {
+    const response = await userService.getAll()
+    
+    // Verificar se a resposta tem formato de paginação ou é uma lista simples
+    if (response.results) {
+      users.value = response.results
+    } else {
+      users.value = response
+    }
+  } catch (err) {
+    console.error('Erro ao buscar usuários:', err)
+    notification.error('Erro ao carregar usuários', { 
+      title: 'Erro',
+      duration: 5000
+    })
+  } finally {
+    loadingUsers.value = false
   }
 }
 
@@ -413,13 +647,19 @@ const fetchProjects = async () => {
 const changePage = (page) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
+  fetchProjects()
 }
 
 // Formatar data
 const formatDate = (dateString) => {
   if (!dateString) return ''
+  
   const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
+  return new Intl.DateTimeFormat('pt-BR', { 
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(date)
 }
 
 // Obter label do status
@@ -431,6 +671,7 @@ const getStatusLabel = (status) => {
     'CONCLUIDO': 'Concluído',
     'CANCELADO': 'Cancelado'
   }
+  
   return statusMap[status] || status
 }
 
@@ -441,39 +682,178 @@ const getPriorityLabel = (priority) => {
     'MEDIA': 'Média',
     'ALTA': 'Alta'
   }
+  
   return priorityMap[priority] || priority
 }
 
 // Abrir modal de novo projeto
 const openNewProjectModal = () => {
   showNewProjectModal.value = true
+  fetchUsers()
+}
+
+// Abrir modal de edição de projeto
+const openEditProjectModal = async (project) => {
+  try {
+    loading.value = true
+    const projectDetails = await projectService.getById(project.id)
+    editingProject.value = { ...projectDetails }
+    showEditProjectModal.value = true
+    fetchUsers()
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do projeto:', err)
+    notification.error('Erro ao carregar detalhes do projeto', { 
+      title: 'Erro',
+      duration: 5000
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 // Criar novo projeto
 const createProject = async () => {
-  creatingProject.value = true
+  formErrors.value = {}
+  isSubmitting.value = true
   
   try {
-    await $api.post('/api/projects/', newProject.value)
+    // Validar campos obrigatórios
+    if (!newProject.value.titulo) {
+      formErrors.value.titulo = 'Título é obrigatório'
+    }
     
-    // Resetar form e fechar modal
+    if (!newProject.value.data_inicio) {
+      formErrors.value.data_inicio = 'Data de início é obrigatória'
+    }
+    
+    if (!newProject.value.data_fim) {
+      formErrors.value.data_fim = 'Data de término é obrigatória'
+    }
+    
+    if (Object.keys(formErrors.value).length > 0) {
+      return
+    }
+    
+    await projectService.create(newProject.value)
+    
+    notification.success('Projeto criado com sucesso!', { 
+      title: 'Sucesso',
+      duration: 5000
+    })
+    
+    showNewProjectModal.value = false
     newProject.value = {
       titulo: '',
       descricao: '',
-      data_inicio: new Date().toISOString().split('T')[0],
-      data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      data_inicio: '',
+      data_fim: '',
       status: 'PLANEJADO',
-      prioridade: 'MEDIA'
+      prioridade: 'MEDIA',
     }
-    showNewProjectModal.value = false
     
-    // Recarregar projetos
-    await fetchProjects()
+    fetchProjects()
   } catch (err) {
     console.error('Erro ao criar projeto:', err)
-    alert('Não foi possível criar o projeto. Por favor, tente novamente.')
+    
+    if (err.response && err.response.data) {
+      // Mapear erros da API para o formulário
+      const apiErrors = err.response.data
+      Object.keys(apiErrors).forEach(key => {
+        formErrors.value[key] = Array.isArray(apiErrors[key]) 
+          ? apiErrors[key][0] 
+          : apiErrors[key]
+      })
+    } else {
+      notification.error('Erro ao criar projeto. Por favor, tente novamente.', { 
+        title: 'Erro',
+        duration: 5000
+      })
+    }
   } finally {
-    creatingProject.value = false
+    isSubmitting.value = false
+  }
+}
+
+// Atualizar projeto
+const updateProject = async () => {
+  formErrors.value = {}
+  isSubmitting.value = true
+  
+  try {
+    // Validar campos obrigatórios
+    if (!editingProject.value.titulo) {
+      formErrors.value.titulo = 'Título é obrigatório'
+    }
+    
+    if (!editingProject.value.data_inicio) {
+      formErrors.value.data_inicio = 'Data de início é obrigatória'
+    }
+    
+    if (!editingProject.value.data_fim) {
+      formErrors.value.data_fim = 'Data de término é obrigatória'
+    }
+    
+    if (Object.keys(formErrors.value).length > 0) {
+      return
+    }
+    
+    await projectService.update(editingProject.value.id, editingProject.value)
+    
+    notification.success('Projeto atualizado com sucesso!', { 
+      title: 'Sucesso',
+      duration: 5000
+    })
+    
+    showEditProjectModal.value = false
+    editingProject.value = null
+    
+    fetchProjects()
+  } catch (err) {
+    console.error('Erro ao atualizar projeto:', err)
+    
+    if (err.response && err.response.data) {
+      // Mapear erros da API para o formulário
+      const apiErrors = err.response.data
+      Object.keys(apiErrors).forEach(key => {
+        formErrors.value[key] = Array.isArray(apiErrors[key]) 
+          ? apiErrors[key][0] 
+          : apiErrors[key]
+      })
+    } else {
+      notification.error('Erro ao atualizar projeto. Por favor, tente novamente.', { 
+        title: 'Erro',
+        duration: 5000
+      })
+    }
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// Excluir projeto
+const deleteProject = async (id) => {
+  if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    await projectService.remove(id)
+    
+    notification.success('Projeto excluído com sucesso!', { 
+      title: 'Sucesso',
+      duration: 5000
+    })
+    
+    fetchProjects()
+  } catch (err) {
+    console.error('Erro ao excluir projeto:', err)
+    notification.error('Erro ao excluir projeto. Por favor, tente novamente.', { 
+      title: 'Erro',
+      duration: 5000
+    })
+  } finally {
+    loading.value = false
   }
 }
 
@@ -482,10 +862,22 @@ const viewProject = (id) => {
   router.push(`/projetos/${id}`)
 }
 
-// Observar mudanças nos filtros e página
-watch([currentPage, searchQuery, statusFilter, priorityFilter], () => {
+// Observar mudanças nos filtros
+watch([searchQuery, statusFilter, priorityFilter], () => {
   if (searchQuery.value === '' && statusFilter.value === '' && priorityFilter.value === '') {
     fetchProjects()
+  } else {
+    currentPage.value = 1
+    fetchProjects()
   }
+})
+
+// Verificar se deve abrir modal de novo projeto
+onMounted(() => {
+  if (route.query.new === 'true') {
+    openNewProjectModal()
+  }
+  
+  fetchProjects()
 })
 </script>

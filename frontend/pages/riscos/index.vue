@@ -427,7 +427,7 @@ const fetchRisks = async () => {
       }
     })
     
-    risks.value = response.data.results || response.data
+    risks.value = Array.isArray(response.data.results) ? response.data.results : []
     
     // Configurar paginação se disponível
     if (response.data.count !== undefined) {

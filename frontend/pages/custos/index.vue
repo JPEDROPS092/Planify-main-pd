@@ -412,7 +412,7 @@ const fetchCosts = async () => {
       }
     })
     
-    costs.value = response.data.results || response.data
+    costs.value = Array.isArray(response.data.results) ? response.data.results : [];
     
     // Configurar paginação se disponível
     if (response.data.count !== undefined) {

@@ -76,10 +76,10 @@
         </svg>
         <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhuma tarefa encontrada</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {{ tasks.length === 0 ? 'Comece criando sua primeira tarefa.' : 'Nenhuma tarefa corresponde aos filtros aplicados.' }}
+          {{ tasks && tasks.length === 0 ? 'Comece criando sua primeira tarefa.' : 'Nenhuma tarefa corresponde aos filtros aplicados.' }}
         </p>
         <button
-          v-if="tasks.length === 0"
+          v-if="tasks && tasks.length === 0"
           @click="openNewTaskModal"
           class="mt-4 inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700"
         >
