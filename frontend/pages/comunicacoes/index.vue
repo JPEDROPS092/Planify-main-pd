@@ -278,6 +278,10 @@
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { listMensagens, createMensagem, retrieveMensagem, updateMensagem } from '~/services/api/communications'
+import { listProjetos } from '~/services/api/projects'
+import { listUsuarios } from '~/services/api/teams'
+import { useAuth } from '~/services/api/auth'
 import EmptyState from '~/components/EmptyState.vue'
 
 definePageMeta({
@@ -373,20 +377,50 @@ const fetchMessages = async () => {
   error.value = null
   
   try {
-    const response = await $api.get('/api/communications/', {
-      params: {
-        page: currentPage.value
-      }
-    })
-    
-    messages.value = response.data.results || response.data
-    
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    const params = {
+      page: currentPage.value,
+      ordering: '-data_envio'
     }
+    
+    if (typeFilter.value) {
+      params.tipo = typeFilter.value
+    }
+    
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    
+    if (projectFilter.value) {
+      params.projeto = projectFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    // Usar o novo serviço de API para mensagens
+    const response = await listMensagens(params)
+    
+    messages.value = response.results.map(message => ({
+      id: message.id,
+      titulo: message.titulo,
+      conteudo: message.conteudo,
+      tipo: message.tipo,
+      tipo_display: message.tipo_display,
+      status: message.status,
+      status_display: message.status_display,
+      remetente: message.remetente,
+      remetente_nome: message.remetente_nome,
+      destinatario: message.destinatario,
+      destinatario_nome: message.destinatario_nome,
+      projeto: message.projeto,
+      projeto_nome: message.projeto_nome,
+      data_envio: message.data_envio,
+      data_leitura: message.data_leitura
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar mensagens:', err)
     error.value = 'Não foi possível carregar as mensagens. Por favor, tente novamente.'
@@ -398,8 +432,12 @@ const fetchMessages = async () => {
 // Buscar projetos
 const fetchProjects = async () => {
   try {
-    const response = await $api.get('/api/projects/')
-    projects.value = response.data.results || response.data
+    // Usar o novo serviço de API para projetos
+    const response = await listProjetos()
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      titulo: project.nome
+    }))
   } catch (err) {
     console.error('Erro ao buscar projetos:', err)
   }
@@ -408,8 +446,13 @@ const fetchProjects = async () => {
 // Buscar usuários
 const fetchUsers = async () => {
   try {
-    const response = await $api.get('/api/users/')
-    users.value = response.data.results || response.data
+    // Usar o novo serviço de API para usuários
+    const response = await listUsuarios()
+    users.value = response.results.map(user => ({
+      id: user.id,
+      nome: user.nome,
+      email: user.email
+    }))
   } catch (err) {
     console.error('Erro ao buscar usuários:', err)
   }
@@ -464,10 +507,25 @@ const openNewMessageModal = () => {
 
 // Enviar mensagem
 const sendMessage = async () => {
+  if (!messageForm.value.titulo || !messageForm.value.conteudo || !messageForm.value.destinatario) {
+    alert('Preencha os campos obrigatórios')
+    return
+  }
+  
   sending.value = true
   
   try {
-    await $api.post('/api/communications/', messageForm.value)
+    // Preparar dados da mensagem
+    const messageData = {
+      titulo: messageForm.value.titulo,
+      conteudo: messageForm.value.conteudo,
+      tipo: messageForm.value.tipo,
+      destinatario: messageForm.value.destinatario,
+      projeto: messageForm.value.projeto || null
+    }
+    
+    // Usar o novo serviço de API para criar mensagens
+    await createMensagem(messageData)
     
     showMessageModal.value = false
     await fetchMessages()
@@ -482,14 +540,22 @@ const sendMessage = async () => {
 // Marcar mensagem como lida
 const markAsRead = async (id) => {
   try {
-    await $api.patch(`/api/communications/${id}/`, {
-      status: 'LIDA'
+    // Buscar detalhes da mensagem primeiro
+    const messageDetails = await retrieveMensagem(id)
+    
+    // Atualizar status para lida usando o novo serviço de API
+    await updateMensagem(id, {
+      ...messageDetails,
+      status: 'LIDA',
+      data_leitura: new Date().toISOString()
     })
     
     // Atualizar status na lista local
     const message = messages.value.find(m => m.id === id)
     if (message) {
       message.status = 'LIDA'
+      message.status_display = 'Lida'
+      message.data_leitura = new Date().toISOString()
     }
   } catch (err) {
     console.error('Erro ao marcar mensagem como lida:', err)
@@ -499,8 +565,6 @@ const markAsRead = async (id) => {
 
 // Observar mudanças nos filtros e página
 watch([currentPage, searchQuery, typeFilter, statusFilter, projectFilter], () => {
-  if (searchQuery.value === '' && typeFilter.value === '' && statusFilter.value === '' && projectFilter.value === '') {
-    fetchMessages()
-  }
+  fetchMessages()
 })
 </script>

@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'colorfield',
     'chartjs',
     'django_seed',
+    'drf_spectacular',  # Desabilitado temporariamente
     
     # Local apps
     'users',
@@ -145,12 +146,13 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Desabilitado temporariamente
     'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
@@ -183,7 +185,15 @@ DJOSER = {
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
-    'SERIALIZERS': {},
+    'SERIALIZERS': {
+        'user': 'users.serializers.UserSerializer',
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'user_delete': 'users.serializers.UserSerializer',
+        'password_reset': 'users.serializers.ResetPasswordSerializer',
+        'password_reset_confirm': 'users.serializers.SetNewPasswordSerializer',
+        'set_password': 'users.serializers.ChangePasswordSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+    },
     'EMAIL': {
         'activation': 'users.email.ActivationEmail',
         'confirmation': 'users.email.ConfirmationEmail',
@@ -191,6 +201,14 @@ DJOSER = {
         'password_changed_confirmation': 'users.email.PasswordChangedConfirmationEmail',
     },
     'ACTIVATION_REQUIRED': False,
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Planify API',
+    'DESCRIPTION': 'Documentação completa da API do sistema Planify.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # CORS settings

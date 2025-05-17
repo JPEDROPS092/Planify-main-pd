@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import { useApiService, ApiError } from '~/services/api'
 import { useState } from '#imports'
+import { ApiError } from '~/services/api/config'
+import { createAuthToken, retrieveAuthUsersMe, refreshAuthTokenCreate } from '~/services/api/auth'
 
 export const useAuth = () => {
   // Usar useState para persistir o estado do usuário entre componentes
@@ -10,14 +10,18 @@ export const useAuth = () => {
   const isLoading = ref(false)
   const error = ref('')
   
-  // Usar o serviço de API
-  const apiService = useApiService()
+  // Tokens de autenticação
+  const accessToken = useState<string | null>('auth.accessToken', () => {
+    return process.client ? localStorage.getItem('auth_token') : null
+  })
+  
+  const refreshToken = useState<string | null>('auth.refreshToken', () => {
+    return process.client ? localStorage.getItem('refresh_token') : null
+  })
 
   // Verificar se o usuário está autenticado
   const checkAuth = async () => {
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      isAuthenticated.value = false
+    if (!accessToken.value) {
       user.value = null
       return false
     }
@@ -25,8 +29,8 @@ export const useAuth = () => {
     try {
       isLoading.value = true
       
-      // Usando o serviço de API para verificar autenticação
-      const userData = await apiService.checkAuth()
+      // Usando o novo serviço de API para buscar o usuário atual
+      const userData = await retrieveAuthUsersMe()
       user.value = userData
       return true
     } catch (err) {
@@ -34,7 +38,12 @@ export const useAuth = () => {
       
       // Tratamento de erro específico
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        localStorage.removeItem('auth_token')
+        if (process.client) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('refresh_token')
+        }
+        accessToken.value = null
+        refreshToken.value = null
       }
       
       user.value = null
@@ -45,46 +54,44 @@ export const useAuth = () => {
   }
 
   // Fazer login
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: { username: string; password: string }) => {
     isLoading.value = true
     error.value = ''
     
     try {
-      // Usando o serviço de API para login
-      const success = await apiService.login(email, password)
+      // Usando o novo serviço de API para login
+      const tokenData = await createAuthToken(credentials)
       
-      if (success) {
-        await checkAuth()
-        return true
+      // Salvar tokens
+      if (process.client) {
+        localStorage.setItem('auth_token', tokenData.access)
+        if (tokenData.refresh) {
+          localStorage.setItem('refresh_token', tokenData.refresh)
+        }
       }
-      return false
+      
+      accessToken.value = tokenData.access
+      if (tokenData.refresh) {
+        refreshToken.value = tokenData.refresh
+      }
+      
+      // Buscar dados do usuário
+      const userData = await retrieveAuthUsersMe()
+      user.value = userData
+      
+      return userData
     } catch (err) {
       console.error('Erro ao fazer login:', err)
       
-      // Tratamento de erro específico
       if (err instanceof ApiError) {
-        if (err.status === 401) {
-          error.value = 'Credenciais inválidas. Por favor, verifique seu email e senha.'
-        } else if (err.status === 400) {
-          // Extrair mensagens de erro do backend se disponíveis
-          if (err.data && typeof err.data === 'object') {
-            const errorMessages = Object.values(err.data)
-              .flat()
-              .filter(msg => typeof msg === 'string')
-              .join('. ')
-            
-            error.value = errorMessages || 'Dados de login inválidos. Por favor, verifique as informações.'
-          } else {
-            error.value = 'Dados de login inválidos. Por favor, verifique as informações.'
-          }
-        } else {
-          error.value = err.friendlyMessage
-        }
+        error.value = err.message
+      } else if (err instanceof Error) {
+        error.value = err.message
       } else {
-        error.value = 'Credenciais inválidas. Por favor, tente novamente.'
+        error.value = 'Ocorreu um erro ao fazer login. Por favor, tente novamente.'
       }
       
-      return false
+      throw err
     } finally {
       isLoading.value = false
     }
@@ -92,19 +99,43 @@ export const useAuth = () => {
 
   // Fazer logout
   const logout = () => {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('refresh_token')
+    if (process.client) {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('refresh_token')
+    }
+    accessToken.value = null
+    refreshToken.value = null
     user.value = null
     navigateTo('/login')
   }
   
   // Atualizar token usando refresh token
-  const refreshToken = async () => {
+  const refreshAuthToken = async () => {
+    if (!refreshToken.value) {
+      throw new Error('Refresh token não disponível')
+    }
+    
     try {
-      return await apiService.refreshToken()
+      const tokenData = await refreshAuthTokenCreate({ refresh: refreshToken.value })
+      
+      if (process.client) {
+        localStorage.setItem('auth_token', tokenData.access)
+      }
+      
+      accessToken.value = tokenData.access
+      return tokenData.access
     } catch (err) {
       console.error('Erro ao atualizar token:', err)
-      return false
+      
+      if (process.client) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('refresh_token')
+      }
+      
+      accessToken.value = null
+      refreshToken.value = null
+      user.value = null
+      throw err
     }
   }
 
@@ -136,13 +167,15 @@ export const useAuth = () => {
 
   return {
     user,
+    accessToken,
+    refreshToken,
     isAuthenticated,
     isLoading,
     error,
     login,
     logout,
     checkAuth,
-    refreshToken,
+    refreshAuthToken,
     getCurrentUser,
     hasPermission
   }

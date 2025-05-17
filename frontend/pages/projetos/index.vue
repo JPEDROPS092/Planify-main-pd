@@ -479,15 +479,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useProjectService } from '~/services/projectService'
-import type { Project } from '~/services/projectService'
-import { useUserService } from '~/services/userService'
+import { useProjectService } from '~/services/api/projects'
+import { listAuthUsers } from '~/services/api/auth'
+import { useAuth } from '~/services/api/auth'
 import { useNotification } from '~/composables/useNotification'
 
 const router = useRouter()
 const route = useRoute()
 const projectService = useProjectService()
-const userService = useUserService()
+const { user } = useAuth()
 const notification = useNotification()
 
 // Estado
@@ -580,33 +580,37 @@ const fetchProjects = async () => {
   try {
     const params = {
       page: currentPage.value,
-      page_size: itemsPerPage.value
+      ordering: '-data_criacao'
     }
     
     if (statusFilter.value) {
       params.status = statusFilter.value
     }
     
-    if (priorityFilter.value) {
-      params.priority = priorityFilter.value
-    }
-    
     if (searchQuery.value) {
       params.search = searchQuery.value
     }
     
-    const response = await projectService.getAll(params)
+    // Usar o novo serviço de projetos
+    const response = await projectService.fetchProjects(params)
     
-    // Verificar se a resposta tem formato de paginação ou é uma lista simples
-    if (response.results && response.count !== undefined) {
-      projects.value = response.results
-      totalItems.value = response.count
-      totalPages.value = Math.ceil(response.count / itemsPerPage.value)
-    } else {
-      projects.value = response
-      totalItems.value = response.length
-      totalPages.value = 1
-    }
+    // Processar dados da resposta paginada
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      titulo: project.nome,
+      descricao: project.descricao,
+      data_inicio: project.data_inicio,
+      data_fim: project.data_fim,
+      status: project.status,
+      prioridade: project.prioridade,
+      status_display: project.status_display,
+      progresso: project.progresso,
+      gerente: project.gerente,
+      gerente_nome: project.gerente_nome
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar projetos:', err)
     error.value = 'Não foi possível carregar os projetos. Por favor, tente novamente.'
@@ -621,25 +625,20 @@ const fetchProjects = async () => {
 
 // Buscar usuários para seleção de gerente
 const fetchUsers = async () => {
-  loadingUsers.value = true
-  
   try {
-    const response = await userService.getAll()
-    
-    // Verificar se a resposta tem formato de paginação ou é uma lista simples
-    if (response.results) {
-      users.value = response.results
-    } else {
-      users.value = response
-    }
+    // Usar o novo serviço de API para usuários
+    const response = await listAuthUsers()
+    users.value = response.results.map(user => ({
+      id: user.id,
+      nome: user.full_name,
+      email: user.email
+    }))
   } catch (err) {
     console.error('Erro ao buscar usuários:', err)
-    notification.error('Erro ao carregar usuários', { 
+    notification.error('Erro ao carregar usuários', {
       title: 'Erro',
       duration: 5000
     })
-  } finally {
-    loadingUsers.value = false
   }
 }
 
@@ -696,7 +695,7 @@ const openNewProjectModal = () => {
 const openEditProjectModal = async (project) => {
   try {
     loading.value = true
-    const projectDetails = await projectService.getById(project.id)
+    const projectDetails = await projectService.fetchProject(project.id)
     editingProject.value = { ...projectDetails }
     showEditProjectModal.value = true
     fetchUsers()
@@ -713,62 +712,72 @@ const openEditProjectModal = async (project) => {
 
 // Criar novo projeto
 const createProject = async () => {
-  formErrors.value = {}
+  if (!newProject.titulo || !newProject.data_inicio || !newProject.status) {
+    notification.error('Preencha todos os campos obrigatórios', {
+      title: 'Erro',
+      duration: 5000
+    })
+    return
+  }
+  
   isSubmitting.value = true
   
   try {
-    // Validar campos obrigatórios
-    if (!newProject.value.titulo) {
-      formErrors.value.titulo = 'Título é obrigatório'
+    // Preparar dados para o novo formato da API
+    const projectData = {
+      nome: newProject.titulo,
+      descricao: newProject.descricao,
+      data_inicio: newProject.data_inicio,
+      data_fim: newProject.data_fim || null,
+      status: newProject.status,
+      gerente: newProject.gerente
     }
     
-    if (!newProject.value.data_inicio) {
-      formErrors.value.data_inicio = 'Data de início é obrigatória'
-    }
+    // Usar o serviço de projetos para criar projeto
+    const response = await projectService.createProject(projectData)
     
-    if (!newProject.value.data_fim) {
-      formErrors.value.data_fim = 'Data de término é obrigatória'
-    }
+    // Adicionar o novo projeto à lista
+    projects.value.unshift({
+      id: response.id,
+      titulo: response.nome,
+      descricao: response.descricao,
+      data_inicio: response.data_inicio,
+      data_fim: response.data_fim,
+      status: response.status,
+      status_display: response.status_display,
+      progresso: response.progresso,
+      gerente: response.gerente,
+      gerente_nome: response.gerente_nome
+    })
     
-    if (Object.keys(formErrors.value).length > 0) {
-      return
-    }
+    // Atualizar contagem total
+    totalItems.value += 1
+    totalPages.value = Math.ceil(totalItems.value / itemsPerPage.value)
     
-    await projectService.create(newProject.value)
+    // Fechar o modal e limpar o formulário
+    showNewProjectModal.value = false
+    newProject.titulo = ''
+    newProject.descricao = ''
+    newProject.data_inicio = new Date().toISOString().split('T')[0]
+    newProject.data_fim = ''
+    newProject.status = 'PLANEJADO'
+    newProject.prioridade = 'MEDIA'
+    newProject.gerente = null
     
-    notification.success('Projeto criado com sucesso!', { 
+    // Mostrar notificação de sucesso
+    notification.success('Projeto criado com sucesso', {
       title: 'Sucesso',
       duration: 5000
     })
     
-    showNewProjectModal.value = false
-    newProject.value = {
-      titulo: '',
-      descricao: '',
-      data_inicio: '',
-      data_fim: '',
-      status: 'PLANEJADO',
-      prioridade: 'MEDIA',
-    }
-    
-    fetchProjects()
+    // Redirecionar para a página do novo projeto
+    router.push(`/projetos/${response.id}`)
   } catch (err) {
     console.error('Erro ao criar projeto:', err)
-    
-    if (err.response && err.response.data) {
-      // Mapear erros da API para o formulário
-      const apiErrors = err.response.data
-      Object.keys(apiErrors).forEach(key => {
-        formErrors.value[key] = Array.isArray(apiErrors[key]) 
-          ? apiErrors[key][0] 
-          : apiErrors[key]
-      })
-    } else {
-      notification.error('Erro ao criar projeto. Por favor, tente novamente.', { 
-        title: 'Erro',
-        duration: 5000
-      })
-    }
+    notification.error('Não foi possível criar o projeto. Por favor, tente novamente.', {
+      title: 'Erro',
+      duration: 5000
+    })
   } finally {
     isSubmitting.value = false
   }
@@ -797,7 +806,19 @@ const updateProject = async () => {
       return
     }
     
-    await projectService.update(editingProject.value.id, editingProject.value)
+    // Preparar dados para envio
+    const projectData = {
+      nome: editingProject.value.titulo,
+      descricao: editingProject.value.descricao,
+      data_inicio: editingProject.value.data_inicio,
+      data_fim: editingProject.value.data_fim,
+      status: editingProject.value.status,
+      prioridade: editingProject.value.prioridade,
+      gerente: editingProject.value.gerente
+    }
+    
+    // Enviar para a API usando o serviço de projetos
+    await projectService.updateProject(editingProject.value.id, projectData)
     
     notification.success('Projeto atualizado com sucesso!', { 
       title: 'Sucesso',
@@ -838,7 +859,7 @@ const deleteProject = async (id) => {
   
   try {
     loading.value = true
-    await projectService.remove(id)
+    await projectService.deleteProject(id)
     
     notification.success('Projeto excluído com sucesso!', { 
       title: 'Sucesso',

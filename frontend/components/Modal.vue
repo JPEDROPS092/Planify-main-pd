@@ -75,37 +75,30 @@
   </Teleport>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  name: 'Modal',
-  props: {
-    modelValue: {
-      type: Boolean,
-      required: true
-    },
-    title: {
-      type: String,
-      default: 'Modal'
-    },
-    size: {
-      type: String,
-      default: 'md',
-      validator: (value: string) => ['sm', 'md', 'lg', 'xl', 'full'].includes(value)
-    },
-    fullHeight: {
-      type: Boolean,
-      default: false
-    },
-    closeOnBackdrop: {
-      type: Boolean,
-      default: true
-    }
+<script setup>
+defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
   },
-  emits: ['update:modelValue'],
-  setup() {
-    return {}
+  title: {
+    type: String,
+    default: ''
+  },
+  size: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['sm', 'md', 'lg', 'xl', 'full'].includes(value)
+  },
+  fullHeight: {
+    type: Boolean,
+    default: false
+  },
+  closeOnBackdrop: {
+    type: Boolean,
+    default: true
   }
 })
+
+defineEmits(['update:modelValue'])
 </script>

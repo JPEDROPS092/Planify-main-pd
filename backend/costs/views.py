@@ -108,17 +108,28 @@ class CustoViewSet(viewsets.ModelViewSet):
         # Filtra por projeto
         projeto_id = self.request.query_params.get('projeto')
         if projeto_id:
-            queryset = queryset.filter(projeto_id=projeto_id)
+            try:
+                queryset = queryset.filter(projeto_id=int(projeto_id))
+            except (ValueError, TypeError):
+                pass  # Ignora filtro se o valor não for um número válido
         
         # Filtra por tarefa
         tarefa_id = self.request.query_params.get('tarefa')
         if tarefa_id:
-            queryset = queryset.filter(tarefa_id=tarefa_id)
+            try:
+                queryset = queryset.filter(tarefa_id=int(tarefa_id))
+            except (ValueError, TypeError):
+                pass  # Ignora filtro se o valor não for um número válido
         
         # Filtra por categoria
-        categoria_id = self.request.query_params.get('categoria')
-        if categoria_id:
-            queryset = queryset.filter(categoria_id=categoria_id)
+        categoria = self.request.query_params.get('categoria')
+        if categoria:
+            # Tenta primeiro filtrar por ID numérico
+            try:
+                queryset = queryset.filter(categoria_id=int(categoria))
+            except (ValueError, TypeError):
+                # Se não for um ID numérico, tenta filtrar pelo nome da categoria
+                queryset = queryset.filter(categoria__nome__iexact=categoria)
         
         # Filtra por tipo
         tipo = self.request.query_params.get('tipo')
@@ -140,10 +151,16 @@ class CustoViewSet(viewsets.ModelViewSet):
         valor_max = self.request.query_params.get('valor_max')
         
         if valor_min:
-            queryset = queryset.filter(valor__gte=valor_min)
+            try:
+                queryset = queryset.filter(valor__gte=float(valor_min))
+            except (ValueError, TypeError):
+                pass  # Ignora filtro se o valor não for um número válido
         
         if valor_max:
-            queryset = queryset.filter(valor__lte=valor_max)
+            try:
+                queryset = queryset.filter(valor__lte=float(valor_max))
+            except (ValueError, TypeError):
+                pass  # Ignora filtro se o valor não for um número válido
         
         # Filtra por texto (busca em descrição e observações)
         texto = self.request.query_params.get('texto')

@@ -160,6 +160,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { listEquipes, createEquipe, retrieveEquipe, updateEquipe, destroyEquipe } from '~/services/api/teams'
+import { useAuth } from '~/services/api/auth'
 import { useNuxtApp } from '#app'
 
 const router = useRouter()
@@ -184,18 +186,20 @@ const fetchTeams = async () => {
   error.value = ''
   
   try {
-    const response = await $api.get('/api/teams/')
-    teams.value = response.data.results || response.data || []
+    // Usar o novo serviço de API para equipes
+    const response = await listEquipes()
+    
+    teams.value = response.results.map(team => ({
+      id: team.id,
+      nome: team.nome,
+      descricao: team.descricao,
+      membros: team.membros || [],
+      data_criacao: team.data_criacao,
+      status: team.status
+    }))
   } catch (err) {
     console.error('Erro ao buscar equipes:', err)
     error.value = 'Não foi possível carregar as equipes. Por favor, tente novamente.'
-    
-    // Dados de exemplo para demonstração
-    teams.value = [
-      { id: 1, nome: 'Equipe de Desenvolvimento', descricao: 'Responsável pelo desenvolvimento do software', membros: [{nome: 'João Silva'}, {nome: 'Maria Santos'}], data_criacao: '2025-04-15', status: 'Ativa' },
-      { id: 2, nome: 'Equipe de Design', descricao: 'Responsável pelo design da interface', membros: [{nome: 'Pedro Alves'}, {nome: 'Ana Oliveira'}], data_criacao: '2025-04-20', status: 'Ativa' },
-      { id: 3, nome: 'Equipe de Testes', descricao: 'Responsável pelos testes e garantia de qualidade', membros: [{nome: 'Carlos Mendes'}, {nome: 'Lúcia Ferreira'}], data_criacao: '2025-04-25', status: 'Ativa' }
-    ]
   } finally {
     loading.value = false
   }
@@ -237,39 +241,51 @@ const openNewTeamModal = () => {
 }
 
 // Editar equipe
-const editTeam = (team) => {
-  editingTeam.value = team
-  teamForm.value = {
-    nome: team.nome,
-    descricao: team.descricao || '',
-    membros: team.membros || []
+const editTeam = async (team) => {
+  try {
+    // Buscar detalhes completos da equipe usando o novo serviço de API
+    const teamDetails = await retrieveEquipe(team.id)
+    
+    editingTeam.value = teamDetails
+    teamForm.value = {
+      nome: teamDetails.nome,
+      descricao: teamDetails.descricao || '',
+      membros: teamDetails.membros || []
+    }
+    showTeamModal.value = true
+  } catch (err) {
+    console.error('Erro ao buscar detalhes da equipe para edição:', err)
+    error.value = 'Não foi possível carregar os detalhes da equipe para edição.'
   }
-  showTeamModal.value = true
 }
 
 // Salvar equipe
 const saveTeam = async () => {
+  if (!teamForm.value.nome) {
+    alert('O nome da equipe é obrigatório')
+    return
+  }
+  
   saving.value = true
   
   try {
+    // Preparar dados da equipe
+    const teamData = {
+      nome: teamForm.value.nome,
+      descricao: teamForm.value.descricao || '',
+      membros: teamForm.value.membros || []
+    }
+    
     if (editingTeam.value) {
-      // Atualizar equipe existente
-      await $api.put(`/api/teams/${editingTeam.value.id}/`, teamForm.value)
-      
-      // Atualizar a lista de equipes
-      teams.value = teams.value.map(team => {
-        if (team.id === editingTeam.value.id) {
-          return { ...team, ...teamForm.value }
-        }
-        return team
-      })
+      // Atualizar equipe existente usando o novo serviço de API
+      await updateEquipe(editingTeam.value.id, teamData)
     } else {
-      // Criar nova equipe
-      const response = await $api.post('/api/teams/', teamForm.value)
-      teams.value.push(response.data)
+      // Criar nova equipe usando o novo serviço de API
+      await createEquipe(teamData)
     }
     
     showTeamModal.value = false
+    await fetchTeams()
   } catch (err) {
     console.error('Erro ao salvar equipe:', err)
     alert('Erro ao salvar equipe. Por favor, tente novamente.')
@@ -279,8 +295,35 @@ const saveTeam = async () => {
 }
 
 // Ver detalhes da equipe
-const viewTeam = (id) => {
-  router.push(`/equipes/${id}`)
+const viewTeam = async (id) => {
+  try {
+    // Buscar detalhes da equipe usando o novo serviço de API antes de navegar
+    await retrieveEquipe(id)
+    router.push(`/equipes/${id}`)
+  } catch (err) {
+    console.error('Erro ao buscar detalhes da equipe:', err)
+    error.value = 'Não foi possível carregar os detalhes da equipe.'
+  }
+}
+
+// Confirmar exclusão de equipe
+const confirmDeleteTeam = (team) => {
+  if (confirm(`Tem certeza que deseja excluir a equipe "${team.nome}"?`)) {
+    deleteTeam(team.id)
+  }
+}
+
+// Excluir equipe
+const deleteTeam = async (id) => {
+  try {
+    // Usar o novo serviço de API para excluir a equipe
+    await destroyEquipe(id)
+    // Atualizar a lista após a exclusão
+    fetchTeams()
+  } catch (err) {
+    console.error('Erro ao excluir equipe:', err)
+    error.value = 'Não foi possível excluir a equipe. Por favor, tente novamente.'
+  }
 }
 
 // Carregar dados ao montar o componente

@@ -148,59 +148,54 @@
   </form>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue'
-import { useTaskService } from '~/services/taskService'
-import type { Task } from '~/services/taskService'
-import { useProjectService } from '~/services/projectService'
-import type { Project } from '~/services/projectService'
-import { useUserService } from '~/services/userService'
-import type { User } from '~/services/userService'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useTaskService } from '~/services/api/tasks'
+import type { Tarefa } from '~/services/api/types'
+import { useProjectService } from '~/services/api/projects'
+import type { Projeto } from '~/services/api/types'
+import { useUserService } from '~/services/api/auth'
+import type { User } from '~/services/api/types'
 import { useNotification } from '~/composables/useNotification'
 import LoadingButton from './LoadingButton.vue'
+const props = defineProps({
+  task: {
+    type: Object as () => Tarefa | null,
+    default: null
+  },
+  projectId: {
+    type: Number,
+    default: null
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  }
+})
 
-export default defineComponent({
-  name: 'TaskForm',
-  components: {
-    LoadingButton
-  },
-  props: {
-    task: {
-      type: Object as () => Task | null,
-      default: null
-    },
-    projectId: {
-      type: Number,
-      default: null
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['submit', 'cancel'],
-  setup(props, { emit }) {
-    const taskService = useTaskService()
-    const projectService = useProjectService()
-    const userService = useUserService()
-    const notify = useNotification()
-    
-    const projects = ref<any[]>([])
-    const projectMembers = ref<any[]>([])
-    const errors = ref<Record<string, string>>({})
+const emit = defineEmits(['submit', 'cancel'])
+
+const taskService = useTaskService()
+const projectService = useProjectService()
+const userService = useUserService()
+const notify = useNotification()
+
+const projects = ref<any[]>([])
+const projectMembers = ref<any[]>([])
+const errors = ref<Record<string, string>>({})
     
     // Verificar se o projeto está fixo (quando vem da prop projectId)
     const projectFixed = computed(() => !!props.projectId)
     
     // Formulário
-    const form = ref<Task>({
-      title: '',
-      description: '',
-      project: props.projectId || 0,
+    const form = ref({
+      titulo: '',
+      descricao: '',
+      projeto: props.projectId || 0,
       status: 'PENDENTE',
-      priority: 'MEDIA',
-      due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      estimated_hours: 0
+      prioridade: 'MEDIA',
+      data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      estimativa_horas: 0
     })
     
     // Verificar se estamos criando ou editando
@@ -327,18 +322,4 @@ export default defineComponent({
         await loadProjectMembers()
       }
     })
-    
-    return {
-      form,
-      projects,
-      projectMembers,
-      projectFixed,
-      errors,
-      isCreating,
-      isFormValid,
-      loadProjectMembers,
-      handleSubmit
-    }
-  }
-})
 </script>

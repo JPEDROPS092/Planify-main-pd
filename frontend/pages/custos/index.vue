@@ -325,6 +325,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { listCustos, createCusto, retrieveCusto, updateCusto, destroyCusto } from '~/services/api/costs'
+import { listProjetos } from '~/services/api/projects'
+import { useAuth } from '~/services/api/auth'
 import EmptyState from '~/components/EmptyState.vue'
 
 definePageMeta({
@@ -406,20 +409,46 @@ const fetchCosts = async () => {
   error.value = null
   
   try {
-    const response = await $api.get('/api/costs/', {
-      params: {
-        page: currentPage.value
-      }
-    })
-    
-    costs.value = Array.isArray(response.data.results) ? response.data.results : [];
-    
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    const params = {
+      page: currentPage.value,
+      ordering: '-data'
     }
+    
+    if (categoryFilter.value) {
+      params.categoria = categoryFilter.value
+    }
+    
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    
+    if (projectFilter.value) {
+      params.projeto = projectFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    // Usar o novo serviço de API para custos
+    const response = await listCustos(params)
+    
+    costs.value = response.results.map(cost => ({
+      id: cost.id,
+      descricao: cost.descricao,
+      projeto: cost.projeto,
+      projeto_nome: cost.projeto_nome,
+      categoria: cost.categoria,
+      categoria_display: cost.categoria_display,
+      valor: cost.valor,
+      data: cost.data,
+      status: cost.status,
+      status_display: cost.status_display,
+      observacoes: cost.observacoes
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar custos:', err)
     error.value = 'Não foi possível carregar os custos. Por favor, tente novamente.'
@@ -431,8 +460,12 @@ const fetchCosts = async () => {
 // Buscar projetos
 const fetchProjects = async () => {
   try {
-    const response = await $api.get('/api/projects/')
-    projects.value = response.data.results || response.data
+    // Usar o novo serviço de API para projetos
+    const response = await listProjetos()
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      titulo: project.nome
+    }))
     
     if (projects.value.length > 0) {
       costForm.value.projeto = projects.value[0].id
@@ -507,29 +540,55 @@ const openNewCostModal = () => {
 }
 
 // Editar custo
-const editCost = (cost) => {
-  editingCost.value = cost
-  costForm.value = {
-    descricao: cost.descricao,
-    projeto: cost.projeto,
-    categoria: cost.categoria,
-    valor: cost.valor,
-    data: cost.data,
-    status: cost.status,
-    observacoes: cost.observacoes || ''
+const editCost = async (cost) => {
+  try {
+    // Buscar detalhes completos do custo usando o novo serviço de API
+    const costDetails = await retrieveCusto(cost.id)
+    
+    editingCost.value = costDetails
+    costForm.value = {
+      descricao: costDetails.descricao,
+      projeto: costDetails.projeto,
+      categoria: costDetails.categoria,
+      valor: costDetails.valor,
+      data: costDetails.data,
+      status: costDetails.status,
+      observacoes: costDetails.observacoes || ''
+    }
+    showCostModal.value = true
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do custo para edição:', err)
+    error.value = 'Não foi possível carregar os detalhes do custo para edição.'
   }
-  showCostModal.value = true
 }
 
 // Salvar custo
 const saveCost = async () => {
+  if (!costForm.value.descricao || !costForm.value.projeto || !costForm.value.valor) {
+    alert('Preencha os campos obrigatórios')
+    return
+  }
+  
   saving.value = true
   
   try {
+    // Preparar dados do custo
+    const costData = {
+      descricao: costForm.value.descricao,
+      projeto: costForm.value.projeto,
+      categoria: costForm.value.categoria,
+      valor: costForm.value.valor,
+      data: costForm.value.data,
+      status: costForm.value.status,
+      observacoes: costForm.value.observacoes || ''
+    }
+    
     if (editingCost.value) {
-      await $api.put(`/api/costs/${editingCost.value.id}/`, costForm.value)
+      // Atualizar custo existente usando o novo serviço de API
+      await updateCusto(editingCost.value.id, costData)
     } else {
-      await $api.post('/api/costs/', costForm.value)
+      // Criar novo custo usando o novo serviço de API
+      await createCusto(costData)
     }
     
     showCostModal.value = false
@@ -543,15 +602,40 @@ const saveCost = async () => {
 }
 
 // Ver detalhes do custo
-const viewCost = (id) => {
-  router.push(`/custos/${id}`)
+const viewCost = async (id) => {
+  try {
+    // Buscar detalhes do custo usando o novo serviço de API antes de navegar
+    await retrieveCusto(id)
+    router.push(`/custos/${id}`)
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do custo:', err)
+    error.value = 'Não foi possível carregar os detalhes do custo.'
+  }
+}
+
+// Confirmar exclusão de custo
+const confirmDeleteCost = (cost) => {
+  if (confirm(`Tem certeza que deseja excluir o custo "${cost.descricao}"?`)) {
+    deleteCost(cost.id)
+  }
+}
+
+// Excluir custo
+const deleteCost = async (id) => {
+  try {
+    // Usar o novo serviço de API para excluir o custo
+    await destroyCusto(id)
+    // Atualizar a lista após a exclusão
+    fetchCosts()
+  } catch (err) {
+    console.error('Erro ao excluir custo:', err)
+    error.value = 'Não foi possível excluir o custo. Por favor, tente novamente.'
+  }
 }
 
 // Observar mudanças nos filtros e página
 watch([currentPage, searchQuery, categoryFilter, statusFilter, projectFilter], () => {
-  if (searchQuery.value === '' && categoryFilter.value === '' && statusFilter.value === '' && projectFilter.value === '') {
-    fetchCosts()
-  }
+  fetchCosts()
 })
 
 // Carregar dados ao montar o componente

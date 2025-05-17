@@ -338,6 +338,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { listRiscos, createRisco, retrieveRisco, updateRisco, destroyRisco } from '~/services/api/risks'
+import { listProjetos } from '~/services/api/projects'
+import { useAuth } from '~/services/api/auth'
 import EmptyState from '~/components/EmptyState.vue'
 
 definePageMeta({
@@ -421,20 +424,53 @@ const fetchRisks = async () => {
   error.value = null
   
   try {
-    const response = await $api.get('/api/risks/', {
-      params: {
-        page: currentPage.value
-      }
-    })
-    
-    risks.value = Array.isArray(response.data.results) ? response.data.results : []
-    
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    const params = {
+      page: currentPage.value,
+      ordering: '-data_identificacao'
     }
+    
+    if (probabilityFilter.value) {
+      params.probabilidade = probabilityFilter.value
+    }
+    
+    if (impactFilter.value) {
+      params.impacto = impactFilter.value
+    }
+    
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    
+    if (projectFilter.value) {
+      params.projeto = projectFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    // Usar o novo serviço de API para riscos
+    const response = await listRiscos(params)
+    
+    risks.value = response.results.map(risk => ({
+      id: risk.id,
+      titulo: risk.titulo,
+      descricao: risk.descricao,
+      projeto: risk.projeto,
+      projeto_nome: risk.projeto_nome,
+      probabilidade: risk.probabilidade,
+      probabilidade_display: risk.probabilidade_display,
+      impacto: risk.impacto,
+      impacto_display: risk.impacto_display,
+      status: risk.status,
+      status_display: risk.status_display,
+      plano_mitigacao: risk.plano_mitigacao,
+      data_identificacao: risk.data_identificacao,
+      data_atualizacao: risk.data_atualizacao
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar riscos:', err)
     error.value = 'Não foi possível carregar os riscos. Por favor, tente novamente.'
@@ -446,8 +482,12 @@ const fetchRisks = async () => {
 // Buscar projetos
 const fetchProjects = async () => {
   try {
-    const response = await $api.get('/api/projects/')
-    projects.value = response.data.results || response.data
+    // Usar o novo serviço de API para projetos
+    const response = await listProjetos()
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      titulo: project.nome
+    }))
     
     if (projects.value.length > 0) {
       riskForm.value.projeto = projects.value[0].id
@@ -524,29 +564,55 @@ const openNewRiskModal = () => {
 }
 
 // Editar risco
-const editRisk = (risk) => {
-  editingRisk.value = risk
-  riskForm.value = {
-    titulo: risk.titulo,
-    descricao: risk.descricao,
-    projeto: risk.projeto,
-    probabilidade: risk.probabilidade,
-    impacto: risk.impacto,
-    status: risk.status,
-    plano_mitigacao: risk.plano_mitigacao || ''
+const editRisk = async (risk) => {
+  try {
+    // Buscar detalhes completos do risco usando o novo serviço de API
+    const riskDetails = await retrieveRisco(risk.id)
+    
+    editingRisk.value = riskDetails
+    riskForm.value = {
+      titulo: riskDetails.titulo,
+      descricao: riskDetails.descricao || '',
+      projeto: riskDetails.projeto,
+      probabilidade: riskDetails.probabilidade,
+      impacto: riskDetails.impacto,
+      status: riskDetails.status,
+      plano_mitigacao: riskDetails.plano_mitigacao || ''
+    }
+    showRiskModal.value = true
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do risco para edição:', err)
+    error.value = 'Não foi possível carregar os detalhes do risco para edição.'
   }
-  showRiskModal.value = true
 }
 
 // Salvar risco
 const saveRisk = async () => {
+  if (!riskForm.value.titulo || !riskForm.value.projeto) {
+    alert('Preencha os campos obrigatórios')
+    return
+  }
+  
   saving.value = true
   
   try {
+    // Preparar dados do risco
+    const riskData = {
+      titulo: riskForm.value.titulo,
+      descricao: riskForm.value.descricao || '',
+      projeto: riskForm.value.projeto,
+      probabilidade: riskForm.value.probabilidade,
+      impacto: riskForm.value.impacto,
+      status: riskForm.value.status,
+      plano_mitigacao: riskForm.value.plano_mitigacao || ''
+    }
+    
     if (editingRisk.value) {
-      await $api.put(`/api/risks/${editingRisk.value.id}/`, riskForm.value)
+      // Atualizar risco existente usando o novo serviço de API
+      await updateRisco(editingRisk.value.id, riskData)
     } else {
-      await $api.post('/api/risks/', riskForm.value)
+      // Criar novo risco usando o novo serviço de API
+      await createRisco(riskData)
     }
     
     showRiskModal.value = false
@@ -560,16 +626,40 @@ const saveRisk = async () => {
 }
 
 // Ver detalhes do risco
-const viewRisk = (id) => {
-  router.push(`/riscos/${id}`)
+const viewRisk = async (id) => {
+  try {
+    // Buscar detalhes do risco usando o novo serviço de API antes de navegar
+    await retrieveRisco(id)
+    router.push(`/riscos/${id}`)
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do risco:', err)
+    error.value = 'Não foi possível carregar os detalhes do risco.'
+  }
+}
+
+// Confirmar exclusão de risco
+const confirmDeleteRisk = (risk) => {
+  if (confirm(`Tem certeza que deseja excluir o risco "${risk.titulo}"?`)) {
+    deleteRisk(risk.id)
+  }
+}
+
+// Excluir risco
+const deleteRisk = async (id) => {
+  try {
+    // Usar o novo serviço de API para excluir o risco
+    await destroyRisco(id)
+    // Atualizar a lista após a exclusão
+    fetchRisks()
+  } catch (err) {
+    console.error('Erro ao excluir risco:', err)
+    error.value = 'Não foi possível excluir o risco. Por favor, tente novamente.'
+  }
 }
 
 // Observar mudanças nos filtros e página
 watch([currentPage, searchQuery, probabilityFilter, impactFilter, statusFilter, projectFilter], () => {
-  if (searchQuery.value === '' && probabilityFilter.value === '' && impactFilter.value === '' && 
-      statusFilter.value === '' && projectFilter.value === '') {
-    fetchRisks()
-  }
+  fetchRisks()
 })
 
 // Carregar dados ao montar o componente

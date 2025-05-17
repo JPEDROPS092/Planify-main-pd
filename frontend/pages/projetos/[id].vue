@@ -24,6 +24,14 @@
               </svg>
               Editar
             </Button>
+            <Button variant="outline" @click="navigateToKanbanView">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+              Quadro Kanban
+            </Button>
             <!-- Outros botões de ação rápida podem ser adicionados aqui -->
           </div>
         </div>
@@ -89,6 +97,9 @@
         <div v-if="activeTab === 'costs'">
           <ProjectCosts :project-id="project.id" />
         </div>
+        <div v-if="activeTab === 'kanban'">
+          <KanbanBoard :project-id="project.id" />
+        </div>
         <!-- Adicionar mais seções conforme necessário (Documentos, Comunicação, etc.) -->
       </div>
     </div>
@@ -113,6 +124,7 @@ import ProjectTasks from '~/components/project/ProjectTasks.vue'
 import ProjectTeam from '~/components/project/ProjectTeam.vue'
 import ProjectRisks from '~/components/project/ProjectRisks.vue'
 import ProjectCosts from '~/components/project/ProjectCosts.vue'
+import KanbanBoard from '~/components/project/KanbanBoard.vue'
 
 definePageMeta({
   layout: 'dashboard',
@@ -137,7 +149,8 @@ const tabs = [
   { id: 'tasks', name: 'Tarefas' },
   { id: 'team', name: 'Equipe' },
   { id: 'risks', name: 'Riscos' },
-  { id: 'costs', name: 'Custos' }
+  { id: 'costs', name: 'Custos' },
+  { id: 'kanban', name: 'Kanban' }
 ]
 
 const projectManagerName = computed(() => {
@@ -181,6 +194,12 @@ async function fetchProjectDetails() {
 function navigateToEditProject() {
   if (project.value?.id) {
     router.push(`/projetos/editar/${project.value.id}`)
+  }
+}
+
+function navigateToKanbanView() {
+  if (project.value?.id) {
+    router.push(`/projetos/${project.value.id}/kanban`)
   }
 }
 

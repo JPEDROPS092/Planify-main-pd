@@ -288,6 +288,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { listDocumentos, createDocumento, retrieveDocumento, downloadDocumento } from '~/services/api/documents'
+import { listProjetos } from '~/services/api/projects'
+import { useAuth } from '~/services/api/auth'
+import { createFormData } from '~/services/api/config'
 
 definePageMeta({
   middleware: ['auth']
@@ -364,20 +368,43 @@ const fetchDocuments = async () => {
   error.value = null
   
   try {
-    const response = await $api.get('/api/documents/', {
-      params: {
-        page: currentPage.value
-      }
-    })
-    
-    documents.value = response.data.results || response.data
-    
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    const params = {
+      page: currentPage.value,
+      ordering: '-data_upload'
     }
+    
+    if (typeFilter.value) {
+      params.tipo = typeFilter.value
+    }
+    
+    if (projectFilter.value) {
+      params.projeto = projectFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    // Usar o novo serviço de API para documentos
+    const response = await listDocumentos(params)
+    
+    documents.value = response.results.map(doc => ({
+      id: doc.id,
+      titulo: doc.titulo,
+      descricao: doc.descricao,
+      projeto: doc.projeto,
+      projeto_nome: doc.projeto_nome,
+      tipo: doc.tipo,
+      tipo_display: doc.tipo_display,
+      versao: doc.versao,
+      arquivo: doc.arquivo,
+      arquivo_nome: doc.arquivo_nome,
+      data_upload: doc.data_upload,
+      tamanho: doc.tamanho
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar documentos:', err)
     error.value = 'Não foi possível carregar os documentos. Por favor, tente novamente.'
@@ -389,8 +416,12 @@ const fetchDocuments = async () => {
 // Buscar projetos
 const fetchProjects = async () => {
   try {
-    const response = await $api.get('/api/projects/')
-    projects.value = response.data.results || response.data
+    // Usar o novo serviço de API para projetos
+    const response = await listProjetos()
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      titulo: project.nome
+    }))
     
     if (projects.value.length > 0) {
       documentForm.value.projeto = projects.value[0].id
@@ -454,19 +485,21 @@ const uploadDocument = async () => {
   uploading.value = true
   
   try {
-    const formData = new FormData()
-    formData.append('titulo', documentForm.value.titulo)
-    formData.append('descricao', documentForm.value.descricao)
-    formData.append('projeto', documentForm.value.projeto)
-    formData.append('tipo', documentForm.value.tipo)
-    formData.append('versao', documentForm.value.versao)
-    formData.append('arquivo', fileInput.value.files[0])
+    // Preparar dados do documento
+    const documentData = {
+      titulo: documentForm.value.titulo,
+      descricao: documentForm.value.descricao || '',
+      projeto: documentForm.value.projeto,
+      tipo: documentForm.value.tipo,
+      versao: documentForm.value.versao || '1.0',
+      arquivo: fileInput.value.files[0]
+    }
     
-    await $api.post('/api/documents/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    // Usar o helper createFormData para criar o FormData corretamente
+    const formData = createFormData(documentData)
+    
+    // Usar o novo serviço de API para criar documentos
+    await createDocumento(formData)
     
     showDocumentModal.value = false
     await fetchDocuments()
@@ -479,20 +512,32 @@ const uploadDocument = async () => {
 }
 
 // Download de documento
-const downloadDocument = (doc) => {
-  window.open(doc.arquivo, '_blank')
+const downloadDocument = async (doc) => {
+  try {
+    // Usar o novo serviço de API para download de documentos
+    const url = await downloadDocumento(doc.id)
+    window.open(url, '_blank')
+  } catch (err) {
+    console.error('Erro ao fazer download do documento:', err)
+    error.value = 'Não foi possível fazer o download do documento. Por favor, tente novamente.'
+  }
 }
 
 // Ver detalhes do documento
-const viewDocument = (id) => {
-  router.push(`/documentos/${id}`)
+const viewDocument = async (id) => {
+  try {
+    // Buscar detalhes do documento usando o novo serviço de API antes de navegar
+    await retrieveDocumento(id)
+    router.push(`/documentos/${id}`)
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do documento:', err)
+    error.value = 'Não foi possível carregar os detalhes do documento.'
+  }
 }
 
 // Observar mudanças nos filtros e página
 watch([currentPage, searchQuery, typeFilter, projectFilter], () => {
-  if (searchQuery.value === '' && typeFilter.value === '' && projectFilter.value === '') {
-    fetchDocuments()
-  }
+  fetchDocuments()
 })
 
 // Carregar dados ao montar o componente

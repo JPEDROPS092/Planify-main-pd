@@ -72,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from '~/services/api/auth'
 import { ref } from 'vue'
 import { useNuxtApp } from '#app'
 
@@ -81,20 +82,21 @@ const password = ref('')
 const isLoading = ref(false)
 const error = ref('')
 
+// Importar o composable de autenticação dos novos serviços de API
+const { login, isAuthenticated } = useAuth()
+
 const handleLogin = async () => {
   isLoading.value = true
   error.value = ''
   
   try {
-    const response = await $api.post('/api/auth/token/', {
+    // Usar o método login do composable useAuth
+    await login({
       username: username.value,
       password: password.value
     })
     
-    if (response.data.access) {
-      // Salvar o token no localStorage
-      localStorage.setItem('auth_token', response.data.access)
-      
+    if (isAuthenticated.value) {
       // Redirecionar para a página inicial
       navigateTo('/projetos')
     }

@@ -1,0 +1,44 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryBorderColor': '#666'}}}%%
+graph TD
+    %% Pessoas
+    admin["Admin<br><small>Administrador do sistema</small>"]
+    user["Usuário<br><small>Pessoa comum que acessa o sistema</small>"]
+
+    %% Sistema Boundary
+    subgraph Sistema de Autenticação
+        %% Containers
+        api["API REST<br><small>FastAPI / Django / etc</small><br>Interface de acesso ao sistema de autenticação"]
+        spa["Frontend<br><small>React / Angular / etc</small><br>Interface de usuário para login, perfil e permissões"]
+        db[("Database<br><small>PostgreSQL</small><br>Armazena usuários, perfis, permissões e histórico de senhas")]
+
+        %% Components
+        userComp["Gerenciador de Usuários<br><small>Python Module</small><br>Cria, bloqueia e atualiza usuários"]
+        authComp["Autenticação<br><small>Python Module</small><br>Verifica senha, bloqueio e troca de senha"]
+        profileComp["Gerenciador de Perfil<br><small>Python Module</small><br>Edita preferências de usuário"]
+        accessComp["Gerenciador de Permissões<br><small>Python Module</small><br>Associa usuários a perfis de acesso"]
+    end
+
+    %% Relações
+    admin --> spa
+    user --> spa
+    spa --> api
+    api --> userComp
+    api --> authComp
+    api --> profileComp
+    api --> accessComp
+
+    userComp --> db
+    authComp --> db
+    profileComp --> db
+    accessComp --> db
+
+    %% Estilização
+    classDef person fill:#08427b,color:white,stroke:#666;
+    classDef container fill:#1168bd,color:white,stroke:#666;
+    classDef component fill:#4083c4,color:white,stroke:#666;
+    classDef database fill:#4b5b6d,color:white,stroke:#666,shape:cylinder;
+    
+    class admin,user person;
+    class api,spa container;
+    class userComp,authComp,profileComp,accessComp component;
+    class db database;

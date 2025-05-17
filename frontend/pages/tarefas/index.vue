@@ -102,7 +102,7 @@
                 <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Status</th>
                 <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Prioridade</th>
                 <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Prazo</th>
-                <th scope="col" class="px-4 py-3 text-sm font-medium text-gray-500">Ações</th>
+                <th class="px-4 py-3.5 text-left text-sm font-semibold text-gray-900">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -142,25 +142,24 @@
                   {{ formatDate(task.data_termino) }}
                 </td>
                 <td class="px-4 py-3 text-sm">
-                  <div class="flex items-center space-x-2">
+                  <div class="flex space-x-2">
                     <button
                       @click="viewTask(task.id)"
-                      class="rounded-md p-1 text-blue-600 hover:bg-blue-50"
-                      title="Ver detalhes"
+                      class="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
+                      Ver
                     </button>
                     <button
                       @click="editTask(task)"
-                      class="rounded-md p-1 text-gray-600 hover:bg-gray-100"
-                      title="Editar"
+                      class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                      </svg>
+                      Editar
+                    </button>
+                    <button
+                      @click="confirmDeleteTask(task)"
+                      class="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                    >
+                      Excluir
                     </button>
                   </div>
                 </td>
@@ -321,6 +320,9 @@
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { listTarefas, createTarefa, retrieveTarefa, updateTarefa, destroyTarefa } from '~/services/api/tasks'
+import { listProjetos } from '~/services/api/projects'
+import { useAuth } from '~/services/api/auth'
 
 definePageMeta({
   middleware: ['auth']
@@ -426,20 +428,50 @@ const fetchTasks = async () => {
   error.value = null
   
   try {
-    const response = await $api.get('/api/tasks/', {
-      params: {
-        page: currentPage.value
-      }
-    })
-    
-    tasks.value = response.data.results || response.data
-    
-    // Configurar paginação se disponível
-    if (response.data.count !== undefined) {
-      const count = response.data.count
-      const pageSize = 10 // Ajuste conforme a API
-      totalPages.value = Math.ceil(count / pageSize)
+    const params = {
+      page: currentPage.value,
+      ordering: '-data_criacao'
     }
+    
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    
+    if (priorityFilter.value) {
+      params.prioridade = priorityFilter.value
+    }
+    
+    if (projectFilter.value) {
+      params.projeto = projectFilter.value
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    // Usar o novo serviço de API para tarefas
+    const response = await listTarefas(params)
+    
+    // Processar dados da resposta paginada
+    tasks.value = response.results.map(task => ({
+      id: task.id,
+      titulo: task.titulo,
+      descricao: task.descricao,
+      projeto: task.projeto,
+      projeto_nome: task.projeto_nome,
+      responsavel: task.responsavel,
+      responsavel_nome: task.responsavel_nome,
+      prioridade: task.prioridade,
+      prioridade_display: task.prioridade_display,
+      status: task.status,
+      status_display: task.status_display,
+      data_inicio: task.data_inicio,
+      data_fim: task.data_fim,
+      progresso: task.progresso
+    }))
+    
+    totalItems.value = response.count
+    totalPages.value = Math.ceil(response.count / itemsPerPage.value)
   } catch (err) {
     console.error('Erro ao buscar tarefas:', err)
     error.value = 'Não foi possível carregar as tarefas. Por favor, tente novamente.'
@@ -451,8 +483,12 @@ const fetchTasks = async () => {
 // Buscar projetos
 const fetchProjects = async () => {
   try {
-    const response = await $api.get('/api/projects/')
-    projects.value = response.data.results || response.data
+    // Usar o novo serviço de API para projetos
+    const response = await listProjetos()
+    projects.value = response.results.map(project => ({
+      id: project.id,
+      nome: project.nome
+    }))
   } catch (err) {
     console.error('Erro ao buscar projetos:', err)
   }
@@ -513,50 +549,104 @@ const openNewTaskModal = () => {
 }
 
 // Editar tarefa
-const editTask = (task) => {
-  editingTask.value = task
-  taskForm.value = {
-    titulo: task.titulo,
-    descricao: task.descricao,
-    projeto: task.projeto,
-    status: task.status,
-    prioridade: task.prioridade,
-    data_inicio: task.data_inicio,
-    data_fim: task.data_fim
+const editTask = async (task) => {
+  try {
+    // Buscar detalhes completos da tarefa usando o novo serviço de API
+    const taskDetails = await retrieveTarefa(task.id)
+    
+    editingTask.value = taskDetails
+    taskForm.value = {
+      titulo: taskDetails.titulo,
+      descricao: taskDetails.descricao || '',
+      projeto: taskDetails.projeto,
+      responsavel: taskDetails.responsavel || null,
+      status: taskDetails.status,
+      prioridade: taskDetails.prioridade,
+      data_inicio: taskDetails.data_inicio || null,
+      data_fim: taskDetails.data_fim || null,
+      estimativa_horas: taskDetails.estimativa_horas || null
+    }
+    showTaskModal.value = true
+  } catch (err) {
+    console.error('Erro ao buscar detalhes da tarefa para edição:', err)
+    error.value = 'Não foi possível carregar os detalhes da tarefa para edição.'
   }
-  showTaskModal.value = true
 }
 
 // Salvar tarefa
 const saveTask = async () => {
+  if (!taskForm.titulo || !taskForm.projeto) {
+    alert('Preencha os campos obrigatórios')
+    return
+  }
+  
   saving.value = true
   
   try {
+    // Preparar dados para o novo formato da API
+    const taskData = {
+      titulo: taskForm.titulo,
+      descricao: taskForm.descricao || null,
+      projeto: taskForm.projeto,
+      responsavel: taskForm.responsavel || null,
+      prioridade: taskForm.prioridade,
+      status: taskForm.status,
+      data_inicio: taskForm.data_inicio || null,
+      data_fim: taskForm.data_fim || null,
+      estimativa_horas: taskForm.estimativa_horas || null
+    }
+    
     if (editingTask.value) {
-      await $api.put(`/api/tasks/${editingTask.value.id}/`, taskForm.value)
+      // Atualizar tarefa existente usando o novo serviço de API
+      await updateTarefa(editingTask.value.id, taskData)
     } else {
-      await $api.post('/api/tasks/', taskForm.value)
+      // Criar nova tarefa usando o novo serviço de API
+      await createTarefa(taskData)
     }
     
     showTaskModal.value = false
-    await fetchTasks()
+    fetchTasks()
   } catch (err) {
     console.error('Erro ao salvar tarefa:', err)
-    alert('Não foi possível salvar a tarefa. Por favor, tente novamente.')
   } finally {
     saving.value = false
   }
 }
 
 // Ver detalhes da tarefa
-const viewTask = (id) => {
-  router.push(`/tarefas/${id}`)
+const viewTask = async (id) => {
+  try {
+    // Buscar detalhes da tarefa usando o novo serviço de API antes de navegar
+    await retrieveTarefa(id)
+    router.push(`/tarefas/${id}`)
+  } catch (err) {
+    console.error('Erro ao buscar detalhes da tarefa:', err)
+    error.value = 'Não foi possível carregar os detalhes da tarefa.'
+  }
+}
+
+// Confirmar exclusão de tarefa
+const confirmDeleteTask = (task) => {
+  if (confirm(`Tem certeza que deseja excluir a tarefa "${task.titulo}"?`)) {
+    deleteTask(task.id)
+  }
+}
+
+// Excluir tarefa
+const deleteTask = async (id) => {
+  try {
+    // Usar o novo serviço de API para excluir a tarefa
+    await destroyTarefa(id)
+    // Atualizar a lista após a exclusão
+    fetchTasks()
+  } catch (err) {
+    console.error('Erro ao excluir tarefa:', err)
+    error.value = 'Não foi possível excluir a tarefa. Por favor, tente novamente.'
+  }
 }
 
 // Observar mudanças nos filtros e página
 watch([currentPage, searchQuery, statusFilter, priorityFilter, projectFilter], () => {
-  if (searchQuery.value === '' && statusFilter.value === '' && priorityFilter.value === '' && projectFilter.value === '') {
-    fetchTasks()
-  }
+  fetchTasks()
 })
 </script>

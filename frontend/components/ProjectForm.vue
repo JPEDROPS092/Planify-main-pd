@@ -127,31 +127,28 @@
   </form>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue'
-import { useProjectService } from '~/services/projectService'
-import type { Project } from '~/services/projectService'
-import { useUserService } from '~/services/userService'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useProjectService } from '~/services/api/projects'
+import type { Projeto } from '~/services/api/types'
+import { useUserService } from '~/services/api/auth'
+import type { User } from '~/services/api/types'
 import { useNotification } from '~/composables/useNotification'
 import LoadingButton from './LoadingButton.vue'
 
-export default defineComponent({
-  name: 'ProjectForm',
-  components: {
-    LoadingButton
+const props = defineProps({
+  project: {
+    type: Object as () => Projeto | null,
+    default: null
   },
-  props: {
-    project: {
-      type: Object as () => Project | null,
-      default: null
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['submit', 'cancel'],
-  setup(props, { emit }) {
+  loading: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['submit', 'cancel'])
+
     const projectService = useProjectService()
     const userService = useUserService()
     const notify = useNotification()
@@ -161,15 +158,14 @@ export default defineComponent({
     const errors = ref<Record<string, string>>({})
     
     // Formulário
-    const form = ref<Project>({
+    const form = ref({
       name: '',
       description: '',
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'PLANEJAMENTO',
-      budget: 0,
-      manager: undefined,
-      team_members: []
+      status: 'PLANEJADO',
+      prioridade: 'MEDIA',
+      manager: undefined
     })
     
     // Verificar se estamos criando ou editando
@@ -276,16 +272,4 @@ export default defineComponent({
       loadUsers()
       checkPermissions()
     })
-    
-    return {
-      form,
-      users,
-      errors,
-      isCreating,
-      isManager,
-      isFormValid,
-      handleSubmit
-    }
-  }
-})
 </script>

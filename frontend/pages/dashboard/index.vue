@@ -1,251 +1,230 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-      <p class="text-gray-500 dark:text-gray-400">Bem-vindo ao seu painel de controle, {{ userName }}</p>
+      <h1 class="text-2xl font-bold">Dashboard</h1> <!-- Removed dark:text-white as shadcn handles it -->
+      <p class="text-muted-foreground">Bem-vindo ao seu painel de controle, {{ userName }}</p>
     </div>
 
     <!-- Resumo -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="flex items-center">
-          <div class="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <path d="M3 3v18h18"></path>
-              <path d="M7 12v5"></path>
-              <path d="m14 7 3-3 3 3"></path>
-              <path d="M7 19h5"></path>
-              <path d="M19 15v4"></path>
-              <path d="M11 12v5"></path>
-              <path d="M14 12v5"></path>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Projetos</p>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ projetosCount }}</h3>
-          </div>
-        </div>
-        <div class="mt-4">
-          <NuxtLink to="/projetos" class="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">Ver todos →</NuxtLink>
-        </div>
-      </div>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Projetos</CardTitle>
+          <Briefcase class="h-5 w-5 text-blue-500" /> <!-- Example icon, adjust color as needed -->
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ projetosCount }}</div>
+        </CardContent>
+        <CardFooter>
+          <NuxtLink to="/projetos" class="text-xs text-muted-foreground hover:text-primary">
+            Ver todos →
+          </NuxtLink>
+        </CardFooter>
+      </Card>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="flex items-center">
-          <div class="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <rect width="8" height="8" x="3" y="3" rx="2"></rect>
-              <rect width="8" height="8" x="13" y="3" rx="2"></rect>
-              <rect width="8" height="8" x="3" y="13" rx="2"></rect>
-              <rect width="8" height="8" x="13" y="13" rx="2"></rect>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tarefas</p>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ tarefasCount }}</h3>
-          </div>
-        </div>
-        <div class="mt-4">
-          <NuxtLink to="/tarefas" class="text-sm font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300">Ver todas →</NuxtLink>
-        </div>
-      </div>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Tarefas</CardTitle>
+          <ListChecks class="h-5 w-5 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ tarefasCount }}</div>
+        </CardContent>
+        <CardFooter>
+          <NuxtLink to="/tarefas" class="text-xs text-muted-foreground hover:text-primary">
+            Ver todas →
+          </NuxtLink>
+        </CardFooter>
+      </Card>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="flex items-center">
-          <div class="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Equipes</p>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ equipesCount }}</h3>
-          </div>
-        </div>
-        <div class="mt-4">
-          <NuxtLink to="/equipes" class="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300">Ver todas →</NuxtLink>
-        </div>
-      </div>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Equipes</CardTitle>
+          <Users class="h-5 w-5 text-purple-500" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ equipesCount }}</div>
+        </CardContent>
+        <CardFooter>
+          <NuxtLink to="/equipes" class="text-xs text-muted-foreground hover:text-primary">
+            Ver todas →
+          </NuxtLink>
+        </CardFooter>
+      </Card>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="flex items-center">
-          <div class="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" x2="12" y1="9" y2="13"></line>
-              <line x1="12" x2="12.01" y1="17" y2="17"></line>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Riscos</p>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ riscosCount }}</h3>
-          </div>
-        </div>
-        <div class="mt-4">
-          <NuxtLink to="/riscos" class="text-sm font-medium text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300">Ver todos →</NuxtLink>
-        </div>
-      </div>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Riscos</CardTitle>
+          <AlertTriangle class="h-5 w-5 text-yellow-500" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ riscosCount }}</div>
+        </CardContent>
+        <CardFooter>
+          <NuxtLink to="/riscos" class="text-xs text-muted-foreground hover:text-primary">
+            Ver todos →
+          </NuxtLink>
+        </CardFooter>
+      </Card>
     </div>
 
     <!-- Projetos Recentes e Tarefas Pendentes -->
     <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
       <!-- Projetos Recentes -->
-      <div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Projetos Recentes</h3>
-        </div>
-        <div v-if="projetos.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-          <div v-for="(projeto, index) in projetos.slice(0, 5)" :key="index" class="px-6 py-4">
-            <div class="flex items-center justify-between">
+      <Card>
+        <CardHeader>
+          <CardTitle>Projetos Recentes</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <template v-if="projetos.length > 0">
+            <div v-for="projeto in projetos.slice(0, 5)" :key="projeto.id" class="flex items-center justify-between">
               <div>
-                <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ projeto.nome }}</h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ projeto.status }}</p>
+                <p class="text-sm font-medium leading-none">{{ projeto.nome }}</p>
+                <p class="text-xs text-muted-foreground">{{ projeto.status }}</p>
               </div>
-              <NuxtLink :to="`/projetos/${projeto.id}`" class="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                Detalhes
+              <NuxtLink :to="`/projetos/${projeto.id}`">
+                <Button variant="outline" size="sm">Detalhes</Button>
               </NuxtLink>
             </div>
-          </div>
-        </div>
-        <div v-else class="p-6">
-          <EmptyState>
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10 text-gray-400 dark:text-gray-500">
-                <path d="M3 3v18h18"></path>
-                <path d="M7 12v5"></path>
-                <path d="m14 7 3-3 3 3"></path>
-                <path d="M7 19h5"></path>
-                <path d="M19 15v4"></path>
-                <path d="M11 12v5"></path>
-                <path d="M14 12v5"></path>
-              </svg>
-            </template>
-            <template #title>Nenhum projeto encontrado</template>
-            <template #description>Você ainda não tem projetos. Crie seu primeiro projeto para começar.</template>
-            <template #action>
-              <button @click="openNewProjectModal" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600">
-                Criar projeto
-              </button>
-            </template>
-          </EmptyState>
-        </div>
-        <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          <NuxtLink to="/projetos" class="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">Ver todos os projetos →</NuxtLink>
-        </div>
-      </div>
+          </template>
+          <template v-else>
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+              <FolderKanban class="h-12 w-12 text-muted-foreground" />
+              <p class="mt-4 text-sm font-semibold">Nenhum projeto encontrado</p>
+              <p class="mt-1 text-xs text-muted-foreground">Você ainda não tem projetos.</p>
+              <Button @click="openNewProjectModal" class="mt-4" size="sm">Criar projeto</Button>
+            </div>
+          </template>
+        </CardContent>
+        <CardFooter v-if="projetos.length > 0">
+           <NuxtLink to="/projetos" class="text-xs text-muted-foreground hover:text-primary">Ver todos os projetos →</NuxtLink>
+        </CardFooter>
+      </Card>
 
       <!-- Tarefas Pendentes -->
-      <div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800">
-        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tarefas Pendentes</h3>
-        </div>
-        <div v-if="tarefas.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-          <div v-for="(tarefa, index) in tarefas.slice(0, 5)" :key="index" class="px-6 py-4">
-            <div class="flex items-center justify-between">
+      <Card>
+        <CardHeader>
+          <CardTitle>Tarefas Pendentes</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <template v-if="tarefasPendentes.length > 0">
+            <div v-for="tarefa in tarefasPendentes.slice(0, 5)" :key="tarefa.id" class="flex items-center justify-between">
               <div>
-                <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ tarefa.titulo }}</h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Prazo: {{ formatDate(tarefa.prazo) }}</p>
+                <p class="text-sm font-medium leading-none">{{ tarefa.titulo }}</p>
+                <p class="text-xs text-muted-foreground">Prazo: {{ formatDate(tarefa.prazo) }}</p>
               </div>
-              <span :class="`rounded-md px-2.5 py-1 text-xs font-medium ${getPrioridadeClass(tarefa.prioridade)}`">
-                {{ tarefa.prioridade }}
-              </span>
+              <Badge :variant="getPrioridadeVariant(tarefa.prioridade)">{{ tarefa.prioridade }}</Badge>
             </div>
-          </div>
-        </div>
-        <div v-else class="p-6">
-          <EmptyState>
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10 text-gray-400 dark:text-gray-500">
-                <rect width="8" height="8" x="3" y="3" rx="2"></rect>
-                <rect width="8" height="8" x="13" y="3" rx="2"></rect>
-                <rect width="8" height="8" x="3" y="13" rx="2"></rect>
-                <rect width="8" height="8" x="13" y="13" rx="2"></rect>
-              </svg>
-            </template>
-            <template #title>Nenhuma tarefa pendente</template>
-            <template #description>Você não tem tarefas pendentes no momento.</template>
-            <template #action>
-              <button @click="openNewTaskModal" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-700 dark:bg-green-700 dark:hover:bg-green-600">
-                Criar tarefa
-              </button>
-            </template>
-          </EmptyState>
-        </div>
-        <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          <NuxtLink to="/tarefas" class="text-sm font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300">Ver todas as tarefas →</NuxtLink>
-        </div>
-      </div>
+          </template>
+          <template v-else>
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+              <ClipboardCheck class="h-12 w-12 text-muted-foreground" />
+              <p class="mt-4 text-sm font-semibold">Nenhuma tarefa pendente</p>
+              <p class="mt-1 text-xs text-muted-foreground">Você não tem tarefas pendentes.</p>
+              <Button @click="openNewTaskModal" class="mt-4" size="sm" variant="secondary">Criar tarefa</Button>
+            </div>
+          </template>
+        </CardContent>
+        <CardFooter v-if="tarefasPendentes.length > 0">
+          <NuxtLink to="/tarefas" class="text-xs text-muted-foreground hover:text-primary">Ver todas as tarefas →</NuxtLink>
+        </CardFooter>
+      </Card>
     </div>
 
     <!-- Notificações Recentes -->
-    <div class="mt-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800">
-      <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notificações Recentes</h3>
-      </div>
-      <div v-if="notificacoes.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <div v-for="(notificacao, index) in notificacoes.slice(0, 5)" :key="index" class="px-6 py-4">
-          <div class="flex items-start gap-4">
-            <div :class="`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${getNotificacaoIconClass(notificacao.tipo)}`">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                <path v-if="notificacao.tipo === 'MENSAGEM'" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                <path v-else-if="notificacao.tipo === 'ALERTA'" d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line v-else-if="notificacao.tipo === 'ALERTA'" x1="12" x2="12" y1="9" y2="13"></line>
-                <line v-else-if="notificacao.tipo === 'ALERTA'" x1="12" x2="12.01" y1="17" y2="17"></line>
-                <path v-else d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-              </svg>
+    <Card class="mt-8">
+      <CardHeader>
+        <CardTitle>Notificações Recentes</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <template v-if="notificacoesNaoLidas.length > 0">
+          <div v-for="notificacao in notificacoesNaoLidas.slice(0, 5)" :key="notificacao.id" class="flex items-start gap-3">
+            <Avatar class="h-9 w-9" :class="getNotificacaoAvatarClass(notificacao.tipo)">
+              <!-- <AvatarImage src="/placeholder-user.jpg" /> -->
+              <AvatarFallback>
+                <component :is="getNotificacaoIcon(notificacao.tipo)" class="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <div class="grid gap-1 flex-1">
+              <p class="text-sm font-medium leading-none">{{ notificacao.titulo }}</p>
+              <p class="text-xs text-muted-foreground">{{ notificacao.mensagem }}</p>
+              <p class="text-xs text-muted-foreground">{{ formatDate(notificacao.data) }}</p>
             </div>
-            <div class="flex-1">
-              <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ notificacao.titulo }}</h4>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ notificacao.mensagem }}</p>
-              <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ formatDate(notificacao.data) }}</p>
-            </div>
-            <button v-if="!notificacao.lida" @click="marcarComoLida(notificacao.id)" class="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+            <Button v-if="!notificacao.lida" @click="marcarComoLida(notificacao.id)" variant="ghost" size="sm">
               Marcar como lida
-            </button>
+            </Button>
           </div>
-        </div>
-      </div>
-      <div v-else class="p-6">
-        <EmptyState>
-          <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10 text-gray-400 dark:text-gray-500">
-              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
-            </svg>
-          </template>
-          <template #title>Nenhuma notificação</template>
-          <template #description>Você não tem notificações no momento.</template>
-        </EmptyState>
-      </div>
-      <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <NuxtLink to="/comunicacoes" class="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">Ver todas as notificações →</NuxtLink>
-      </div>
-    </div>
+        </template>
+        <template v-else>
+          <div class="flex flex-col items-center justify-center py-8 text-center">
+            <BellOff class="h-12 w-12 text-muted-foreground" />
+            <p class="mt-4 text-sm font-semibold">Nenhuma notificação</p>
+            <p class="mt-1 text-xs text-muted-foreground">Você não tem notificações no momento.</p>
+          </div>
+        </template>
+      </CardContent>
+      <CardFooter v-if="notificacoesNaoLidas.length > 0 || notificacoes.find(n => n.lida)">
+        <NuxtLink to="/comunicacoes" class="text-xs text-muted-foreground hover:text-primary">Ver todas as notificações →</NuxtLink>
+      </CardFooter>
+    </Card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, shallowRef } from 'vue'
+import { useRouter } from 'vue-router' // or 'nuxt/app' for Nuxt 3
 import { useNuxtApp } from '#app'
 
+// Shadcn-vue components (auto-imported by Nuxt if in components/ui directory)
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
+// Lucide Icons
+import {
+  Briefcase,
+  ListChecks,
+  Users,
+  AlertTriangle,
+  FolderKanban,
+  ClipboardCheck,
+  MessageSquare, // For MENSAGEM
+  ShieldAlert, // For ALERTA
+  Cog,         // For SISTEMA
+  BellOff,
+} from 'lucide-vue-next'
+
 const router = useRouter()
+const { $api } = useNuxtApp()
+
 const userName = ref('Usuário')
 const projetosCount = ref(0)
 const tarefasCount = ref(0)
 const equipesCount = ref(0)
 const riscosCount = ref(0)
 const projetos = ref([])
-const tarefas = ref([])
+const todasTarefas = ref([]) // Store all tasks
 const notificacoes = ref([])
+
+// Computed property for pending tasks
+const tarefasPendentes = computed(() => {
+  // Assuming tasks have a 'status' property, e.g., 'PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDA'
+  // Adjust this filter based on your actual task status values
+  return todasTarefas.value.filter(
+    tarefa => tarefa.status?.toUpperCase() !== 'CONCLUÍDA' && tarefa.status?.toUpperCase() !== 'FINALIZADA'
+  );
+});
+
+// Computed property for unread notifications
+const notificacoesNaoLidas = computed(() => {
+  return notificacoes.value.filter(n => !n.lida);
+});
+
 
 // Formatar data
 const formatDate = (dateString) => {
   if (!dateString) return 'Sem data'
-  
   const date = new Date(dateString)
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -254,162 +233,146 @@ const formatDate = (dateString) => {
   }).format(date)
 }
 
-// Obter classe CSS para prioridade
-const getPrioridadeClass = (prioridade) => {
+// Obter variant para Badge de prioridade
+const getPrioridadeVariant = (prioridade) => {
   switch (prioridade?.toUpperCase()) {
     case 'ALTA':
-      return 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-    case 'MÉDIA':
-      return 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+      return 'destructive'
+    case 'MÉDIA': // Shadcn 'warning' variant might be yellow-ish, or use 'default' with custom CSS if needed
+      return 'warning' // Or 'default' and style it if 'warning' is not suitable
     case 'BAIXA':
-      return 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+      return 'outline' // Or 'secondary' or 'success' (if green is desired)
     default:
-      return 'bg-gray-50 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
+      return 'secondary'
   }
 }
 
-// Obter classe CSS para ícone de notificação
-const getNotificacaoIconClass = (tipo) => {
+// Get Lucide icon component for notification type
+const getNotificacaoIcon = (tipo) => {
   switch (tipo?.toUpperCase()) {
     case 'MENSAGEM':
-      return 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+      return shallowRef(MessageSquare)
     case 'ALERTA':
-      return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300'
+      return shallowRef(ShieldAlert)
     case 'SISTEMA':
-      return 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300'
+      return shallowRef(Cog)
     default:
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+      return shallowRef(MessageSquare) // Default icon
   }
 }
+// Get Avatar background class (optional, for visual distinction)
+const getNotificacaoAvatarClass = (tipo) => {
+    switch (tipo?.toUpperCase()) {
+    case 'MENSAGEM':
+      return 'bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300'
+    case 'ALERTA':
+      return 'bg-yellow-100 dark:bg-yellow-800 text-yellow-600 dark:text-yellow-300'
+    case 'SISTEMA':
+      return 'bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300'
+    default:
+      return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+  }
+}
+
 
 // Marcar notificação como lida
 const marcarComoLida = async (id) => {
   try {
-    const { $api } = useNuxtApp()
     await $api.patch(`/api/communications/${id}/`, {
-      status: 'LIDA'
+      status: 'LIDA' // Or whatever your API expects for 'read'
     })
-    
-    // Atualizar a lista de notificações
-    notificacoes.value = notificacoes.value.map(n => {
-      if (n.id === id) {
-        return { ...n, lida: true }
-      }
-      return n
-    })
+    // Re-fetch or update local state
+    const index = notificacoes.value.findIndex(n => n.id === id)
+    if (index !== -1) {
+      notificacoes.value[index].lida = true
+      notificacoes.value[index].status = 'LIDA' // Also update status if your filter relies on it
+    }
   } catch (error) {
     console.error('Erro ao marcar notificação como lida:', error)
   }
 }
 
-// Abrir modal de novo projeto
 const openNewProjectModal = () => {
   router.push('/projetos?new=true')
 }
 
-// Abrir modal de nova tarefa
 const openNewTaskModal = () => {
   router.push('/tarefas?new=true')
 }
 
 onMounted(async () => {
   try {
-    const { $api } = useNuxtApp()
-    
-    // Buscar informações do usuário
     const userResponse = await $api.get('/api/auth/users/me/')
     userName.value = userResponse.data.full_name || userResponse.data.username
-    
-    // Buscar contagens
-    try {
-      const projetosResponse = await $api.get('/api/projects/')
-      if (projetosResponse.data.count !== undefined) {
+
+    // --- Projetos ---
+    const projetosResponse = await $api.get('/api/projects/')
+    if (projetosResponse.data.results) { // Paginated
         projetosCount.value = projetosResponse.data.count
-        projetos.value = projetosResponse.data.results || []
-      } else if (Array.isArray(projetosResponse.data)) {
+        projetos.value = projetosResponse.data.results
+    } else { // Not paginated
         projetosCount.value = projetosResponse.data.length
         projetos.value = projetosResponse.data
-      }
-    } catch (err) {
-      console.error('Erro ao buscar projetos:', err)
-      // Dados de exemplo para demonstração
-      projetosCount.value = 5
-      projetos.value = [
-        { id: 1, nome: 'Sistema de Gestão Integrada', status: 'Em andamento' },
-        { id: 2, nome: 'Aplicativo Mobile', status: 'Planejamento' },
-        { id: 3, nome: 'Plataforma de E-commerce', status: 'Em andamento' },
-        { id: 4, nome: 'Inteligência Artificial para Previsão', status: 'Concluído' },
-        { id: 5, nome: 'Blockchain para Rastreabilidade', status: 'Em andamento' }
-      ]
     }
-    
-    try {
-      const tarefasResponse = await $api.get('/api/tasks/')
-      if (tarefasResponse.data.count !== undefined) {
-        tarefasCount.value = tarefasResponse.data.count
-        tarefas.value = tarefasResponse.data.results || []
-      } else if (Array.isArray(tarefasResponse.data)) {
+
+    // --- Tarefas ---
+    // Fetch all tasks and then filter for pending ones using the computed property
+    const tarefasResponse = await $api.get('/api/tasks/') // Endpoint for ALL tasks
+     if (tarefasResponse.data.results) {
+        tarefasCount.value = tarefasResponse.data.count // This might be total tasks, not just pending
+        todasTarefas.value = tarefasResponse.data.results
+    } else {
         tarefasCount.value = tarefasResponse.data.length
-        tarefas.value = tarefasResponse.data
-      }
-    } catch (err) {
-      console.error('Erro ao buscar tarefas:', err)
-      // Dados de exemplo para demonstração
-      tarefasCount.value = 8
-      tarefas.value = [
-        { id: 1, titulo: 'Desenvolver API REST', prazo: '2025-05-15', prioridade: 'ALTA' },
-        { id: 2, titulo: 'Criar interface de usuário', prazo: '2025-05-20', prioridade: 'MÉDIA' },
-        { id: 3, titulo: 'Implementar autenticação', prazo: '2025-05-10', prioridade: 'ALTA' },
-        { id: 4, titulo: 'Realizar testes de integração', prazo: '2025-05-25', prioridade: 'MÉDIA' },
-        { id: 5, titulo: 'Documentar API', prazo: '2025-05-30', prioridade: 'BAIXA' }
-      ]
+        todasTarefas.value = tarefasResponse.data
     }
-    
-    try {
-      const equipesResponse = await $api.get('/api/teams/')
-      if (equipesResponse.data.count !== undefined) {
-        equipesCount.value = equipesResponse.data.count
-      } else if (Array.isArray(equipesResponse.data)) {
-        equipesCount.value = equipesResponse.data.length
-      }
-    } catch (err) {
-      console.error('Erro ao buscar equipes:', err)
-      equipesCount.value = 3
+    // You might want a separate count for pending tasks displayed on the summary card
+    // For simplicity, I'm using the total count here. Or you could fetch /api/tasks/?status=PENDENTE for the count.
+
+
+    // --- Equipes ---
+    const equipesResponse = await $api.get('/api/teams/')
+    equipesCount.value = equipesResponse.data.count ?? equipesResponse.data.length;
+
+    // --- Riscos ---
+    const riscosResponse = await $api.get('/api/risks/')
+    riscosCount.value = riscosResponse.data.count ?? riscosResponse.data.length;
+
+    // --- Notificações ---
+    // Fetch all notifications and filter in computed, or fetch only unread
+    // const notificacoesResponse = await $api.get('/api/communications/?status=NAO_LIDA') // Example: fetch only unread
+    const notificacoesResponse = await $api.get('/api/communications/') // Fetch all
+    if (notificacoesResponse.data.results) {
+        notificacoes.value = notificacoesResponse.data.results.map(n => ({ ...n, lida: n.status === 'LIDA' }))
+    } else {
+         notificacoes.value = notificacoesResponse.data.map(n => ({ ...n, lida: n.status === 'LIDA' }))
     }
-    
-    try {
-      const riscosResponse = await $api.get('/api/risks/')
-      if (riscosResponse.data.count !== undefined) {
-        riscosCount.value = riscosResponse.data.count
-      } else if (Array.isArray(riscosResponse.data)) {
-        riscosCount.value = riscosResponse.data.length
-      }
-    } catch (err) {
-      console.error('Erro ao buscar riscos:', err)
-      riscosCount.value = 2
-    }
-    
-    try {
-      const notificacoesResponse = await $api.get('/api/communications/')
-      if (notificacoesResponse.data.count !== undefined) {
-        notificacoes.value = notificacoesResponse.data.results || []
-      } else if (Array.isArray(notificacoesResponse.data)) {
-        notificacoes.value = notificacoesResponse.data.map(n => ({
-          ...n,
-          lida: n.status === 'LIDA'
-        }))
-      }
-    } catch (err) {
-      console.error('Erro ao buscar notificações:', err)
-      // Dados de exemplo para demonstração
-      notificacoes.value = [
-        { id: 1, tipo: 'MENSAGEM', titulo: 'Nova mensagem', mensagem: 'Você recebeu uma nova mensagem de João Silva', data: '2025-05-04', lida: false },
-        { id: 2, tipo: 'ALERTA', titulo: 'Prazo próximo', mensagem: 'A tarefa "Desenvolver API REST" está com o prazo se aproximando', data: '2025-05-03', lida: true },
-        { id: 3, tipo: 'SISTEMA', titulo: 'Atualização do sistema', mensagem: 'O sistema foi atualizado para a versão 2.0', data: '2025-05-02', lida: false }
-      ]
-    }
+
   } catch (error) {
     console.error('Erro ao carregar dados do dashboard:', error)
+    // Fallback data for demonstration
+    userName.value = 'Usuário Exemplo';
+    projetosCount.value = 2;
+    projetos.value = [
+      { id: 1, nome: 'Sistema de Gestão Exemplo', status: 'Em andamento' },
+      { id: 2, nome: 'App Mobile Exemplo', status: 'Planejamento' },
+    ];
+    tarefasCount.value = 3; // Total tasks
+    todasTarefas.value = [
+      { id: 1, titulo: 'API REST Exemplo', prazo: '2025-07-15', prioridade: 'ALTA', status: 'PENDENTE' },
+      { id: 2, titulo: 'UI Design Exemplo', prazo: '2025-07-20', prioridade: 'MÉDIA', status: 'PENDENTE' },
+      { id: 3, titulo: 'Documentação Exemplo', prazo: '2025-06-30', prioridade: 'BAIXA', status: 'CONCLUÍDA' },
+    ];
+    equipesCount.value = 1;
+    riscosCount.value = 0;
+    notificacoes.value = [
+      { id: 1, tipo: 'MENSAGEM', titulo: 'Nova Mensagem Exemplo', mensagem: 'Confira os detalhes.', data: '2025-07-01', lida: false, status: 'NAO_LIDA' },
+      { id: 2, tipo: 'ALERTA', titulo: 'Alerta de Prazo Exemplo', mensagem: 'Tarefa X está próxima do prazo.', data: '2025-06-28', lida: true, status: 'LIDA' },
+    ];
   }
 })
 </script>
+
+<style scoped>
+/* You can add minimal scoped styles here if absolutely necessary,
+   but prefer Tailwind and shadcn-vue defaults. */
+</style>
