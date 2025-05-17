@@ -1,46 +1,88 @@
-# Planify - Sistema de Gerenciamento de Projetos de P&D
 
-Planify é um sistema web completo para gerenciamento de projetos de Pesquisa e Desenvolvimento (P&D), desenvolvido com Django REST Framework no backend e Nuxt.js com Material UI no frontend.
+# 🌟 **Planify** - Sistema de Gerenciamento de Projetos de P&D
 
-## Visão Geral
+![Planify Banner](https://via.placeholder.com/1200x400?text=Planify+-+Gerenciamento+de+Projetos+de+P%26D)
 
-O Planify tem como missão impulsionar o setor de tecnologia da informação, promovendo colaboração e eficiência. Ao adotar uma abordagem moderna e integrada, o software busca ampliar a interação entre as empresas associadas e fornecer suporte às tomadas de decisão entre as lideranças.
+**Planify** é uma solução completa para gerenciamento de projetos de Pesquisa e Desenvolvimento (P&D), projetada para promover colaboração, eficiência e organização. Com uma interface moderna e recursos avançados, o Planify é a ferramenta ideal para equipes que buscam excelência em seus projetos.
 
-### Principais Módulos
+---
 
-O sistema está estruturado nos seguintes módulos principais:
+## 🚀 **Visão Geral**
 
-1. **Usuários (users)** - Autenticação, perfis e permissões
-2. **Projetos (projects)** - Gerenciamento de projetos e sprints
-3. **Tarefas (tasks)** - Gerenciamento de tarefas e atribuições
-4. **Equipes (teams)** - Gerenciamento de equipes e membros
-5. **Riscos (risks)** - Identificação e mitigação de riscos
-6. **Custos (costs)** - Controle de orçamentos e gastos
-7. **Documentos (documents)** - Gerenciamento de documentação
-8. **Comunicações (communications)** - Chat integrado e notificações
+O Planify foi desenvolvido para atender às necessidades de equipes de P&D, oferecendo uma abordagem integrada para gerenciar projetos, tarefas, equipes, riscos, custos e muito mais.
 
-## Tecnologias Utilizadas
+### 🎯 **Missão**
 
-### Backend
-- Django 4.2+
-- Django REST Framework
-- SQLite (desenvolvimento) / PostgreSQL (produção)
-- Python 3.9+
+Impulsionar o setor de tecnologia da informação, promovendo colaboração e eficiência, enquanto fornece suporte às tomadas de decisão entre lideranças.
 
-### Frontend
-- Nuxt.js 3
-- Vue.js 3
-- Material UI
-- Tailwind CSS
+---
 
-## Configuração do Ambiente de Desenvolvimento
+## 🛠️ **Principais Funcionalidades**
 
-### Requisitos
+- 🔒 **Autenticação e Controle de Acesso**: Gerenciamento de usuários com permissões baseadas em papéis.
+- 📋 **Gerenciamento de Projetos**: Criação, acompanhamento e análise de projetos.
+- ✅ **Tarefas e Kanban**: Gerenciamento de tarefas com visualização em quadro Kanban.
+- 👥 **Gestão de Equipes**: Organização de equipes e atribuição de papéis.
+- ⚠️ **Gestão de Riscos**: Identificação, análise e mitigação de riscos.
+- 💰 **Controle de Custos**: Orçamento, despesas e relatórios financeiros.
+- 📂 **Repositório de Documentos**: Upload, versionamento e controle de acesso.
+- 💬 **Comunicação Integrada**: Chat e notificações em tempo real.
+- 📅 **Calendário de Projetos**: Visualização de eventos e prazos.
+
+---
+
+## 🏗️ **Estrutura do Projeto**
+
+```plaintext
+Planify/
+├── backend/             # Backend em Django REST Framework
+│   ├── communications/  # Módulo de comunicações e notificações
+│   ├── costs/           # Módulo de gestão de custos
+│   ├── documents/       # Módulo de documentação
+│   ├── projects/        # Módulo de projetos
+│   ├── risks/           # Módulo de gestão de riscos
+│   ├── tasks/           # Módulo de tarefas
+│   ├── teams/           # Módulo de equipes
+│   ├── users/           # Módulo de usuários
+│   └── manage.py        # Script de gerenciamento Django
+│
+└── frontend/            # Frontend em Nuxt.js
+    ├── components/      # Componentes Vue reutilizáveis
+    ├── layouts/         # Layouts da aplicação
+    ├── pages/           # Páginas da aplicação
+    ├── plugins/         # Plugins Nuxt.js
+    └── nuxt.config.ts   # Configuração do Nuxt.js
+```
+
+---
+
+## 🧰 **Tecnologias Utilizadas**
+
+### **Backend**
+
+- 🐍 **Python 3.9+**
+- 🌐 **Django 4.2+**
+- 🔗 **Django REST Framework**
+- 🗄️ **PostgreSQL** (produção) / **SQLite** (desenvolvimento)
+
+### **Frontend**
+
+- 🖼️ **Nuxt.js 3**
+- 🖌️ **Vue.js 3**
+- 🎨 **Material UI**
+- 🌀 **Tailwind CSS**
+
+---
+
+## ⚙️ **Configuração do Ambiente de Desenvolvimento**
+
+### **Requisitos**
+
 - Python 3.9+
 - Node.js 16+
-- npm ou yarn
+- npm, yarn ou bun
 
-### Backend
+### **Backend**
 
 ```bash
 # Clonar o repositório
@@ -64,7 +106,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Frontend
+### **Frontend**
 
 ```bash
 # Navegar para o diretório do frontend
@@ -77,52 +119,42 @@ npm install
 npm run dev
 ```
 
-## Estrutura do Projeto
+---
 
-```
-Planify/
-├── backend/
-│   ├── communications/  # Módulo de comunicações e notificações
-│   ├── costs/           # Módulo de gestão de custos
-│   ├── documents/       # Módulo de documentação
-│   ├── planify/         # Configurações do projeto Django
-│   ├── projects/        # Módulo de projetos
-│   ├── risks/           # Módulo de gestão de riscos
-│   ├── tasks/           # Módulo de tarefas
-│   ├── teams/           # Módulo de equipes
-│   ├── users/           # Módulo de usuários
-│   └── manage.py        # Script de gerenciamento Django
-│
-└── frontend/
-    ├── components/      # Componentes Vue reutilizáveis
-    ├── layouts/         # Layouts da aplicação
-    ├── pages/           # Páginas da aplicação
-    ├── plugins/         # Plugins Nuxt.js
-    └── nuxt.config.ts   # Configuração do Nuxt.js
-```
+## 🌟 **Como Contribuir**
 
-## Funcionalidades Principais
+Contribuições são bem-vindas! Siga os passos abaixo para colaborar:
 
-- Autenticação e controle de acesso baseado em papéis
-- Gerenciamento completo de projetos de P&D
-- Acompanhamento de tarefas com diferentes status
-- Gestão de equipes e atribuição de papéis
-- Identificação e mitigação de riscos
-- Controle de custos e orçamentos
-- Repositório de documentos
-- Sistema de comunicação integrado (chat e notificações)
-- Calendário de projetos e eventos
+1. Faça um fork do repositório.
+2. Crie uma branch para sua feature:
+   ```bash
+   git checkout -b feature/nova-funcionalidade
+   ```
+3. Faça commit das suas alterações:
+   ```bash
+   git commit -m "Adiciona nova funcionalidade"
+   ```
+4. Faça push para a branch:
+   ```bash
+   git push origin feature/nova-funcionalidade
+   ```
+5. Abra um Pull Request.
 
-## Contribuição
+---
 
-Para contribuir com o projeto:
+## 📜 **Licença**
 
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Faça commit das suas alterações (`git commit -m 'Adiciona nova funcionalidade'`)
-4. Faça push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
+Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
 
-## Licença
+---
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
+## 📞 **Contato**
+
+- **GitHub**: [Planify](https://github.com/seu-usuario/Planify)
+- **Discord**: [Comunidade Planify](https://discord.gg/planify)
+- **Documentação**: [Planify Docs](https://planify-docs.com)
+
+---
+
+> **Nota:** Este README foi projetado para ser informativo e visualmente atraente. Adicione imagens, badges e links relevantes para torná-lo ainda mais impactante!
+>
