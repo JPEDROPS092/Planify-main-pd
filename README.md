@@ -87,7 +87,7 @@ Planify/
 ```bash
 # Clonar o repositório
 git clone https://github.com/jpedrops092/Planify-main-pd.git
-cd Planify/backend
+cd Planify-main-pd/backend
 
 # Criar e ativar ambiente virtual
 python -m venv venv
