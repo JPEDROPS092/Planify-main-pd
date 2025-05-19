@@ -86,7 +86,7 @@ Planify/
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/seu-usuario/Planify.git
+git clone https://github.com/jpedrops092/Planify-main-pd.git
 cd Planify/backend
 
 # Criar e ativar ambiente virtual
