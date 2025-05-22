@@ -156,5 +156,5 @@ Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](./LIC
 
 ---
 
-> **Nota:** Este README foi projetado para ser informativo e visualmente atraente. Adicione imagens, badges e links relevantes para torná-lo ainda mais impactante!
+
 >
