@@ -1,12 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
     <!-- Componente de notificações -->
     <NotificationContainer />
     
-    <!-- Mobile menu button -->
+    <!-- Mobile menu button - Agora com animação e feedback visual -->
     <button 
-      @click="isSidebarOpen = !isSidebarOpen" 
-      class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg md:hidden"
+      @click="toggleMobileSidebar" 
+      class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all hover:bg-blue-700 active:scale-95 md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      aria-label="Menu de navegação"
     >
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -38,30 +39,39 @@
       />
     </Modal>
     
-    <!-- Sidebar -->
+    <!-- Overlay para fechar o menu em dispositivos móveis -->
+    <div 
+      v-if="isSidebarOpen" 
+      @click="toggleMobileSidebar" 
+      class="fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity md:hidden"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Sidebar aprimorada -->
     <aside 
       :class="[
-        'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out dark:border-gray-700 dark:bg-gray-800',
+        'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-gray-200 bg-white shadow-lg transition-all duration-300 ease-in-out dark:border-gray-700 dark:bg-gray-800',
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        isSidebarCollapsed ? 'md:w-16' : 'md:w-64'
+        isSidebarCollapsed ? 'md:w-20' : 'md:w-64'
       ]"
     >
-      <!-- Logo -->
+      <!-- Logo e cabeçalho da sidebar -->
       <div class="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700">
-        <div class="flex items-center">
-          <img src="/svg/logop.svg" alt="Planify Logo" class="h-8 w-8" />
+        <div class="flex items-center space-x-2 overflow-hidden">
+          <img src="/img/logop.png" alt="Planify Logo" class="h-8 w-8 flex-shrink-0" />
           <span 
             :class="[
-              'ml-2 text-xl font-semibold text-gray-800 dark:text-white',
-              isSidebarCollapsed ? 'md:hidden' : ''
+              'text-xl font-semibold text-gray-800 truncate transition-opacity duration-300 dark:text-white',
+              isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
             ]"
           >
             Planify
           </span>
         </div>
         <button 
-          @click="isSidebarOpen = false" 
-          class="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 md:hidden"
+          @click="toggleMobileSidebar" 
+          class="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 md:hidden focus:outline-none focus:ring-2 focus:ring-gray-500"
+          aria-label="Fechar menu"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -69,63 +79,111 @@
         </button>
       </div>
       
-      <!-- Menu de navegação -->
-      <nav class="flex-1 overflow-y-auto p-4">
-        <ul class="space-y-2">
+      <!-- Menu de navegação aprimorado -->
+      <nav class="flex-1 overflow-y-auto py-4 px-3">
+        <ul class="space-y-1">
           <li>
             <a 
               href="/dashboard" 
               :class="[
-                'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path === '/dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+                route.path === '/dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+                :class="[
+                  'h-6 w-6 flex-shrink-0 transition-colors duration-200',
+                  route.path === '/dashboard' ? 'text-blue-600 dark:text-blue-400' : ''
+                ]"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Dashboard</span>
+              <span 
+                :class="[
+                  'ml-3 whitespace-nowrap transition-opacity duration-200',
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                ]"
+              >
+                Dashboard
+              </span>
             </a>
           </li>
           <li>
             <a 
               href="/projetos" 
               :class="[
-                'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/projetos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+                route.path.startsWith('/projetos') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+                :class="[
+                  'h-6 w-6 flex-shrink-0 transition-colors duration-200',
+                  route.path.startsWith('/projetos') ? 'text-blue-600 dark:text-blue-400' : ''
+                ]"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Projetos</span>
+              <span 
+                :class="[
+                  'ml-3 whitespace-nowrap transition-opacity duration-200',
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                ]"
+              >
+                Projetos
+              </span>
             </a>
           </li>
           <li>
             <a 
               href="/tarefas" 
               :class="[
-                'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/tarefas') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+                route.path.startsWith('/tarefas') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+                :class="[
+                  'h-6 w-6 flex-shrink-0 transition-colors duration-200',
+                  route.path.startsWith('/tarefas') ? 'text-blue-600 dark:text-blue-400' : ''
+                ]"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Tarefas</span>
+              <span 
+                :class="[
+                  'ml-3 whitespace-nowrap transition-opacity duration-200',
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                ]"
+              >
+                Tarefas
+              </span>
             </a>
           </li>
           <li>
             <a 
               href="/equipes" 
               :class="[
-                'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/equipes') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+                route.path.startsWith('/equipes') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+                :class="[
+                  'h-6 w-6 flex-shrink-0 transition-colors duration-200',
+                  route.path.startsWith('/equipes') ? 'text-blue-600 dark:text-blue-400' : ''
+                ]"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Equipes</span>
+              <span 
+                :class="[
+                  'ml-3 whitespace-nowrap transition-opacity duration-200',
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                ]"
+              >
+                Equipes
+              </span>
             </a>
           </li>
           <li>
@@ -188,36 +246,37 @@
       </nav>
     </aside>
     
-    <!-- Conteúdo principal -->
+    <!-- Conteúdo principal com transição suave -->
     <div 
       :class="[
-        'flex flex-col transition-all duration-300 ease-in-out',
-        isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+        'flex-1 flex flex-col transition-all duration-300 ease-in-out',
+        isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
       ]"
     >
-      <!-- Header -->
-      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-800">
-        <!-- Título da página -->
-        <div class="flex items-center">
+      <!-- Header aprimorado -->
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center space-x-4">
           <button 
             @click="toggleSidebar" 
-            class="mr-4 hidden rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 md:block"
+            class="hidden rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:ring-gray-700 md:block"
+            aria-label="Toggle sidebar"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
               <path v-if="isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
           </button>
-          <h1 class="text-xl font-semibold text-gray-800 dark:text-white">{{ pageTitle }}</h1>
+          <h1 class="text-xl font-semibold text-gray-800 truncate dark:text-white">{{ pageTitle }}</h1>
         </div>
         
-        <!-- Ações rápidas -->
-        <div class="flex items-center space-x-2">
+        <!-- Ações rápidas aprimoradas -->
+        <div class="flex items-center space-x-3">
           <button 
             @click="openNewProjectModal" 
-            class="flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+            class="flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+            aria-label="Criar novo projeto"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1 h-4 w-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1.5 h-4 w-4">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             <span class="hidden sm:inline">Novo Projeto</span>
@@ -226,9 +285,10 @@
           
           <button 
             @click="openNewTaskModal" 
-            class="flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:bg-green-700 dark:hover:bg-green-800"
+            class="flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-green-700 hover:shadow active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:bg-green-700 dark:hover:bg-green-800"
+            aria-label="Criar nova tarefa"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1 h-4 w-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1.5 h-4 w-4">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             <span class="hidden sm:inline">Nova Tarefa</span>
@@ -277,9 +337,9 @@
         </div>
       </header>
       
-      <!-- Conteúdo da página -->
-      <main class="flex-1 overflow-auto">
-        <div class="container mx-auto p-4">
+      <!-- Conteúdo da página com melhor espaçamento e responsividade -->
+      <main class="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <!-- Slot para o conteúdo da página -->
           <slot />
         </div>

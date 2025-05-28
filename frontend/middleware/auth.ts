@@ -1,20 +1,44 @@
-export default defineNuxtRouteMiddleware((to, from) => {
+import { useAuth } from '~/composables/useAuth'
+
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  // Rotas protegidas que exigem autenticação
+  const protectedRoutes = [
+    '/projetos', 
+    '/tarefas', 
+    '/equipes', 
+    '/comunicacoes', 
+    '/dashboard',
+    '/riscos',
+    '/documentos',
+    '/custos'
+  ]
+  
+  // Rotas públicas que não exigem autenticação
+  const publicRoutes = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password'
+  ]
+  
+  // Verificar se a rota atual é protegida
+  const isProtectedRoute = protectedRoutes.some(route => to.path.startsWith(route))
+  const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/'
+  
   // Se estamos no lado do cliente
   if (process.client) {
-    // Verificar se o token existe
-    const token = localStorage.getItem('auth_token')
+    const { isAuthenticated, checkAuth } = useAuth()
     
-    // Se não existe token e a rota requer autenticação, redirecionar para o login
-    if (!token && (to.path.startsWith('/projetos') || 
-                  to.path.startsWith('/tarefas') || 
-                  to.path.startsWith('/equipes') || 
-                  to.path.startsWith('/comunicacoes') || 
-                  to.path.startsWith('/dashboard'))) {
+    // Verificar autenticação
+    await checkAuth()
+    
+    // Se não está autenticado e a rota é protegida, redirecionar para o login
+    if (!isAuthenticated.value && isProtectedRoute) {
       return navigateTo('/login')
     }
     
-    // Se o usuário está autenticado e está tentando acessar a página inicial, redirecionar para o dashboard
-    if (token && (to.path === '/' || to.path === '/login')) {
+    // Se está autenticado e está tentando acessar uma rota pública, redirecionar para o dashboard
+    if (isAuthenticated.value && isPublicRoute) {
       return navigateTo('/dashboard')
     }
   }

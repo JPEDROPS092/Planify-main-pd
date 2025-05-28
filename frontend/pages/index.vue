@@ -3,15 +3,7 @@
     <!-- Header -->
     <header class="container mx-auto px-4 py-6 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <div class="flex h-10 w-10 items-center justify-center rounded-md bg-blue-600 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-            <path d="M2 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-3-2.5-2-5 .24-5 3Z"></path>
-            <path d="M12 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-3-2.5-2-5 .24-5 3Z"></path>
-            <path d="M7 14c3.22-2.91 4.29-8.75 5-12 1.66 2.38 4.94 9 5 12"></path>
-            <path d="M22 9c-4.29 0-7.14-2.33-10-7 5.71 0 10 4.67 10 7Z"></path>
-          </svg>
-        </div>
-        <span class="text-xl font-bold text-blue-600 dark:text-blue-400">Planify</span>
+          <img src="/img/logop.png" alt="Logo" class="h-32 w-22">
       </div>
       <div class="flex items-center gap-4">
         <button @click="toggleTheme" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -227,16 +219,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuth } from '~/composables/useAuth'
 
 const router = useRouter()
 const isDarkMode = ref(false)
+const { isAuthenticated } = useAuth()
 
 // Verificar se o usuário já está autenticado
 onMounted(() => {
-  // Verificar se o token existe
-  const token = localStorage.getItem('auth_token')
-  if (token) {
-    router.push('/projetos')
+  // Redirecionar para o dashboard se o usuário estiver autenticado
+  if (isAuthenticated.value) {
+    router.push('/dashboard')
   }
   
   // Verificar preferência de tema

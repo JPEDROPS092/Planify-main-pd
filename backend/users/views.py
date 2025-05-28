@@ -41,6 +41,28 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+        
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def permissions(self, request):
+        """
+        Retorna as permissões do usuário autenticado.
+        """
+        user = request.user
+        
+        # Obter todos os perfis de acesso do usuário
+        user_access_profiles = UserAccessProfile.objects.filter(user=user)
+        access_profile_ids = [uap.access_profile_id for uap in user_access_profiles]
+        
+        # Obter todas as permissões associadas a esses perfis de acesso
+        permissions = Permission.objects.filter(access_profile_id__in=access_profile_ids)
+        
+        # Formatar as permissões como uma lista de strings no formato "MODULO.ACAO"
+        formatted_permissions = [f"{perm.module}.{perm.action}" for perm in permissions]
+        
+        return Response({
+            'role': user.role,
+            'permissions': formatted_permissions
+        })
     
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request):

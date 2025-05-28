@@ -1,172 +1,12 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1 class="text-2xl font-bold">Dashboard</h1> <!-- Removed dark:text-white as shadcn handles it -->
+      <h1 class="text-2xl font-bold">Dashboard</h1>
       <p class="text-muted-foreground">Bem-vindo ao seu painel de controle, {{ userName }}</p>
     </div>
-
-    <!-- Resumo -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Projetos</CardTitle>
-          <Briefcase class="h-5 w-5 text-blue-500" /> <!-- Example icon, adjust color as needed -->
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ projetosCount }}</div>
-        </CardContent>
-        <CardFooter>
-          <NuxtLink to="/projetos" class="text-xs text-muted-foreground hover:text-primary">
-            Ver todos →
-          </NuxtLink>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Tarefas</CardTitle>
-          <ListChecks class="h-5 w-5 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ tarefasCount }}</div>
-        </CardContent>
-        <CardFooter>
-          <NuxtLink to="/tarefas" class="text-xs text-muted-foreground hover:text-primary">
-            Ver todas →
-          </NuxtLink>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Equipes</CardTitle>
-          <Users class="h-5 w-5 text-purple-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ equipesCount }}</div>
-        </CardContent>
-        <CardFooter>
-          <NuxtLink to="/equipes" class="text-xs text-muted-foreground hover:text-primary">
-            Ver todas →
-          </NuxtLink>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Riscos</CardTitle>
-          <AlertTriangle class="h-5 w-5 text-yellow-500" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ riscosCount }}</div>
-        </CardContent>
-        <CardFooter>
-          <NuxtLink to="/riscos" class="text-xs text-muted-foreground hover:text-primary">
-            Ver todos →
-          </NuxtLink>
-        </CardFooter>
-      </Card>
-    </div>
-
-    <!-- Projetos Recentes e Tarefas Pendentes -->
-    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Projetos Recentes -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Projetos Recentes</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <template v-if="projetos.length > 0">
-            <div v-for="projeto in projetos.slice(0, 5)" :key="projeto.id" class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium leading-none">{{ projeto.nome }}</p>
-                <p class="text-xs text-muted-foreground">{{ projeto.status }}</p>
-              </div>
-              <NuxtLink :to="`/projetos/${projeto.id}`">
-                <Button variant="outline" size="sm">Detalhes</Button>
-              </NuxtLink>
-            </div>
-          </template>
-          <template v-else>
-            <div class="flex flex-col items-center justify-center py-8 text-center">
-              <FolderKanban class="h-12 w-12 text-muted-foreground" />
-              <p class="mt-4 text-sm font-semibold">Nenhum projeto encontrado</p>
-              <p class="mt-1 text-xs text-muted-foreground">Você ainda não tem projetos.</p>
-              <Button @click="openNewProjectModal" class="mt-4" size="sm">Criar projeto</Button>
-            </div>
-          </template>
-        </CardContent>
-        <CardFooter v-if="projetos.length > 0">
-           <NuxtLink to="/projetos" class="text-xs text-muted-foreground hover:text-primary">Ver todos os projetos →</NuxtLink>
-        </CardFooter>
-      </Card>
-
-      <!-- Tarefas Pendentes -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Tarefas Pendentes</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <template v-if="tarefasPendentes.length > 0">
-            <div v-for="tarefa in tarefasPendentes.slice(0, 5)" :key="tarefa.id" class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium leading-none">{{ tarefa.titulo }}</p>
-                <p class="text-xs text-muted-foreground">Prazo: {{ formatDate(tarefa.prazo) }}</p>
-              </div>
-              <Badge :variant="getPrioridadeVariant(tarefa.prioridade)">{{ tarefa.prioridade }}</Badge>
-            </div>
-          </template>
-          <template v-else>
-            <div class="flex flex-col items-center justify-center py-8 text-center">
-              <ClipboardCheck class="h-12 w-12 text-muted-foreground" />
-              <p class="mt-4 text-sm font-semibold">Nenhuma tarefa pendente</p>
-              <p class="mt-1 text-xs text-muted-foreground">Você não tem tarefas pendentes.</p>
-              <Button @click="openNewTaskModal" class="mt-4" size="sm" variant="secondary">Criar tarefa</Button>
-            </div>
-          </template>
-        </CardContent>
-        <CardFooter v-if="tarefasPendentes.length > 0">
-          <NuxtLink to="/tarefas" class="text-xs text-muted-foreground hover:text-primary">Ver todas as tarefas →</NuxtLink>
-        </CardFooter>
-      </Card>
-    </div>
-
-    <!-- Notificações Recentes -->
-    <Card class="mt-8">
-      <CardHeader>
-        <CardTitle>Notificações Recentes</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <template v-if="notificacoesNaoLidas.length > 0">
-          <div v-for="notificacao in notificacoesNaoLidas.slice(0, 5)" :key="notificacao.id" class="flex items-start gap-3">
-            <Avatar class="h-9 w-9" :class="getNotificacaoAvatarClass(notificacao.tipo)">
-              <!-- <AvatarImage src="/placeholder-user.jpg" /> -->
-              <AvatarFallback>
-                <component :is="getNotificacaoIcon(notificacao.tipo)" class="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <div class="grid gap-1 flex-1">
-              <p class="text-sm font-medium leading-none">{{ notificacao.titulo }}</p>
-              <p class="text-xs text-muted-foreground">{{ notificacao.mensagem }}</p>
-              <p class="text-xs text-muted-foreground">{{ formatDate(notificacao.data) }}</p>
-            </div>
-            <Button v-if="!notificacao.lida" @click="marcarComoLida(notificacao.id)" variant="ghost" size="sm">
-              Marcar como lida
-            </Button>
-          </div>
-        </template>
-        <template v-else>
-          <div class="flex flex-col items-center justify-center py-8 text-center">
-            <BellOff class="h-12 w-12 text-muted-foreground" />
-            <p class="mt-4 text-sm font-semibold">Nenhuma notificação</p>
-            <p class="mt-1 text-xs text-muted-foreground">Você não tem notificações no momento.</p>
-          </div>
-        </template>
-      </CardContent>
-      <CardFooter v-if="notificacoesNaoLidas.length > 0 || notificacoes.find(n => n.lida)">
-        <NuxtLink to="/comunicacoes" class="text-xs text-muted-foreground hover:text-primary">Ver todas as notificações →</NuxtLink>
-      </CardFooter>
-    </Card>
+    
+    <!-- Usar o componente RoleBasedDashboard para exibir o dashboard apropriado com base no papel do usuário -->
+    <RoleBasedDashboard />
   </div>
 </template>
 
@@ -174,6 +14,7 @@
 import { ref, onMounted, computed, shallowRef } from 'vue'
 import { useRouter } from 'vue-router' // or 'nuxt/app' for Nuxt 3
 import { useNuxtApp } from '#app'
+import RoleBasedDashboard from '~/components/dashboard/RoleBasedDashboard.vue'
 
 // Shadcn-vue components (auto-imported by Nuxt if in components/ui directory)
 import { Button } from '@/components/ui/button'

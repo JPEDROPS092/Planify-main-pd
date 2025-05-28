@@ -41,7 +41,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
         ('ADMIN', 'Administrator'),
         ('PROJECT_MANAGER', 'Project Manager'),
+        ('TEAM_LEADER', 'Team Leader'),
         ('TEAM_MEMBER', 'Team Member'),
+        ('STAKEHOLDER', 'Stakeholder/Client'),
+        ('AUDITOR', 'Auditor'),
     )
     
     email = models.EmailField(unique=True)
@@ -55,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_password_change = models.DateTimeField(null=True, blank=True)
     failed_login_attempts = models.PositiveIntegerField(default=0)
     is_locked = models.BooleanField(default=False)
+    last_login_attempt = models.DateTimeField(null=True, blank=True)
     
     objects = UserManager()
     
@@ -68,6 +72,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.password_change_required and self.last_password_change is None:
             self.last_password_change = timezone.now()
         super().save(*args, **kwargs)
+    
+    def increment_failed_login(self):
+        """Incrementa o contador de tentativas falhas de login e bloqueia a conta se necessário"""
+        self.failed_login_attempts += 1
+        self.last_login_attempt = timezone.now()
+        
+        # Bloquear a conta após 5 tentativas falhas
+        if self.failed_login_attempts >= 5:
+            self.is_locked = True
+            
+        self.save(update_fields=['failed_login_attempts', 'is_locked'])
+    
+    def reset_failed_login(self):
+        """Reseta o contador de tentativas falhas de login após um login bem-sucedido"""
+        self.failed_login_attempts = 0
+        self.is_locked = False
+        self.save(update_fields=['failed_login_attempts', 'is_locked'])
+    
+    def has_permission(self, module, action):
+        """Verifica se o usuário tem permissão para realizar uma ação em um módulo"""
+        # Administradores têm acesso total
+        if self.role == 'ADMIN' or self.is_superuser:
+            return True
+            
+        # Verificar permissões específicas através dos perfis de acesso
+        for user_profile in self.access_profiles.all():
+            if user_profile.access_profile.permissions.filter(module=module, action=action).exists():
+                return True
+                
+        return False
 
 
 class UserProfile(models.Model):
@@ -109,6 +143,11 @@ class Permission(models.Model):
         ('COSTS', 'Costs'),
         ('DOCUMENTS', 'Documents'),
         ('REPORTS', 'Reports'),
+        ('USERS', 'Users'),
+        ('SETTINGS', 'Settings'),
+        ('DASHBOARD', 'Dashboard'),
+        ('NOTIFICATIONS', 'Notifications'),
+        ('APPROVALS', 'Approvals'),
     )
     
     ACTION_CHOICES = (
@@ -116,6 +155,11 @@ class Permission(models.Model):
         ('CREATE', 'Create'),
         ('EDIT', 'Edit'),
         ('DELETE', 'Delete'),
+        ('APPROVE', 'Approve'),
+        ('ASSIGN', 'Assign'),
+        ('EXPORT', 'Export'),
+        ('IMPORT', 'Import'),
+        ('COMMENT', 'Comment'),
     )
     
     access_profile = models.ForeignKey(AccessProfile, on_delete=models.CASCADE, related_name='permissions')
@@ -150,3 +194,22 @@ class PasswordHistory(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class AccessAttempt(models.Model):
+    """Modelo para registrar tentativas de acesso a recursos protegidos"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_attempts')
+    endpoint = models.CharField(max_length=255)
+    method = models.CharField(max_length=10)
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField()
+    success = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Access Attempt'
+        verbose_name_plural = 'Access Attempts'
+    
+    def __str__(self):
+        status = 'Success' if self.success else 'Failed'
+        return f"{self.user.username} - {self.endpoint} - {status} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"

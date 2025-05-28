@@ -16,64 +16,185 @@
 <style>
     :root {
         --primary: #2980b9;
-        --secondary: #ffffff;
-        --accent: #1abc9c;
-        --primary-fg: #fff;
-        --body-fg: #333;
-        --body-bg: #fff;
-        --header-color: #fff;
+        --secondary: #f8f9fa;
+        --accent: #16a085;
+        --primary-fg: #ffffff;
+        --body-fg: #333333;
+        --body-bg: #ffffff;
+        --header-color: #ffffff;
         --header-branding-color: var(--accent);
         --header-bg: var(--primary);
         --header-link-color: var(--primary-fg);
+        
+        /* New color variables for better visibility */
+        --link-hover: #1a5276;
+        --text-muted: #6c757d;
+        --border-color: #dee2e6;
+        --success: #27ae60;
+        --warning: #f39c12;
+        --danger: #e74c3c;
+        --info: #3498db;
     }
     
+    /* Base styling */
+    body {
+        color: var(--body-fg);
+        background: var(--body-bg);
+    }
+    
+    /* Header styling */
     #header {
         background: var(--primary);
         color: var(--header-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     #branding h1 {
         color: var(--header-color);
+        font-weight: 600;
     }
     
+    /* Module headers */
     .module h2, .module caption, .inline-group h2 {
         background: var(--primary);
+        color: var(--primary-fg);
+        padding: 10px 15px;
+        font-weight: 500;
     }
     
+    /* Breadcrumbs with better contrast */
     div.breadcrumbs {
         background: var(--secondary);
+        color: var(--body-fg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 15px;
     }
     
-    a:link, a:visited {
+    div.breadcrumbs a {
         color: var(--primary);
     }
     
+    div.breadcrumbs a:hover {
+        color: var(--link-hover);
+    }
+    
+    /* Links with better contrast */
+    a:link, a:visited {
+        color: var(--primary);
+        text-decoration: none;
+    }
+    
+    a:hover {
+        color: var(--link-hover);
+        text-decoration: underline;
+    }
+    
+    /* Buttons with better hover states */
     .button, input[type=submit], input[type=button], .submit-row input, a.button {
         background: var(--primary);
+        color: var(--primary-fg);
+        border-radius: 4px;
+        font-weight: 500;
+        padding: 8px 16px;
+        border: none;
     }
     
     .button:hover, input[type=submit]:hover, input[type=button]:hover {
-        background: var(--secondary);
+        background: var(--link-hover);
+        color: var(--primary-fg);
     }
     
     .button.default, input[type=submit].default, .submit-row input.default {
         background: var(--accent);
+        color: var(--primary-fg);
     }
     
     .button.default:hover, input[type=submit].default:hover {
-        background: var(--secondary);
+        background: #0e8066; /* Darker shade of accent */
     }
     
+    /* Table headers */
     .dashboard .module table th {
         background: var(--secondary);
+        color: var(--body-fg);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
     }
     
+    /* Form elements */
+    input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], 
+    input[type=tel], textarea, select, .vTextField {
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+    
+    /* Selector styling */
     .selector-chosen h2 {
         background: var(--primary) !important;
+        color: var(--primary-fg) !important;
+    }
+    
+    .selector-available h2 {
+        background: var(--secondary) !important;
+        color: var(--body-fg) !important;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    /* Paginator with better contrast */
+    .paginator {
+        margin: 15px 0;
+        padding: 10px 0;
+        border-top: 1px solid var(--border-color);
     }
     
     .paginator a:link, .paginator a:visited {
         background: var(--primary) !important;
+        color: var(--primary-fg) !important;
+        border-radius: 4px;
+        padding: 6px 12px;
+    }
+    
+    .paginator a:hover {
+        background: var(--link-hover) !important;
+    }
+    
+    /* Message styling */
+    .messagelist li.success {
+        background: var(--success);
+        color: white;
+    }
+    
+    .messagelist li.warning {
+        background: var(--warning);
+        color: white;
+    }
+    
+    .messagelist li.error {
+        background: var(--danger);
+        color: white;
+    }
+    
+    /* List filter styling */
+    .list-filter {
+        background: var(--secondary);
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    .list-filter h3 {
+        background: var(--primary);
+        color: var(--primary-fg);
+        padding: 8px 15px;
+        border-radius: 4px 4px 0 0;
+        margin: 0;
+    }
+    
+    /* Help text with better visibility */
+    .help, p.help, form p.help, div.help, form div.help, div.help li {
+        color: var(--text-muted);
+        font-size: 0.9em;
+        margin-top: 5px;
     }
 </style>
 {% endblock %}
