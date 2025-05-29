@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from users.models import User
-from projects.models import Project
+from projects.models import Projeto
 from risks.models import Risco
 from datetime import date, timedelta
 
@@ -15,14 +15,14 @@ class RiskAPITests(APITestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(user=self.admin)
-        self.project = Project.objects.create(
-            name='Projeto Risco',
-            description='Teste',
-            start_date=date.today(),
-            end_date=date.today() + timedelta(days=10),
-            status='PLANNED',
-            priority='MEDIUM',
-            created_by=self.admin
+        self.project = Projeto.objects.create(
+            nome='Projeto Risco',
+            descricao='Teste',
+            data_inicio=date.today(),
+            data_termino=date.today() + timedelta(days=10),
+            status='PLANEJADO',
+            prioridade='MEDIA',
+            criado_por=self.admin
         )
 
     def test_create_risk(self):

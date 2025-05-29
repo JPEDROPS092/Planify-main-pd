@@ -1,8 +1,8 @@
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from users.models import User
-from projects.models import Project
-from tasks.models import Task
+from projects.models import Projeto
+from tasks.models import Tarefa
 from datetime import date, timedelta
 
 class TaskAPITests(APITestCase):
@@ -15,18 +15,18 @@ class TaskAPITests(APITestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(user=self.admin)
-        self.project = Project.objects.create(
-            name='Projeto Tarefa',
-            description='Teste',
-            start_date=date.today(),
-            end_date=date.today() + timedelta(days=10),
-            status='PLANNED',
-            priority='MEDIUM',
-            created_by=self.admin
+        self.project = Projeto.objects.create(
+            nome='Projeto Tarefa',
+            descricao='Teste',
+            data_inicio=date.today(),
+            data_termino=date.today() + timedelta(days=10),
+            status='PLANEJADO',
+            prioridade='MEDIA',
+            criado_por=self.admin
         )
 
     def test_create_task(self):
-        url = reverse('task-list')
+        url = reverse('tarefa-list')
         data = {
             'titulo': 'Tarefa Teste',
             'descricao': 'Descrição de teste',
@@ -38,9 +38,9 @@ class TaskAPITests(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(Task.objects.filter(titulo='Tarefa Teste').exists())
+        self.assertTrue(Tarefa.objects.filter(titulo='Tarefa Teste').exists())
 
     def test_list_tasks(self):
-        url = reverse('task-list')
+        url = reverse('tarefa-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

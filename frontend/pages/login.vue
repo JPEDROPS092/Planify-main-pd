@@ -72,39 +72,28 @@
 </template>
 
 <script setup lang="ts">
-import { useAuth } from '~/services/api/auth'
+import { useAuth } from '~/composables/useAuth'
 import { ref } from 'vue'
 import { useNuxtApp } from '#app'
 
 const { $api } = useNuxtApp()
 const username = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const error = ref('')
 
-// Importar o composable de autenticação dos novos serviços de API
-const { login, isAuthenticated } = useAuth()
+const { login, isAuthenticated, error, isLoading } = useAuth()
 
 const handleLogin = async () => {
-  isLoading.value = true
-  error.value = ''
-  
   try {
-    // Usar o método login do composable useAuth
     await login({
       username: username.value,
       password: password.value
     })
     
     if (isAuthenticated.value) {
-      // Redirecionar para a página inicial
       navigateTo('/projetos')
     }
   } catch (err) {
-    console.error('Erro ao fazer login:', err)
-    error.value = 'Credenciais inválidas. Por favor, tente novamente.'
-  } finally {
-    isLoading.value = false
+    console.error('Erro ao fazer login na página:', err)
   }
 }
 </script>

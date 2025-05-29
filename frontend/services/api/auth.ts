@@ -6,6 +6,7 @@ import { $fetch } from 'ofetch'
 import { useNuxtApp } from '#app'
 import { useState, computed } from '#imports'
 import { API_CONFIG, ApiError, createFormData, getApiConfig } from './config'
+import { authLogger, apiLogger } from '~/lib/logger'
 import type {
   TokenObtainPairRequest,
   TokenObtainPair,
@@ -58,6 +59,9 @@ export const useAuth = () => {
         localStorage.setItem('refresh_token', tokens.refresh)
       }
     }
+    
+    authLogger.info('Tokens salvos com sucesso')
+    authLogger.debug('Access token:', tokens.access.substring(0, 15) + '...')
   }
   
   // Função para limpar tokens
@@ -70,16 +74,21 @@ export const useAuth = () => {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('refresh_token')
     }
+    
+    authLogger.info('Tokens removidos')
   }
   
   // Função para fazer login
   const login = async (credentials: TokenObtainPairRequest) => {
+    authLogger.info('Tentando login para usuário:', credentials.username)
     try {
       const tokens = await createAuthToken(credentials)
+      authLogger.info('Login bem-sucedido')
       saveTokens(tokens)
       await fetchCurrentUser()
       return true
-    } catch (error) {
+    } catch (error: any) {
+      authLogger.error('Falha no login:', error.message || 'Erro desconhecido')
       clearTokens()
       throw error
     }
@@ -87,20 +96,25 @@ export const useAuth = () => {
   
   // Função para fazer logout
   const logout = () => {
+    authLogger.info('Realizando logout')
     clearTokens()
   }
   
   // Função para atualizar o token
   const refreshAuthToken = async () => {
     if (!refreshToken.value) {
+      authLogger.error('Refresh token não disponível')
       throw new Error('Refresh token não disponível')
     }
     
+    authLogger.info('Atualizando token de acesso')
     try {
       const tokens = await refreshAuthTokenCreate({ refresh: refreshToken.value })
+      authLogger.info('Token atualizado com sucesso')
       saveTokens(tokens)
       return tokens
-    } catch (error) {
+    } catch (error: any) {
+      authLogger.error('Falha ao atualizar token:', error.message || 'Erro desconhecido')
       clearTokens()
       throw error
     }
@@ -108,10 +122,13 @@ export const useAuth = () => {
   
   // Função para buscar o usuário atual
   const fetchCurrentUser = async () => {
+    authLogger.info('Buscando informações do usuário atual')
     try {
       user.value = await retrieveAuthUsersMe()
+      authLogger.info('Informações do usuário obtidas com sucesso', user.value?.username)
       return user.value
-    } catch (error) {
+    } catch (error: any) {
+      authLogger.error('Falha ao buscar usuário atual:', error.message || 'Erro desconhecido')
       throw error
     }
   }
@@ -135,19 +152,23 @@ export const createFetchClient = () => {
   // Criamos uma função interna que só vai acessar o useAuth quando for chamada
   // e não durante a inicialização do módulo
   return async <T>(url: string, options: FetchOptions = {}): Promise<T> => {
+    const method = options.method || 'GET';
+    
     // Movemos a chamada do useAuth para dentro da função que será executada no contexto correto
     let token = null
     if (process.client) {
       // Em ambiente cliente, tentamos obter o token do localStorage diretamente
       token = localStorage.getItem('auth_token')
+      authLogger.debug('Token obtido do localStorage:', token ? `${token.substring(0, 15)}...` : 'null')
     } else {
       // Em SSR ou quando o composable estiver disponível, usamos o useAuth
       try {
         const { accessToken } = useAuth()
         token = accessToken.value
+        authLogger.debug('Token obtido do useAuth:', token ? `${token.substring(0, 15)}...` : 'null')
       } catch (e) {
         // Ignora erro se o composable não estiver disponível
-        console.warn('useAuth não disponível no contexto atual')
+        authLogger.warn('useAuth não disponível no contexto atual')
       }
     }
     
@@ -167,43 +188,64 @@ export const createFetchClient = () => {
     if (token) {
       fetchOptions.headers = {
         ...fetchOptions.headers,
-        Authorization: `Bearer ${token}`
+        'Authorization': `Bearer ${token}`
       }
+      apiLogger.debug(`Requisição ${method} para ${url} com token de autenticação`)
+      apiLogger.debug('Headers:', fetchOptions.headers)
+    } else {
+      apiLogger.warn(`Requisição ${method} para ${url} SEM token de autenticação`)
     }
     
     try {
-      return await $fetch<T>(url, fetchOptions)
+      apiLogger.http(method, url);
+      const response = await $fetch<T>(url, fetchOptions)
+      apiLogger.http(method, url, 200);
+      return response
     } catch (error: any) {
+      const status = error.response?.status || 0;
+      apiLogger.http(method, url, status);
+      apiLogger.error(`Erro ${status} na requisição:`, error.message || 'Erro desconhecido');
+      
       // Tratar erro 401 com refresh de token
       if (error.response?.status === 401 && !url.includes('/api/auth/token/refresh/')) {
+        authLogger.info('Tentando refresh de token após erro 401')
         try {
           // Tentamos obter o refreshAuthToken apenas quando precisamos dele
           const { refreshAuthToken } = useAuth()
           
           try {
+            authLogger.debug('Executando refreshAuthToken()')
             await refreshAuthToken()
             
             // Tentar novamente com o novo token
             // Obter o token atualizado do localStorage diretamente para evitar problemas de contexto
             const newToken = process.client ? localStorage.getItem('auth_token') : null
+            authLogger.debug('Novo token após refresh:', newToken ? `${newToken.substring(0, 15)}...` : 'null')
             
             if (newToken) {
               fetchOptions.headers = {
                 ...fetchOptions.headers,
-                Authorization: `Bearer ${newToken}`
+                'Authorization': `Bearer ${newToken}`
               }
               
-              return await $fetch<T>(url, fetchOptions)
+              apiLogger.info('Repetindo requisição com novo token')
+              apiLogger.http(method, url);
+              const retryResponse = await $fetch<T>(url, fetchOptions)
+              apiLogger.http(method, url, 200);
+              apiLogger.info('Requisição repetida com sucesso')
+              return retryResponse
             } else {
+              authLogger.error('Refresh de token não retornou um novo token')
               throw error
             }
           } catch (refreshError) {
             // Se falhar o refresh, propagar o erro original
+            authLogger.error('Erro durante refresh de token:', refreshError)
             throw error
           }
         } catch (authError) {
           // Se não conseguir acessar o useAuth, propagar o erro original
-          console.error('Erro ao acessar useAuth para refresh:', authError)
+          authLogger.error('Erro ao acessar useAuth para refresh:', authError)
           throw error
         }
       }

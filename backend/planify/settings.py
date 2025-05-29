@@ -242,3 +242,71 @@ CORS_ALLOW_HEADERS = [
 
 # Email settings (for password reset)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '\033[1;36m[{asctime}]\033[0m \033[1;33m[{levelname}]\033[0m \033[1;35m[{name}]\033[0m {message}',
+            'style': '{',
+        },
+        'auth': {
+            'format': '\033[1;36m[{asctime}]\033[0m \033[1;32m[AUTH]\033[0m \033[1;33m[{levelname}]\033[0m {message}',
+            'style': '{',
+        },
+        'middleware': {
+            'format': '\033[1;36m[{asctime}]\033[0m \033[1;34m[MIDDLEWARE]\033[0m \033[1;33m[{levelname}]\033[0m {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'auth_console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'auth',
+        },
+        'middleware_console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'middleware',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users.authentication': {
+            'handlers': ['auth_console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users.middleware': {
+            'handlers': ['middleware_console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

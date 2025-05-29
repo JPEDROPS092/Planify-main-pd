@@ -1,6 +1,11 @@
 from django.http import JsonResponse
 from django.urls import resolve
 from django.conf import settings
+import logging
+import re
+import traceback
+
+logger = logging.getLogger(__name__)
 
 class PermissionMiddleware:
     """
@@ -13,12 +18,22 @@ class PermissionMiddleware:
         self.get_response = get_response
         # Endpoints que não requerem verificação de permissão
         self.public_paths = [
-            '/api/auth/login/',
+            '/api/auth/token/',  
             '/api/auth/register/',
-            '/api/auth/refresh-token/',
+            '/api/auth/token/refresh/',  
             '/api/auth/password-reset/',
             '/api/auth/password-reset/confirm/',
             '/admin/',
+            # Adicionar endpoints do Djoser que devem ser públicos
+            '/api/auth/users/', 
+            '/api/auth/users/activation/',
+            '/api/auth/users/resend_activation/',
+            '/api/auth/users/reset_password/',
+            '/api/auth/users/reset_password_confirm/',
+            # Endpoints do drf-spectacular para documentação da API
+            '/api/schema/',
+            '/api/schema/swagger-ui/',
+            '/api/schema/redoc/',
         ]
         
         # Mapeamento de URLs para módulos e ações
@@ -105,19 +120,51 @@ class PermissionMiddleware:
         }
     
     def __call__(self, request):
+        # Informações básicas da requisição
+        logger.debug(f"Verificando permissões para: {request.path} [{request.method}]")
+        
         # Verificar se o caminho é público
         if any(request.path.startswith(path) for path in self.public_paths):
+            logger.debug(f"Caminho {request.path} é público, permitindo acesso")
             return self.get_response(request)
         
-        # Verificar se o usuário está autenticado
-        if not request.user.is_authenticated:
+        # Verificar informações de autenticação
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            logger.debug(f"Header de autorização presente: {auth_header[:20]}...")
+        else:
+            logger.debug("Nenhum header de autorização encontrado")
+        
+        try:
+            if not hasattr(request, 'user') or not request.user.is_authenticated:
+                logger.warning(f"Usuário não autenticado tentando acessar {request.path}")
+                return JsonResponse({
+                    'error': 'Unauthorized',
+                    'message': 'Authentication required',
+                    'detail': 'You must be logged in to access this resource'
+                }, status=401)
+        except AttributeError as e:
+            logger.error(f"Erro de atributo durante autenticação no middleware: {str(e)}")
             return JsonResponse({
                 'error': 'Unauthorized',
-                'message': 'Authentication required'
+                'message': 'Authentication failed',
+                'detail': 'Authentication system error'
             }, status=401)
+        except Exception as e:
+            logger.error(f"Erro durante autenticação no middleware: {str(e)}")
+            logger.error(traceback.format_exc())
+            return JsonResponse({
+                'error': 'Unauthorized',
+                'message': 'Authentication failed',
+                'detail': 'An unexpected error occurred during authentication'
+            }, status=401)
+            
+        # Log de informações do usuário autenticado
+        logger.debug(f"Usuário autenticado: {request.user.username} (ID: {request.user.id})")
         
         # Verificar se a conta do usuário está bloqueada
         if request.user.is_locked:
+            logger.warning(f"Conta do usuário {request.user.username} está bloqueada, acesso negado")
             return JsonResponse({
                 'error': 'Account Locked',
                 'message': 'Your account has been locked due to multiple failed login attempts. Please contact an administrator.'
@@ -125,6 +172,7 @@ class PermissionMiddleware:
         
         # Administradores têm acesso total
         if request.user.is_superuser or request.user.role == 'ADMIN':
+            logger.debug(f"Usuário {request.user.username} é administrador, concedendo acesso total")
             return self.get_response(request)
         
         # Encontrar permissão necessária para o endpoint
@@ -133,30 +181,38 @@ class PermissionMiddleware:
             import re
             if re.match(pattern, request.path):
                 permission_required = permission
+                logger.debug(f"Permissão necessária para {request.path}: {permission['module']}.{permission['action']}")
                 break
         
         # Se não encontrou permissão necessária, permitir acesso (pode ser um endpoint não mapeado)
         if not permission_required:
+            logger.debug(f"Nenhuma permissão específica necessária para {request.path}, concedendo acesso")
             return self.get_response(request)
         
         # Verificar se o usuário tem permissão
         if request.user.has_permission(permission_required['module'], permission_required['action']):
+            logger.debug(f"Usuário {request.user.username} tem permissão {permission_required['module']}.{permission_required['action']}, concedendo acesso")
             return self.get_response(request)
         
         # Registrar tentativa de acesso não autorizado
         from django.utils import timezone
         from users.models import AccessAttempt
         
+        # Obter o IP do cliente
+        client_ip = self.get_client_ip(request)
+        
+        # Registrar a tentativa no banco de dados
         AccessAttempt.objects.create(
             user=request.user,
             endpoint=request.path,
             method=request.method,
-            ip_address=self.get_client_ip(request),
+            ip_address=client_ip,
             timestamp=timezone.now(),
             success=False
         )
         
         # Retornar erro de permissão negada
+        logger.warning(f"Usuário {request.user.username} não tem permissão {permission_required['module']}.{permission_required['action']} para acessar {request.path} (IP: {client_ip})")
         return JsonResponse({
             'error': 'Forbidden',
             'message': 'You do not have permission to access this resource'
