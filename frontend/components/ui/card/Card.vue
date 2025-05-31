@@ -19,3 +19,7 @@ const props = defineProps<{
     <slot />
   </div>
 </template>
+
+<style scoped>
+/* Adicione estilos específicos para o seu componente aqui */
+</style>

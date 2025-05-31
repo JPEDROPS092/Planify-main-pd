@@ -131,7 +131,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useProjectService } from '~/services/api/projects'
 import type { Projeto } from '~/services/api/types'
-import { useUserService } from '~/services/api/auth'
+import { useUserService } from '~/services/api/userService'
 import type { User } from '~/services/api/types'
 import { useNotification } from '~/composables/useNotification'
 import LoadingButton from './LoadingButton.vue'

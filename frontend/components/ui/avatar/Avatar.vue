@@ -19,3 +19,7 @@ const props = withDefaults(defineProps<{
     <slot />
   </AvatarRoot>
 </template>
+
+<style scoped>
+/* Adicione estilos específicos para o componente aqui, se necessário */
+</style>

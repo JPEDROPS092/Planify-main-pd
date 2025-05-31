@@ -1,235 +1,104 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal-fade">
-      <div 
-        v-if="modelValue" 
-        class="modal-backdrop"
-        :class="{ 'modal-backdrop--fullheight': fullHeight }"
-        @click="closeOnBackdrop && close()"
-      >
-        <div 
-          class="modal-container"
-          :class="{
-            'modal-container--sm': size === 'sm',
-            'modal-container--md': size === 'md',
-            'modal-container--lg': size === 'lg',
-            'modal-container--xl': size === 'xl',
-            'modal-container--fullheight': fullHeight
-          }"
-          @click.stop
-        >
-          <div class="modal-header">
-            <slot name="header">
-              <h3 class="modal-title">{{ title }}</h3>
-            </slot>
-            <button 
-              v-if="showCloseButton" 
-              class="modal-close" 
-              @click="close()"
-              aria-label="Fechar"
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="modelValue" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <!-- Overlay de fundo -->
+          <div 
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity dark:bg-gray-800 dark:bg-opacity-75" 
+            aria-hidden="true"
+            @click="closeOnBackdrop && $emit('update:modelValue', false)"
+          ></div>
+
+          <!-- Truque para centralizar o modal verticalmente -->
+          <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+
+          <!-- Modal -->
+          <Transition
+            enter-active-class="transition ease-out duration-300"
+            enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            enter-to-class="opacity-100 translate-y-0 sm:scale-100"
+            leave-active-class="transition ease-in duration-200"
+            leave-from-class="opacity-100 translate-y-0 sm:scale-100"
+            leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+          >
+            <div 
+              v-if="modelValue" 
+              :class="[
+                'inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all dark:bg-gray-900 sm:my-8 sm:align-middle',
+                size === 'sm' ? 'sm:max-w-lg' : '',
+                size === 'md' ? 'sm:max-w-2xl' : '',
+                size === 'lg' ? 'sm:max-w-4xl' : '',
+                size === 'xl' ? 'sm:max-w-6xl' : '',
+                size === 'full' ? 'sm:max-w-full' : '',
+                fullHeight ? 'sm:h-[calc(100vh-8rem)]' : ''
+              ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div class="modal-body">
-            <slot></slot>
-          </div>
-          
-          <div v-if="$slots.footer" class="modal-footer">
-            <slot name="footer"></slot>
-          </div>
+              <!-- Cabeçalho do Modal -->
+              <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                  {{ title }}
+                </h3>
+                <button
+                  type="button"
+                  class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-gray-900 dark:text-gray-500 dark:hover:text-gray-400"
+                  @click="$emit('update:modelValue', false)"
+                >
+                  <span class="sr-only">Fechar</span>
+                  <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Conteúdo do Modal -->
+              <div :class="['px-6 py-4', fullHeight ? 'overflow-y-auto' : '']" :style="fullHeight ? 'max-height: calc(100vh - 14rem);' : ''">
+                <slot></slot>
+              </div>
+
+              <!-- Rodapé do Modal (opcional) -->
+              <div v-if="$slots.footer" class="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+                <slot name="footer"></slot>
+              </div>
+            </div>
+          </Transition>
         </div>
       </div>
     </Transition>
   </Teleport>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  name: 'Modal',
-  
-  props: {
-    modelValue: {
-      type: Boolean,
-      required: true
-    },
-    title: {
-      type: String,
-      default: ''
-    },
-    size: {
-      type: String,
-      default: 'md',
-      validator: (value: string) => ['sm', 'md', 'lg', 'xl'].includes(value)
-    },
-    fullHeight: {
-      type: Boolean,
-      default: false
-    },
-    closeOnBackdrop: {
-      type: Boolean,
-      default: true
-    },
-    showCloseButton: {
-      type: Boolean,
-      default: true
-    }
+<script setup>
+defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
   },
-  
-  emits: ['update:modelValue', 'close'],
-  
-  setup(props, { emit }) {
-    // Função para fechar o modal
-    const close = () => {
-      emit('update:modelValue', false)
-      emit('close')
-    }
-    
-    return {
-      close
-    }
+  title: {
+    type: String,
+    default: ''
+  },
+  size: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['sm', 'md', 'lg', 'xl', 'full'].includes(value)
+  },
+  fullHeight: {
+    type: Boolean,
+    default: false
+  },
+  closeOnBackdrop: {
+    type: Boolean,
+    default: true
   }
 })
+
+defineEmits(['update:modelValue'])
 </script>
-
-<style scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-backdrop--fullheight {
-  padding: 0;
-}
-
-.modal-container {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 2rem);
-  overflow: hidden;
-}
-
-.modal-container--fullheight {
-  height: 100vh;
-  max-height: 100vh;
-  border-radius: 0;
-}
-
-.modal-container--sm {
-  max-width: 24rem;
-}
-
-.modal-container--md {
-  max-width: 32rem;
-}
-
-.modal-container--lg {
-  max-width: 48rem;
-}
-
-.modal-container--xl {
-  max-width: 64rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text-primary, #333);
-}
-
-.modal-close {
-  background: transparent;
-  border: none;
-  padding: 0.25rem;
-  cursor: pointer;
-  color: var(--color-text-secondary, #666);
-  transition: color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close:hover {
-  color: var(--color-text-primary, #333);
-}
-
-.modal-close svg {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-/* Transições */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-.modal-fade-enter-active .modal-container,
-.modal-fade-leave-active .modal-container {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.modal-fade-enter-from .modal-container,
-.modal-fade-leave-to .modal-container {
-  transform: translateY(20px);
-  opacity: 0;
-}
-
-/* Tema escuro */
-:root.dark .modal-container {
-  background-color: var(--color-bg-secondary, #1e1e1e);
-  color: var(--color-text-primary, #f0f0f0);
-}
-
-:root.dark .modal-header,
-:root.dark .modal-footer {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-</style>
