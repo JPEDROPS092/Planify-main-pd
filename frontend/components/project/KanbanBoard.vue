@@ -211,7 +211,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, defineEmits } from 'vue'
-import { useTaskService } from '~/services/taskService'
+import { useTaskService } from '~/services/api/tasks'
 import { useNotification } from '~/composables/useNotification'
 import draggable from 'vuedraggable'
 import type { Task, TaskUpdate } from '~/services/taskService'
@@ -271,31 +271,49 @@ const hasAnyTasks = computed(() => allTasks.value.length > 0)
 // Funções
 async function fetchTasks() {
   if (!props.projectId) return
+  
   loading.value = true
   error.value = null
   
   try {
-    const result = await taskService.fetchTasks({ projeto: Number(props.projectId) })
-    // O backend pode retornar um objeto com 'results' ou diretamente um array
-    const taskList = Array.isArray(result) ? result : result.results || []
+    const { showApiError } = useNotification()
     
-    // Buscar detalhes do responsável para cada tarefa
-    allTasks.value = await Promise.all(taskList.map(async (task: any) => {
-      let assigneeDetails: User | null = null
-      if (task.assignee) {
-        try {
-          assigneeDetails = await userService.getUserById(task.assignee)
-        } catch (e) {
-          console.warn(`Falha ao buscar detalhes do usuário ${task.assignee}`, e)
-        }
-      }
-      return { ...task, assignee_details: assigneeDetails }
+    // Buscar tarefas do projeto
+    const response = await taskService.listTarefas({
+      projeto: Number(props.projectId),
+      ordering: 'prioridade'
+    })
+    
+    // Mapear tarefas para o formato esperado pelo componente
+    const formattedTasks = response.results.map(task => ({
+      id: task.id,
+      name: task.titulo,
+      description: task.descricao,
+      status: task.status,
+      due_date: task.data_vencimento,
+      assignee: task.responsavel,
+      assignee_details: task.responsavel_nome ? {
+        first_name: task.responsavel_nome.split(' ')[0],
+        username: task.responsavel_nome
+      } : null,
+      priority: task.prioridade,
+      sprint: task.sprint
     }))
     
-    emit('tasksUpdated', allTasks.value)
+    // Distribuir tarefas entre as colunas
+    allTasks.value = formattedTasks
+    
+    // Atualizar as colunas
+    pendingTasks.value = formattedTasks.filter(task => task.status === 'A_FAZER')
+    inProgressTasks.value = formattedTasks.filter(task => task.status === 'EM_ANDAMENTO')
+    completedTasks.value = formattedTasks.filter(task => task.status === 'FEITO')
+    blockedTasks.value = formattedTasks.filter(task => task.status === 'BLOQUEADO')
+    
+    emit('tasks-updated', formattedTasks)
   } catch (err: any) {
     error.value = err
-    showApiError(err, 'Falha ao carregar tarefas')
+    console.error('Erro ao buscar tarefas:', err)
+    showApiError(err, 'Erro ao carregar tarefas')
   } finally {
     loading.value = false
   }
@@ -331,33 +349,57 @@ async function handleTaskFormSubmit(formData: TaskUpdate) {
 async function handleDragEnd(evt: any) {
   drag.value = false
   
-  // Se a tarefa foi movida para uma coluna diferente
   if (evt.from !== evt.to) {
     const task = evt.item.__draggable_context.element
-    let newStatus = ''
+    const newStatus = getNewStatus(evt.to)
     
-    // Determinar o novo status com base na coluna de destino
-    if (evt.to.parentElement.querySelector('.column-header h4').textContent === 'A Fazer') {
-      newStatus = 'A Fazer'
-    } else if (evt.to.parentElement.querySelector('.column-header h4').textContent === 'Em Andamento') {
-      newStatus = 'Em Andamento'
-    } else if (evt.to.parentElement.querySelector('.column-header h4').textContent === 'Concluído') {
-      newStatus = 'Concluído'
-    } else if (evt.to.parentElement.querySelector('.column-header h4').textContent === 'Bloqueado') {
-      newStatus = 'Bloqueado'
-    }
-    
-    if (newStatus && task.id) {
+    if (newStatus) {
       try {
-        await taskService.updateTaskStatus(task.id, newStatus)
-        notifySuccess(`Tarefa movida para "${newStatus}"`)
-        // Recarregar as tarefas para garantir que tudo esteja sincronizado
-        await fetchTasks()
-      } catch (error: any) {
-        showApiError(error, 'Falha ao atualizar status da tarefa')
-        // Recarregar as tarefas para reverter qualquer mudança na UI
+        const taskService = useTaskService()
+        const { success: notifySuccess, showApiError } = useNotification()
+        
+        // Atualizar o status da tarefa localmente
+        const oldStatus = task.status
+        task.status = newStatus
+        
+        // Atualizar no backend
+        await taskService.partialUpdateTarefa(task.id, {
+          status: newStatus
+        })
+        
+        notifySuccess(`Tarefa movida para ${getStatusText(newStatus)}`)
+        
+        // Emitir evento
+        emit('tasks-updated', [...pendingTasks.value, ...inProgressTasks.value, ...completedTasks.value, ...blockedTasks.value])
+      } catch (err: any) {
+        console.error('Erro ao atualizar status da tarefa:', err)
+        const { showApiError } = useNotification()
+        showApiError(err, 'Erro ao mover tarefa')
+        
+        // Reverter a mudança em caso de erro
         await fetchTasks()
       }
+    }
+  }
+  
+  function getNewStatus(container: any) {
+    const containerId = container.id || ''
+    
+    if (containerId.includes('pending')) return 'A_FAZER'
+    if (containerId.includes('progress')) return 'EM_ANDAMENTO'
+    if (containerId.includes('completed')) return 'FEITO'
+    if (containerId.includes('blocked')) return 'BLOQUEADO'
+    
+    return null
+  }
+  
+  function getStatusText(status: string) {
+    switch (status) {
+      case 'A_FAZER': return 'A Fazer'
+      case 'EM_ANDAMENTO': return 'Em Andamento'
+      case 'FEITO': return 'Concluído'
+      case 'BLOQUEADO': return 'Bloqueado'
+      default: return status
     }
   }
 }

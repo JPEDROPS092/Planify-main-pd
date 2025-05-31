@@ -1,15 +1,9 @@
 /**
- * Configuração base para os serviços da API do Planify
- * Fornece utilitários e configurações para comunicação com o backend
+ * Configuração base para os serviços da API
  */
 import { useRuntimeConfig } from '#app'
-import { useState } from '#imports'
 
-/**
- * Função para obter a configuração da API de forma lazy
- * Garante que a configuração seja obtida apenas quando necessário
- * @returns Configuração básica da API
- */
+// Função para obter a configuração da API de forma lazy
 export const getApiConfig = () => {
   return {
     baseURL: process.client ? useRuntimeConfig().public.apiBaseUrl : '',
@@ -20,39 +14,12 @@ export const getApiConfig = () => {
   }
 }
 
-/**
- * Configuração estática da API (compatibilidade com código existente)
- * @deprecated Use getApiConfig() para obter a configuração dinamicamente
- */
+// Configuração da API (compatibilidade com código existente)
 export const API_CONFIG = {
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
-}
-
-/**
- * Função para obter o token de autenticação atual
- * Prioriza o estado reativo do Nuxt e faz fallback para localStorage
- * @returns Token de autenticação ou null se não estiver autenticado
- */
-export const getAuthToken = (): string | null => {
-  // Usar o estado reativo do Nuxt para o token
-  const accessToken = useState<string | null>('auth.accessToken')
-  
-  if (accessToken.value) {
-    return accessToken.value
-  }
-  
-  // Fallback para localStorage se o estado não estiver disponível
-  if (process.client && localStorage.getItem('auth_token')) {
-    const token = localStorage.getItem('auth_token')
-    // Sincronizar com o estado
-    accessToken.value = token
-    return token
-  }
-  
-  return null
 }
 
 // Classe para gerenciar erros da API

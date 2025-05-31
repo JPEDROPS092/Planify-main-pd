@@ -1,4 +1,5 @@
-from rest_framework import viewsets, status, generics, permissions
+from rest_framework import viewsets, status, generics
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -22,7 +23,7 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -31,10 +32,10 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.action == 'create' or self.action == 'reset_password':
-            return [permissions.IsAdminUser()]
+            return [IsAdminUser()]
         return super().get_permissions()
     
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """
         Retorna as informações do usuário autenticado.
@@ -42,7 +43,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
         
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def permissions(self, request):
         """
         Retorna as permissões do usuário autenticado.
@@ -64,7 +65,7 @@ class UserViewSet(viewsets.ModelViewSet):
             'permissions': formatted_permissions
         })
     
-    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
         user = request.user
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
@@ -75,7 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def reset_password(self, request, pk=None):
         user = self.get_object()
         # Generate a temporary password
@@ -95,21 +96,21 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return Response({'detail': 'Temporary password sent to user email'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def activate(self, request, pk=None):
         user = self.get_object()
         user.is_active = True
         user.save()
         return Response({'detail': 'User activated successfully'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def deactivate(self, request, pk=None):
         user = self.get_object()
         user.is_active = False
         user.save()
         return Response({'detail': 'User deactivated successfully'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def unlock(self, request, pk=None):
         user = self.get_object()
         user.is_locked = False
@@ -120,7 +121,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
@@ -132,19 +133,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 class AccessProfileViewSet(viewsets.ModelViewSet):
     queryset = AccessProfile.objects.all()
     serializer_class = AccessProfileSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
     filterset_fields = ['access_profile', 'module', 'action']
 
 
 class UserAccessProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserAccessProfileSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
     
     def get_queryset(self):
         return UserAccessProfile.objects.all()
@@ -155,7 +156,7 @@ class UserAccessProfileViewSet(viewsets.ModelViewSet):
 
 class ForgotPasswordView(generics.GenericAPIView):
     serializer_class = ResetPasswordSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
     
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -186,7 +187,7 @@ class ForgotPasswordView(generics.GenericAPIView):
 
 class ResetPasswordConfirmView(generics.GenericAPIView):
     serializer_class = SetNewPasswordSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
     
     def post(self, request):
         serializer = self.get_serializer(data=request.data)

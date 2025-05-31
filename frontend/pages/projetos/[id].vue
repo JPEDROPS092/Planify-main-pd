@@ -9,14 +9,14 @@
       <Button class="mt-4" @click="fetchProjectDetails">Tentar Novamente</Button>
     </div>
     <div v-else-if="project" class="space-y-8">
-      <!-- Cabeçalho do Projeto -->
+      <!-- Cabeçalho do Projeto com Ações Rápidas -->
       <header class="pb-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">{{ project.name }}</h1>
-            <p class="text-gray-600 dark:text-gray-400 text-lg">{{ project.description }}</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">{{ project.nome }}</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">{{ project.descricao }}</p>
           </div>
-          <div class="mt-4 md:mt-0 flex space-x-2">
+          <div class="mt-4 md:mt-0 flex flex-wrap space-x-2">
             <Button variant="outline" @click="navigateToEditProject">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
@@ -24,84 +24,20 @@
               </svg>
               Editar
             </Button>
-            <Button variant="outline" @click="navigateToKanbanView">
+            <Button variant="primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="3" y1="9" x2="21" y2="9"></line>
-                <line x1="9" y1="21" x2="9" y2="9"></line>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              Quadro Kanban
+              Exportar
             </Button>
-            <!-- Outros botões de ação rápida podem ser adicionados aqui -->
-          </div>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 text-sm">
-          <div>
-            <span class="text-gray-500 dark:text-gray-400 block">Status</span>
-            <span class="font-semibold text-gray-700 dark:text-gray-300 py-1 px-2 rounded-full text-xs uppercase tracking-wider" :class="getStatusClass(project.status)">
-              {{ project.status }}
-            </span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400 block">Gerente</span>
-            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ projectManagerName || 'N/A' }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400 block">Data de Início</span>
-            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ formatDate(project.start_date) }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400 block">Data de Término</span>
-            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ formatDate(project.end_date) }}</span>
-          </div>
-          <div v-if="project.budget">
-            <span class="text-gray-500 dark:text-gray-400 block">Orçamento</span>
-            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ formatCurrency(project.budget) }}</span>
           </div>
         </div>
       </header>
 
-      <!-- Tabs para seções de detalhes -->
-      <nav class="flex border-b border-gray-200 dark:border-gray-700 -mb-px">
-        <button 
-          v-for="tab in tabs" 
-          :key="tab.id"
-          @click="activeTab = tab.id"
-          :class="[
-            'py-4 px-1 mr-6 text-sm font-medium border-b-2 focus:outline-none',
-            activeTab === tab.id 
-              ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-300' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500'
-          ]"
-        >
-          {{ tab.name }}
-        </button>
-      </nav>
-
-      <!-- Conteúdo das Tabs -->
-      <div class="mt-0">
-        <div v-if="activeTab === 'overview'">
-          <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Visão Geral</h2>
-          <p class="text-gray-600 dark:text-gray-400">Gráficos e métricas chave do projeto (a implementar).</p>
-          <!-- TODO: Implementar gráficos de progresso, resumo de orçamento, etc. -->
-        </div>
-        <div v-if="activeTab === 'tasks'">
-          <ProjectTasks :project-id="project.id" />
-        </div>
-        <div v-if="activeTab === 'team'">
-          <ProjectTeam :project-id="project.id" />
-        </div>
-        <div v-if="activeTab === 'risks'">
-          <ProjectRisks :project-id="project.id" />
-        </div>
-        <div v-if="activeTab === 'costs'">
-          <ProjectCosts :project-id="project.id" />
-        </div>
-        <div v-if="activeTab === 'kanban'">
-          <KanbanBoard :project-id="project.id" />
-        </div>
-        <!-- Adicionar mais seções conforme necessário (Documentos, Comunicação, etc.) -->
-      </div>
+      <!-- Dashboard do Projeto -->
+      <ProjectDashboard :project-id="projectId" />
     </div>
     <div v-else class="text-center text-gray-500 dark:text-gray-400 py-10">
       <p>Nenhum projeto encontrado com este ID.</p>
@@ -112,19 +48,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useProjectService } from '~/services/projectService'
-import type { Project } from '~/services/projectService'
-import { useUserService } from '~/services/userService'
-import type { User } from '~/services/userService'
+import { useProjectService } from '~/services/api/projects'
 import { useNotification } from '~/composables/useNotification'
+import { useAuth } from '~/services/api/auth'
+import type { Projeto } from '~/services/api/types'
 import Button from '~/components/ui/Button.vue'
 import SkeletonLoader from '~/components/SkeletonLoader.vue'
-// Importar componentes para as tabs (a serem criados)
-import ProjectTasks from '~/components/project/ProjectTasks.vue'
-import ProjectTeam from '~/components/project/ProjectTeam.vue'
-import ProjectRisks from '~/components/project/ProjectRisks.vue'
-import ProjectCosts from '~/components/project/ProjectCosts.vue'
-import KanbanBoard from '~/components/project/KanbanBoard.vue'
+import ProjectDashboard from '~/components/project/ProjectDashboard.vue'
 
 definePageMeta({
   layout: 'dashboard',
@@ -134,73 +64,46 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const projectService = useProjectService()
-const userService = useUserService()
 const { success: notifySuccess, error: notifyError, showApiError } = useNotification()
 
+const { isAuthenticated } = useAuth()
 const projectId = computed(() => Number(route.params.id))
-const project = ref<Project | null>(null)
-const projectManager = ref<User | null>(null)
+const project = ref<Projeto | null>(null)
 const loadingProject = ref(true)
 const projectError = ref<Error | null>(null)
 
-const activeTab = ref('overview')
-const tabs = [
-  { id: 'overview', name: 'Visão Geral' },
-  { id: 'tasks', name: 'Tarefas' },
-  { id: 'team', name: 'Equipe' },
-  { id: 'risks', name: 'Riscos' },
-  { id: 'costs', name: 'Custos' },
-  { id: 'kanban', name: 'Kanban' }
-]
-
-const projectManagerName = computed(() => {
-  if (projectManager.value) {
-    return `${projectManager.value.first_name} ${projectManager.value.last_name}`.trim() || projectManager.value.username
-  }
-  return 'N/A'
-})
-
 async function fetchProjectDetails() {
-  if (!projectId.value) {
-    projectError.value = new Error('ID do projeto inválido.')
-    loadingProject.value = false
-    return
-  }
-
+  if (!projectId.value) return
+  
   loadingProject.value = true
   projectError.value = null
+  
   try {
-    const fetchedProject = await projectService.getById(projectId.value)
-    project.value = fetchedProject
-
-    if (fetchedProject && fetchedProject.manager) {
-      try {
-        projectManager.value = await userService.getUserById(fetchedProject.manager)
-      } catch (userError) {
-        console.warn('Erro ao buscar gerente do projeto:', userError)
-        projectManager.value = null // ou algum usuário placeholder
-      }
+    // Verificar autenticação antes de carregar
+    if (!isAuthenticated.value) {
+      return router.push('/login')
     }
     
-  } catch (error: any) {
-    projectError.value = error
-    showApiError(error)
-    project.value = null
+    project.value = await projectService.retrieveProjeto(Number(projectId.value))
+  } catch (err: any) {
+    projectError.value = err
+    console.error('Erro ao buscar detalhes do projeto:', err)
+    showApiError(err, 'Erro ao carregar detalhes do projeto')
   } finally {
     loadingProject.value = false
   }
 }
 
 function navigateToEditProject() {
-  if (project.value?.id) {
-    router.push(`/projetos/editar/${project.value.id}`)
-  }
+  router.push(`/projetos/editar/${projectId.value}`)
 }
 
 function navigateToKanbanView() {
-  if (project.value?.id) {
-    router.push(`/projetos/${project.value.id}/kanban`)
-  }
+  router.push(`/projetos/${projectId.value}/kanban`)
+}
+
+function navigateToGanttView() {
+  router.push(`/projetos/${projectId.value}/gantt`)
 }
 
 const formatDate = (dateString?: string) => {
@@ -213,14 +116,51 @@ const formatCurrency = (value?: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 }
 
-const getStatusClass = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'planejado': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-    case 'em andamento': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-    case 'concluído': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    case 'atrasado': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-    case 'cancelado': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+function getStatusClass(status: string) {
+  switch (status) {
+    case 'PLANEJADO':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+    case 'EM_ANDAMENTO':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+    case 'PAUSADO':
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+    case 'CONCLUIDO':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    case 'CANCELADO':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  }
+}
+
+function getStatusText(status: string) {
+  switch (status) {
+    case 'PLANEJADO': return 'Planejado'
+    case 'EM_ANDAMENTO': return 'Em Andamento'
+    case 'PAUSADO': return 'Pausado'
+    case 'CONCLUIDO': return 'Concluído'
+    case 'CANCELADO': return 'Cancelado'
+    default: return status
+  }
+}
+
+function getPriorityClass(priority: string) {
+  switch (priority) {
+    case 'BAIXA': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    case 'MEDIA': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+    case 'ALTA': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+    case 'CRITICA': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  }
+}
+
+function getPriorityText(priority: string) {
+  switch (priority) {
+    case 'BAIXA': return 'Baixa'
+    case 'MEDIA': return 'Média'
+    case 'ALTA': return 'Alta'
+    case 'CRITICA': return 'Crítica'
+    default: return priority
   }
 }
 

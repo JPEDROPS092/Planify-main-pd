@@ -3,6 +3,7 @@ import { ApiError } from '~/services/api'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
+  const accessToken = useState<string | null>('auth.accessToken')
   
   const api = axios.create({
     baseURL: config.public.apiBaseUrl,
@@ -15,9 +16,15 @@ export default defineNuxtPlugin((nuxtApp) => {
   
   // Interceptor para adicionar o token de autenticação em cada requisição
   api.interceptors.request.use(config => {
-    const token = localStorage.getItem('auth_token')
-    if (token) {
+    // Usar o estado reativo do Nuxt em vez de acessar diretamente localStorage
+    if (accessToken.value) {
+      config.headers.Authorization = `Bearer ${accessToken.value}`
+    } else if (process.client && localStorage.getItem('auth_token')) {
+      // Fallback: verificar localStorage caso o estado não esteja disponível
+      const token = localStorage.getItem('auth_token')
       config.headers.Authorization = `Bearer ${token}`
+      // Sincronizar com o estado
+      accessToken.value = token
     }
     return config
   })
@@ -27,6 +34,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     response => response,
     async error => {
       const originalRequest = error.config
+      const refreshToken = useState<string | null>('auth.refreshToken')
       
       // Se o erro for 401 (não autorizado) e não for uma tentativa de refresh
       if (error.response && error.response.status === 401 && 
@@ -35,42 +43,81 @@ export default defineNuxtPlugin((nuxtApp) => {
         
         originalRequest._retry = true
         
-        // Tentar atualizar o token
-        const refreshToken = localStorage.getItem('refresh_token')
-        if (refreshToken) {
+        // Tentar atualizar o token usando o estado reativo
+        if (refreshToken.value) {
           try {
+            console.log('Tentando atualizar token automaticamente')
             const response = await axios.post(`${config.public.apiBaseUrl}/api/auth/token/refresh/`, {
-              refresh: refreshToken
+              refresh: refreshToken.value
             })
             
             if (response.data.access) {
-              // Atualizar o token no localStorage
+              console.log('Token atualizado com sucesso')
+              // Atualizar o token no estado reativo e localStorage
+              accessToken.value = response.data.access
+              
+              if (process.client) {
+                localStorage.setItem('auth_token', response.data.access)
+                
+                // Se um novo refresh token for fornecido, atualize-o também
+                if (response.data.refresh) {
+                  refreshToken.value = response.data.refresh
+                  localStorage.setItem('refresh_token', response.data.refresh)
+                }
+              }
+              
+              // Atualizar o header da requisição original
+              originalRequest.headers.Authorization = `Bearer ${response.data.access}`
+              
+              // Reenviar a requisição original com o api do axios
+              return api(originalRequest)
+            }
+          } catch (refreshError) {
+            console.error('Erro ao atualizar token automaticamente:', refreshError)
+            
+            // Se falhar ao atualizar o token, limpar estado e redirecionar para login
+            if (process.client) {
+              localStorage.removeItem('auth_token')
+              localStorage.removeItem('refresh_token')
+            }
+            accessToken.value = null
+            refreshToken.value = null
+            navigateTo('/login')
+          }
+        } else if (process.client && localStorage.getItem('refresh_token')) {
+          // Fallback: tentar com o token do localStorage se disponível
+          try {
+            const localRefreshToken = localStorage.getItem('refresh_token')
+            const response = await axios.post(`${config.public.apiBaseUrl}/api/auth/token/refresh/`, {
+              refresh: localRefreshToken
+            })
+            
+            if (response.data.access) {
+              // Atualizar tokens
+              accessToken.value = response.data.access
               localStorage.setItem('auth_token', response.data.access)
+              
+              if (response.data.refresh) {
+                refreshToken.value = response.data.refresh
+                localStorage.setItem('refresh_token', response.data.refresh)
+              }
               
               // Atualizar o header da requisição original
               originalRequest.headers.Authorization = `Bearer ${response.data.access}`
               
               // Reenviar a requisição original
-              return axios(originalRequest)
+              return api(originalRequest)
             }
-          } catch (refreshError) {
-            console.error('Erro ao atualizar token:', refreshError)
-            
-            // Se falhar ao atualizar o token, redirecionar para login
+          } catch (e) {
+            console.error('Fallback refresh falhou:', e)
+            // Limpar tudo e redirecionar
+            accessToken.value = null
+            refreshToken.value = null
             localStorage.removeItem('auth_token')
             localStorage.removeItem('refresh_token')
             navigateTo('/login')
           }
         }
-        
-        // Se não houver refresh token, redirecionar para login
-        navigateTo('/login')
-      }
-      
-      // Tratamento padrão de erros
-      if (error.response && error.response.status === 401) {
-        // Redirecionar para login se não estiver autenticado
-        navigateTo('/login')
       }
       
       return Promise.reject(error)

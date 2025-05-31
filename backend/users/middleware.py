@@ -18,12 +18,18 @@ class PermissionMiddleware:
         self.get_response = get_response
         # Endpoints que não requerem verificação de permissão
         self.public_paths = [
+            '/',  # Rota raiz
+            '/favicon.ico',  # Favicon
+            '/api/docs/',  # Documentação da API
             '/api/auth/token/',  
             '/api/auth/register/',
             '/api/auth/token/refresh/',  
             '/api/auth/password-reset/',
             '/api/auth/password-reset/confirm/',
             '/admin/',
+            '/admin/login/',
+            # Rotas de registro público
+            '/api/users/register/',
             # Adicionar endpoints do Djoser que devem ser públicos
             '/api/auth/users/', 
             '/api/auth/users/activation/',
@@ -34,6 +40,9 @@ class PermissionMiddleware:
             '/api/schema/',
             '/api/schema/swagger-ui/',
             '/api/schema/redoc/',
+            # Arquivos estáticos
+            '/static/',
+            '/media/',
         ]
         
         # Mapeamento de URLs para módulos e ações
@@ -124,8 +133,13 @@ class PermissionMiddleware:
         logger.debug(f"Verificando permissões para: {request.path} [{request.method}]")
         
         # Verificar se o caminho é público
-        if any(request.path.startswith(path) for path in self.public_paths):
+        if request.path == '/' or request.path == '/favicon.ico' or any(request.path.startswith(path) for path in self.public_paths):
             logger.debug(f"Caminho {request.path} é público, permitindo acesso")
+            return self.get_response(request)
+        
+        # Verificar se é um arquivo estático
+        if request.path.startswith('/static/') or request.path.startswith('/media/'):
+            logger.debug(f"Caminho {request.path} é um arquivo estático, permitindo acesso")
             return self.get_response(request)
         
         # Verificar informações de autenticação

@@ -184,7 +184,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, defineEmits } from 'vue'
-import { useTaskService } from '~/services/taskService'
+import { useTaskService } from '~/services/api/tasks'
+import { useProjectService } from '~/services/api/projects'
+import { useNotification } from '~/composables/useNotification'
 import { useNotification } from '~/composables/useNotification'
 import draggable from 'vuedraggable'
 import type { Task } from '~/services/taskService'
@@ -250,161 +252,132 @@ function getStatusClass(status?: string) {
 
 // Funções de gerenciamento de sprints
 async function fetchSprints() {
-  if (!props.projectId) return
   loading.value = true
   error.value = null
   
   try {
-    // Simulação - em um ambiente real, você usaria um serviço de API para buscar sprints
-    // Exemplo: const result = await sprintService.getByProject(props.projectId)
-    
-    // Para demonstração, vamos criar algumas sprints fictícias
-    sprints.value = [
-      { id: 1, name: 'Sprint 1 - Planejamento', start_date: '2025-05-01', end_date: '2025-05-14', goal: 'Definir requisitos e planejar o projeto', project: props.projectId },
-      { id: 2, name: 'Sprint 2 - MVP', start_date: '2025-05-15', end_date: '2025-05-28', goal: 'Desenvolver o MVP com funcionalidades básicas', project: props.projectId }
-    ]
-    
-    // Buscar todas as tarefas do projeto
-    await fetchTasks()
-    
-    // Inicializar o mapa de tarefas por sprint
-    sprints.value.forEach(sprint => {
-      // Simulação - em um ambiente real, você buscaria as tarefas associadas a cada sprint
-      // Para demonstração, vamos distribuir as tarefas aleatoriamente
-      const tasksForSprint = allTasks.value.filter((_, index) => index % sprints.value.length === sprint.id % sprints.value.length)
-      sprintTasksMap.value[sprint.id] = [...tasksForSprint]
+    const response = await projectService.listSprints({
+      projeto: props.projectId,
+      ordering: 'start_date'
     })
     
-    // Tarefas disponíveis são as que não estão em nenhuma sprint
-    updateAvailableTasks()
+    sprints.value = response.results
     
-    emit('sprintsUpdated', sprints.value)
+    // Inicializar o mapa de tarefas por sprint
+    response.results.forEach(sprint => {
+      if (!sprintTasksMap.value[sprint.id]) {
+        sprintTasksMap.value[sprint.id] = []
+      }
+    })
   } catch (err: any) {
     error.value = err
-    showApiError(err, 'Falha ao carregar sprints')
+    console.error('Erro ao buscar sprints:', err)
+    showApiError(err)
   } finally {
     loading.value = false
   }
 }
 
-async function fetchTasks() {
-  try {
-    const result = await taskService.fetchTasks({ projeto: Number(props.projectId) })
-    allTasks.value = Array.isArray(result) ? result : result.results || []
-  } catch (err: any) {
-    showApiError(err, 'Falha ao carregar tarefas')
-  }
-}
-
-function updateAvailableTasks() {
-  // Identificar todas as tarefas que já estão em sprints
-  const tasksInSprints = new Set()
-  Object.values(sprintTasksMap.value).forEach(tasks => {
-    tasks.forEach(task => tasksInSprints.add(task.id))
-  })
-  
-  // Filtrar as tarefas disponíveis (que não estão em nenhuma sprint)
-  availableTasks.value = allTasks.value.filter(task => !tasksInSprints.has(task.id))
-}
-
-function editSprint(sprint: any) {
-  editingSprint.value = { ...sprint }
-  sprintForm.value = {
-    name: sprint.name,
-    start_date: sprint.start_date,
-    end_date: sprint.end_date,
-    goal: sprint.goal || '',
-    project: Number(props.projectId)
-  }
-  showCreateSprintModal.value = false
-}
-
-function closeSprintModal() {
-  showCreateSprintModal.value = false
-  editingSprint.value = null
-  resetSprintForm()
-}
-
-function resetSprintForm() {
-  sprintForm.value = {
-    name: '',
-    start_date: '',
-    end_date: '',
-    goal: '',
-    project: Number(props.projectId)
-  }
-}
-
 async function saveSprint() {
+  savingForm.value = true
+  
   try {
+    const { success: notifySuccess, showApiError } = useNotification()
+    
     if (editingSprint.value) {
       // Atualizar sprint existente
-      const updatedSprint = {
-        ...editingSprint.value,
-        name: sprintForm.value.name,
-        start_date: sprintForm.value.start_date,
-        end_date: sprintForm.value.end_date,
-        goal: sprintForm.value.goal
-      }
+      const updatedSprint = await projectService.updateSprint(editingSprint.value.id, {
+        nome: sprintForm.value.name,
+        descricao: sprintForm.value.goal,
+        data_inicio: sprintForm.value.start_date,
+        data_fim: sprintForm.value.end_date,
+        projeto: props.projectId
+      })
       
-      // Simulação - em um ambiente real, você usaria um serviço de API para atualizar a sprint
-      // Exemplo: await sprintService.update(editingSprint.value.id, updatedSprint)
-      
-      const index = sprints.value.findIndex(s => s.id === editingSprint.value.id)
-      if (index !== -1) {
-        sprints.value[index] = updatedSprint
+      // Atualizar localmente
+      const sprintIndex = sprints.value.findIndex(s => s.id === editingSprint.value?.id)
+      if (sprintIndex !== -1) {
+        sprints.value[sprintIndex] = {
+          ...updatedSprint,
+          name: updatedSprint.nome,
+          start_date: updatedSprint.data_inicio,
+          end_date: updatedSprint.data_fim
+        }
       }
       
       notifySuccess('Sprint atualizada com sucesso!')
+      emit('sprint-updated', updatedSprint)
     } else {
       // Criar nova sprint
-      const newSprint = {
-        id: Date.now(), // Simulação de ID único
-        ...sprintForm.value,
-        project: Number(props.projectId)
-      }
+      const newSprint = await projectService.createSprint({
+        nome: sprintForm.value.name,
+        descricao: sprintForm.value.goal,
+        data_inicio: sprintForm.value.start_date,
+        data_fim: sprintForm.value.end_date,
+        projeto: props.projectId
+      })
       
-      // Simulação - em um ambiente real, você usaria um serviço de API para criar a sprint
-      // Exemplo: const createdSprint = await sprintService.create(newSprint)
+      // Adicionar localmente
+      sprints.value.push({
+        ...newSprint,
+        id: newSprint.id,
+        name: newSprint.nome,
+        start_date: newSprint.data_inicio,
+        end_date: newSprint.data_fim,
+        project: newSprint.projeto
+      })
       
-      sprints.value.push(newSprint)
       sprintTasksMap.value[newSprint.id] = []
-      
       notifySuccess('Sprint criada com sucesso!')
+      emit('sprint-created', newSprint)
     }
     
     closeSprintModal()
-    emit('sprintsUpdated', sprints.value)
-  } catch (error: any) {
-    showApiError(error, editingSprint.value ? 'Falha ao atualizar sprint' : 'Falha ao criar sprint')
+  } catch (err: any) {
+    showApiError(err, 'Erro ao salvar sprint')
+    console.error('Erro ao salvar sprint:', err)
+  } finally {
+    savingForm.value = false
   }
 }
 
 async function confirmDeleteSprint(sprintId: number) {
-  const confirmed = await confirm(
+  const { confirm: confirmDialog, success: notifySuccess, showApiError } = useNotification()
+  
+  // Confirmar exclusão
+  const isConfirmed = await confirmDialog(
     'Excluir Sprint',
-    'Tem certeza que deseja excluir esta sprint? Todas as tarefas associadas serão desvinculadas.',
-    { confirmButtonText: 'Excluir', cancelButtonText: 'Cancelar', type: 'danger' }
+    'Tem certeza que deseja excluir esta sprint? Esta ação não pode ser desfeita e todas as tarefas associadas serão desvinculadas.',
+    'Excluir',
+    'Cancelar'
   )
   
-  if (confirmed) {
+  if (isConfirmed) {
+    deletingSprint.value = sprintId
+    
     try {
-      // Simulação - em um ambiente real, você usaria um serviço de API para excluir a sprint
-      // Exemplo: await sprintService.delete(sprintId)
+      await projectService.destroySprint(sprintId)
       
-      // Mover todas as tarefas desta sprint para "disponíveis"
+      // Remover localmente
+      sprints.value = sprints.value.filter(sprint => sprint.id !== sprintId)
+      
+      // Limpar tarefas associadas
       if (sprintTasksMap.value[sprintId]) {
-        availableTasks.value = [...availableTasks.value, ...sprintTasksMap.value[sprintId]]
+        // Mover tarefas de volta para disponíveis
+        const tasksToMove = [...sprintTasksMap.value[sprintId]]
+        availableTasks.value = [...availableTasks.value, ...tasksToMove]
+        
+        // Remover do mapa
         delete sprintTasksMap.value[sprintId]
       }
       
-      // Remover a sprint da lista
-      sprints.value = sprints.value.filter(s => s.id !== sprintId)
-      
       notifySuccess('Sprint excluída com sucesso!')
-      emit('sprintsUpdated', sprints.value)
-    } catch (error: any) {
-      showApiError(error, 'Falha ao excluir sprint')
+      emit('sprint-deleted', sprintId)
+    } catch (err: any) {
+      showApiError(err, 'Erro ao excluir sprint')
+      console.error('Erro ao excluir sprint:', err)
+    } finally {
+      deletingSprint.value = null
     }
   }
 }

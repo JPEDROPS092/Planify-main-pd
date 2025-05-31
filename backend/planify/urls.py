@@ -15,7 +15,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 # Criando um router padrão para a API
 router = DefaultRouter()
 
+# View para redirecionar a raiz para a documentação da API
+def redirect_to_api_docs(request):
+    return redirect('/api/schema/swagger-ui/')
+
 urlpatterns = [
+    # Rota raiz
+    path('', redirect_to_api_docs, name='api-docs-redirect'),
+    
     # Admin do Django
     path('admin/', admin.site.urls),
     
@@ -23,6 +30,7 @@ urlpatterns = [
     path('api/auth/', include('djoser.urls')),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/users/', include('users.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/tasks/', include('tasks.urls')),
     path('api/teams/', include('teams.urls')),

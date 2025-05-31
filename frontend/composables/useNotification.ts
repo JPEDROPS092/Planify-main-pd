@@ -1,5 +1,5 @@
 import { ref, reactive } from 'vue'
-import { ApiError } from '~/services/api'
+import { ApiError } from '~/services/api/config'
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info' | 'loading'
 

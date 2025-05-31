@@ -57,8 +57,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useProjectService } from '~/services/projectService'
+import { useRoute, useRouter } from 'vue-router'
+import { useProjectService } from '~/services/api/projects'
 import { useNotification } from '~/composables/useNotification'
 import KanbanBoard from '~/components/project/KanbanBoard.vue'
 import SprintManagement from '~/components/project/SprintManagement.vue'
@@ -83,10 +83,18 @@ async function fetchProject() {
   error.value = null
   
   try {
-    project.value = await projectService.getById(Number(projectId.value))
+    project.value = await projectService.retrieveProjeto(Number(projectId.value))
+    // Mapear campos para o formato esperado pelo componente
+    project.value = {
+      ...project.value,
+      name: project.value.titulo,
+      description: project.value.descricao,
+      start_date: project.value.data_inicio,
+      end_date: project.value.data_fim
+    }
   } catch (err: any) {
     error.value = err
-    showApiError(err, 'Falha ao carregar projeto')
+    showApiError(err, 'Erro ao carregar projeto')
   } finally {
     loading.value = false
   }

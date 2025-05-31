@@ -94,12 +94,28 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    profile = UserProfileSerializer(required=False)
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'full_name', 'role', 'password']
+        fields = ['username', 'email', 'full_name', 'role', 'password', 'profile']
+    
+    def validate(self, attrs):
+        # Garantir que o papel seja válido
+        role = attrs.get('role', 'TEAM_MEMBER')
+        if role not in dict(User.ROLE_CHOICES):
+            raise serializers.ValidationError({"role": "Papel inválido. Escolha um dos papéis válidos."})
+        return attrs
     
     def create(self, validated_data):
+        # Extrair dados do perfil se fornecidos
+        profile_data = validated_data.pop('profile', None)
+        
+        # Definir o papel padrão como TEAM_MEMBER se não for especificado
+        if 'role' not in validated_data:
+            validated_data['role'] = 'TEAM_MEMBER'
+        
+        # Criar o usuário
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -108,10 +124,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
         
         user.set_password(validated_data['password'])
+        user.is_active = True  # Garantir que o usuário esteja ativo
+        user.password_change_required = False  # Não exigir mudança de senha no primeiro login
         user.save()
         
-        # Create default profile
-        UserProfile.objects.create(user=user)
+        # Criar perfil do usuário
+        if profile_data:
+            UserProfile.objects.create(user=user, **profile_data)
+        else:
+            UserProfile.objects.create(user=user)
         
         return user
 

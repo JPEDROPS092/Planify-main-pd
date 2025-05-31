@@ -7,6 +7,7 @@ from .views import (
     ForgotPasswordView, ResetPasswordConfirmView
 )
 from .auth_views import CustomTokenObtainPairView
+from .register_views import RegisterView
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -18,6 +19,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('register/', RegisterView.as_view(), name='register'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('reset-password/', ResetPasswordConfirmView.as_view(), name='reset_password'),
     path('users/<int:user_pk>/access-profiles/', UserAccessProfileViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-access-profiles'),

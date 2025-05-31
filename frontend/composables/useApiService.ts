@@ -1,7 +1,8 @@
 /**
  * Composable para utilização dos serviços da API
  */
-import { useAuth, ApiError } from '~/services/api'
+import { ApiError } from '~/services/api/config'
+import { useAuth } from '~/composables/useAuth'
 import { useNotification } from '~/composables/useNotification'
 
 export const useApiService = () => {
@@ -72,7 +73,23 @@ export const useApiService = () => {
     }
   }
   
+  /**
+   * Função para tratar erros da API e retornar mensagens amigáveis
+   * @param error Erro capturado
+   * @returns Mensagem de erro formatada
+   */
+  const handleApiError = (error: any): string => {
+    if (error instanceof ApiError) {
+      return error.friendlyMessage
+    } else if (error instanceof Error) {
+      return error.message
+    } else {
+      return 'Ocorreu um erro inesperado. Por favor, tente novamente.'
+    }
+  }
+  
   return {
-    withLoading
+    withLoading,
+    handleApiError
   }
 }
