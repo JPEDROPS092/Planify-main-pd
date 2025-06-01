@@ -1,10 +1,25 @@
+<!--
+  CardContent.vue
+  
+  Componente para o conteúdo principal de um Card.
+  
+  Props:
+  - class: Classes CSS adicionais
+  
+  Exemplo de uso:
+  <CardContent>
+    <p>Este é o conteúdo principal do card.</p>
+  </CardContent>
+-->
+
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+// [Refatorado para padronização] - Documentação adicionada
+import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
-  class?: HTMLAttributes['class']
-}>()
+  class?: HTMLAttributes['class'];
+}>();
 </script>
 
 <template>

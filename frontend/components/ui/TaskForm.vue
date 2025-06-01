@@ -13,23 +13,23 @@
 <script setup lang="ts">
 // Este componente é um wrapper para o componente TaskForm em /components/task/TaskForm.vue
 // Mantido para compatibilidade com código existente
-import TaskForm from './task/TaskForm.vue'
-import type { Tarefa } from '~/services/api/types'
+import TaskForm from './task/TaskForm.vue';
+import type { Tarefa } from '~/services/api/types';
 
 const props = defineProps({
   task: {
     type: Object as () => Tarefa | null,
-    default: null
+    default: null,
   },
   projectId: {
     type: Number,
-    default: null
+    default: null,
   },
   loading: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-defineEmits(['submit', 'cancel'])
+defineEmits(['submit', 'cancel']);
 </script>

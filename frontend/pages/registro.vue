@@ -1,6 +1,10 @@
 <template>
-  <div class="container flex h-screen w-screen flex-col items-center justify-center">
-    <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+  <div
+    class="container flex h-screen w-screen flex-col items-center justify-center"
+  >
+    <div
+      class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]"
+    >
       <div class="flex flex-col space-y-2 text-center">
         <h1 class="text-2xl font-semibold tracking-tight">Criar uma conta</h1>
         <p class="text-sm text-muted-foreground">
@@ -73,8 +77,8 @@
                 required
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
               :disabled="isLoading"
             >
@@ -95,7 +99,10 @@
         </div>
         <div class="text-center text-sm">
           Já tem uma conta?
-          <NuxtLink to="/login" class="text-primary underline-offset-4 hover:underline">
+          <NuxtLink
+            to="/login"
+            class="text-primary underline-offset-4 hover:underline"
+          >
             Faça login
           </NuxtLink>
         </div>
@@ -105,60 +112,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive } from 'vue';
 
-const { $api } = useNuxtApp()
-const isLoading = ref(false)
-const error = ref('')
+const { $api } = useNuxtApp();
+const isLoading = ref(false);
+const error = ref('');
 
 const formData = reactive({
   username: '',
   email: '',
   full_name: '',
   password: '',
-  re_password: ''
-})
+  re_password: '',
+});
 
 const handleRegistro = async () => {
   // Validar se as senhas coincidem
   if (formData.password !== formData.re_password) {
-    error.value = 'As senhas não coincidem'
-    return
+    error.value = 'As senhas não coincidem';
+    return;
   }
 
-  isLoading.value = true
-  error.value = ''
-  
+  isLoading.value = true;
+  error.value = '';
+
   try {
     await $api.post('/api/auth/users/', {
       username: formData.username,
       email: formData.email,
       full_name: formData.full_name,
       password: formData.password,
-      re_password: formData.re_password
-    })
-    
+      re_password: formData.re_password,
+    });
+
     // Redirecionar para a página de login com mensagem de sucesso
-    navigateTo('/login?registered=true')
+    navigateTo('/login?registered=true');
   } catch (err: any) {
-    console.error('Erro ao registrar:', err)
-    
+    console.error('Erro ao registrar:', err);
+
     // Exibir mensagens de erro específicas da API
     if (err.response && err.response.data) {
-      const errorData = err.response.data
+      const errorData = err.response.data;
       if (typeof errorData === 'object') {
         const errorMessages = Object.entries(errorData)
-          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-          .join('; ')
-        error.value = errorMessages
+          .map(
+            ([key, value]) =>
+              `${key}: ${Array.isArray(value) ? value.join(', ') : value}`
+          )
+          .join('; ');
+        error.value = errorMessages;
       } else {
-        error.value = 'Erro ao criar conta. Por favor, tente novamente.'
+        error.value = 'Erro ao criar conta. Por favor, tente novamente.';
       }
     } else {
-      error.value = 'Erro ao criar conta. Por favor, tente novamente.'
+      error.value = 'Erro ao criar conta. Por favor, tente novamente.';
     }
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>

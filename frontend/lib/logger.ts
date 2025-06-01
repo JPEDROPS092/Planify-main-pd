@@ -8,9 +8,9 @@ type LogLevel = 'info' | 'debug' | 'warn' | 'error';
 
 // Cores para diferentes níveis de log
 const LOG_COLORS = {
-  info: '#4CAF50',  // Verde
+  info: '#4CAF50', // Verde
   debug: '#2196F3', // Azul
-  warn: '#FF9800',  // Laranja
+  warn: '#FF9800', // Laranja
   error: '#F44336', // Vermelho
 };
 
@@ -24,16 +24,16 @@ export type LogModule = 'auth' | 'api' | 'projects' | 'app' | 'router';
  */
 export function createLogger(module: LogModule) {
   const prefix = `[Planify:${module}]`;
-  
+
   // Verificar se estamos em produção
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   // Em produção, não exibimos logs de debug
   const shouldLog = (level: LogLevel) => {
     if (isProduction && level === 'debug') return false;
     return true;
   };
-  
+
   return {
     /**
      * Log de informação
@@ -41,36 +41,52 @@ export function createLogger(module: LogModule) {
      */
     info: (...args: any[]) => {
       if (!shouldLog('info')) return;
-      console.log(`%c${prefix}`, `color: ${LOG_COLORS.info}; font-weight: bold;`, ...args);
+      console.log(
+        `%c${prefix}`,
+        `color: ${LOG_COLORS.info}; font-weight: bold;`,
+        ...args
+      );
     },
-    
+
     /**
      * Log de debug (apenas em desenvolvimento)
      * @param message Mensagem ou objeto para logar
      */
     debug: (...args: any[]) => {
       if (!shouldLog('debug')) return;
-      console.log(`%c${prefix}`, `color: ${LOG_COLORS.debug}; font-weight: bold;`, ...args);
+      console.log(
+        `%c${prefix}`,
+        `color: ${LOG_COLORS.debug}; font-weight: bold;`,
+        ...args
+      );
     },
-    
+
     /**
      * Log de aviso
      * @param message Mensagem ou objeto para logar
      */
     warn: (...args: any[]) => {
       if (!shouldLog('warn')) return;
-      console.warn(`%c${prefix}`, `color: ${LOG_COLORS.warn}; font-weight: bold;`, ...args);
+      console.warn(
+        `%c${prefix}`,
+        `color: ${LOG_COLORS.warn}; font-weight: bold;`,
+        ...args
+      );
     },
-    
+
     /**
      * Log de erro
      * @param message Mensagem ou objeto para logar
      */
     error: (...args: any[]) => {
       if (!shouldLog('error')) return;
-      console.error(`%c${prefix}`, `color: ${LOG_COLORS.error}; font-weight: bold;`, ...args);
+      console.error(
+        `%c${prefix}`,
+        `color: ${LOG_COLORS.error}; font-weight: bold;`,
+        ...args
+      );
     },
-    
+
     /**
      * Log de requisição HTTP
      * @param method Método HTTP
@@ -79,11 +95,13 @@ export function createLogger(module: LogModule) {
      */
     http: (method: string, url: string, status?: number) => {
       if (!shouldLog('info')) return;
-      
-      const statusColor = status 
-        ? (status >= 200 && status < 300 ? LOG_COLORS.info : LOG_COLORS.error)
+
+      const statusColor = status
+        ? status >= 200 && status < 300
+          ? LOG_COLORS.info
+          : LOG_COLORS.error
         : LOG_COLORS.debug;
-      
+
       const statusText = status ? `[${status}]` : '';
       console.log(
         `%c${prefix} %c${method} %c${url} %c${statusText}`,
@@ -92,7 +110,7 @@ export function createLogger(module: LogModule) {
         'color: #607D8B;',
         `color: ${statusColor};`
       );
-    }
+    },
   };
 }
 

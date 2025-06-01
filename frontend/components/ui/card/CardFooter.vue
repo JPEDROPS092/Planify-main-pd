@@ -1,10 +1,27 @@
+<!--
+  CardFooter.vue
+  
+  Componente para o rodapé de um Card.
+  Geralmente contém ações relacionadas ao card.
+  
+  Props:
+  - class: Classes CSS adicionais
+  
+  Exemplo de uso:
+  <CardFooter>
+    <Button variant="outline">Cancelar</Button>
+    <Button>Salvar</Button>
+  </CardFooter>
+-->
+
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+// [Refatorado para padronização] - Documentação adicionada
+import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
-  class?: HTMLAttributes['class']
-}>()
+  class?: HTMLAttributes['class'];
+}>();
 </script>
 
 <template>

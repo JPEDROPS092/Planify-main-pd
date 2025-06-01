@@ -1,279 +1,370 @@
 /**
- * Serviço de comunicações do Planify
- * Fornece funções para gerenciamento de mensagens e notificações
+ * Serviço de comunicações
+ * Gerado a partir da especificação OpenAPI
  */
-import { ref } from 'vue'
-import { useApiService } from '~/composables/useApiService'
-import { useAuth } from '~/composables/useAuth'
-import * as api from './communications'
+import { createFetchClient } from './auth';
+import { createFormData } from './config';
 import type {
   ChatMensagem,
   ChatMensagemRequest,
   Notificacao,
   NotificacaoRequest,
-  PaginatedResponse
-} from './types'
+  PaginatedResponse,
+} from './types';
+
+// Função para obter a instância do cliente fetch apenas quando necessário
+const getApi = () => {
+  return createFetchClient();
+};
 
 /**
- * Composable para gerenciamento de mensagens de chat
- * Fornece estado reativo e métodos para gerenciar mensagens
+ * Listar mensagens de chat
+ * @param params Parâmetros de paginação e filtro
  */
-export const useChatService = () => {
-  const { handleApiError, withLoading } = useApiService()
-  const { user } = useAuth()
-  
-  const mensagens = ref<ChatMensagem[]>([])
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
-  
-  /**
-   * Carrega mensagens de um projeto
-   * @param projetoId ID do projeto
-   * @param params Parâmetros adicionais
-   * @returns Lista de mensagens
-   */
-  const fetchMensagens = async (projetoId: number, params?: { page?: number, ordering?: string }) => {
-    isLoading.value = true
-    error.value = null
-    
-    try {
-      const response = await api.listMensagens({
-        projeto: projetoId,
-        ...params
-      })
-      mensagens.value = response.results
-      return response
-    } catch (err: any) {
-      error.value = handleApiError(err)
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-  
-  /**
-   * Envia uma nova mensagem
-   * @param mensagemData Dados da mensagem
-   * @returns Mensagem criada
-   */
-  const enviarMensagem = async (mensagemData: ChatMensagemRequest) => {
-    return withLoading(
-      async () => {
-        try {
-          const novaMensagem = await api.createMensagem(mensagemData)
-          mensagens.value = [...mensagens.value, novaMensagem]
-          return novaMensagem
-        } catch (err: any) {
-          error.value = handleApiError(err)
-          throw err
-        }
-      },
-      { 
-        loadingMessage: 'Enviando mensagem...',
-        successMessage: 'Mensagem enviada com sucesso!'
-      }
-    )
-  }
-  
-  /**
-   * Marca uma mensagem como lida
-   * @param mensagemId ID da mensagem
-   * @returns Mensagem atualizada
-   */
-  const marcarComoLida = async (mensagemId: number) => {
-    try {
-      const mensagemAtualizada = await api.marcarComoLidaMensagem(mensagemId)
-      
-      // Atualiza a mensagem na lista
-      mensagens.value = mensagens.value.map(m => 
-        m.id === mensagemId ? mensagemAtualizada : m
-      )
-      
-      return mensagemAtualizada
-    } catch (err: any) {
-      error.value = handleApiError(err)
-      throw err
-    }
-  }
-  
-  /**
-   * Obtém mensagens não lidas
-   * @returns Lista de mensagens não lidas
-   */
-  const getMensagensNaoLidas = async () => {
-    try {
-      return await api.retrieveMensagensNaoLidas()
-    } catch (err: any) {
-      error.value = handleApiError(err)
-      throw err
-    }
-  }
-  
-  /**
-   * Exclui uma mensagem
-   * @param mensagemId ID da mensagem
-   * @returns void
-   */
-  const excluirMensagem = async (mensagemId: number) => {
-    return withLoading(
-      async () => {
-        try {
-          await api.destroyMensagem(mensagemId)
-          
-          // Remove a mensagem da lista
-          mensagens.value = mensagens.value.filter(m => m.id !== mensagemId)
-          
-          return true
-        } catch (err: any) {
-          error.value = handleApiError(err)
-          throw err
-        }
-      },
-      {
-        loadingMessage: 'Excluindo mensagem...',
-        successMessage: 'Mensagem excluída com sucesso!'
-      }
-    )
-  }
-  
-  return {
-    mensagens,
-    isLoading,
-    error,
-    fetchMensagens,
-    enviarMensagem,
-    marcarComoLida,
-    getMensagensNaoLidas,
-    excluirMensagem
-  }
+export async function listMensagens(params?: {
+  ordering?: string;
+  page?: number;
+  projeto?: number;
+}): Promise<PaginatedResponse<ChatMensagem>> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.ordering) queryParams.append('ordering', params.ordering);
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.projeto) queryParams.append('projeto', params.projeto.toString());
+
+  const queryString = queryParams.toString();
+  const url = `/api/communications/mensagens/${queryString ? `?${queryString}` : ''}`;
+
+  return getApi()<PaginatedResponse<ChatMensagem>>(url, {
+    method: 'GET',
+  });
 }
 
 /**
- * Composable para gerenciamento de notificações
- * Fornece estado reativo e métodos para gerenciar notificações
+ * Criar uma nova mensagem de chat
+ * @param payload Dados da mensagem
  */
-export const useNotificationService = () => {
-  const { handleApiError, withLoading } = useApiService()
-  const { user } = useAuth()
-  
-  const notificacoes = ref<Notificacao[]>([])
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
-  
-  /**
-   * Carrega notificações do usuário atual
-   * @param params Parâmetros adicionais
-   * @returns Lista paginada de notificações
-   */
-  const fetchNotificacoes = async (params?: { page?: number, lida?: boolean, ordering?: string }) => {
-    isLoading.value = true
-    error.value = null
-    
-    try {
-      const userId = user.value?.id
-      if (!userId) {
-        throw new Error('Usuário não autenticado')
-      }
-      
-      const response = await api.listNotificacoes({
-        usuario: userId,
-        ...params
-      })
-      
-      notificacoes.value = response.results
-      return response
-    } catch (err: any) {
-      error.value = handleApiError(err)
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-  
-  /**
-   * Marca uma notificação como lida
-   * @param notificacaoId ID da notificação
-   * @returns Notificação atualizada
-   */
-  const marcarComoLida = async (notificacaoId: number) => {
-    try {
-      const notificacaoAtualizada = await api.marcarComoLidaNotificacao(notificacaoId)
-      
-      // Atualiza a notificação na lista
-      notificacoes.value = notificacoes.value.map(n => 
-        n.id === notificacaoId ? notificacaoAtualizada : n
-      )
-      
-      return notificacaoAtualizada
-    } catch (err: any) {
-      error.value = handleApiError(err)
-      throw err
-    }
-  }
-  
-  /**
-   * Marca todas as notificações como lidas
-   * @returns void
-   */
-  const marcarTodasComoLidas = async () => {
-    return withLoading(
-      async () => {
-        try {
-          await api.marcarTodasComoLidasNotificacoes()
-          
-          // Atualiza todas as notificações na lista como lidas
-          notificacoes.value = notificacoes.value.map(n => ({
-            ...n,
-            lida: true
-          }))
-          
-          return true
-        } catch (err: any) {
-          error.value = handleApiError(err)
-          throw err
-        }
+export async function createMensagem(
+  payload: ChatMensagemRequest
+): Promise<ChatMensagem> {
+  // Se houver um anexo, usar FormData
+  if (payload.anexo) {
+    const formData = createFormData(payload);
+
+    return getApi()<ChatMensagem>('/api/communications/mensagens/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': undefined, // O navegador definirá automaticamente com o boundary correto
       },
-      {
-        loadingMessage: 'Marcando notificações como lidas...',
-        successMessage: 'Todas as notificações foram marcadas como lidas!'
-      }
-    )
+    });
   }
-  
-  /**
-   * Exclui uma notificação
-   * @param notificacaoId ID da notificação
-   * @returns void
-   */
-  const excluirNotificacao = async (notificacaoId: number) => {
-    return withLoading(
-      async () => {
-        try {
-          await api.destroyNotificacao(notificacaoId)
-          
-          // Remove a notificação da lista
-          notificacoes.value = notificacoes.value.filter(n => n.id !== notificacaoId)
-          
-          return true
-        } catch (err: any) {
-          error.value = handleApiError(err)
-          throw err
-        }
+
+  return getApi()<ChatMensagem>('/api/communications/mensagens/', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/**
+ * Obter detalhes de uma mensagem de chat
+ * @param id ID da mensagem
+ */
+export async function retrieveMensagem(id: number): Promise<ChatMensagem> {
+  return getApi()<ChatMensagem>(`/api/communications/mensagens/${id}/`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Atualizar uma mensagem de chat
+ * @param id ID da mensagem
+ * @param payload Dados da mensagem
+ */
+export async function updateMensagem(
+  id: number,
+  payload: ChatMensagemRequest
+): Promise<ChatMensagem> {
+  // Se houver um anexo, usar FormData
+  if (payload.anexo) {
+    const formData = createFormData(payload);
+
+    return getApi()<ChatMensagem>(`/api/communications/mensagens/${id}/`, {
+      method: 'PUT',
+      body: formData,
+      headers: {
+        'Content-Type': undefined, // O navegador definirá automaticamente com o boundary correto
       },
-      {
-        loadingMessage: 'Excluindo notificação...',
-        successMessage: 'Notificação excluída com sucesso!'
-      }
-    )
+    });
   }
-  
-  return {
-    notificacoes,
-    isLoading,
-    error,
-    fetchNotificacoes,
-    marcarComoLida,
-    marcarTodasComoLidas,
-    excluirNotificacao
+
+  return getApi()<ChatMensagem>(`/api/communications/mensagens/${id}/`, {
+    method: 'PUT',
+    body: payload,
+  });
+}
+
+/**
+ * Atualizar parcialmente uma mensagem de chat
+ * @param id ID da mensagem
+ * @param payload Dados parciais da mensagem
+ */
+export async function partialUpdateMensagem(
+  id: number,
+  payload: Partial<ChatMensagemRequest>
+): Promise<ChatMensagem> {
+  // Se houver um anexo, usar FormData
+  if (payload.anexo) {
+    const formData = createFormData(payload);
+
+    return getApi()<ChatMensagem>(`/api/communications/mensagens/${id}/`, {
+      method: 'PATCH',
+      body: formData,
+      headers: {
+        'Content-Type': undefined, // O navegador definirá automaticamente com o boundary correto
+      },
+    });
   }
+
+  return getApi()<ChatMensagem>(`/api/communications/mensagens/${id}/`, {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+/**
+ * Excluir uma mensagem de chat
+ * @param id ID da mensagem
+ */
+export async function destroyMensagem(id: number): Promise<void> {
+  return getApi()<void>(`/api/communications/mensagens/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Marcar uma mensagem como lida
+ * @param id ID da mensagem
+ */
+export async function marcarComoLidaMensagem(
+  id: number
+): Promise<ChatMensagem> {
+  return getApi()<ChatMensagem>(
+    `/api/communications/mensagens/${id}/marcar_como_lida/`,
+    {
+      method: 'POST',
+    }
+  );
+}
+
+/**
+ * Obter mensagens não lidas
+ */
+export async function retrieveMensagensNaoLidas(): Promise<ChatMensagem[]> {
+  return getApi()<ChatMensagem[]>(
+    '/api/communications/mensagens/mensagens_nao_lidas/',
+    {
+      method: 'GET',
+    }
+  );
+}
+
+/**
+ * Listar notificações
+ * @param params Parâmetros de paginação e filtro
+ */
+export async function listNotificacoes(params?: {
+  lida?: boolean;
+  ordering?: string;
+  page?: number;
+  usuario?: number;
+}): Promise<PaginatedResponse<Notificacao>> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.lida !== undefined)
+    queryParams.append('lida', params.lida.toString());
+  if (params?.ordering) queryParams.append('ordering', params.ordering);
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.usuario) queryParams.append('usuario', params.usuario.toString());
+
+  const queryString = queryParams.toString();
+  const url = `/api/communications/notificacoes/${queryString ? `?${queryString}` : ''}`;
+
+  return getApi()<PaginatedResponse<Notificacao>>(url, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Criar uma nova notificação
+ * @param payload Dados da notificação
+ */
+export async function createNotificacao(
+  payload: NotificacaoRequest
+): Promise<Notificacao> {
+  return getApi()<Notificacao>('/api/communications/notificacoes/', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/**
+ * Obter detalhes de uma notificação
+ * @param id ID da notificação
+ */
+export async function retrieveNotificacao(id: number): Promise<Notificacao> {
+  return getApi()<Notificacao>(`/api/communications/notificacoes/${id}/`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Atualizar uma notificação
+ * @param id ID da notificação
+ * @param payload Dados da notificação
+ */
+export async function updateNotificacao(
+  id: number,
+  payload: NotificacaoRequest
+): Promise<Notificacao> {
+  return getApi()<Notificacao>(`/api/communications/notificacoes/${id}/`, {
+    method: 'PUT',
+    body: payload,
+  });
+}
+
+/**
+ * Atualizar parcialmente uma notificação
+ * @param id ID da notificação
+ * @param payload Dados parciais da notificação
+ */
+export async function partialUpdateNotificacao(
+  id: number,
+  payload: Partial<NotificacaoRequest>
+): Promise<Notificacao> {
+  return getApi()<Notificacao>(`/api/communications/notificacoes/${id}/`, {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+/**
+ * Excluir uma notificação
+ * @param id ID da notificação
+ */
+export async function destroyNotificacao(id: number): Promise<void> {
+  return getApi()<void>(`/api/communications/notificacoes/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Marcar uma notificação como lida
+ * @param id ID da notificação
+ */
+export async function marcarComoLidaNotificacao(
+  id: number
+): Promise<Notificacao> {
+  return getApi()<Notificacao>(
+    `/api/communications/notificacoes/${id}/marcar_como_lida/`,
+    {
+      method: 'POST',
+    }
+  );
+}
+
+/**
+ * Marcar todas as notificações como lidas
+ */
+export async function marcarTodasComoLidasNotificacoes(): Promise<void> {
+  return getApi()<void>(
+    '/api/communications/notificacoes/marcar_todas_como_lidas/',
+    {
+      method: 'POST',
+    }
+  );
+}
+
+/**
+ * Listar configurações de notificações
+ * @param params Parâmetros de paginação e filtro
+ */
+export async function listConfiguracoes(params?: {
+  ordering?: string;
+  page?: number;
+  usuario?: number;
+}): Promise<PaginatedResponse<any>> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.ordering) queryParams.append('ordering', params.ordering);
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.usuario) queryParams.append('usuario', params.usuario.toString());
+
+  const queryString = queryParams.toString();
+  const url = `/api/communications/configuracoes/${queryString ? `?${queryString}` : ''}`;
+
+  return getApi()<PaginatedResponse<any>>(url, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Criar uma nova configuração de notificação
+ * @param payload Dados da configuração
+ */
+export async function createConfiguracao(payload: any): Promise<any> {
+  return getApi()<any>('/api/communications/configuracoes/', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/**
+ * Obter detalhes de uma configuração de notificação
+ * @param id ID da configuração
+ */
+export async function retrieveConfiguracao(id: number): Promise<any> {
+  return getApi()<any>(`/api/communications/configuracoes/${id}/`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Atualizar uma configuração de notificação
+ * @param id ID da configuração
+ * @param payload Dados da configuração
+ */
+export async function updateConfiguracao(
+  id: number,
+  payload: any
+): Promise<any> {
+  return getApi()<any>(`/api/communications/configuracoes/${id}/`, {
+    method: 'PUT',
+    body: payload,
+  });
+}
+
+/**
+ * Atualizar parcialmente uma configuração de notificação
+ * @param id ID da configuração
+ * @param payload Dados parciais da configuração
+ */
+export async function partialUpdateConfiguracao(
+  id: number,
+  payload: any
+): Promise<any> {
+  return getApi()<any>(`/api/communications/configuracoes/${id}/`, {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+/**
+ * Excluir uma configuração de notificação
+ * @param id ID da configuração
+ */
+export async function destroyConfiguracao(id: number): Promise<void> {
+  return getApi()<void>(`/api/communications/configuracoes/${id}/`, {
+    method: 'DELETE',
+  });
 }

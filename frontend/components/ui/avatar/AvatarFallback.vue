@@ -1,7 +1,21 @@
-<script setup lang="ts">
-import { AvatarFallback, type AvatarFallbackProps } from 'reka-ui'
+<!--
+  AvatarFallback.vue
+  
+  Componente para exibir um fallback quando a imagem do avatar não está disponível.
+  Geralmente usado dentro do componente Avatar.
+  
+  Exemplo de uso:
+  <Avatar>
+    <AvatarImage src="/path/to/image.jpg" alt="Avatar do usuário" />
+    <AvatarFallback>JP</AvatarFallback>
+  </Avatar>
+-->
 
-const props = defineProps<AvatarFallbackProps>()
+<script setup lang="ts">
+// [Refatorado para padronização] - Documentação adicionada
+import { AvatarFallback, type AvatarFallbackProps } from 'reka-ui';
+
+const props = defineProps<AvatarFallbackProps>();
 </script>
 
 <template>

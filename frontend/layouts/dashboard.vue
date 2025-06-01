@@ -2,106 +2,139 @@
   <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
     <!-- Componente de notificações -->
     <NotificationContainer />
-    
+
     <!-- Mobile menu button - Agora com animação e feedback visual -->
-    <button 
-      @click="toggleMobileSidebar" 
+    <button
+      @click="toggleMobileSidebar"
       class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all hover:bg-blue-700 active:scale-95 md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       aria-label="Menu de navegação"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        class="h-6 w-6"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
       </svg>
     </button>
-    
+
     <!-- Modais -->
-    <Modal
-      v-model="isNewProjectModalOpen"
-      title="Novo Projeto"
-      size="lg"
-    >
+    <Modal v-model="isNewProjectModalOpen" title="Novo Projeto" size="lg">
       <ProjectForm
         :loading="isProjectFormLoading"
         @submit="handleProjectSubmit"
         @cancel="isNewProjectModalOpen = false"
       />
     </Modal>
-    
-    <Modal
-      v-model="isNewTaskModalOpen"
-      title="Nova Tarefa"
-      size="lg"
-    >
+
+    <Modal v-model="isNewTaskModalOpen" title="Nova Tarefa" size="lg">
       <TaskForm
         :loading="isTaskFormLoading"
         @submit="handleTaskSubmit"
         @cancel="isNewTaskModalOpen = false"
       />
     </Modal>
-    
+
     <!-- Overlay para fechar o menu em dispositivos móveis -->
-    <div 
-      v-if="isSidebarOpen" 
-      @click="toggleMobileSidebar" 
+    <div
+      v-if="isSidebarOpen"
+      @click="toggleMobileSidebar"
       class="fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity md:hidden"
       aria-hidden="true"
     ></div>
 
     <!-- Sidebar aprimorada -->
-    <aside 
+    <aside
       :class="[
         'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-gray-200 bg-white shadow-lg transition-all duration-300 ease-in-out dark:border-gray-700 dark:bg-gray-800',
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        isSidebarCollapsed ? 'md:w-20' : 'md:w-64'
+        isSidebarCollapsed ? 'md:w-20' : 'md:w-64',
       ]"
     >
       <!-- Logo e cabeçalho da sidebar -->
-      <div class="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700">
+      <div
+        class="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700"
+      >
         <div class="flex items-center space-x-2 overflow-hidden">
-          <img src="/img/logop.png" alt="Planify Logo" class="h-8 w-8 flex-shrink-0" />
-          <span 
+          <img
+            src="/img/logop.png"
+            alt="Planify Logo"
+            class="h-8 w-8 flex-shrink-0"
+          />
+          <span
             :class="[
               'text-xl font-semibold text-gray-800 truncate transition-opacity duration-300 dark:text-white',
-              isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+              isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100',
             ]"
           >
             Planify
           </span>
         </div>
-        <button 
-          @click="toggleMobileSidebar" 
+        <button
+          @click="toggleMobileSidebar"
           class="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 md:hidden focus:outline-none focus:ring-2 focus:ring-gray-500"
           aria-label="Fechar menu"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-6 w-6">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            class="h-6 w-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
-      
+
       <!-- Menu de navegação aprimorado -->
       <nav class="flex-1 overflow-y-auto py-4 px-3">
         <ul class="space-y-1">
           <li>
-            <a 
-              href="/dashboard" 
+            <a
+              href="/dashboard"
               :class="[
                 'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                route.path === '/dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
+                route.path === '/dashboard'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
                 :class="[
                   'h-6 w-6 flex-shrink-0 transition-colors duration-200',
-                  route.path === '/dashboard' ? 'text-blue-600 dark:text-blue-400' : ''
+                  route.path === '/dashboard'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : '',
                 ]"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                />
               </svg>
-              <span 
+              <span
                 :class="[
                   'ml-3 whitespace-nowrap transition-opacity duration-200',
-                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100',
                 ]"
               >
                 Dashboard
@@ -109,25 +142,38 @@
             </a>
           </li>
           <li>
-            <a 
-              href="/projetos" 
+            <a
+              href="/projetos"
               :class="[
                 'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                route.path.startsWith('/projetos') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
+                route.path.startsWith('/projetos')
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
                 :class="[
                   'h-6 w-6 flex-shrink-0 transition-colors duration-200',
-                  route.path.startsWith('/projetos') ? 'text-blue-600 dark:text-blue-400' : ''
+                  route.path.startsWith('/projetos')
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : '',
                 ]"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
               </svg>
-              <span 
+              <span
                 :class="[
                   'ml-3 whitespace-nowrap transition-opacity duration-200',
-                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100',
                 ]"
               >
                 Projetos
@@ -135,25 +181,38 @@
             </a>
           </li>
           <li>
-            <a 
-              href="/tarefas" 
+            <a
+              href="/tarefas"
               :class="[
                 'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                route.path.startsWith('/tarefas') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
+                route.path.startsWith('/tarefas')
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
                 :class="[
                   'h-6 w-6 flex-shrink-0 transition-colors duration-200',
-                  route.path.startsWith('/tarefas') ? 'text-blue-600 dark:text-blue-400' : ''
+                  route.path.startsWith('/tarefas')
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : '',
                 ]"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
               </svg>
-              <span 
+              <span
                 :class="[
                   'ml-3 whitespace-nowrap transition-opacity duration-200',
-                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100',
                 ]"
               >
                 Tarefas
@@ -161,25 +220,38 @@
             </a>
           </li>
           <li>
-            <a 
-              href="/equipes" 
+            <a
+              href="/equipes"
               :class="[
                 'flex items-center rounded-lg p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                route.path.startsWith('/equipes') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''
+                route.path.startsWith('/equipes')
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
                 :class="[
                   'h-6 w-6 flex-shrink-0 transition-colors duration-200',
-                  route.path.startsWith('/equipes') ? 'text-blue-600 dark:text-blue-400' : ''
+                  route.path.startsWith('/equipes')
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : '',
                 ]"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
-              <span 
+              <span
                 :class="[
                   'ml-3 whitespace-nowrap transition-opacity duration-200',
-                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100'
+                  isSidebarCollapsed ? 'md:opacity-0' : 'md:opacity-100',
                 ]"
               >
                 Equipes
@@ -187,156 +259,307 @@
             </a>
           </li>
           <li>
-            <a 
-              href="/comunicacoes" 
+            <a
+              href="/comunicacoes"
               :class="[
                 'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/comunicacoes') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                route.path.startsWith('/comunicacoes')
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="h-5 w-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Comunicações</span>
+              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']"
+                >Comunicações</span
+              >
             </a>
           </li>
           <li>
-            <a 
-              href="/documentos" 
+            <a
+              href="/documentos"
               :class="[
                 'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/documentos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                route.path.startsWith('/documentos')
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="h-5 w-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Documentos</span>
+              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']"
+                >Documentos</span
+              >
             </a>
           </li>
           <li>
-            <a 
-              href="/custos" 
+            <a
+              href="/custos"
               :class="[
                 'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/custos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                route.path.startsWith('/custos')
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="h-5 w-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Custos</span>
+              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']"
+                >Custos</span
+              >
             </a>
           </li>
           <li>
-            <a 
-              href="/riscos" 
+            <a
+              href="/riscos"
               :class="[
                 'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-                route.path.startsWith('/riscos') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : ''
+                route.path.startsWith('/riscos')
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                  : '',
               ]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="h-5 w-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
-              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']">Riscos</span>
+              <span :class="['ml-3', isSidebarCollapsed ? 'md:hidden' : '']"
+                >Riscos</span
+              >
             </a>
           </li>
         </ul>
       </nav>
     </aside>
-    
+
     <!-- Conteúdo principal com transição suave -->
-    <div 
+    <div
       :class="[
         'flex-1 flex flex-col transition-all duration-300 ease-in-out',
-        isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
+        isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64',
       ]"
     >
       <!-- Header aprimorado -->
-      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <header
+        class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
         <div class="flex items-center space-x-4">
-          <button 
-            @click="toggleSidebar" 
+          <button
+            @click="toggleSidebar"
             class="hidden rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:ring-gray-700 md:block"
             aria-label="Toggle sidebar"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-              <path v-if="isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="h-5 w-5"
+            >
+              <path
+                v-if="isSidebarCollapsed"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
+              <path
+                v-else
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
             </svg>
           </button>
-          <h1 class="text-xl font-semibold text-gray-800 truncate dark:text-white">{{ pageTitle }}</h1>
+          <h1
+            class="text-xl font-semibold text-gray-800 truncate dark:text-white"
+          >
+            {{ pageTitle }}
+          </h1>
         </div>
-        
+
         <!-- Ações rápidas aprimoradas -->
         <div class="flex items-center space-x-3">
-          <button 
-            @click="openNewProjectModal" 
+          <button
+            @click="openNewProjectModal"
             class="flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
             aria-label="Criar novo projeto"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1.5 h-4 w-4">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="mr-1.5 h-4 w-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             <span class="hidden sm:inline">Novo Projeto</span>
             <span class="inline sm:hidden">Projeto</span>
           </button>
-          
-          <button 
-            @click="openNewTaskModal" 
+
+          <button
+            @click="openNewTaskModal"
             class="flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-green-700 hover:shadow active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:bg-green-700 dark:hover:bg-green-800"
             aria-label="Criar nova tarefa"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mr-1.5 h-4 w-4">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="mr-1.5 h-4 w-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             <span class="hidden sm:inline">Nova Tarefa</span>
             <span class="inline sm:hidden">Tarefa</span>
           </button>
-          
+
           <!-- Tema -->
-          <button 
-            @click="toggleTheme" 
+          <button
+            @click="toggleTheme"
             class="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
-            <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            <svg
+              v-if="isDarkMode"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="h-5 w-5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+              />
             </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="h-5 w-5">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            <svg
+              v-else
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="h-5 w-5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
             </svg>
           </button>
-          
+
           <!-- Perfil do usuário -->
           <div class="relative" ref="dropdownRef">
-            <button 
-              @click="isDropdownOpen = !isDropdownOpen" 
+            <button
+              @click="isDropdownOpen = !isDropdownOpen"
               class="flex items-center rounded-full bg-gray-200 text-sm font-medium text-gray-700 focus:outline-none dark:bg-gray-700 dark:text-gray-300"
             >
               <span class="sr-only">Abrir menu do usuário</span>
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white">
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white"
+              >
                 {{ userInitials }}
               </div>
             </button>
-            
+
             <!-- Menu do usuário -->
-            <div 
-              v-if="isDropdownOpen" 
+            <div
+              v-if="isDropdownOpen"
               class="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
             >
-              <div class="border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</p>
-                <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
+              <div
+                class="border-b border-gray-200 px-4 py-2 dark:border-gray-700"
+              >
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ userName }}
+                </p>
+                <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+                  {{ userRole }}
+                </p>
               </div>
-              <a href="/perfil" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Perfil</a>
-              <a href="/configuracoes" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Configurações</a>
-              <button @click="logout" class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700">Sair</button>
+              <a
+                href="/perfil"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >Perfil</a
+              >
+              <a
+                href="/configuracoes"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >Configurações</a
+              >
+              <button
+                @click="logout"
+                class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+              >
+                Sair
+              </button>
             </div>
           </div>
         </div>
       </header>
-      
+
       <!-- Conteúdo da página com melhor espaçamento e responsividade -->
       <main class="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
         <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -349,56 +572,63 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeMount, watch, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuth } from '~/composables/useAuth'
-import { useNotification } from '~/composables/useNotification'
-import { useProjectService } from '~/services/api/projects'
-import { useTaskService } from '~/services/api/tasks'
-import Modal from '~/components/Modal.vue'
-import ProjectForm from '~/components/ProjectForm.vue'
-import TaskForm from '~/components/TaskForm.vue'
-import NotificationContainer from '~/components/ui/NotificationContainer.vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeMount,
+  watch,
+  onBeforeUnmount,
+} from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuth } from '~/composables/useAuth';
+import { useNotification } from '~/composables/useNotification';
+import { useProjectService } from '~/services/api/projects';
+import { useTaskService } from '~/services/api/tasks';
+import Modal from '~/components/Modal.vue';
+import ProjectForm from '~/components/ProjectForm.vue';
+import TaskForm from '~/components/TaskForm.vue';
+import NotificationContainer from '~/components/ui/NotificationContainer.vue';
 
 // Router e rota atual
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 
 // Serviços
-const projectService = useProjectService()
-const taskService = useTaskService()
-const notify = useNotification()
+const projectService = useProjectService();
+const taskService = useTaskService();
+const notify = useNotification();
 
 // Estado do sidebar
-const isSidebarOpen = ref(false)
-const isSidebarCollapsed = ref(false)
-const isMobile = ref(false)
+const isSidebarOpen = ref(false);
+const isSidebarCollapsed = ref(false);
+const isMobile = ref(false);
 
 // Estado do dropdown do usuário
-const isDropdownOpen = ref(false)
-const dropdownRef = ref(null)
+const isDropdownOpen = ref(false);
+const dropdownRef = ref(null);
 
 // Estado do tema
-const isDarkMode = ref(false)
+const isDarkMode = ref(false);
 
 // Dados do usuário
-const userName = ref('Usuário')
-const userRole = ref('Membro')
+const userName = ref('Usuário');
+const userRole = ref('Membro');
 const userInitials = computed(() => {
-  if (!userName.value) return 'U'
+  if (!userName.value) return 'U';
   return userName.value
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .slice(0, 2)
     .join('')
-    .toUpperCase()
-})
+    .toUpperCase();
+});
 
 // Estado dos modais
-const isNewProjectModalOpen = ref(false)
-const isNewTaskModalOpen = ref(false)
-const isProjectFormLoading = ref(false)
-const isTaskFormLoading = ref(false)
+const isNewProjectModalOpen = ref(false);
+const isNewTaskModalOpen = ref(false);
+const isProjectFormLoading = ref(false);
+const isTaskFormLoading = ref(false);
 
 // Título da página
 const pageTitles = {
@@ -411,215 +641,211 @@ const pageTitles = {
   '/custos': 'Custos',
   '/riscos': 'Riscos',
   '/perfil': 'Perfil',
-  '/configuracoes': 'Configurações'
-}
+  '/configuracoes': 'Configurações',
+};
 
 const pageTitle = computed(() => {
   // Verificar correspondências exatas primeiro
   if (pageTitles[route.path]) {
-    return pageTitles[route.path]
+    return pageTitles[route.path];
   }
-  
+
   // Verificar correspondências parciais
   for (const [path, title] of Object.entries(pageTitles)) {
     if (route.path.startsWith(path) && path !== '/dashboard') {
       // Se temos um ID na rota, adicionar "Detalhes" ao título
       if (route.params.id) {
-        return `${title} - Detalhes`
+        return `${title} - Detalhes`;
       }
-      return title
+      return title;
     }
   }
-  
+
   // Fallback
-  return 'Planify'
-})
+  return 'Planify';
+});
 
 // Verificar se é dispositivo móvel
 const checkIfMobile = () => {
   if (process.client) {
-    isMobile.value = window.innerWidth < 768
+    isMobile.value = window.innerWidth < 768;
     if (isMobile.value) {
-      isSidebarOpen.value = false
+      isSidebarOpen.value = false;
     } else {
-      isSidebarOpen.value = true
+      isSidebarOpen.value = true;
     }
   }
-}
+};
 
 onBeforeMount(() => {
   if (process.client) {
-    checkIfMobile()
-    window.addEventListener('resize', checkIfMobile)
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
   }
-})
+});
 
 onMounted(() => {
   // Carregar dados do usuário
-  loadUserData()
-  
+  loadUserData();
+
   // Inicializar tema
-  initializeTheme()
-  
+  initializeTheme();
+
   // Inicializar dropdown
-  initializeDropdown()
-  
+  initializeDropdown();
+
   // Verificar se é dispositivo móvel
-  checkIfMobile()
-  
+  checkIfMobile();
+
   // Verificar preferência do sidebar
-  const savedSidebarState = localStorage.getItem('sidebarCollapsed')
+  const savedSidebarState = localStorage.getItem('sidebarCollapsed');
   if (savedSidebarState) {
-    isSidebarCollapsed.value = savedSidebarState === 'true'
+    isSidebarCollapsed.value = savedSidebarState === 'true';
   }
-})
+});
 
 // Carregar dados do usuário
 const loadUserData = async () => {
   try {
-    const { getCurrentUser } = useAuth()
-    const user = await getCurrentUser()
-    
+    const { getCurrentUser } = useAuth();
+    const user = await getCurrentUser();
+
     if (user) {
-      userName.value = user.name || user.username || 'Usuário'
-      userRole.value = user.is_staff ? 'Administrador' : 'Membro'
+      userName.value = user.name || user.username || 'Usuário';
+      userRole.value = user.is_staff ? 'Administrador' : 'Membro';
     }
   } catch (error) {
-    console.error('Erro ao carregar dados do usuário:', error)
+    console.error('Erro ao carregar dados do usuário:', error);
   }
-}
+};
 
 // Inicializar tema
 const initializeTheme = () => {
   if (process.client) {
     // Verificar preferência salva
-    const savedTheme = localStorage.getItem('theme')
-    
+    const savedTheme = localStorage.getItem('theme');
+
     // Verificar preferência do sistema
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)'
+    ).matches;
+
     // Definir tema inicial
-    isDarkMode.value = savedTheme === 'dark' || (!savedTheme && prefersDark)
-    
+    isDarkMode.value = savedTheme === 'dark' || (!savedTheme && prefersDark);
+
     // Aplicar tema
-    applyTheme()
+    applyTheme();
   }
-}
+};
 
 // Aplicar tema
 const applyTheme = () => {
   if (isDarkMode.value) {
-    document.documentElement.classList.add('dark')
-    localStorage.setItem('theme', 'dark')
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
   } else {
-    document.documentElement.classList.remove('dark')
-    localStorage.setItem('theme', 'light')
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
   }
-}
+};
 
 // Alternar tema
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value
-  applyTheme()
-}
+  isDarkMode.value = !isDarkMode.value;
+  applyTheme();
+};
 
 // Inicializar dropdown
 const initializeDropdown = () => {
   if (process.client) {
     const handleClickOutside = (event) => {
       if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
-        isDropdownOpen.value = false
+        isDropdownOpen.value = false;
       }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside)
-    
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
     // Limpar listener ao desmontar
     onBeforeUnmount(() => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    })
+      document.removeEventListener('mousedown', handleClickOutside);
+    });
   }
-}
+};
 
 // Logout
 const logout = () => {
-  const { logout: authLogout } = useAuth()
-  authLogout()
-}
+  const { logout: authLogout } = useAuth();
+  authLogout();
+};
 
 // Toggle sidebar
 const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-  localStorage.setItem('sidebarCollapsed', isSidebarCollapsed.value.toString())
-}
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+  localStorage.setItem('sidebarCollapsed', isSidebarCollapsed.value.toString());
+};
 
 // Funções para abrir modais
 const openNewProjectModal = () => {
-  isNewProjectModalOpen.value = true
-}
+  isNewProjectModalOpen.value = true;
+};
 
 const openNewTaskModal = () => {
-  isNewTaskModalOpen.value = true
-}
+  isNewTaskModalOpen.value = true;
+};
 
 // Funções para manipular submissões de formulários
 const handleProjectSubmit = async (projectData) => {
-  isProjectFormLoading.value = true
-  
+  isProjectFormLoading.value = true;
+
   try {
-    await notify.withLoading(
-      projectService.create(projectData),
-      {
-        loadingMessage: 'Criando projeto...',
-        successMessage: 'Projeto criado com sucesso!',
-        errorMessage: 'Erro ao criar projeto'
-      }
-    )
-    
-    isNewProjectModalOpen.value = false
-    
+    await notify.withLoading(projectService.create(projectData), {
+      loadingMessage: 'Criando projeto...',
+      successMessage: 'Projeto criado com sucesso!',
+      errorMessage: 'Erro ao criar projeto',
+    });
+
+    isNewProjectModalOpen.value = false;
+
     // Redirecionar para a página de projetos se não estiver nela
     if (!route.path.startsWith('/projetos')) {
-      router.push('/projetos')
+      router.push('/projetos');
     } else {
       // Recarregar a página para mostrar o novo projeto
-      router.go()
+      router.go();
     }
   } catch (error) {
-    console.error('Erro ao criar projeto:', error)
+    console.error('Erro ao criar projeto:', error);
   } finally {
-    isProjectFormLoading.value = false
+    isProjectFormLoading.value = false;
   }
-}
+};
 
 const handleTaskSubmit = async (taskData) => {
-  isTaskFormLoading.value = true
-  
+  isTaskFormLoading.value = true;
+
   try {
-    await notify.withLoading(
-      taskService.create(taskData),
-      {
-        loadingMessage: 'Criando tarefa...',
-        successMessage: 'Tarefa criada com sucesso!',
-        errorMessage: 'Erro ao criar tarefa'
-      }
-    )
-    
-    isNewTaskModalOpen.value = false
-    
+    await notify.withLoading(taskService.create(taskData), {
+      loadingMessage: 'Criando tarefa...',
+      successMessage: 'Tarefa criada com sucesso!',
+      errorMessage: 'Erro ao criar tarefa',
+    });
+
+    isNewTaskModalOpen.value = false;
+
     // Redirecionar para a página de tarefas se não estiver nela
     if (!route.path.startsWith('/tarefas')) {
-      router.push('/tarefas')
+      router.push('/tarefas');
     } else {
       // Recarregar a página para mostrar a nova tarefa
-      router.go()
+      router.go();
     }
   } catch (error) {
-    console.error('Erro ao criar tarefa:', error)
+    console.error('Erro ao criar tarefa:', error);
   } finally {
-    isTaskFormLoading.value = false
+    isTaskFormLoading.value = false;
   }
-}
+};
 </script>
 
 <style scoped>

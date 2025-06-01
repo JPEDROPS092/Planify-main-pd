@@ -7,38 +7,38 @@
 export enum RoleEnum {
   ADMIN = 'ADMIN',
   PROJECT_MANAGER = 'PROJECT_MANAGER',
-  TEAM_MEMBER = 'TEAM_MEMBER'
+  TEAM_MEMBER = 'TEAM_MEMBER',
 }
 
 export enum ActionEnum {
   VIEW = 'VIEW',
   CREATE = 'CREATE',
   EDIT = 'EDIT',
-  DELETE = 'DELETE'
+  DELETE = 'DELETE',
 }
 
 export enum AlertaStatusEnum {
   ATIVO = 'ATIVO',
   RESOLVIDO = 'RESOLVIDO',
-  IGNORADO = 'IGNORADO'
+  IGNORADO = 'IGNORADO',
 }
 
 export enum AlertaTipoEnum {
   PROJETO = 'PROJETO',
-  TAREFA = 'TAREFA'
+  TAREFA = 'TAREFA',
 }
 
 export enum ThemePreferenceEnum {
   LIGHT = 'LIGHT',
   DARK = 'DARK',
-  SYSTEM = 'SYSTEM'
+  SYSTEM = 'SYSTEM',
 }
 
 export enum PrioridadeEnum {
   BAIXA = 'BAIXA',
   MEDIA = 'MEDIA',
   ALTA = 'ALTA',
-  CRITICA = 'CRITICA'
+  CRITICA = 'CRITICA',
 }
 
 export enum StatusEnum {
@@ -46,7 +46,7 @@ export enum StatusEnum {
   EM_ANDAMENTO = 'EM_ANDAMENTO',
   CONCLUIDO = 'CONCLUIDO',
   BLOQUEADO = 'BLOQUEADO',
-  CANCELADO = 'CANCELADO'
+  CANCELADO = 'CANCELADO',
 }
 
 export enum NovoStatusEnum {
@@ -55,7 +55,7 @@ export enum NovoStatusEnum {
   MITIGADO = 'MITIGADO',
   ACEITO = 'ACEITO',
   TRANSFERIDO = 'TRANSFERIDO',
-  FECHADO = 'FECHADO'
+  FECHADO = 'FECHADO',
 }
 
 export enum ProbabilidadeEnum {
@@ -63,7 +63,7 @@ export enum ProbabilidadeEnum {
   BAIXA = 'BAIXA',
   MEDIA = 'MEDIA',
   ALTA = 'ALTA',
-  MUITO_ALTA = 'MUITO_ALTA'
+  MUITO_ALTA = 'MUITO_ALTA',
 }
 
 export enum ImpactoEnum {
@@ -71,18 +71,18 @@ export enum ImpactoEnum {
   BAIXO = 'BAIXO',
   MEDIO = 'MEDIO',
   ALTO = 'ALTO',
-  MUITO_ALTO = 'MUITO_ALTO'
+  MUITO_ALTO = 'MUITO_ALTO',
 }
 
 export enum MembroProjetoPapelEnum {
   GERENTE = 'GERENTE',
   DESENVOLVEDOR = 'DESENVOLVEDOR',
-  TESTADOR = 'TESTADOR'
+  TESTADOR = 'TESTADOR',
 }
 
 export enum CustoTipoEnum {
   FIXO = 'FIXO',
-  VARIAVEL = 'VARIAVEL'
+  VARIAVEL = 'VARIAVEL',
 }
 
 export enum DocumentoTipoEnum {
@@ -91,7 +91,7 @@ export enum DocumentoTipoEnum {
   TECNICO = 'TECNICO',
   TESTE = 'TESTE',
   USUARIO = 'USUARIO',
-  OUTRO = 'OUTRO'
+  OUTRO = 'OUTRO',
 }
 
 // Interfaces para paginação

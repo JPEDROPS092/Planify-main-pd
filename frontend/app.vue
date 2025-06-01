@@ -5,13 +5,13 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted } from 'vue';
 
 // Configuração inicial do tema
 onMounted(() => {
-  const theme = localStorage.getItem('theme')
+  const theme = localStorage.getItem('theme');
   if (theme === 'dark') {
-    document.documentElement.classList.add('dark')
+    document.documentElement.classList.add('dark');
   }
-})
+});
 </script>

@@ -5,19 +5,19 @@
 </template>
 
 <script setup>
-import { useAuth } from '~/composables/useAuth'
+import { useAuth } from '~/composables/useAuth';
 
 // Verificar autenticação
-const { isAuthenticated, checkAuth } = useAuth()
+const { isAuthenticated, checkAuth } = useAuth();
 
 // Verificar autenticação ao carregar a página
 onMounted(async () => {
-  await checkAuth()
-})
+  await checkAuth();
+});
 
 // Definir layout
 definePageMeta({
   layout: 'dashboard',
-  middleware: ['auth']
-})
+  middleware: ['auth'],
+});
 </script>
