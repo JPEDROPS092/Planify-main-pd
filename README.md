@@ -157,4 +157,4 @@ Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](./LIC
 ---
 
 
->
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JPEDROPS092/Planify-main-pd)
