@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useProjectService } from '~/services/api/projects';
+import { useProjectService } from '~/services/api/services/projectService';
 import { useNotification } from '~/composables/useNotification';
 import KanbanBoard from '~/components/project/KanbanBoard.vue';
 import SprintManagement from '~/components/project/SprintManagement.vue';

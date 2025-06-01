@@ -534,15 +534,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  listRiscos,
-  createRisco,
-  retrieveRisco,
-  updateRisco,
-  destroyRisco,
-} from '~/services/api/risks';
-import { listProjetos } from '~/services/api/projects';
-import { useAuth } from '~/services/api/auth';
+import { useRiskService } from '~/services/api/services/riskService';
+import { useProjectService } from '~/services/api/services/projectService';
+import { useAuth } from '~/composables/useAuth';
 import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({

@@ -583,11 +583,11 @@ import {
 import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useNotification } from '~/composables/useNotification';
-import { useProjectService } from '~/services/api/projects';
-import { useTaskService } from '~/services/api/tasks';
-import Modal from '~/components/Modal.vue';
-import ProjectForm from '~/components/ProjectForm.vue';
-import TaskForm from '~/components/TaskForm.vue';
+import { useProjectService } from '~/services/api/services/projectService';
+import { useTaskService } from '~/services/api/services/taskService';
+import Modal from '~/components/ui/Modal.vue';
+import ProjectForm from '~/components/ui/ProjectForm.vue';
+import TaskForm from '~/components/ui/TaskForm.vue';
 import NotificationContainer from '~/components/ui/NotificationContainer.vue';
 
 // Router e rota atual

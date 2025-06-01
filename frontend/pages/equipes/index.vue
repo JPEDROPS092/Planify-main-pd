@@ -313,14 +313,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  listEquipes,
-  createEquipe,
-  retrieveEquipe,
-  updateEquipe,
-  destroyEquipe,
-} from '~/services/api/teams';
-import { useAuth } from '~/services/api/auth';
+import { useTeamService } from '~/services/api/services/teamService';
+import { useUserService } from '~/services/api/userService';
+import { useAuth } from '~/composables/useAuth';
 import { useNuxtApp } from '#app';
 
 const router = useRouter();

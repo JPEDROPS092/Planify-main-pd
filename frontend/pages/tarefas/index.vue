@@ -509,15 +509,9 @@
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import {
-  listTarefas,
-  createTarefa,
-  retrieveTarefa,
-  updateTarefa,
-  destroyTarefa,
-} from '~/services/api/tasks';
-import { listProjetos } from '~/services/api/projects';
-import { useAuth } from '~/services/api/auth';
+import { useTaskService } from '~/services/api/services/taskService';
+import { useProjectService } from '~/services/api/services/projectService';
+import { useAuth } from '~/composables/useAuth';
 
 definePageMeta({
   middleware: ['auth'],

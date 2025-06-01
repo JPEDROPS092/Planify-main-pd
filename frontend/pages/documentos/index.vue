@@ -498,14 +498,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  listDocumentos,
-  createDocumento,
-  retrieveDocumento,
-  downloadDocumento,
-} from '~/services/api/documents';
-import { listProjetos } from '~/services/api/projects';
-import { useAuth } from '~/services/api/auth';
+import { useDocumentService } from '~/services/api/documentService';
+import { useProjectService } from '~/services/api/services/projectService';
+import { useAuth } from '~/composables/useAuth';
 import { createFormData } from '~/services/api/config';
 
 definePageMeta({

@@ -1,7 +1,6 @@
-
 # 🌟 **Planify** - Sistema de Gerenciamento de Projetos de P&D
 
-![Planify Banner](https://via.placeholder.com/1200x400?text=Planify+-+Gerenciamento+de+Projetos+de+P%26D)
+![1748802879852](image/README/1748802879852.png)
 
 **Planify** é uma solução completa para gerenciamento de projetos de Pesquisa e Desenvolvimento (P&D), projetada para promover colaboração, eficiência e organização. Com uma interface moderna e recursos avançados, o Planify é a ferramenta ideal para equipes que buscam excelência em seus projetos.
 
@@ -155,6 +154,3 @@ Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](./LIC
 - **Documentação**: [Planify Docs](https://planify-docs.com)
 
 ---
-
-
->

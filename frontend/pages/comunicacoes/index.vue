@@ -479,15 +479,10 @@
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import {
-  listMensagens,
-  createMensagem,
-  retrieveMensagem,
-  updateMensagem,
-} from '~/services/api/communications';
-import { listProjetos } from '~/services/api/projects';
-import { listUsuarios } from '~/services/api/teams';
-import { useAuth } from '~/services/api/auth';
+import { useMessageService, useNotificationService } from '~/services/api'; // Updated import from central API
+import { useProjectService } from '~/services/api'; // Updated import from central API
+import { useUserService } from '~/services/api'; // Updated import from central API
+import { useAuth } from '~/composables/useAuth';
 import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({
@@ -496,7 +491,12 @@ definePageMeta({
 
 const router = useRouter();
 const route = useRoute();
-const { $api } = useNuxtApp();
+
+// Get services from the new API structure
+const { messages: messagesRef, isLoading, error: serviceError, fetchMessages, sendMessage: sendNewMessage, markAsRead: markMessageAsRead } = useMessageService();
+const { fetchProjects } = useProjectService();
+const { fetchUsers } = useUserService();
+const { user } = useAuth();
 
 // Estado
 const messages = ref([]);
@@ -506,6 +506,8 @@ const loading = ref(true);
 const error = ref(null);
 const currentPage = ref(1);
 const totalPages = ref(1);
+const totalItems = ref(0);
+const itemsPerPage = ref(10);
 const searchQuery = ref('');
 const typeFilter = ref('');
 const statusFilter = ref('');
@@ -580,57 +582,69 @@ onBeforeMount(() => {
 // Escutar evento global para abrir o modal
 onMounted(() => {
   // Buscar dados iniciais
-  fetchProjects();
-  fetchUsers();
-  fetchMessages();
+  loadInitialData();
 });
 
-// Buscar mensagens
-const fetchMessages = async () => {
+// Função para carregar dados iniciais
+const loadInitialData = async () => {
+  try {
+    await Promise.all([
+      loadProjects(),
+      loadUsers(),
+      loadMessages()
+    ]);
+  } catch (err) {
+    console.error('Erro ao carregar dados iniciais:', err);
+    error.value = 'Ocorreu um erro ao carregar os dados. Por favor, recarregue a página.';
+  }
+};
+
+// Buscar mensagens usando o serviço de API
+const loadMessages = async () => {
   loading.value = true;
   error.value = null;
 
   try {
     const params = {
       page: currentPage.value,
-      ordering: '-data_envio',
+      ordering: '-created_at',
     };
 
     if (typeFilter.value) {
-      params.tipo = typeFilter.value;
+      params.message_type = typeFilter.value;
     }
 
     if (statusFilter.value) {
-      params.status = statusFilter.value;
+      params.is_read = statusFilter.value === 'LIDA';
     }
 
     if (projectFilter.value) {
-      params.projeto = projectFilter.value;
+      params.project_id = projectFilter.value;
     }
 
     if (searchQuery.value) {
       params.search = searchQuery.value;
     }
 
-    // Usar o novo serviço de API para mensagens
-    const response = await listMensagens(params);
+    // Usar o serviço de API para mensagens
+    const response = await fetchMessages(params);
 
     messages.value = response.results.map((message) => ({
       id: message.id,
-      titulo: message.titulo,
-      conteudo: message.conteudo,
-      tipo: message.tipo,
-      tipo_display: message.tipo_display,
-      status: message.status,
-      status_display: message.status_display,
-      remetente: message.remetente,
-      remetente_nome: message.remetente_nome,
-      destinatario: message.destinatario,
-      destinatario_nome: message.destinatario_nome,
-      projeto: message.projeto,
-      projeto_nome: message.projeto_nome,
-      data_envio: message.data_envio,
-      data_leitura: message.data_leitura,
+      titulo: message.title || message.content.substring(0, 30),
+      conteudo: message.content,
+      tipo: message.is_global ? 'MENSAGEM' : 'NOTIFICACAO',
+      tipo_display: message.is_global ? 'Mensagem' : 'Notificação',
+      status: message.is_read ? 'LIDA' : 'NAO_LIDA',
+      status_display: message.is_read ? 'Lida' : 'Não lida',
+      remetente: message.sender_id,
+      remetente_nome: message.sender_name,
+      destinatario: message.recipient_id,
+      destinatario_nome: message.recipient_name,
+      projeto: message.project_id,
+      projeto_nome: message.project_name,
+      data_envio: message.created_at,
+      data_leitura: message.read_at,
     }));
 
     totalItems.value = response.count;
@@ -644,29 +658,28 @@ const fetchMessages = async () => {
   }
 };
 
-// Buscar projetos
-const fetchProjects = async () => {
+// Buscar projetos usando o serviço de API
+const loadProjects = async () => {
   try {
-    // Usar o novo serviço de API para projetos
-    const response = await listProjetos();
+    const response = await fetchProjects();
     projects.value = response.results.map((project) => ({
       id: project.id,
-      titulo: project.nome,
+      titulo: project.name || project.title,
     }));
   } catch (err) {
     console.error('Erro ao buscar projetos:', err);
   }
 };
 
-// Buscar usuários
-const fetchUsers = async () => {
+// Buscar usuários usando o serviço de API
+const loadUsers = async () => {
   try {
-    // Usar o novo serviço de API para usuários
-    const response = await listUsuarios();
+    const response = await fetchUsers();
     users.value = response.results.map((user) => ({
       id: user.id,
-      nome: user.nome,
+      nome: user.full_name || `${user.first_name} ${user.last_name}`,
       email: user.email,
+      username: user.username,
     }));
   } catch (err) {
     console.error('Erro ao buscar usuários:', err);
@@ -720,12 +733,12 @@ const openNewMessageModal = () => {
   showMessageModal.value = true;
 };
 
-// Enviar mensagem
+// Enviar mensagem usando o serviço de API
 const sendMessage = async () => {
   if (
     !messageForm.value.titulo ||
     !messageForm.value.conteudo ||
-    !messageForm.value.destinatario
+    messageForm.value.destinatarios.length === 0
   ) {
     alert('Preencha os campos obrigatórios');
     return;
@@ -734,20 +747,25 @@ const sendMessage = async () => {
   sending.value = true;
 
   try {
-    // Preparar dados da mensagem
-    const messageData = {
-      titulo: messageForm.value.titulo,
-      conteudo: messageForm.value.conteudo,
-      tipo: messageForm.value.tipo,
-      destinatario: messageForm.value.destinatario,
-      projeto: messageForm.value.projeto || null,
-    };
-
-    // Usar o novo serviço de API para criar mensagens
-    await createMensagem(messageData);
+    // Preparar dados da mensagem usando a nova estrutura
+    const isGlobal = messageForm.value.tipo === 'MENSAGEM';
+    
+    // Para mensagens globais, enviaremos uma para cada destinatário
+    const sendPromises = messageForm.value.destinatarios.map(userId => {
+      return sendNewMessage({
+        content: messageForm.value.conteudo,
+        title: messageForm.value.titulo,
+        project_id: messageForm.value.projeto || null,
+        recipient_id: userId,
+        is_global: isGlobal,
+        sender_id: user.value?.id
+      });
+    });
+    
+    await Promise.all(sendPromises);
 
     showMessageModal.value = false;
-    await fetchMessages();
+    await loadMessages();
   } catch (err) {
     console.error('Erro ao enviar mensagem:', err);
     alert('Não foi possível enviar a mensagem. Por favor, tente novamente.');
@@ -756,18 +774,11 @@ const sendMessage = async () => {
   }
 };
 
-// Marcar mensagem como lida
+// Marcar mensagem como lida usando o serviço de API
 const markAsRead = async (id) => {
   try {
-    // Buscar detalhes da mensagem primeiro
-    const messageDetails = await retrieveMensagem(id);
-
-    // Atualizar status para lida usando o novo serviço de API
-    await updateMensagem(id, {
-      ...messageDetails,
-      status: 'LIDA',
-      data_leitura: new Date().toISOString(),
-    });
+    // Marcar como lida usando o serviço
+    await markMessageAsRead(id);
 
     // Atualizar status na lista local
     const message = messages.value.find((m) => m.id === id);
@@ -788,7 +799,7 @@ const markAsRead = async (id) => {
 watch(
   [currentPage, searchQuery, typeFilter, statusFilter, projectFilter],
   () => {
-    fetchMessages();
+    loadMessages();
   }
 );
 </script>

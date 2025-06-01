@@ -3,7 +3,7 @@
  * Encapsula as funções do serviço de custos
  */
 import { ref, computed } from 'vue';
-import { costService } from '~/services/api/costService';
+import { useCostService as apiCostService } from '~/services/api/services/costService';
 import { useNotification } from './useNotification';
 import { withLoading } from './withLoading';
 import { useCostStore } from '~/stores/costStore';
@@ -43,7 +43,7 @@ export const useCostService = () => {
     error.value = null;
 
     try {
-      const response = await costService.listCustos(params);
+      const response = await apiCostService().listCustos(params);
       // Armazenar no cache
       costStore.setCosts(response.data);
       return response;
@@ -73,7 +73,7 @@ export const useCostService = () => {
     error.value = null;
 
     try {
-      const response = await costService.retrieveCusto(id);
+      const response = await apiCostService().retrieveCusto(id);
       // Armazenar no cache
       costStore.setCostDetail(id, response.data);
       return response;
@@ -95,7 +95,7 @@ export const useCostService = () => {
     return withLoading(
       async () => {
         try {
-          const response = await costService.createCusto(custoData);
+          const response = await apiCostService().createCusto(custoData);
           // Atualizar o cache
           costStore.addCost(response.data);
           notify.success('Custo criado com sucesso!');
@@ -120,7 +120,7 @@ export const useCostService = () => {
     return withLoading(
       async () => {
         try {
-          const response = await costService.updateCusto(id, custoData);
+          const response = await apiCostService().updateCusto(id, custoData);
           // Atualizar o cache
           costStore.updateCost(id, response.data);
           notify.success('Custo atualizado com sucesso!');
@@ -145,7 +145,7 @@ export const useCostService = () => {
     return withLoading(
       async () => {
         try {
-          const response = await costService.partialUpdateCusto(id, custoData);
+          const response = await apiCostService().partialUpdateCusto(id, custoData);
           // Atualizar o cache
           costStore.updateCost(id, response.data);
           notify.success('Custo atualizado com sucesso!');
@@ -169,7 +169,7 @@ export const useCostService = () => {
     return withLoading(
       async () => {
         try {
-          await costService.destroyCusto(id);
+          await apiCostService().destroyCusto(id);
           // Atualizar o cache
           costStore.removeCost(id);
           notify.success('Custo excluído com sucesso!');
@@ -194,7 +194,7 @@ export const useCostService = () => {
     error.value = null;
 
     try {
-      const response = await costService.listCategorias(params);
+      const response = await apiCostService().listCategorias(params);
       categories.value = response.results || [];
       return response;
     } catch (err) {
@@ -218,7 +218,7 @@ export const useCostService = () => {
     try {
       // Buscar custos com filtros apropriados
       const params = projectId ? { projeto: projectId } : {};
-      const response = await costService.listCustos(params);
+      const response = await apiCostService().listCustos(params);
       const custos = response.results || [];
 
       // Calcular totais por categoria

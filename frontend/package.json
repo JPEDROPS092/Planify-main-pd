@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@nuxt/image": "^1.10.0",
+    "@nuxtjs/sentry": "^8.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.510.0",
     "nuxt": "^3.17.0",
+    "ofetch": "^1.4.1",
     "pinia": "^3.0.2",
     "reka-ui": "^2.2.1",
     "sortablejs": "1.15.0",

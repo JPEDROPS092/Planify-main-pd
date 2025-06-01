@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useProjectService } from '~/services/api/projects';
+import { useProjectService } from '~/services/api/services/projectService';
 import { useAuth } from '~/composables/useAuth';
 import { useNotification } from '~/composables/useNotification';
 import Button from '~/components/ui/Button.vue';

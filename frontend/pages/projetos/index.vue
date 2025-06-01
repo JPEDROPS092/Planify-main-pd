@@ -804,9 +804,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeMount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useProjectService } from '~/services/api/projects';
-import { listAuthUsers } from '~/services/api/auth';
-import { useAuth } from '~/services/api/auth';
+import { useProjectService } from '~/services/api/services/projectService';
+import { useUserService } from '~/services/api/services/userService';
+import { useAuth } from '~/composables/useAuth';
 import { useNotification } from '~/composables/useNotification';
 
 const router = useRouter();
@@ -959,12 +959,13 @@ const fetchProjects = async () => {
 // Buscar usuários para seleção de gerente
 const fetchUsers = async () => {
   try {
-    // Usar o novo serviço de API para usuários
-    const response = await listAuthUsers();
-    users.value = response.results.map((user) => ({
+    const userService = useUserService();
+    const response = await userService.fetchUsers();
+    users.value = response.map((user) => ({
       id: user.id,
-      nome: user.full_name,
+      nome: user.full_name || `${user.first_name} ${user.last_name}`,
       email: user.email,
+      username: user.username
     }));
   } catch (err) {
     console.error('Erro ao buscar usuários:', err);

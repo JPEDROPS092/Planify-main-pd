@@ -86,9 +86,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useProjectService } from '~/services/api/projects';
+import { useProjectService } from '~/services/api/services/projectService';
 import { useNotification } from '~/composables/useNotification';
-import { useAuth } from '~/services/api/auth';
+import { useAuth } from '~/composables/useAuth';
 import type { Projeto } from '~/services/api/types';
 import Button from '~/components/ui/Button.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';

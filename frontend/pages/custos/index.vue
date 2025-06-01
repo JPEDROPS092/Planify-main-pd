@@ -400,8 +400,8 @@
   import { ref, computed, watch, onMounted, defineAsyncComponent, shallowRef } from 'vue';
   import { getUniqueKey, debounce, createShallowState } from '~/lib/performance';
   import { useRouter } from 'vue-router';
-  import { useCostService } from '~/composables/useCostService';
-  import { useProjectService } from '~/services/api/projectService';
+  import { useCostService } from '~/services/api/services/costService';
+  import { useProjectService } from '~/services/api/services/projectService';
   import { useNotification } from '~/composables/useNotification';
   // Lazy loading do componente de formulário de custos para melhorar a performance inicial da página
   const CostForm = defineAsyncComponent(() => import('~/components/ui/cost/CostForm.vue'));
