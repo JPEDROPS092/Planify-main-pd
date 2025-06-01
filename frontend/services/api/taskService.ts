@@ -1,10 +1,12 @@
 /**
  * Serviço de tarefas
  * Gerado a partir da especificação OpenAPI
+ * Otimizado com cache via Pinia
  */
 import { createFetchClient, useAuth } from './auth';
 import { createFormData } from './config';
 import { useState, computed } from '#imports';
+import { useTaskStore } from '~/stores/taskStore';
 import type {
   Tarefa,
   TarefaRequest,
@@ -333,40 +335,75 @@ export const useTaskService = () => {
     search?: string;
     sprint?: number;
     status?: string;
-  }) => {
+  }, useCache: boolean = true) => {
+    const taskStore = useTaskStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && !params?.page && !params?.search && taskStore.isTasksCacheValid) {
+      return {
+        results: taskStore.tasks,
+        count: taskStore.tasks.length,
+        data: taskStore.tasks
+      };
+    }
+    
     isLoading.value = true;
     error.value = null;
+    taskStore.setFetching(true);
 
     try {
       const response = await listTarefas(params);
+      
+      // Armazenar no cache apenas se não houver filtros específicos
+      if (!params?.search && !params?.page) {
+        taskStore.setTasks(response.results || []);
+      }
+      
       return response;
     } catch (err: any) {
       error.value = err.message || 'Erro ao buscar tarefas';
       throw err;
     } finally {
       isLoading.value = false;
+      taskStore.setFetching(false);
     }
   };
 
   // Função para buscar uma tarefa específica
-  const fetchTask = async (id: number) => {
+  const fetchTask = async (id: number, useCache: boolean = true) => {
+    const taskStore = useTaskStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && taskStore.isTaskDetailCacheValid(id)) {
+      const cachedTask = taskStore.taskDetails[id];
+      currentTask.value = cachedTask;
+      return cachedTask;
+    }
+    
     isLoading.value = true;
     error.value = null;
+    taskStore.setFetching(true);
 
     try {
       const task = await retrieveTarefa(id);
       currentTask.value = task;
+      
+      // Armazenar no cache
+      taskStore.setTaskDetail(task);
+      
       return task;
     } catch (err: any) {
       error.value = err.message || `Erro ao buscar tarefa ${id}`;
       throw err;
     } finally {
       isLoading.value = false;
+      taskStore.setFetching(false);
     }
   };
 
   // Função para criar uma nova tarefa
   const createTask = async (taskData: TarefaRequest) => {
+    const taskStore = useTaskStore();
     isLoading.value = true;
     error.value = null;
 
@@ -377,6 +414,11 @@ export const useTaskService = () => {
       }
 
       const newTask = await createTarefa(taskData);
+      
+      // Atualizar o cache
+      taskStore.setTaskDetail(newTask);
+      taskStore.clearCache(); // Limpar o cache da lista para forçar uma nova busca
+      
       return newTask;
     } catch (err: any) {
       error.value = err.message || 'Erro ao criar tarefa';
@@ -388,6 +430,7 @@ export const useTaskService = () => {
 
   // Função para atualizar uma tarefa
   const updateTask = async (id: number, taskData: TarefaRequest) => {
+    const taskStore = useTaskStore();
     isLoading.value = true;
     error.value = null;
 
@@ -398,6 +441,9 @@ export const useTaskService = () => {
       if (currentTask.value && currentTask.value.id === id) {
         currentTask.value = updatedTask;
       }
+      
+      // Atualizar o cache
+      taskStore.setTaskDetail(updatedTask);
 
       return updatedTask;
     } catch (err: any) {
@@ -435,6 +481,7 @@ export const useTaskService = () => {
 
   // Função para excluir uma tarefa
   const deleteTask = async (id: number) => {
+    const taskStore = useTaskStore();
     isLoading.value = true;
     error.value = null;
 
@@ -445,6 +492,9 @@ export const useTaskService = () => {
       if (currentTask.value && currentTask.value.id === id) {
         currentTask.value = null;
       }
+      
+      // Remover do cache
+      taskStore.removeTask(id);
 
       return true;
     } catch (err: any) {
@@ -503,6 +553,12 @@ export const useTaskService = () => {
     }
   };
 
+  // Função para limpar o cache
+  const clearTaskCache = () => {
+    const taskStore = useTaskStore();
+    taskStore.clearCache();
+  };
+
   return {
     tasks,
     currentTask,
@@ -514,6 +570,7 @@ export const useTaskService = () => {
     updateTask,
     partialUpdateTask,
     deleteTask,
+    clearTaskCache,
     updateTaskStatus,
     registerTaskHours,
   };

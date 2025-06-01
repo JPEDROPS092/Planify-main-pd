@@ -1,10 +1,12 @@
 /**
  * Serviço de riscos - adaptador para o novo sistema de API
+ * Otimizado com cache via Pinia
  */
 import { ref } from 'vue';
 import * as risksApi from './risks';
 import { useApiService } from '~/composables/useApiService';
 import { useAuth } from '~/composables/useAuth';
+import { useRiskStore } from '~/stores/riskStore';
 
 export const useRiskService = () => {
   const { user, hasPermission } = useAuth();
@@ -15,45 +17,88 @@ export const useRiskService = () => {
   const error = ref(null);
 
   // Carregar todos os riscos
-  const fetchRisks = async (projectId = null) => {
+  const fetchRisks = async (projectId = null, useCache = true) => {
+    const riskStore = useRiskStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && riskStore.isRisksCacheValid) {
+      // Se temos um projectId e o cache contém riscos, filtramos pelo projeto
+      if (projectId) {
+        const filteredRisks = riskStore.risks.filter(risk => {
+          const projetoId = typeof risk.projeto === 'object' ? risk.projeto.id : risk.projeto;
+          return projetoId === projectId;
+        });
+        risks.value = filteredRisks;
+        return filteredRisks;
+      } else {
+        // Se não temos projectId, retornamos todos os riscos do cache
+        risks.value = riskStore.risks;
+        return riskStore.risks;
+      }
+    }
+    
     isLoading.value = true;
     error.value = null;
+    riskStore.setFetching(true);
 
     try {
+      let response;
       if (projectId) {
-        const response = await risksApi.listRiscos({ projeto: projectId });
-        risks.value = response.results;
+        response = await risksApi.listRiscos({ projeto: projectId });
       } else {
-        const response = await risksApi.listRiscos();
-        risks.value = response.results;
+        response = await risksApi.listRiscos();
       }
+      
+      risks.value = response.results;
+      
+      // Armazenar no cache
+      if (!projectId) { // Armazenamos apenas a lista completa
+        riskStore.setRisks(response.results);
+      }
+      
       return risks.value;
     } catch (err) {
       error.value = handleApiError(err);
       throw err;
     } finally {
       isLoading.value = false;
+      riskStore.setFetching(false);
     }
   };
 
   // Obter um risco pelo ID
-  const getRisk = async (riskId) => {
+  const getRisk = async (riskId, useCache = true) => {
+    const riskStore = useRiskStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && riskStore.isRiskDetailCacheValid(riskId)) {
+      return riskStore.riskDetails[riskId];
+    }
+    
     isLoading.value = true;
     error.value = null;
+    riskStore.setFetching(true);
 
     try {
       const risk = await risksApi.retrieveRisco(riskId);
+      
+      // Armazenar no cache
+      riskStore.setRiskDetail(risk);
+      
       return risk;
     } catch (err) {
       error.value = handleApiError(err);
       throw err;
     } finally {
       isLoading.value = false;
+      riskStore.setFetching(false);
     }
   };
 
   // Criar um novo risco
   const createRisk = async (riskData) => {
+    const riskStore = useRiskStore();
+    
     return withLoading(async () => {
       try {
         // Associar automaticamente o usuário atual como criador se não estiver definido
@@ -63,6 +108,10 @@ export const useRiskService = () => {
 
         const newRisk = await risksApi.createRisco(riskData);
         risks.value = [...risks.value, newRisk];
+        
+        // Atualizar o cache
+        riskStore.setRiskDetail(newRisk);
+        
         return newRisk;
       } catch (err) {
         error.value = handleApiError(err);
@@ -73,6 +122,8 @@ export const useRiskService = () => {
 
   // Atualizar um risco
   const updateRisk = async (riskId, riskData) => {
+    const riskStore = useRiskStore();
+    
     return withLoading(async () => {
       try {
         const updatedRisk = await risksApi.updateRisco(riskId, riskData);
@@ -81,6 +132,9 @@ export const useRiskService = () => {
         risks.value = risks.value.map((risk) =>
           risk.id === riskId ? updatedRisk : risk
         );
+        
+        // Atualizar o cache
+        riskStore.setRiskDetail(updatedRisk);
 
         return updatedRisk;
       } catch (err) {
@@ -92,6 +146,8 @@ export const useRiskService = () => {
 
   // Excluir um risco
   const deleteRisk = async (riskId) => {
+    const riskStore = useRiskStore();
+    
     return withLoading(async () => {
       try {
         // Verificar permissão
@@ -103,6 +159,9 @@ export const useRiskService = () => {
 
         // Remover da lista local
         risks.value = risks.value.filter((risk) => risk.id !== riskId);
+        
+        // Remover do cache
+        riskStore.removeRisk(riskId);
 
         return true;
       } catch (err) {
@@ -114,6 +173,8 @@ export const useRiskService = () => {
 
   // Adicionar uma resposta a um risco
   const addRiskResponse = async (riskId, responseData) => {
+    const riskStore = useRiskStore();
+    
     return withLoading(async () => {
       try {
         const updatedRisk = await risksApi.adicionarRespostaRisco(
@@ -125,6 +186,9 @@ export const useRiskService = () => {
         risks.value = risks.value.map((risk) =>
           risk.id === riskId ? updatedRisk : risk
         );
+        
+        // Atualizar o cache
+        riskStore.setRiskDetail(updatedRisk);
 
         return updatedRisk;
       } catch (err) {
@@ -136,6 +200,8 @@ export const useRiskService = () => {
 
   // Atualizar status de um risco
   const updateRiskStatus = async (riskId, status) => {
+    const riskStore = useRiskStore();
+    
     return withLoading(async () => {
       try {
         const updatedRisk = await risksApi.atualizarStatusRisco(riskId, {
@@ -146,6 +212,9 @@ export const useRiskService = () => {
         risks.value = risks.value.map((risk) =>
           risk.id === riskId ? updatedRisk : risk
         );
+        
+        // Atualizar o cache
+        riskStore.setRiskDetail(updatedRisk);
 
         return updatedRisk;
       } catch (err) {
@@ -155,6 +224,12 @@ export const useRiskService = () => {
     });
   };
 
+  // Função para limpar o cache
+  const clearRiskCache = () => {
+    const riskStore = useRiskStore();
+    riskStore.clearCache();
+  };
+  
   return {
     risks,
     isLoading,
@@ -166,5 +241,6 @@ export const useRiskService = () => {
     deleteRisk,
     addRiskResponse,
     updateRiskStatus,
+    clearRiskCache,
   };
 };

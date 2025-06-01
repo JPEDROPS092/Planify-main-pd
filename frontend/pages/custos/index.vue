@@ -138,9 +138,10 @@
       </EmptyState>
 
       <div v-else>
-        <div
-          class="overflow-hidden rounded-lg border bg-white shadow dark:border-gray-700 dark:bg-gray-800"
-        >
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <div v-if="loading" class="p-4">
+            <TableSkeleton :rows="5" :showCheckbox="true" :showDescription="true" :showPagination="true" />
+          </div>
           <table class="w-full border-collapse text-left">
             <thead class="bg-gray-50 dark:bg-gray-700">
               <tr>
@@ -196,74 +197,74 @@
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
               <tr
-                v-for="cost in filteredCosts"
-                :key="cost.id"
+                v-for="(custo, index) in custos"
+                :key="getUniqueKey(custo, index, 'custo')"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <td class="px-4 py-3 text-sm">
                   <div class="font-medium text-gray-900 dark:text-white">
-                    {{ cost.descricao }}
+                    {{ custo.descricao }}
                   </div>
                   <div
-                    v-if="cost.observacoes"
+                    v-if="custo.observacoes"
                     class="mt-1 line-clamp-1 text-xs text-gray-500 dark:text-gray-400"
                   >
-                    {{ cost.observacoes }}
+                    {{ custo.observacoes }}
                   </div>
                 </td>
                 <td class="px-4 py-3 text-sm">
                   <span
                     :class="{
                       'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300':
-                        cost.categoria === 'PESSOAL',
+                        custo.categoria === 'PESSOAL',
                       'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300':
-                        cost.categoria === 'MATERIAL',
+                        custo.categoria === 'MATERIAL',
                       'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300':
-                        cost.categoria === 'EQUIPAMENTO',
+                        custo.categoria === 'EQUIPAMENTO',
                       'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300':
-                        cost.categoria === 'SERVICO',
+                        custo.categoria === 'SERVICO',
                       'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300':
-                        cost.categoria === 'LICENCA',
+                        custo.categoria === 'LICENCA',
                       'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300':
-                        cost.categoria === 'OUTRO',
+                        custo.categoria === 'OUTRO',
                     }"
                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                   >
-                    {{ getCategoryLabel(cost.categoria) }}
+                    {{ getCategoryLabel(custo.categoria) }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  {{ getProjectName(cost.projeto) }}
+                  {{ getProjectName(custo.projeto) }}
                 </td>
                 <td
                   class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white"
                 >
-                  {{ formatCurrency(cost.valor) }}
+                  {{ formatCurrency(custo.valor) }}
                 </td>
                 <td class="px-4 py-3 text-sm">
                   <span
                     :class="{
                       'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300':
-                        cost.status === 'PREVISTO',
+                        custo.status === 'PREVISTO',
                       'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300':
-                        cost.status === 'APROVADO',
+                        custo.status === 'APROVADO',
                       'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300':
-                        cost.status === 'PAGO',
+                        custo.status === 'PAGO',
                       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300':
-                        cost.status === 'CANCELADO',
+                        custo.status === 'CANCELADO',
                     }"
                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                   >
-                    {{ getStatusLabel(cost.status) }}
+                    {{ getStatusLabel(custo.status) }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  {{ formatDate(cost.data) }}
+                  {{ formatDate(custo.data) }}
                 </td>
                 <td class="px-4 py-3 text-sm">
                   <div class="flex items-center space-x-2">
                     <button
-                      @click="editCost(cost)"
+                      @click="editCost(custo)"
                       class="rounded-md p-1 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                       title="Editar"
                     >
@@ -285,7 +286,7 @@
                       </svg>
                     </button>
                     <button
-                      @click="viewCost(cost.id)"
+                      @click="viewCost(custo.id)"
                       class="rounded-md p-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900"
                       title="Ver detalhes"
                     >
@@ -370,6 +371,9 @@
             stroke-linejoin="round"
             class="h-4 w-4"
           >
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
       </div>
     </div>
     
@@ -379,31 +383,22 @@
       title="Gerenciar Custo" 
       size="lg"
     >
-      <Suspense>
-        <template #default>
-          <CostForm
-            :projectId="selectedProjectId"
-            :cost="selectedCost"
-            @submit="handleCostSubmit"
-            @cancel="showCostModal = false"
-          />
-        </template>
-        <template #fallback>
-          <div class="p-4 space-y-4">
-            <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div class="h-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          </div>
-        </template>
-      </Suspense>
+      <LazyWrapper type="form">
+        <CostForm
+          :projectId="selectedProjectId"
+          :cost="selectedCost"
+          @submit="handleCostSubmit"
+          @cancel="showCostModal = false"
+        />
+      </LazyWrapper>
     </Modal>
   </NuxtLayout>
   <!-- ... -->
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch, onMounted, defineAsyncComponent } from 'vue';
+  import { ref, computed, watch, onMounted, defineAsyncComponent, shallowRef } from 'vue';
+  import { getUniqueKey, debounce, createShallowState } from '~/lib/performance';
   import { useRouter } from 'vue-router';
   import { useCostService } from '~/composables/useCostService';
   import { useProjectService } from '~/services/api/projectService';
@@ -412,6 +407,10 @@
   const CostForm = defineAsyncComponent(() => import('~/components/ui/cost/CostForm.vue'));
   // Lazy loading do componente Modal para reduzir o bundle inicial
   const Modal = defineAsyncComponent(() => import('~/components/ui/Modal.vue'));
+  // Lazy loading do componente TableSkeleton para exibir durante carregamento
+  const TableSkeleton = defineAsyncComponent(() => import('~/components/ui/TableSkeleton.vue'));
+  // Componente para gerenciar carregamento assíncrono com Suspense
+  const LazyWrapper = defineAsyncComponent(() => import('~/components/ui/LazyWrapper.vue'));
   
   const router = useRouter();
   const notify = useNotification();
@@ -427,7 +426,8 @@
   const { fetchProjects } = projectService;
   
   // Estado
-  const costs = ref([]);
+  // Usar shallowRef para grandes listas de dados para melhorar performance
+  const custos = createShallowState([]);
   const projects = ref([]);
   const loading = ref(false);
   const error = ref(null);
@@ -441,7 +441,8 @@
   const showCostModal = ref(false);
   const saving = ref(false);
   const editingCost = ref(null);
-  const selectedCost = ref(null);
+  // Usar shallowRef para objetos complexos
+  const selectedCost = createShallowState(null);
   const selectedProjectId = ref(null);
 
   // Abrir modal de novo custo
@@ -452,9 +453,9 @@
   };
 
   // Editar custo
-  function editCost(cost) {
-    selectedCost.value = cost;
-    selectedProjectId.value = typeof cost.projeto === 'object' ? cost.projeto.id : cost.projeto;
+  function editCost(custo) {
+    selectedCost.value = custo;
+    selectedProjectId.value = typeof custo.projeto === 'object' ? custo.projeto.id : custo.projeto;
     showCostModal.value = true;
   }
 
@@ -544,13 +545,13 @@ async function fetchCosts() {
     
     const response = await fetchCustos(params);
     
-    costs.value = response.results || [];
+    custos.value = response.results || [];
     totalPages.value = response.total_pages || 1;
     totalItems.value = response.count || 0;
   } catch (err) {
     console.error('Erro ao buscar custos:', err);
     error.value = 'Não foi possível carregar os custos.';
-    costs.value = [];
+    custos.value = [];
   } finally {
     loading.value = false;
   }
@@ -630,20 +631,28 @@ const paginationRange = computed(() => {
 
 // Filtrar custos
 const filteredCosts = computed(() => {
-  return costs.value;
+  return custos.value;
 });
 
-// Observar mudanças nos filtros e página
-watch(
-  [currentPage, searchQuery, categoryFilter, statusFilter, projectFilter],
-  () => {
+  // Debounce da busca para evitar múltiplas chamadas durante digitação
+  const debouncedSearch = debounce(() => {
+    currentPage.value = 1; // Reset para primeira página ao buscar
     fetchCosts();
-  }
-);
+  }, 300);
+
+  // Observar mudanças nos filtros e paginação com otimizações
+  watch(selectedProjectId, () => {
+    currentPage.value = 1; // Reset para primeira página ao mudar projeto
+    fetchCosts(); // Não usar cache ao mudar de projeto
+  });
+
+  watch([currentPage, searchQuery, categoryFilter, statusFilter, projectFilter], () => {
+    fetchCosts();
+  });
 
 // Carregar dados ao montar o componente
 onMounted(async () => {
   await loadProjects();
   await fetchCosts();
-});
+})
 </script>

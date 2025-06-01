@@ -2,40 +2,23 @@
  * Composable para gerenciamento de custos
  * Encapsula as funções do serviço de custos
  */
-import { ref } from 'vue';
-import { useState } from '#imports';
-import { useAuth } from '~/services/api/auth';
-import {
-  listCustos,
-  createCusto,
-  retrieveCusto,
-  updateCusto,
-  partialUpdateCusto,
-  destroyCusto,
-  listCategorias,
-  createCategoria,
-  retrieveCategoria,
-  updateCategoria,
-  partialUpdateCategoria,
-  destroyCategoria,
-  listAlertas,
-  createAlerta,
-  retrieveAlerta,
-  updateAlerta,
-  partialUpdateAlerta,
-  destroyAlerta,
-  listOrcamentosProjeto,
-  createOrcamentoProjeto,
-  retrieveOrcamentoProjeto,
-  updateOrcamentoProjeto,
-  partialUpdateOrcamentoProjeto,
-  destroyOrcamentoProjeto,
-  retrieveProjetosSemOrcamento,
-} from '~/services/api/costService';
+import { ref, computed } from 'vue';
+import { costService } from '~/services/api/costService';
+import { useNotification } from './useNotification';
+import { withLoading } from './withLoading';
+import { useCostStore } from '~/stores/costStore';
 
 export const useCostService = () => {
-  const { user } = useAuth();
+  const loading = ref(false);
+  const error = ref(null);
+  const notify = useNotification();
   
+  // Usar a store Pinia para cache
+  const costStore = useCostStore();
+  
+  // Computed para verificar se o cache está sendo usado
+  const usingCache = computed(() => costStore.isCacheValid('list'));
+
   const costs = ref([]);
   const categories = ref([]);
   const alerts = ref([]);
@@ -48,18 +31,29 @@ export const useCostService = () => {
    * @param params Parâmetros de filtro e paginação
    * @returns Lista paginada de custos
    */
-  const fetchCustos = async (params = {}) => {
-    isLoading.value = true;
+  const fetchCustos = async (params = {}, useCache = true) => {
+    // Verificar se podemos usar o cache
+    if (useCache && costStore.isCacheValid('list')) {
+      console.log('Usando custos em cache');
+      return { data: costStore.getCosts };
+    }
+
+    loading.value = true;
+    costStore.setFetching(true);
     error.value = null;
-    
+
     try {
-      const response = await listCustos(params);
+      const response = await costService.listCustos(params);
+      // Armazenar no cache
+      costStore.setCosts(response.data);
       return response;
     } catch (err) {
-      error.value = err.message || 'Erro ao buscar custos';
+      console.error('Erro ao buscar custos:', err);
+      error.value = err;
       throw err;
     } finally {
-      isLoading.value = false;
+      loading.value = false;
+      costStore.setFetching(false);
     }
   };
 
@@ -68,18 +62,27 @@ export const useCostService = () => {
    * @param id ID do custo
    * @returns Detalhes do custo
    */
-  const getCusto = async (id) => {
-    isLoading.value = true;
+  const getCusto = async (id, useCache = true) => {
+    // Verificar se podemos usar o cache
+    if (useCache && costStore.isCacheValid(`detail-${id}`)) {
+      console.log(`Usando custo ${id} em cache`);
+      return { data: costStore.getCostById(id) };
+    }
+
+    loading.value = true;
     error.value = null;
-    
+
     try {
-      const custo = await retrieveCusto(id);
-      return custo;
+      const response = await costService.retrieveCusto(id);
+      // Armazenar no cache
+      costStore.setCostDetail(id, response.data);
+      return response;
     } catch (err) {
-      error.value = err.message || `Erro ao buscar custo #${id}`;
+      console.error(`Erro ao buscar custo ${id}:`, err);
+      error.value = err;
       throw err;
     } finally {
-      isLoading.value = false;
+      loading.value = false;
     }
   };
 
@@ -88,24 +91,23 @@ export const useCostService = () => {
    * @param custoData Dados do custo
    * @returns Custo criado
    */
-  const createCustoWrapper = async (custoData) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      // Associar o usuário logado como criador se não for especificado
-      if (!custoData.criado_por && user.value) {
-        custoData.criado_por = user.value.id;
-      }
-      
-      const newCusto = await createCusto(custoData);
-      return newCusto;
-    } catch (err) {
-      error.value = err.message || 'Erro ao criar custo';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+  const createCusto = async (custoData) => {
+    return withLoading(
+      async () => {
+        try {
+          const response = await costService.createCusto(custoData);
+          // Atualizar o cache
+          costStore.addCost(response.data);
+          notify.success('Custo criado com sucesso!');
+          return response;
+        } catch (err) {
+          console.error('Erro ao criar custo:', err);
+          notify.error('Erro ao criar custo');
+          throw err;
+        }
+      },
+      { loading }
+    );
   };
 
   /**
@@ -114,19 +116,23 @@ export const useCostService = () => {
    * @param custoData Dados do custo
    * @returns Custo atualizado
    */
-  const updateCustoWrapper = async (id, custoData) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      const updatedCusto = await updateCusto(id, custoData);
-      return updatedCusto;
-    } catch (err) {
-      error.value = err.message || `Erro ao atualizar custo #${id}`;
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+  const updateCusto = async (id, custoData) => {
+    return withLoading(
+      async () => {
+        try {
+          const response = await costService.updateCusto(id, custoData);
+          // Atualizar o cache
+          costStore.updateCost(id, response.data);
+          notify.success('Custo atualizado com sucesso!');
+          return response;
+        } catch (err) {
+          console.error(`Erro ao atualizar custo ${id}:`, err);
+          notify.error('Erro ao atualizar custo');
+          throw err;
+        }
+      },
+      { loading }
+    );
   };
 
   /**
@@ -135,19 +141,23 @@ export const useCostService = () => {
    * @param custoData Dados parciais do custo
    * @returns Custo atualizado
    */
-  const partialUpdateCustoWrapper = async (id, custoData) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      const updatedCusto = await partialUpdateCusto(id, custoData);
-      return updatedCusto;
-    } catch (err) {
-      error.value = err.message || `Erro ao atualizar custo #${id}`;
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+  const partialUpdateCusto = async (id, custoData) => {
+    return withLoading(
+      async () => {
+        try {
+          const response = await costService.partialUpdateCusto(id, custoData);
+          // Atualizar o cache
+          costStore.updateCost(id, response.data);
+          notify.success('Custo atualizado com sucesso!');
+          return response;
+        } catch (err) {
+          console.error(`Erro ao atualizar custo ${id}:`, err);
+          notify.error('Erro ao atualizar custo');
+          throw err;
+        }
+      },
+      { loading }
+    );
   };
 
   /**
@@ -156,18 +166,22 @@ export const useCostService = () => {
    * @returns true se excluído com sucesso
    */
   const deleteCusto = async (id) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      await destroyCusto(id);
-      return true;
-    } catch (err) {
-      error.value = err.message || `Erro ao excluir custo #${id}`;
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+    return withLoading(
+      async () => {
+        try {
+          await costService.destroyCusto(id);
+          // Atualizar o cache
+          costStore.removeCost(id);
+          notify.success('Custo excluído com sucesso!');
+          return true;
+        } catch (err) {
+          console.error(`Erro ao excluir custo ${id}:`, err);
+          notify.error('Erro ao excluir custo');
+          throw err;
+        }
+      },
+      { loading }
+    );
   };
 
   /**
@@ -176,18 +190,19 @@ export const useCostService = () => {
    * @returns Lista paginada de categorias
    */
   const fetchCategorias = async (params = {}) => {
-    isLoading.value = true;
+    loading.value = true;
     error.value = null;
-    
+
     try {
-      const response = await listCategorias(params);
+      const response = await costService.listCategorias(params);
       categories.value = response.results || [];
       return response;
     } catch (err) {
-      error.value = err.message || 'Erro ao buscar categorias';
+      console.error('Erro ao buscar categorias:', err);
+      error.value = err;
       throw err;
     } finally {
-      isLoading.value = false;
+      loading.value = false;
     }
   };
 
@@ -197,15 +212,15 @@ export const useCostService = () => {
    * @returns Resumo dos custos
    */
   const getResumoCustos = async (projectId = null) => {
-    isLoading.value = true;
+    loading.value = true;
     error.value = null;
-    
+
     try {
       // Buscar custos com filtros apropriados
       const params = projectId ? { projeto: projectId } : {};
-      const response = await listCustos(params);
+      const response = await costService.listCustos(params);
       const custos = response.results || [];
-      
+
       // Calcular totais por categoria
       const totalPorCategoria = {};
       const totalPorStatus = {
@@ -213,9 +228,9 @@ export const useCostService = () => {
         aprovado: 0,
         rejeitado: 0,
       };
-      
+
       let totalGeral = 0;
-      
+
       custos.forEach(custo => {
         // Total por categoria
         const categoriaId = typeof custo.categoria === 'object' 
@@ -224,7 +239,7 @@ export const useCostService = () => {
         const categoriaNome = typeof custo.categoria === 'object' 
           ? custo.categoria.nome 
           : 'Sem categoria';
-          
+
         if (!totalPorCategoria[categoriaId]) {
           totalPorCategoria[categoriaId] = {
             id: categoriaId,
@@ -232,18 +247,18 @@ export const useCostService = () => {
             total: 0
           };
         }
-        
+
         totalPorCategoria[categoriaId].total += custo.valor || 0;
-        
+
         // Total por status
         if (custo.status && totalPorStatus[custo.status] !== undefined) {
           totalPorStatus[custo.status] += custo.valor || 0;
         }
-        
+
         // Total geral
         totalGeral += custo.valor || 0;
       });
-      
+
       return {
         totalGeral,
         totalPorCategoria: Object.values(totalPorCategoria),
@@ -251,27 +266,32 @@ export const useCostService = () => {
         count: response.count
       };
     } catch (err) {
-      error.value = err.message || 'Erro ao obter resumo de custos';
+      console.error('Erro ao obter resumo de custos:', err);
+      error.value = err;
       throw err;
     } finally {
-      isLoading.value = false;
+      loading.value = false;
     }
   };
 
+  // Limpar o cache manualmente
+  const clearCostCache = () => {
+    costStore.clearCache();
+    notify.info('Cache de custos limpo');
+  };
+
   return {
-    costs,
-    categories,
-    alerts,
-    budgets,
-    isLoading,
+    loading,
     error,
+    usingCache,
     fetchCustos,
     getCusto,
-    createCusto: createCustoWrapper,
-    updateCusto: updateCustoWrapper,
-    partialUpdateCusto: partialUpdateCustoWrapper,
+    createCusto,
+    updateCusto,
+    partialUpdateCusto,
     deleteCusto,
-    fetchCategorias,
     getResumoCustos,
+    fetchCategorias,
+    clearCostCache
   };
 };

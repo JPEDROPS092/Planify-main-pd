@@ -1,11 +1,13 @@
 /**
  * Serviço de projetos
  * Gerado a partir da especificação OpenAPI
+ * Otimizado com cache via Pinia
  */
 import { createFetchClient } from './auth';
 import { createFormData } from './config';
 import { useState, computed } from '#imports';
 import { useAuth } from './auth';
+import { useProjectStore } from '~/stores/projectStore';
 import type {
   Projeto,
   ProjetoRequest,
@@ -36,40 +38,75 @@ export const useProjectService = () => {
     page?: number;
     search?: string;
     status?: string;
-  }) => {
+  }, useCache: boolean = true) => {
+    const projectStore = useProjectStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && !params?.page && !params?.search && projectStore.isProjectsCacheValid) {
+      return {
+        results: projectStore.projects,
+        count: projectStore.projects.length,
+        data: projectStore.projects
+      };
+    }
+    
     isLoading.value = true;
     error.value = null;
+    projectStore.setFetching(true);
 
     try {
       const response = await listProjetos(params);
+      
+      // Armazenar no cache apenas se não houver filtros específicos
+      if (!params?.search && !params?.page) {
+        projectStore.setProjects(response.results || []);
+      }
+      
       return response;
     } catch (err: any) {
       error.value = err.message || 'Erro ao buscar projetos';
       throw err;
     } finally {
       isLoading.value = false;
+      projectStore.setFetching(false);
     }
   };
 
   // Função para buscar um projeto específico
-  const fetchProject = async (id: number) => {
+  const fetchProject = async (id: number, useCache: boolean = true) => {
+    const projectStore = useProjectStore();
+    
+    // Verificar se podemos usar o cache
+    if (useCache && projectStore.isProjectDetailCacheValid(id)) {
+      const cachedProject = projectStore.projectDetails[id];
+      currentProject.value = cachedProject;
+      return cachedProject;
+    }
+    
     isLoading.value = true;
     error.value = null;
+    projectStore.setFetching(true);
 
     try {
       const project = await retrieveProjeto(id);
       currentProject.value = project;
+      
+      // Armazenar no cache
+      projectStore.setProjectDetail(project);
+      
       return project;
     } catch (err: any) {
       error.value = err.message || `Erro ao buscar projeto ${id}`;
       throw err;
     } finally {
       isLoading.value = false;
+      projectStore.setFetching(false);
     }
   };
 
   // Função para criar um novo projeto
   const createProject = async (projectData: ProjetoRequest) => {
+    const projectStore = useProjectStore();
     isLoading.value = true;
     error.value = null;
 
@@ -80,6 +117,11 @@ export const useProjectService = () => {
       }
 
       const newProject = await createProjeto(projectData);
+      
+      // Atualizar o cache
+      projectStore.setProjectDetail(newProject);
+      projectStore.clearCache(); // Limpar o cache da lista para forçar uma nova busca
+      
       return newProject;
     } catch (err: any) {
       error.value = err.message || 'Erro ao criar projeto';
@@ -91,6 +133,7 @@ export const useProjectService = () => {
 
   // Função para atualizar um projeto
   const updateProject = async (id: number, projectData: ProjetoRequest) => {
+    const projectStore = useProjectStore();
     isLoading.value = true;
     error.value = null;
 
@@ -101,6 +144,9 @@ export const useProjectService = () => {
       if (currentProject.value && currentProject.value.id === id) {
         currentProject.value = updatedProject;
       }
+      
+      // Atualizar o cache
+      projectStore.setProjectDetail(updatedProject);
 
       return updatedProject;
     } catch (err: any) {
@@ -138,6 +184,7 @@ export const useProjectService = () => {
 
   // Função para excluir um projeto
   const deleteProject = async (id: number) => {
+    const projectStore = useProjectStore();
     isLoading.value = true;
     error.value = null;
 
@@ -148,6 +195,9 @@ export const useProjectService = () => {
       if (currentProject.value && currentProject.value.id === id) {
         currentProject.value = null;
       }
+      
+      // Remover do cache
+      projectStore.removeProject(id);
 
       return true;
     } catch (err: any) {
@@ -212,18 +262,15 @@ export const useProjectService = () => {
     deleteProject,
     archiveProject,
     isProjectManager,
+    // Função para limpar o cache
+    clearProjectCache: () => {
+      const projectStore = useProjectStore();
+      projectStore.clearCache();
+    },
   };
 };
 
-/**
- * Listar projetos
- * @param params Parâmetros de paginação e filtro
- */
-export async function listProjetos(params?: {
-  arquivado?: boolean;
-  gerente?: number;
-  ordering?: string;
-  page?: number;
+// ... (rest of the code remains the same)
   search?: string;
   status?: string;
 }): Promise<PaginatedResponse<ProjetoList>> {
