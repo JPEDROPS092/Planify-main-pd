@@ -1,14 +1,14 @@
 /**
  * Componente MetricsCard
  *
- * Este componente exibe métricas e estatísticas em dashboards.
- * Suporta diferentes formatos de dados, ícones e indicadores de tendência.
+ * Componente para exibição de métricas e estatísticas em formato de cartão.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import MetricsCard from './MetricsCard.vue';
-import type { TrendInfo } from './MetricsCard.vue';
 
-// Exportação explícita do componente e tipos
+// Exportação explícita do componente
 export { MetricsCard };
-export type { TrendInfo };
+
+// Exportação padrão para uso com importações default
+export default { MetricsCard };

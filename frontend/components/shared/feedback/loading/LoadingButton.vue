@@ -85,7 +85,7 @@ export default defineComponent({
       default: false,
     },
     type: {
-      type: String,
+      type: String as () => 'submit' | 'reset' | 'button' | undefined,
       default: 'button',
     },
     fullWidth: {

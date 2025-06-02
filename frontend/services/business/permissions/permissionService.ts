@@ -3,7 +3,7 @@
  * Gerencia verificações de permissões e regras de acesso
  */
 import { useState } from '#imports';
-import { UserProfile } from '../../api/endpoints/auth';
+import { UserProfile } from '../../utils/types';
 
 /**
  * Tipos de permissões disponíveis no sistema

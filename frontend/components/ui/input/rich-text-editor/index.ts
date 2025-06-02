@@ -1,12 +1,14 @@
 /**
  * Componente RichTextEditor
  *
- * Este componente oferece funcionalidades de edição de texto rico para o Planify.
- * Útil para descrições detalhadas, documentação e comunicações.
+ * Componente para edição de texto com formatação avançada.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import RichTextEditor from './RichTextEditor.vue';
 
 // Exportação explícita do componente
 export { RichTextEditor };
+
+// Exportação padrão para uso com importações default
+export default { RichTextEditor };

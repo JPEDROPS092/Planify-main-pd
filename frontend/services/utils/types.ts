@@ -191,6 +191,34 @@ export interface SetNewPasswordRequest {
   token: string;
 }
 
+// Adicionando interfaces de autenticação que estavam no auth.plugin.ts
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+// Interface para usuário estendida para incluir campos adicionais necessários
+// UserProfile já está definido neste arquivo.
+export interface ExtendedUserProfile extends UserProfile {
+  id?: number;
+  username?: string;
+  email?: string;
+  first_name?: string | null; // Tornando opcional
+  last_name?: string | null;  // Tornando opcional
+  full_name?: string | null; // Adicionando full_name
+  role?: RoleEnum | null;    // Adicionando role
+  is_active?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  last_login?: string | null;
+  date_joined?: string | null;
+  groups?: Array<{id: number, name: string}>;
+  permissions?: string[];
+}
+
+// TokenObtainPair já está definido neste arquivo.
+export interface TokenResponse extends TokenObtainPair {}
+
 // Interfaces para projetos
 export interface Projeto {
   id: number;

@@ -482,7 +482,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useMessageService, useNotificationService } from '~/services/api'; // Updated import from central API
 import { useProjectService } from '~/services/api'; // Updated import from central API
 import { useUserService } from '~/services/api'; // Updated import from central API
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({

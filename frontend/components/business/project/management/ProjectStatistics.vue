@@ -99,7 +99,7 @@ import { useProjectService } from '~/services/api/services/projectService';
 import { useTaskService } from '~/services/api/services/taskService';
 import { useRiskService } from '~/services/api/services/riskService';
 import { useCostService } from '~/services/api/services/costService';
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 
 const props = defineProps({
   projectId: {

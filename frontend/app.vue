@@ -15,7 +15,10 @@
 
     <!-- App Content -->
     <NuxtLayout>
-      <NuxtPage v-show="!loading" />
+      <!-- Adicionado um wrapper div para aplicar v-show corretamente -->
+      <div v-show="!loading" class="h-full"> <!-- Adicionado h-full para manter a altura se necessário -->
+        <NuxtPage />
+      </div>
     </NuxtLayout>
   </div>
 </template>

@@ -1,4 +1,4 @@
-import { useNotification } from '@/composables/useNotification';
+import { useNotification } from '@/stores/composables/useNotification';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const notification = useNotification();

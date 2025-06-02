@@ -1,20 +1,10 @@
 /**
  * API Client for Planify
  * Central utility for making API requests with proper authentication and error handling
+ * Usa o plugin Axios configurado em vez de implementação personalizada
  */
-import { $fetch } from 'ofetch';
-import { useRuntimeConfig } from '#app';
-import { useState } from '#imports';
-import { getAuthToken, ApiError, formatQueryParams } from '../config';
-
-// Define our own FetchOptions type since it's not exported by ofetch
-interface FetchOptions {
-  method?: string;
-  headers?: Record<string, string>;
-  baseURL?: string;
-  body?: any;
-  [key: string]: any;
-}
+import { ApiError, createFormData, formatQueryParams } from '../client/config';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Types for API requests
 export type ApiResponse<T = any> = {
@@ -24,123 +14,139 @@ export type ApiResponse<T = any> = {
 };
 
 export type ApiRequestConfig = {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   params?: Record<string, any>;
-  data?: any;
   headers?: Record<string, string>;
   withAuth?: boolean;
+  [key: string]: any;
 };
 
 /**
- * Creates a configured API client instance
+ * API Client que utiliza o plugin Axios configurado
  */
 const createApiClient = () => {
-  const getBaseUrl = () => {
+  // Função para obter a instância do Axios configurada pelo plugin
+  const getAxiosInstance = (): AxiosInstance => {
+    // No contexto do Nuxt, usamos a instância global configurada pelo plugin
+    if (process.client) {
+      const nuxtApp = useNuxtApp();
+      if (nuxtApp.$api) {
+        return nuxtApp.$api;
+      }
+    }
+    
+    // Fallback para uma nova instância (não deve acontecer em produção)
+    console.warn('API client: Usando fallback para axios. O plugin pode não estar carregado.');
     const config = useRuntimeConfig();
-    return process.client ? config.public.apiBaseUrl : '';
+    const axios = require('axios');
+    return axios.create({
+      baseURL: config.public.apiBaseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      withCredentials: true
+    });
   };
 
   /**
-   * Makes an API request with proper error handling
+   * Processa a resposta da API e extrai os dados
    */
-  const request = async <T = any>(
-    endpoint: string,
-    config: ApiRequestConfig = {}
-  ): Promise<T> => {
-    const {
-      method = 'GET',
-      params = {},
-      data = null,
-      headers = {},
-      withAuth = true,
-    } = config;
-
-    // Build request URL with query parameters
-    let url = endpoint;
-    const queryString = formatQueryParams(params);
-    if (queryString) {
-      url = `${url}?${queryString}`;
+  const processResponse = <T>(response: AxiosResponse): T => {
+    // Para APIs que retornam { data: ... } como wrapper
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      return response.data.data as T;
     }
+    // Caso contrário, retorna o corpo da resposta diretamente
+    return response.data as T;
+  };
 
-    // Prepare headers
-    const requestHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...headers,
-    };
-
-    // Add auth token if needed
-    if (withAuth) {
-      const token = getAuthToken();
-      if (token) {
-        requestHeaders['Authorization'] = `Bearer ${token}`;
-      }
-    }
-
-    // Prepare fetch options
-    const fetchOptions: FetchOptions = {
-      method,
-      headers: requestHeaders,
-      baseURL: getBaseUrl(),
-    };
-
-    // Add body for non-GET requests
-    if (method !== 'GET' && data !== null) {
-      if (data instanceof FormData) {
-        // Let the browser set the correct content type with boundary
-        delete requestHeaders['Content-Type'];
-        fetchOptions.body = data;
-      } else {
-        fetchOptions.body = data;
-      }
-    }
-
-    try {
-      // Make the request
-      const response = await $fetch(url, fetchOptions);
-      return response as T;
-    } catch (error: any) {
-      // Handle fetch errors
-      if (error.response) {
-        const { status, statusText } = error.response;
-        const responseData = await error.response._data;
+  /**
+   * Processa erros da API de forma padronizada
+   */
+  const handleApiError = (error: any): never => {
+    if (error.response) {
+      const { status, data, statusText } = error.response;
+      const message = 
+        data?.detail || 
+        data?.message || 
+        statusText || 
+        'Erro na requisição';
         
-        const message = 
-          responseData?.detail || 
-          responseData?.message || 
-          statusText || 
-          'Erro na requisição';
-          
-        throw new ApiError(message, status, responseData);
-      }
-      
-      // Network or other errors
-      throw new ApiError(
-        error.message || 'Erro de conexão',
-        0,
-        null
-      );
+      throw new ApiError(message, status, data);
     }
+    
+    // Network ou outros erros
+    throw new ApiError(
+      error.message || 'Erro de conexão',
+      0,
+      null
+    );
   };
 
   /**
    * HTTP methods shortcuts
    */
   return {
-    get: <T = any>(endpoint: string, config: Omit<ApiRequestConfig, 'method' | 'data'> = {}) => 
-      request<T>(endpoint, { ...config, method: 'GET' }),
+    get: async <T = any>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> => {
+      try {
+        const api = getAxiosInstance();
+        const response = await api.get(endpoint, config);
+        return processResponse<T>(response);
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
       
-    post: <T = any>(endpoint: string, data?: any, config: Omit<ApiRequestConfig, 'method' | 'data'> = {}) => 
-      request<T>(endpoint, { ...config, method: 'POST', data }),
+    post: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
+      try {
+        const api = getAxiosInstance();
+        // Converter para FormData se necessário
+        if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
+          data = createFormData(data);
+          // Axios detecta FormData automaticamente
+        }
+        const response = await api.post(endpoint, data, config);
+        return processResponse<T>(response);
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
       
-    put: <T = any>(endpoint: string, data?: any, config: Omit<ApiRequestConfig, 'method' | 'data'> = {}) => 
-      request<T>(endpoint, { ...config, method: 'PUT', data }),
+    put: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
+      try {
+        const api = getAxiosInstance();
+        if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
+          data = createFormData(data);
+        }
+        const response = await api.put(endpoint, data, config);
+        return processResponse<T>(response);
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
       
-    patch: <T = any>(endpoint: string, data?: any, config: Omit<ApiRequestConfig, 'method' | 'data'> = {}) => 
-      request<T>(endpoint, { ...config, method: 'PATCH', data }),
+    patch: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
+      try {
+        const api = getAxiosInstance();
+        if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
+          data = createFormData(data);
+        }
+        const response = await api.patch(endpoint, data, config);
+        return processResponse<T>(response);
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
       
-    delete: <T = any>(endpoint: string, config: Omit<ApiRequestConfig, 'method'> = {}) => 
-      request<T>(endpoint, { ...config, method: 'DELETE' }),
+    delete: async <T = any>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> => {
+      try {
+        const api = getAxiosInstance();
+        const response = await api.delete(endpoint, config);
+        return processResponse<T>(response);
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
   };
 };
 

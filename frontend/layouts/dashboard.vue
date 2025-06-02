@@ -581,8 +581,8 @@ import {
   onBeforeUnmount,
 } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
+import { useAuth } from '~/stores/composables/useAuth';
+import { useNotification } from '~/stores/composables/useNotification';
 import { useProjectService } from '~/services/api/services/projectService';
 import { useTaskService } from '~/services/api/services/taskService';
 import Modal from '~/components/ui/Modal.vue';
@@ -773,16 +773,22 @@ const initializeDropdown = () => {
   }
 };
 
-// Logout
+// Logout usando o novo serviço de autenticação
 const logout = () => {
-  const { logout: authLogout } = useAuth();
-  authLogout();
+  // Usar o novo serviço de autenticação em vez do useAuth
+  const auth = useAuthService();
+  auth.logout('/auth/login');
 };
 
 // Toggle sidebar
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
   localStorage.setItem('sidebarCollapsed', isSidebarCollapsed.value.toString());
+};
+
+// Toggle mobile sidebar
+const toggleMobileSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
 };
 
 // Funções para abrir modais

@@ -154,12 +154,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, defineProps, toRefs, computed } from 'vue';
-import { useTeamService } from '~/services/api/services/teamService';
-import type { MembroEquipe } from '~/services/api/types'; // Tipo atualizado para português
-import { useUserService } from '~/services/api/userService';
-import type { User } from '~/services/api/types';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
+import { useTeamService, useUserService } from '~/services/api';
+import type { MembroEquipe, User } from '~/services/utils/types'; // Usando o arquivo centralizado de tipos
+import { useAuth } from '~/stores/composables/useAuth';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';

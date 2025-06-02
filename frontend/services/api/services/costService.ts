@@ -6,8 +6,8 @@
 import { ref, computed } from 'vue';
 import * as costsApi from '../endpoints/costs';
 import type { Cost, CostResponse, CostCategory, CostCategoryResponse, BudgetSummary } from '../endpoints/costs';
-import { useApiService } from '~/composables/useApiService';
-import { useAuth } from '~/composables/useAuth';
+import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
 
 export const useCostService = () => {
   const { handleApiError, withLoading } = useApiService();

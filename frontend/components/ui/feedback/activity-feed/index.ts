@@ -1,14 +1,14 @@
 /**
  * Componente ActivityFeed
  *
- * Este componente exibe atividades e atualizações recentes.
- * Útil para feeds de notificações, histórico de atividades e atualizações de projetos.
+ * Componente para exibição de um feed de atividades.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import ActivityFeed from './ActivityFeed.vue';
-import type { Activity } from './ActivityFeed.vue';
 
-// Exportação explícita do componente e tipos
+// Exportação explícita do componente
 export { ActivityFeed };
-export type { Activity };
+
+// Exportação padrão para uso com importações default
+export default { ActivityFeed };

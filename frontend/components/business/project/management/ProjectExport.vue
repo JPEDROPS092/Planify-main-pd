@@ -193,7 +193,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, defineProps, toRefs } from 'vue';
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';
 

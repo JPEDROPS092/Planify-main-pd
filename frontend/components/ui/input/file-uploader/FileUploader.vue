@@ -1,29 +1,19 @@
-<!--
-  FileUploader.vue
-  
-  Componente para upload de arquivos com suporte a drag-and-drop,
-  visualização de progresso e validação de tipos de arquivo.
-  
-  Props:
-  - accept: Tipos de arquivo aceitos (ex: 'image/*,.pdf')
-  - multiple: Permite selecionar múltiplos arquivos
-  - maxSize: Tamanho máximo do arquivo em bytes
-  - maxFiles: Número máximo de arquivos permitidos
-  - disabled: Se o componente está desabilitado
-  - class: Classes CSS adicionais
-  
-  Eventos:
-  - files-selected: Emitido quando arquivos são selecionados
-  - file-error: Emitido quando ocorre um erro (tamanho excedido, tipo inválido, etc.)
-  - upload-progress: Emitido durante o progresso do upload
-  - upload-complete: Emitido quando o upload é concluído
+Descrição:
+  Este é um componente Vue 3 que permite o upload de arquivos via seleção ou arrastar-e-soltar.
+  Ele fornece feedback visual com validação de tipo, tamanho, progresso de envio simulado e lista de arquivos selecionados.
+
+  Funcionalidades:
+  - Drag and drop de arquivos
+  - Validação de tipo, tamanho e número de arquivos
+  - Visualização de arquivos selecionados
+  - Emissão de eventos personalizados para integração externa
 -->
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/input/button';
+import { Badge } from '@/components/ui/feedback/badge';
 import { Upload, X, File, AlertCircle } from 'lucide-vue-next';
 
 const props = withDefaults(
@@ -62,11 +52,9 @@ const hasFiles = computed(() => selectedFiles.value.length > 0);
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
@@ -78,64 +66,47 @@ const openFileDialog = () => {
 
 const handleDragOver = (e: DragEvent) => {
   e.preventDefault();
-  e.stopPropagation();
-  if (!props.disabled) {
-    isDragging.value = true;
-  }
+  isDragging.value = true;
 };
 
 const handleDragLeave = (e: DragEvent) => {
   e.preventDefault();
-  e.stopPropagation();
   isDragging.value = false;
 };
 
 const validateFiles = (files: File[]): boolean => {
   errors.value = [];
 
-  // Verificar número máximo de arquivos
   if (props.multiple && files.length > props.maxFiles) {
-    errors.value.push(
-      `Número máximo de arquivos excedido (máximo: ${props.maxFiles})`
-    );
+    errors.value.push(`Número máximo de arquivos excedido (máximo: ${props.maxFiles})`);
     return false;
   }
 
-  // Verificar tipos de arquivo
-  if (props.accept) {
-    const acceptedTypes = props.accept.split(',').map((type) => type.trim());
+  const acceptedTypes = props.accept.split(',').map((type) => type.trim());
 
-    for (const file of files) {
-      const fileType = file.type;
-      const fileExtension = '.' + file.name.split('.').pop();
+  for (const file of files) {
+    const fileType = file.type;
+    const fileExtension = '.' + file.name.split('.').pop();
 
-      const isAccepted = acceptedTypes.some((type) => {
-        if (type.startsWith('.')) {
-          // Verificar extensão
-          return fileExtension.toLowerCase() === type.toLowerCase();
-        } else if (type.endsWith('/*')) {
-          // Verificar tipo MIME genérico (ex: image/*)
-          const genericType = type.replace('/*', '');
-          return fileType.startsWith(genericType);
-        } else {
-          // Verificar tipo MIME específico
-          return fileType === type;
-        }
-      });
-
-      if (!isAccepted) {
-        errors.value.push(`Tipo de arquivo não permitido: ${file.name}`);
-        return false;
+    const isAccepted = acceptedTypes.some((type) => {
+      if (type.startsWith('.')) {
+        return fileExtension.toLowerCase() === type.toLowerCase();
+      } else if (type.endsWith('/*')) {
+        return fileType.startsWith(type.replace('/*', ''));
+      } else {
+        return fileType === type;
       }
+    });
+
+    if (!isAccepted) {
+      errors.value.push(`Tipo de arquivo não permitido: ${file.name}`);
+      return false;
     }
   }
 
-  // Verificar tamanho máximo
   for (const file of files) {
     if (file.size > props.maxSize) {
-      errors.value.push(
-        `Arquivo muito grande: ${file.name} (${formatFileSize(file.size)}). Tamanho máximo: ${formatFileSize(props.maxSize)}`
-      );
+      errors.value.push(`Arquivo muito grande: ${file.name} (${formatFileSize(file.size)}). Tamanho máximo: ${formatFileSize(props.maxSize)}`);
       return false;
     }
   }
@@ -147,14 +118,8 @@ const handleFilesSelected = (e: Event) => {
   const input = e.target as HTMLInputElement;
   if (input.files && input.files.length > 0) {
     const fileList = Array.from(input.files);
-
     if (validateFiles(fileList)) {
-      if (props.multiple) {
-        selectedFiles.value = [...selectedFiles.value, ...fileList];
-      } else {
-        selectedFiles.value = [fileList[0]];
-      }
-
+      selectedFiles.value = props.multiple ? [...selectedFiles.value, ...fileList] : [fileList[0]];
       emit('files-selected', selectedFiles.value);
     } else {
       emit('file-error', errors.value.join(', '));
@@ -164,21 +129,13 @@ const handleFilesSelected = (e: Event) => {
 
 const handleDrop = (e: DragEvent) => {
   e.preventDefault();
-  e.stopPropagation();
   isDragging.value = false;
-
   if (props.disabled) return;
 
   if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
     const fileList = Array.from(e.dataTransfer.files);
-
     if (validateFiles(fileList)) {
-      if (props.multiple) {
-        selectedFiles.value = [...selectedFiles.value, ...fileList];
-      } else {
-        selectedFiles.value = [fileList[0]];
-      }
-
+      selectedFiles.value = props.multiple ? [...selectedFiles.value, ...fileList] : [fileList[0]];
       emit('files-selected', selectedFiles.value);
     } else {
       emit('file-error', errors.value.join(', '));
@@ -192,24 +149,18 @@ const removeFile = (index: number) => {
 };
 
 const simulateUpload = () => {
-  if (selectedFiles.value.length === 0) return;
+  if (!selectedFiles.value.length) return;
 
   isUploading.value = true;
   uploadProgress.value = 0;
 
-  // Simulação de upload com progresso
   const interval = setInterval(() => {
     uploadProgress.value += 10;
     emit('upload-progress', uploadProgress.value);
-
     if (uploadProgress.value >= 100) {
       clearInterval(interval);
       isUploading.value = false;
-
-      // Simular URLs de arquivos enviados
-      const fileUrls = selectedFiles.value.map(
-        (file) => `https://example.com/uploads/${file.name}`
-      );
+      const fileUrls = selectedFiles.value.map(file => `https://example.com/uploads/${file.name}`);
       emit('upload-complete', fileUrls);
     }
   }, 300);
@@ -219,21 +170,16 @@ const clearFiles = () => {
   selectedFiles.value = [];
   uploadProgress.value = 0;
   errors.value = [];
-  if (fileInputRef.value) {
-    fileInputRef.value.value = '';
-  }
+  if (fileInputRef.value) fileInputRef.value.value = '';
 };
 </script>
 
 <template>
   <div :class="props.class">
-    <!-- Área de upload -->
     <div
       class="relative border-2 border-dashed rounded-lg p-6 transition-colors"
       :class="[
-        isDragging
-          ? 'border-primary bg-primary/5'
-          : 'border-input bg-background',
+        isDragging ? 'border-primary bg-primary/5' : 'border-input bg-background',
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
       ]"
       @dragover="handleDragOver"
@@ -250,21 +196,14 @@ const clearFiles = () => {
         :disabled="disabled"
         @change="handleFilesSelected"
       />
-
-      <div
-        class="flex flex-col items-center justify-center space-y-2 text-center"
-      >
+      <div class="flex flex-col items-center justify-center space-y-2 text-center">
         <Upload class="h-10 w-10 text-muted-foreground" />
         <div class="flex flex-col space-y-1">
           <p class="text-sm font-medium">
-            <span class="text-primary font-semibold"
-              >Clique para fazer upload</span
-            >
-            ou arraste e solte
+            <span class="text-primary font-semibold">Clique para fazer upload</span> ou arraste e solte
           </p>
           <p class="text-xs text-muted-foreground">
-            {{ multiple ? 'Arquivos' : 'Arquivo' }}
-            {{ accept ? `(${accept})` : '' }}
+            {{ multiple ? 'Arquivos' : 'Arquivo' }} {{ accept ? `(${accept})` : '' }}
           </p>
           <p v-if="maxSize" class="text-xs text-muted-foreground">
             Tamanho máximo: {{ formatFileSize(maxSize) }}
@@ -273,7 +212,6 @@ const clearFiles = () => {
       </div>
     </div>
 
-    <!-- Lista de erros -->
     <div v-if="errors.length > 0" class="mt-2">
       <div
         v-for="(error, index) in errors"
@@ -285,7 +223,6 @@ const clearFiles = () => {
       </div>
     </div>
 
-    <!-- Progresso de upload -->
     <div v-if="isUploading" class="mt-4">
       <div class="text-sm font-medium mb-1">Enviando arquivos...</div>
       <div class="w-full h-2 bg-secondary rounded-full overflow-hidden">
@@ -296,7 +233,6 @@ const clearFiles = () => {
       </div>
     </div>
 
-    <!-- Lista de arquivos selecionados -->
     <div v-if="hasFiles" class="mt-4 space-y-2">
       <div class="text-sm font-medium">Arquivos selecionados</div>
       <ul class="space-y-2">

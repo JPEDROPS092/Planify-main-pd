@@ -1,14 +1,14 @@
 /**
  * Componente Breadcrumbs
  *
- * Este componente exibe a navegação hierárquica de páginas.
- * Útil para mostrar o caminho de navegação atual e permitir retornar a páginas anteriores.
+ * Componente para exibição de navegação hierárquica (breadcrumbs).
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import Breadcrumbs from './Breadcrumbs.vue';
-import type { BreadcrumbItem } from './Breadcrumbs.vue';
 
-// Exportação explícita do componente e tipos
+// Exportação explícita do componente
 export { Breadcrumbs };
-export type { BreadcrumbItem };
+
+// Exportação padrão para uso com importações default
+export default { Breadcrumbs };

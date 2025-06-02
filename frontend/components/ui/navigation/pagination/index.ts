@@ -1,15 +1,14 @@
 /**
  * Componente Pagination
  *
- * Este componente oferece navegação em listas e tabelas com muitos itens.
- * Suporta navegação por página, controle de itens por página e exibição de informações de paginação.
+ * Componente para navegação entre páginas em listas paginadas.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import Pagination from './Pagination.vue';
 
 // Exportação explícita do componente
 export { Pagination };
 
-// Renomear arquivo para evitar conflito de nome
-// Novo nome sugerido: UiPagination.ts
+// Exportação padrão para uso com importações default
+export default { Pagination };

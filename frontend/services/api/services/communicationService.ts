@@ -13,8 +13,8 @@ import type {
   NotificationResponse,
   NotificationListResponse
 } from '../endpoints/communications';
-import { useApiService } from '~/composables/useApiService';
-import { useAuth } from '~/composables/useAuth';
+import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
 
 // Message service composable
 export const useMessageService = () => {

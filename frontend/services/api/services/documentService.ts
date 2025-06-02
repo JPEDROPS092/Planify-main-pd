@@ -3,46 +3,107 @@
  * Implementação completa com suporte para feedback visual e associação automática com usuário logado
  */
 import { ref } from 'vue';
-import { useState } from '#imports';
-import { useApiService } from '~/composables/useApiService';
-import { useAuth } from '~/composables/useAuth';
-import { createFetchClient } from './auth';
-import { createFormData } from './config';
-import { useNotification } from '~/composables/useNotification';
-import type { Documento, PaginatedResponse } from './types';
+import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
+import { apiClient } from './apiClient';
+import { createFormData, ApiError } from '../client/config';
+import { useNotification } from '~/stores/composables/useNotification';
+
+// Definição dos tipos de documento
+interface Documento {
+  id: number;
+  nome: string;
+  arquivo: string;
+  projeto?: number;
+  risco?: number;
+  custo?: number;
+  criado_por?: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+// Interfaces para criação e atualização de documentos
+interface DocumentoCreateDTO {
+  nome: string;
+  arquivo: File | string;
+  projeto?: number;
+  risco?: number;
+  custo?: number;
+  criado_por?: number;
+}
+
+interface DocumentoUpdateDTO {
+  nome?: string;
+  arquivo?: File | string;
+  projeto?: number;
+  risco?: number;
+  custo?: number;
+}
+
+// Interface para parâmetros de consulta
+interface DocumentoQueryParams {
+  projeto?: number;
+  risco?: number;
+  custo?: number;
+  ordering?: string;
+  page?: number;
+  search?: string;
+}
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
 
 // Função para obter a instância do cliente fetch apenas quando necessário
 const getApi = () => {
-  return createFetchClient();
+  return apiClient;
+};
+
+// Utilitário para processar erros da API
+const parseApiError = (error: any, defaultMessage: string): string => {
+  if (error instanceof ApiError) {
+    return error.friendlyMessage;
+  }
+  return error.message || defaultMessage;
+};
+
+// Utilitário para processar payloads com FormData
+const processPayload = <T>(payload: T, path: string, method: 'post' | 'put', id?: number): Promise<Documento> => {
+  const url = id ? `${path}/${id}/` : `${path}/`;
+  
+  // Se for FormData, usar como está
+  if (payload instanceof FormData) {
+    return getApi()[method]<Documento>(url, payload, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(response => response.data);
+  }
+  
+  // Se for objeto comum, enviar como JSON
+  return getApi()[method]<Documento>(url, payload)
+    .then(response => response.data);
 };
 
 // Composable para envolver operações com feedback de carregamento
 const withLoading = (promise: Promise<any>, loadingMessage: string, successMessage?: string) => {
-  const { showNotification, updateNotification } = useNotification();
-  const notificationId = showNotification({
-    title: loadingMessage,
-    type: 'loading'
-  });
+  const notification = useNotification();
+  const notificationId = notification.notify('loading', loadingMessage);
 
   return promise
     .then(result => {
       if (successMessage) {
-        updateNotification(notificationId, {
-          title: successMessage,
-          type: 'success',
-          timeout: 3000
-        });
+        notification.notify('success', successMessage);
       } else {
-        updateNotification(notificationId, { remove: true });
+        notification.remove(notificationId);
       }
       return result;
     })
     .catch(error => {
-      updateNotification(notificationId, {
-        title: error.message || 'Ocorreu um erro',
-        type: 'error',
-        timeout: 5000
-      });
+      notification.notify('error', parseApiError(error, 'Ocorreu um erro'));
       throw error;
     });
 };
@@ -51,34 +112,31 @@ export const useDocumentService = () => {
   const { user, hasPermission } = useAuth();
   const { handleApiError } = useApiService();
 
-  const documents = useState<Documento[]>('documents', () => []);
-  const isLoading = useState<boolean>('documents.loading', () => false);
-  const error = useState<string | null>('documents.error', () => null);
+  const documents = ref<Documento[]>([]);
+  const isLoading = ref<boolean>(false);
+  const error = ref<string | null>(null);
 
   // Carregar todos os documentos
-  const fetchDocuments = async (projectId = null) => {
+  const fetchDocuments = async (projectId?: number | null) => {
     isLoading.value = true;
     error.value = null;
 
     try {
+      const params: DocumentoQueryParams = {};
       if (projectId) {
-        const response = await withLoading(
-          listDocumentos({ projeto: projectId }),
-          'Carregando documentos do projeto...',
-          'Documentos carregados com sucesso'
-        );
-        documents.value = response.results;
-      } else {
-        const response = await withLoading(
-          listDocumentos(),
-          'Carregando documentos...',
-          'Documentos carregados com sucesso'
-        );
-        documents.value = response.results;
+        params.projeto = projectId;
       }
+      
+      const response = await withLoading(
+        listDocumentos(params),
+        projectId ? 'Carregando documentos do projeto...' : 'Carregando documentos...',
+        'Documentos carregados com sucesso'
+      );
+      
+      documents.value = response.results;
       return documents.value;
     } catch (err: any) {
-      error.value = err.message || 'Erro ao carregar documentos';
+      error.value = parseApiError(err, 'Erro ao carregar documentos');
       throw err;
     } finally {
       isLoading.value = false;
@@ -98,7 +156,7 @@ export const useDocumentService = () => {
       );
       return document;
     } catch (err: any) {
-      error.value = err.message || `Erro ao carregar documento ${documentId}`;
+      error.value = parseApiError(err, `Erro ao carregar documento ${documentId}`);
       throw err;
     } finally {
       isLoading.value = false;
@@ -106,13 +164,13 @@ export const useDocumentService = () => {
   };
 
   // Criar um novo documento
-  const createDocument = async (documentData: any) => {
+  const createDocument = async (documentData: DocumentoCreateDTO | FormData) => {
     isLoading.value = true;
     error.value = null;
     
     try {
       // Se documentData não for FormData, associar automaticamente o usuário atual como criador
-      if (!(documentData instanceof FormData) && !documentData.criado_por && user.value) {
+      if (!(documentData instanceof FormData) && !documentData.criado_por && user.value?.id) {
         documentData.criado_por = user.value.id;
       }
 
@@ -124,7 +182,7 @@ export const useDocumentService = () => {
       documents.value = [...documents.value, newDocument];
       return newDocument;
     } catch (err: any) {
-      error.value = err.message || 'Erro ao criar documento';
+      error.value = parseApiError(err, 'Erro ao criar documento');
       throw err;
     } finally {
       isLoading.value = false;
@@ -132,7 +190,7 @@ export const useDocumentService = () => {
   };
 
   // Atualizar um documento
-  const updateDocument = async (documentId: number, documentData: any) => {
+  const updateDocument = async (documentId: number, documentData: DocumentoUpdateDTO | FormData) => {
     isLoading.value = true;
     error.value = null;
     
@@ -155,7 +213,7 @@ export const useDocumentService = () => {
 
       return updatedDocument;
     } catch (err: any) {
-      error.value = err.message || `Erro ao atualizar documento ${documentId}`;
+      error.value = parseApiError(err, `Erro ao atualizar documento ${documentId}`);
       throw err;
     } finally {
       isLoading.value = false;
@@ -186,7 +244,7 @@ export const useDocumentService = () => {
 
       return true;
     } catch (err: any) {
-      error.value = err.message || `Erro ao excluir documento ${documentId}`;
+      error.value = parseApiError(err, `Erro ao excluir documento ${documentId}`);
       throw err;
     } finally {
       isLoading.value = false;
@@ -212,7 +270,35 @@ export const useDocumentService = () => {
 
       return url;
     } catch (err: any) {
-      error.value = err.message || `Erro ao baixar documento ${documentId}`;
+      error.value = parseApiError(err, `Erro ao baixar documento ${documentId}`);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // Obter documentos por risco ou custo usando uma função comum
+  const getDocumentosByFilter = async (
+    filterType: 'risco' | 'custo', 
+    filterId: number,
+    loadingMessage: string,
+    errorMessage: string
+  ) => {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      const params: DocumentoQueryParams = {};
+      params[filterType] = filterId;
+      
+      const response = await withLoading(
+        listDocumentos(params),
+        loadingMessage,
+        'Documentos carregados com sucesso'
+      );
+      return response;
+    } catch (err: any) {
+      error.value = parseApiError(err, errorMessage);
       throw err;
     } finally {
       isLoading.value = false;
@@ -221,42 +307,22 @@ export const useDocumentService = () => {
 
   // Obter documentos por risco
   const getDocumentosByRisco = async (riscoId: number) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      const response = await withLoading(
-        listDocumentos({ risco: riscoId }),
-        'Carregando documentos do risco...',
-        'Documentos carregados com sucesso'
-      );
-      return response;
-    } catch (err: any) {
-      error.value = err.message || `Erro ao carregar documentos do risco ${riscoId}`;
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+    return getDocumentosByFilter(
+      'risco', 
+      riscoId, 
+      'Carregando documentos do risco...', 
+      `Erro ao carregar documentos do risco ${riscoId}`
+    );
   };
 
   // Obter documentos por custo
   const getDocumentosByCusto = async (custoId: number) => {
-    isLoading.value = true;
-    error.value = null;
-    
-    try {
-      const response = await withLoading(
-        listDocumentos({ custo: custoId }),
-        'Carregando documentos do custo...',
-        'Documentos carregados com sucesso'
-      );
-      return response;
-    } catch (err: any) {
-      error.value = err.message || `Erro ao carregar documentos do custo ${custoId}`;
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+    return getDocumentosByFilter(
+      'custo', 
+      custoId, 
+      'Carregando documentos do custo...', 
+      `Erro ao carregar documentos do custo ${custoId}`
+    );
   };
 
   return {
@@ -278,50 +344,29 @@ export const useDocumentService = () => {
  * Listar documentos
  * @param params Parâmetros de paginação e filtro
  */
-export async function listDocumentos(params?: {
-  projeto?: number;
-  risco?: number;
-  custo?: number;
-  ordering?: string;
-  page?: number;
-  search?: string;
-}): Promise<PaginatedResponse<Documento>> {
+export async function listDocumentos(params: DocumentoQueryParams = {}): Promise<PaginatedResponse<Documento>> {
   const queryParams = new URLSearchParams();
 
-  if (params?.projeto) queryParams.append('projeto', params.projeto.toString());
-  if (params?.risco) queryParams.append('risco', params.risco.toString());
-  if (params?.custo) queryParams.append('custo', params.custo.toString());
-  if (params?.ordering) queryParams.append('ordering', params.ordering);
-  if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.search) queryParams.append('search', params.search);
+  if (params.projeto) queryParams.append('projeto', params.projeto.toString());
+  if (params.risco) queryParams.append('risco', params.risco.toString());
+  if (params.custo) queryParams.append('custo', params.custo.toString());
+  if (params.ordering) queryParams.append('ordering', params.ordering);
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.search) queryParams.append('search', params.search);
 
   const queryString = queryParams.toString();
   const url = `/api/documents/documentos/${queryString ? `?${queryString}` : ''}`;
 
-  return getApi()<PaginatedResponse<Documento>>(url, {
-    method: 'GET',
-  });
+  return getApi().get<PaginatedResponse<Documento>>(url)
+    .then(response => response.data);
 }
 
 /**
  * Criar um novo documento
  * @param payload Dados do documento
  */
-export async function createDocumento(payload: any): Promise<Documento> {
-  // Se for FormData, usar como está
-  if (payload instanceof FormData) {
-    return getApi()<Documento>('/api/documents/documentos/', {
-      method: 'POST',
-      body: payload,
-      formData: true
-    });
-  }
-  
-  // Se for objeto comum, converter para JSON
-  return getApi()<Documento>('/api/documents/documentos/', {
-    method: 'POST',
-    body: payload,
-  });
+export async function createDocumento(payload: DocumentoCreateDTO | FormData): Promise<Documento> {
+  return processPayload(payload, '/api/documents/documentos', 'post');
 }
 
 /**
@@ -329,9 +374,8 @@ export async function createDocumento(payload: any): Promise<Documento> {
  * @param id ID do documento
  */
 export async function retrieveDocumento(id: number): Promise<Documento> {
-  return getApi()<Documento>(`/api/documents/documentos/${id}/`, {
-    method: 'GET',
-  });
+  return getApi().get<Documento>(`/api/documents/documentos/${id}/`)
+    .then(response => response.data);
 }
 
 /**
@@ -339,21 +383,8 @@ export async function retrieveDocumento(id: number): Promise<Documento> {
  * @param id ID do documento
  * @param payload Dados do documento
  */
-export async function updateDocumento(id: number, payload: any): Promise<Documento> {
-  // Se for FormData, usar como está
-  if (payload instanceof FormData) {
-    return getApi()<Documento>(`/api/documents/documentos/${id}/`, {
-      method: 'PUT',
-      body: payload,
-      formData: true
-    });
-  }
-  
-  // Se for objeto comum, converter para JSON
-  return getApi()<Documento>(`/api/documents/documentos/${id}/`, {
-    method: 'PUT',
-    body: payload,
-  });
+export async function updateDocumento(id: number, payload: DocumentoUpdateDTO | FormData): Promise<Documento> {
+  return processPayload(payload, '/api/documents/documentos', 'put', id);
 }
 
 /**
@@ -361,9 +392,8 @@ export async function updateDocumento(id: number, payload: any): Promise<Documen
  * @param id ID do documento
  */
 export async function destroyDocumento(id: number): Promise<void> {
-  return getApi()<void>(`/api/documents/documentos/${id}/`, {
-    method: 'DELETE',
-  });
+  return getApi().delete(`/api/documents/documentos/${id}/`)
+    .then(() => undefined);
 }
 
 /**
@@ -371,7 +401,6 @@ export async function destroyDocumento(id: number): Promise<void> {
  * @param id ID do documento
  */
 export async function downloadDocumento(id: number): Promise<string> {
-  return getApi()<string>(`/api/documents/documentos/${id}/download/`, {
-    method: 'GET',
-  });
+  return getApi().get<{url: string}>(`/api/documents/documentos/${id}/download/`)
+    .then(response => response.data.url);
 }

@@ -1,27 +1,34 @@
 /**
- * Componentes Card
+ * Componentes de Card
  *
- * Estes componentes são usados para criar cartões de conteúdo com diferentes seções.
- * Suportam cabeçalho, conteúdo, rodapé, título e descrição.
+ * Componentes para criação de cards e seus elementos internos como cabeçalho,
+ * conteúdo, título, descrição e rodapé.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação dos componentes
 import Card from './Card.vue';
-import CardHeader from './CardHeader.vue';
-import CardFooter from './CardFooter.vue';
-import CardTitle from './CardTitle.vue';
-import CardDescription from './CardDescription.vue';
 import CardContent from './CardContent.vue';
+import CardDescription from './CardDescription.vue';
+import CardFooter from './CardFooter.vue';
+import CardHeader from './CardHeader.vue';
+import CardTitle from './CardTitle.vue';
 
 // Exportação explícita dos componentes
 export {
   Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
   CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 };
 
-// Renomear arquivo para evitar conflito de nome
-// Novo nome sugerido: UiCard.ts
+// Exportação padrão para uso com importações default
+export default {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+};

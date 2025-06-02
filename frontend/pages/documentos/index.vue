@@ -4,6 +4,7 @@
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold tracking-tight">Documentos</h1>
         <button
+          v-if="userCanUpload"
           @click="openNewDocumentModal"
           class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700"
         >
@@ -245,8 +246,8 @@
                   <div class="flex items-center space-x-2">
                     <button
                       @click="downloadDocument(doc)"
-                      class="rounded-md p-1 text-blue-600 hover:bg-blue-50"
-                      title="Download"
+                      class="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                      title="Baixar"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -288,6 +289,53 @@
                           d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"
                         ></path>
                         <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                    <!-- Botão de edição - apenas para usuários com permissão -->
+                    <button
+                      v-if="userCanEdit"
+                      @click="editDocument(doc)"
+                      class="rounded-md p-1 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                      title="Editar documento"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-4 w-4"
+                      >
+                        <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                        <path d="m15 5 4 4"></path>
+                      </svg>
+                    </button>
+                    <!-- Botão de exclusão - apenas para usuários com permissão -->
+                    <button
+                      v-if="userCanDelete"
+                      @click="deleteDocument(doc.id)"
+                      class="rounded-md p-1 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                      title="Excluir documento"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-4 w-4"
+                      >
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                       </svg>
                     </button>
                   </div>
@@ -365,7 +413,7 @@
       >
         <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium">Novo Documento</h3>
+            <h3 class="text-lg font-medium">{{ isEditing ? 'Editar Documento' : 'Novo Documento' }}</h3>
             <button
               @click="showDocumentModal = false"
               class="rounded-full p-1 hover:bg-gray-100"
@@ -464,9 +512,12 @@
                 id="arquivo"
                 ref="fileInput"
                 type="file"
-                required
+                :required="!isEditing"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
+              <p v-if="isEditing" class="mt-1 text-xs text-gray-500">
+                Deixe em branco para manter o arquivo atual
+              </p>
             </div>
             <div class="flex justify-end space-x-3 pt-4">
               <button
@@ -500,7 +551,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDocumentService } from '~/services/api/documentService';
 import { useProjectService } from '~/services/api/services/projectService';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 import { createFormData } from '~/services/api/config';
 
 definePageMeta({
@@ -511,6 +562,11 @@ const router = useRouter();
 const { $api } = useNuxtApp();
 const fileInput = ref(null);
 
+// Serviços e autenticação
+const documentService = useDocumentService();
+const projectService = useProjectService();
+const auth = useAuth();
+
 // Estado
 const documents = ref([]);
 const projects = ref([]);
@@ -518,6 +574,12 @@ const loading = ref(true);
 const error = ref(null);
 const currentPage = ref(1);
 const totalPages = ref(1);
+
+// Permissões baseadas em papel
+const userRole = computed(() => auth.user?.role || 'viewer');
+const userCanUpload = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanEdit = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanDelete = computed(() => ['admin', 'manager'].includes(userRole.value));
 const searchQuery = ref('');
 const typeFilter = ref('');
 const projectFilter = ref('');
@@ -526,12 +588,16 @@ const uploading = ref(false);
 
 // Formulário de documento
 const documentForm = ref({
+  id: null,
   titulo: '',
   descricao: '',
   projeto: '',
   tipo: 'OUTRO',
   versao: '1.0',
 });
+
+// Controle de edição
+const isEditing = ref(false);
 
 // Filtrar documentos
 const filteredDocuments = computed(() => {
@@ -684,19 +750,34 @@ const getProjectName = (projectId) => {
 
 // Abrir modal de novo documento
 const openNewDocumentModal = () => {
+  // Resetar o formulário
   documentForm.value = {
+    id: null,
     titulo: '',
     descricao: '',
     projeto: projects.value.length > 0 ? projects.value[0].id : '',
     tipo: 'OUTRO',
     versao: '1.0',
   };
+  isEditing.value = false;
   showDocumentModal.value = true;
 };
 
 // Upload de documento
 const uploadDocument = async () => {
-  if (!fileInput.value.files || fileInput.value.files.length === 0) {
+  // Verificar permissões baseadas em papel
+  if (!userCanUpload.value && !isEditing.value) {
+    alert('Você não tem permissão para fazer upload de documentos.');
+    return;
+  }
+  
+  if (!userCanEdit.value && isEditing.value) {
+    alert('Você não tem permissão para editar documentos.');
+    return;
+  }
+
+  // Para criação de novos documentos, arquivo é obrigatório
+  if (!isEditing.value && (!fileInput.value.files || fileInput.value.files.length === 0)) {
     alert('Por favor, selecione um arquivo para upload.');
     return;
   }
@@ -711,21 +792,34 @@ const uploadDocument = async () => {
       projeto: documentForm.value.projeto,
       tipo: documentForm.value.tipo,
       versao: documentForm.value.versao || '1.0',
-      arquivo: fileInput.value.files[0],
     };
+    
+    // Adicionar arquivo apenas se estiver criando um novo documento ou se um novo arquivo foi selecionado
+    if (!isEditing.value || (fileInput.value.files && fileInput.value.files.length > 0)) {
+      documentData.arquivo = fileInput.value.files[0];
+    }
 
     // Usar o helper createFormData para criar o FormData corretamente
     const formData = createFormData(documentData);
 
-    // Usar o novo serviço de API para criar documentos
-    await createDocumento(formData);
+    if (isEditing.value) {
+      // Atualizar documento existente
+      await documentService.updateDocument(documentForm.value.id, formData);
+      alert('Documento atualizado com sucesso!');
+    } else {
+      // Criar novo documento
+      await documentService.createDocument(formData);
+      alert('Documento criado com sucesso!');
+    }
 
     showDocumentModal.value = false;
     await fetchDocuments();
   } catch (err) {
-    console.error('Erro ao fazer upload do documento:', err);
+    console.error('Erro ao processar o documento:', err);
     alert(
-      'Não foi possível fazer o upload do documento. Por favor, tente novamente.'
+      isEditing.value
+        ? 'Não foi possível atualizar o documento. Por favor, tente novamente.'
+        : 'Não foi possível fazer o upload do documento. Por favor, tente novamente.'
     );
   } finally {
     uploading.value = false;
@@ -735,25 +829,61 @@ const uploadDocument = async () => {
 // Download de documento
 const downloadDocument = async (doc) => {
   try {
-    // Usar o novo serviço de API para download de documentos
-    const url = await downloadDocumento(doc.id);
-    window.open(url, '_blank');
+    const response = await fetch(doc.arquivo);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.titulo;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
   } catch (err) {
-    console.error('Erro ao fazer download do documento:', err);
-    error.value =
-      'Não foi possível fazer o download do documento. Por favor, tente novamente.';
+    console.error('Erro ao baixar documento:', err);
   }
 };
 
 // Ver detalhes do documento
-const viewDocument = async (id) => {
+const viewDocument = (id) => {
+  // Implementar visualização detalhada do documento
+  console.log('Visualizar documento:', id);
+  // Redirecionar para página de detalhes ou abrir modal
+};
+
+// Editar documento
+const editDocument = (doc) => {
+  // Preencher o formulário com os dados do documento
+  documentForm.value = {
+    id: doc.id,
+    titulo: doc.titulo,
+    descricao: doc.descricao,
+    tipo: doc.tipo,
+    projeto: doc.projeto,
+    arquivo: null // Não podemos editar o arquivo, apenas os metadados
+  };
+  
+  // Abrir o modal de edição
+  showDocumentModal.value = true;
+  isEditing.value = true;
+};
+
+// Excluir documento
+const deleteDocument = async (id) => {
+  if (!confirm('Tem certeza que deseja excluir este documento?')) {
+    return;
+  }
+  
   try {
-    // Buscar detalhes do documento usando o novo serviço de API antes de navegar
-    await retrieveDocumento(id);
-    router.push(`/documentos/${id}`);
+    loading.value = true;
+    await documentService.deleteDocument(id);
+    // Atualizar a lista após exclusão
+    await fetchDocuments();
+    alert('Documento excluído com sucesso!');
   } catch (err) {
-    console.error('Erro ao buscar detalhes do documento:', err);
-    error.value = 'Não foi possível carregar os detalhes do documento.';
+    console.error('Erro ao excluir documento:', err);
+    alert('Erro ao excluir documento. Por favor, tente novamente.');
+  } finally {
+    loading.value = false;
   }
 };
 

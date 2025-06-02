@@ -17,16 +17,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { z } from 'zod'
-import { useFormValidation } from '~/composables/useFormValidation'
-import { useAuth } from '~/composables/useAuth'
+import { useFormValidation } from '~/stores/composables/useFormValidation'
+import { useAuth } from '~/stores/composables/useAuth'
+import { useApiService } from '~/stores/composables/useApiService'
 import { useTaskService } from '~/services/api/services/taskService'
 import { useTeamService } from '~/services/api/services/teamService'
-import { useDocumentService } from '~/services/api/documentService'
-import Button from '~/components/ui/Button.vue'
-import LoadingButton from '~/components/ui/LoadingButton.vue'
-import FileUploader from '~/components/ui/file-uploader/FileUploader.vue'
-import { useNotification } from '~/composables/useNotification'
-import type { Tarefa, Usuario } from '~/services/api/types'
+import { useDocumentService } from '~/services/api/services/documentService'
+import Button from '~/components/ui/input/button/Button.vue'
+import LoadingButton from '~/components/shared/feedback/loading'
+import FileUploader from '~/components/ui/input/file-uploader/FileUploader.vue'
+import { useNotification } from '~/stores/composables/useNotification'
+import type { Tarefa, User } from '@/services/utils/types'
 
 const props = defineProps({
   task: {
@@ -69,7 +70,7 @@ const taskSchema = z.object({
   descricao: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres'),
   data_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   data_fim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
-    .refine(data => !form.data.data_inicio || data >= form.data.data_inicio, {
+    .refine(data => !form.formData.value.data_inicio || data >= form.formData.value.data_inicio, {
       message: 'A data de término deve ser posterior à data de início',
     }),
   status: z.enum(['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDA', 'ATRASADA']),
@@ -391,11 +392,11 @@ onMounted(() => {
       <FileUploader
         accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png"
         :multiple="true"
-        :max-size="10 * 1024 * 1024" <!-- 10MB -->
+        :max-size="10 * 1024 * 1024" 
         :max-files="5"
         @files-selected="handleFilesSelected"
         class="border-dashed border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4"
-      />
+      ></FileUploader>
     </div>
     
     <!-- Botões de ação -->

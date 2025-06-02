@@ -5,9 +5,44 @@
  */
 import { ref, computed } from 'vue';
 import * as projectsApi from '../endpoints/projects';
-import { useAuth } from '~/composables/useAuth';
-import { useApiService } from '~/composables/useApiService';
-import { useProjectStore } from '~/stores/projectStore';
+import { useAuth } from '~/stores/composables/useAuth';
+import { useApiService } from '~/stores/composables/useApiService';
+// Importando defineStore para criar a store localmente
+import { defineStore } from 'pinia';
+
+// Definindo store de projetos localmente para evitar dependência externa
+const useProjectStore = defineStore('projects', () => {
+  const projects = ref([]);
+  const isLoading = ref(false);
+  
+  function setProjects(newProjects) {
+    projects.value = newProjects;
+  }
+  
+  function addProject(project) {
+    projects.value.push(project);
+  }
+  
+  function updateProjectInStore(id, updatedProject) {
+    const index = projects.value.findIndex(p => p.id === id);
+    if (index !== -1) {
+      projects.value[index] = { ...projects.value[index], ...updatedProject };
+    }
+  }
+  
+  function removeProject(id) {
+    projects.value = projects.value.filter(p => p.id !== id);
+  }
+  
+  return {
+    projects,
+    isLoading,
+    setProjects,
+    addProject,
+    updateProjectInStore,
+    removeProject
+  };
+});
 
 // Composable para gerenciamento de projetos
 export const useProjectService = () => {

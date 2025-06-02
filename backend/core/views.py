@@ -6,12 +6,62 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
+# Imports adicionados para drf-spectacular e serializadores
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers
+
 from projects.models import Projeto
 from tasks.models import Tarefa
 from risks.models import Risco
 from costs.models import Custo
 from .decorators import swagger_schema_with_examples
+from .openapi import dashboard_schema, health_check_schema
 
+# Serializers para drf-spectacular
+# Comentário: Serializadores para definir os esquemas de resposta para drf-spectacular.
+# Estes serializadores ajudam a gerar uma documentação da API clara e precisa.
+
+class TarefaStatusCountSerializer(serializers.Serializer):
+    # Comentário: Representa a contagem de tarefas para um status específico.
+    status = serializers.CharField(help_text="Status da tarefa (ex: Pendente, Em Andamento, Concluída)")
+    count = serializers.IntegerField(help_text="Quantidade de tarefas com este status")
+
+class VisaoGeralDashboardSerializer(serializers.Serializer):
+    # Comentário: Define a estrutura dos dados para a visão geral do dashboard.
+    total_projetos = serializers.IntegerField(help_text="Número total de projetos no sistema")
+    total_tarefas = serializers.IntegerField(help_text="Número total de tarefas no sistema")
+    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Lista detalhada da contagem de tarefas por cada status")
+
+class MetricasProjetoSerializer(serializers.Serializer):
+    # Comentário: Define a estrutura dos dados para as métricas de um projeto específico.
+    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Contagem de tarefas do projeto, agrupadas por status")
+    progresso = serializers.FloatField(help_text="Percentual de conclusão do projeto (0-100)")
+    riscos_ativos = serializers.IntegerField(help_text="Número de riscos atualmente ativos para o projeto")
+    custos_totais = serializers.FloatField(help_text="Soma dos custos registrados para o projeto")
+    dias_restantes = serializers.IntegerField(help_text="Número de dias restantes até a data final planejada do projeto")
+
+class ErrorSerializer(serializers.Serializer):
+    # Comentário: Serializador padrão para respostas de erro.
+    error = serializers.CharField(help_text="Mensagem descrevendo o erro ocorrido")
+
+class ProximaTarefaSerializer(serializers.Serializer):
+    # Comentário: Define a estrutura para os detalhes de uma próxima tarefa.
+    titulo = serializers.CharField(help_text="Título da tarefa")
+    data_inicio = serializers.DateTimeField(help_text="Data e hora de início planejadas para a tarefa")
+    projeto__titulo = serializers.CharField(help_text="Título do projeto ao qual esta tarefa pertence")
+
+class DashboardUsuarioSerializer(serializers.Serializer):
+    # Comentário: Define a estrutura dos dados para o dashboard pessoal do usuário.
+    projetos_gerenciados = serializers.IntegerField(help_text="Número de projetos onde o usuário é o gerente")
+    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Contagem das tarefas do usuário, agrupadas por status")
+    tarefas_atrasadas = serializers.IntegerField(help_text="Número de tarefas atribuídas ao usuário que estão atrasadas")
+    proximas_tarefas = ProximaTarefaSerializer(many=True, help_text="Lista das próximas tarefas agendadas para o usuário")
+
+@extend_schema(
+    exclude=True,  # Comentário: Esta view é um redirecionamento, não precisa aparecer na documentação da API.
+    tags=['Outros'] 
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def documentacao_api(request):
@@ -20,16 +70,76 @@ def documentacao_api(request):
     """
     return redirect('openapi-schema')
 
+@extend_schema(
+    operation_id='health_check_retrieve',
+    summary="Verificação de Saúde Simples",
+    description="Endpoint simples para verificar se a API está operacional. Retorna 'ok' se estiver tudo certo.",
+    responses={
+        200: OpenApiResponse(
+            response={'type': 'object', 'properties': {'status': {'type': 'string', 'example': 'ok'}}},
+            description="API está operacional."
+        )
+    },
+    tags=['Saúde do Sistema']
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@extend_schema(
+    summary="Verificar status da API",
+    description="Endpoint para verificar se a API está funcionando corretamente",
+    responses={200: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            'Exemplo de resposta',
+            value={
+                'status': 'ok',
+                'database': 'connected',
+                'version': '1.0.0'
+            }
+        )
+    ]
+)
 def checagem_saude(request):
     """
     Endpoint para verificar se a API está funcionando
     """
     return Response({"status": "ok"})
 
+@extend_schema(
+    operation_id='health_check_original_retrieve',
+    summary="Verificação de Saúde Detalhada",
+    description="Endpoint para verificar o estado da API, incluindo versão e ambiente. Não requer autenticação.",
+    responses={
+        200: OpenApiResponse(
+            response={
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'string', 'example': 'online'},
+                    'versao': {'type': 'string', 'example': '1.0'},
+                    'ambiente': {'type': 'string', 'example': 'desenvolvimento'},
+                    'data_hora': {'type': 'string', 'format': 'date-time', 'example': '2024-07-15T14:30:00Z'}
+                }
+            },
+            description="API está operacional com detalhes."
+        )
+    },
+    tags=['Saúde do Sistema']
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@extend_schema(
+    summary="Verificar status da API (versão original)",
+    description="Endpoint simples para verificar se a API está funcionando. Não requer autenticação.",
+    responses={200: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            'Exemplo de resposta',
+            value={
+                'status': 'ok'
+            }
+        )
+    ]
+)
 def checagem_saude_original(request):
     """
     Endpoint simples para verificar se a API está funcionando.
@@ -47,27 +157,43 @@ api_documentation = documentacao_api
 health_check = checagem_saude
 health_check_original = checagem_saude_original
 
-@swagger_schema_with_examples(
-    method='get',
-    operation_description="Endpoint para obter dados do dashboard",
+@extend_schema(
+    operation_id='visao_geral_dashboard_retrieve',
+    summary="Visão Geral do Dashboard",
+    description="Retorna uma visão geral do sistema, incluindo o número total de projetos, tarefas e a distribuição de tarefas por status. Requer autenticação.",
     responses={
-        200: {
-            'description': "Dados do dashboard",
-            'examples': {
-                "application/json": {
-                    'total_projetos': 5,
-                    'total_tarefas': 15,
-                    'tarefas_por_status': [
-                        {'status': 'Pendente', 'count': 5},
-                        {'status': 'Em Andamento', 'count': 7},
-                        {'status': 'Concluída', 'count': 3}
-                    ]
-                }
-            }
-        }
-    }
+        200: OpenApiResponse(
+            response=VisaoGeralDashboardSerializer,
+            description="Dados consolidados do dashboard.",
+            examples=[
+                OpenApiExample(
+                    name="Exemplo de Resposta",
+                    summary="Exemplo de dados retornados pelo dashboard.",
+                    value={
+                        'total_projetos': 5,
+                        'total_tarefas': 15,
+                        'tarefas_por_status': [
+                            {'status': 'Pendente', 'count': 5},
+                            {'status': 'Em Andamento', 'count': 7},
+                            {'status': 'Concluída', 'count': 3}
+                        ]
+                    }
+                )
+            ]
+        )
+    },
+    tags=['Dashboard']
 )
 @api_view(['GET'])
+@extend_schema(
+    summary="Visão geral do dashboard",
+    description="Endpoint para obter dados gerais do dashboard",
+    responses={
+        200: VisaoGeralDashboardSerializer,
+        400: ErrorSerializer,
+        401: ErrorSerializer
+    }
+)
 def visao_geral_dashboard(request):
     """
     Endpoint para obter dados do dashboard
@@ -99,47 +225,70 @@ def visao_geral_dashboard(request):
 
 dashboard_overview = visao_geral_dashboard
 
-@swagger_schema_with_examples(
-    method='get',
-    operation_description="Retorna métricas específicas de um projeto",
-    manual_parameters=[
-        {
-            'name': 'project_id',
-            'in': 'path',
-            'description': "ID do projeto",
-            'type': 'integer',
-            'required': True
-        }
+@extend_schema(
+    operation_id='metricas_projeto_retrieve',
+    summary="Métricas Detalhadas do Projeto",
+    description="Fornece métricas detalhadas para um projeto específico, como distribuição de tarefas por status, progresso, riscos ativos, custos e dias restantes. Acessível publicamente para fins de demonstração ou integração externa.",
+    parameters=[
+        OpenApiParameter(
+            name='project_id',
+            location=OpenApiParameter.PATH,
+            description="ID numérico do projeto para o qual as métricas são solicitadas.",
+            required=True,
+            type=OpenApiTypes.INT 
+        )
     ],
     responses={
-        200: {
-            'description': "Métricas do projeto",
-            'examples': {
-                "application/json": {
-                    'tarefas_por_status': [
-                        {'status': 'Pendente', 'count': 5},
-                        {'status': 'Em Andamento', 'count': 3},
-                        {'status': 'Concluída', 'count': 7}
-                    ],
-                    'progresso': 46.67,
-                    'riscos_ativos': 2,
-                    'custos_totais': 15000.0,
-                    'dias_restantes': 30
-                }
-            }
-        },
-        404: {
-            'description': "Projeto não encontrado",
-            'examples': {
-                "application/json": {
-                    "error": "Projeto não encontrado"
-                }
-            }
-        }
-    }
+        200: OpenApiResponse(
+            response=MetricasProjetoSerializer,
+            description="Métricas detalhadas do projeto.",
+            examples=[
+                OpenApiExample(
+                    name="Exemplo de Métricas",
+                    summary="Exemplo de métricas retornadas para um projeto.",
+                    value={
+                        'tarefas_por_status': [
+                            {'status': 'Pendente', 'count': 5},
+                            {'status': 'Em Andamento', 'count': 3},
+                            {'status': 'Concluída', 'count': 7}
+                        ],
+                        'progresso': 46.67,
+                        'riscos_ativos': 2,
+                        'custos_totais': 15000.0,
+                        'dias_restantes': 30
+                    }
+                )
+            ]
+        ),
+        404: OpenApiResponse(
+            response=ErrorSerializer,
+            description="O projeto com o ID especificado não foi encontrado.",
+            examples=[
+                OpenApiExample(
+                    name="Erro Projeto Não Encontrado",
+                    summary="Exemplo de erro quando o projeto não é encontrado.",
+                    value={"error": "Projeto não encontrado"}
+                )
+            ]
+        )
+    },
+    tags=['Projetos', 'Dashboard']
 )
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny]) # Mantido conforme original
+@extend_schema(
+    summary="Métricas de projeto",
+    description="Retorna métricas específicas de um projeto",
+    parameters=[
+        OpenApiParameter(name='project_id', description='ID do projeto', required=True, type=int)
+    ],
+    responses={
+        200: MetricasProjetoSerializer,
+        400: ErrorSerializer,
+        401: ErrorSerializer,
+        404: ErrorSerializer
+    }
+)
 def metricas_projeto(request, project_id):
     """
     Retorna métricas específicas de um projeto.
@@ -197,34 +346,54 @@ def metricas_projeto(request, project_id):
 
 project_metrics = metricas_projeto
 
-@swagger_schema_with_examples(
-    method='get',
-    operation_description="Retorna dados específicos para o dashboard do usuário",
+@extend_schema(
+    operation_id='dashboard_usuario_retrieve',
+    summary="Dashboard Pessoal do Usuário",
+    description="Retorna dados personalizados para o dashboard do usuário autenticado, incluindo projetos gerenciados, suas tarefas por status, tarefas atrasadas e próximas tarefas. Requer autenticação.",
     responses={
-        200: {
-            'description': "Dados do dashboard do usuário",
-            'examples': {
-                "application/json": {
-                    'projetos_gerenciados': 2,
-                    'tarefas_por_status': [
-                        {'status': 'Pendente', 'count': 3},
-                        {'status': 'Em Andamento', 'count': 2},
-                        {'status': 'Concluída', 'count': 5}
-                    ],
-                    'tarefas_atrasadas': 1,
-                    'proximas_tarefas': [
-                        {
-                            'titulo': 'Implementar login',
-                            'data_inicio': '2023-05-15T10:00:00Z',
-                            'projeto__titulo': 'Sistema de Gestão'
-                        }
-                    ]
-                }
-            }
-        }
-    }
+        200: OpenApiResponse(
+            response=DashboardUsuarioSerializer,
+            description="Dados consolidados para o dashboard do usuário.",
+            examples=[
+                OpenApiExample(
+                    name="Exemplo de Dashboard do Usuário",
+                    summary="Exemplo de dados retornados para o dashboard pessoal.",
+                    value={
+                        'projetos_gerenciados': 2,
+                        'tarefas_por_status': [
+                            {'status': 'Pendente', 'count': 3},
+                            {'status': 'Em Andamento', 'count': 2},
+                            {'status': 'Concluída', 'count': 5}
+                        ],
+                        'tarefas_atrasadas': 1,
+                        'proximas_tarefas': [
+                            {
+                                'titulo': 'Implementar login',
+                                'data_inicio': '2023-05-15T10:00:00Z',
+                                'projeto__titulo': 'Sistema de Gestão'
+                            },
+                            {
+                                'titulo': 'Revisar documentação API',
+                                'data_inicio': '2023-05-16T09:00:00Z',
+                                'projeto__titulo': 'Plataforma XPTO'
+                            }
+                        ]
+                    }
+                )
+            ]
+        )
+    },
+    tags=['Dashboard', 'Usuários']
 )
 @api_view(['GET'])
+@extend_schema(
+    summary="Dashboard do usuário",
+    description="Retorna dados específicos para o dashboard do usuário logado",
+    responses={
+        200: DashboardUsuarioSerializer,
+        401: ErrorSerializer
+    }
+)
 def dashboard_usuario(request):
     """
     Retorna dados específicos para o dashboard do usuário.

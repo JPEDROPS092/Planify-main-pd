@@ -4,8 +4,8 @@
  */
 import { ref } from 'vue';
 import { useState } from '#imports';
-import { apiClient } from '../config';
-import { useAuth } from '~/composables/useAuth';
+import { apiClient } from './apiClient';
+import { useAuth } from '~/stores/composables/useAuth';
 
 // Define interfaces for API responses
 interface PaginatedResponse<T> {

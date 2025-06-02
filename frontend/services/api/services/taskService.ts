@@ -3,10 +3,12 @@
  * Gerado a partir da especificação OpenAPI
  * Otimizado com cache via Pinia
  */
-import { createFetchClient, useAuth } from '../auth';
-import { createFormData } from '../config';
-import { useState, computed } from '#imports';
-import { useTaskStore } from '~/stores/taskStore';
+import { useAuth } from '~/stores/composables/useAuth';
+import { apiClient } from './apiClient';
+import { createFormData } from '../client/config';
+import { useState, computed, ref } from '#imports';
+// Usando defineStore para criar a store de tarefas localmente se necessário
+import { defineStore } from 'pinia';
 import type {
   Tarefa,
   TarefaRequest,
@@ -16,8 +18,42 @@ import type {
 
 // Função para obter a instância do cliente fetch apenas quando necessário
 const getApi = () => {
-  return createFetchClient();
+  return apiClient;
 };
+
+// Definindo store de tarefas localmente para evitar dependência externa
+const useTaskStore = defineStore('tasks', () => {
+  const tasks = ref([]);
+  const isLoading = ref(false);
+  
+  function setTasks(newTasks) {
+    tasks.value = newTasks;
+  }
+  
+  function addTask(task) {
+    tasks.value.push(task);
+  }
+  
+  function updateTaskInStore(id, updatedTask) {
+    const index = tasks.value.findIndex(t => t.id === id);
+    if (index !== -1) {
+      tasks.value[index] = { ...tasks.value[index], ...updatedTask };
+    }
+  }
+  
+  function removeTask(id) {
+    tasks.value = tasks.value.filter(t => t.id !== id);
+  }
+  
+  return {
+    tasks,
+    isLoading,
+    setTasks,
+    addTask,
+    updateTaskInStore,
+    removeTask
+  };
+});
 
 /**
  * Listar tarefas

@@ -1,57 +1,64 @@
-import { defineNuxtPlugin, navigateTo, useRoute } from '#app';
-import { useAuth } from '@/composables/useAuth';
-import { apiClient } from './config';
+/**
+ * Endpoints de autenticação para o Planify
+ * Centraliza todas as chamadas de API relacionadas à autenticação
+ */
+import { apiClient } from '../services/apiClient';
+import type { 
+  TokenObtainPair, 
+  TokenRefresh, 
+  LoginCredentials, 
+  ExtendedUserProfile,
+} from '~/services/utils/types';
 
-// Authentication API endpoints
-export const createAuthToken = async (credentials: { username: string; password: string }) => {
-  const response = await apiClient.post('/api/auth/token/', credentials);
-  return response.data;
+/**
+ * Obtém token de acesso a partir das credenciais de login
+ * @param credentials Credenciais de login (username/email e senha)
+ * @returns Tokens de acesso e refresh
+ */
+export const createAuthToken = async (credentials: LoginCredentials): Promise<TokenObtainPair> => {
+  return await apiClient.post<TokenObtainPair>('/api/auth/token/', credentials);
 };
 
-export const refreshAuthTokenCreate = async (data: { refresh: string }) => {
-  const response = await apiClient.post('/api/auth/token/refresh/', data);
-  return response.data;
+/**
+ * Atualiza o token de acesso usando o token de refresh
+ * @param data Objeto contendo o token de refresh
+ * @returns Novo token de acesso (e possivelmente novo token de refresh)
+ */
+export const refreshAuthToken = async (data: { refresh: string }): Promise<TokenRefresh> => {
+  return await apiClient.post<TokenRefresh>('/api/auth/token/refresh/', data);
 };
 
-export const retrieveAuthUsersMe = async () => {
-  const response = await apiClient.get('/api/auth/users/me/');
-  return response.data;
+/**
+ * Obtém os dados do usuário autenticado
+ * @returns Perfil completo do usuário
+ */
+export const retrieveAuthUsersMe = async (): Promise<ExtendedUserProfile> => {
+  return await apiClient.get<ExtendedUserProfile>('/api/auth/users/me/');
 };
 
-// Auth plugin for Nuxt
-export default defineNuxtPlugin(async (nuxtApp) => {
-  const { checkAuth, isAuthenticated } = useAuth();
-  const route = useRoute();
+/**
+ * Registra um novo usuário
+ * @param userData Dados do usuário a ser registrado
+ * @returns Perfil do usuário criado
+ */
+export const registerUser = async (userData: Partial<ExtendedUserProfile>): Promise<ExtendedUserProfile> => {
+  return await apiClient.post<ExtendedUserProfile>('/api/auth/users/', userData);
+};
 
-  // Verificar autenticação ao iniciar a aplicação
-  if (process.client) {
-    try {
-      await checkAuth();
-    } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
-    }
-  }
+/**
+ * Solicita redefinição de senha
+ * @param email Email do usuário
+ * @returns Resposta da API
+ */
+export const requestPasswordReset = async (email: string): Promise<any> => {
+  return await apiClient.post('/api/auth/users/reset_password/', { email });
+};
 
-  // Middleware global para verificar autenticação em rotas protegidas
-  nuxtApp.hook('app:created', () => {
-    nuxtApp.hook('page:start', async () => {
-      // Rotas públicas que não precisam de autenticação
-      const publicRoutes = [
-        '/login',
-        '/register',
-        '/forgot-password',
-        '/reset-password',
-      ];
-
-      // Se a rota atual não é pública e o usuário não está autenticado, redirecionar para login
-      if (!publicRoutes.includes(route.path) && !isAuthenticated.value) {
-        return navigateTo('/login');
-      }
-
-      // Se o usuário está autenticado e está tentando acessar uma página de autenticação, redirecionar para dashboard
-      if (publicRoutes.includes(route.path) && isAuthenticated.value) {
-        return navigateTo('/dashboard');
-      }
-    });
-  });
-});
+/**
+ * Confirma a redefinição de senha
+ * @param data Dados para redefinição (uid, token, nova senha)
+ * @returns Resposta da API
+ */
+export const confirmPasswordReset = async (data: { uid: string; token: string; new_password: string }): Promise<any> => {
+  return await apiClient.post('/api/auth/users/reset_password_confirm/', data);
+};

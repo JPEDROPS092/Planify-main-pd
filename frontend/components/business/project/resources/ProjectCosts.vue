@@ -213,8 +213,8 @@ import { useCostService } from '~/services/api/services/costService';
 import type { Custo, CustoCreate, CustoUpdate } from '~/services/api/types'; // Tipos atualizados
 import { useProjectService } from '~/services/api/services/projectService';
 import type { Projeto } from '~/services/api/types';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
+import { useAuth } from '~/stores/composables/useAuth';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import CostForm from '~/components/CostForm.vue'; // Assumindo que você criará este componente

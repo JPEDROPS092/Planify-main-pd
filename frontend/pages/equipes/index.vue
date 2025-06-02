@@ -315,7 +315,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTeamService } from '~/services/api/services/teamService';
 import { useUserService } from '~/services/api/userService';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 import { useNuxtApp } from '#app';
 
 const router = useRouter();

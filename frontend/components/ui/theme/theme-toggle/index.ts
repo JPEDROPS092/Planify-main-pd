@@ -1,12 +1,14 @@
 /**
  * Componente ThemeToggle
  *
- * Este componente permite controlar o tema da aplicação (claro/escuro/sistema)
- * e ajustes de acessibilidade como tamanho de fonte.
+ * Componente para alternar entre temas claro e escuro.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import ThemeToggle from './ThemeToggle.vue';
 
 // Exportação explícita do componente
 export { ThemeToggle };
+
+// Exportação padrão para uso com importações default
+export default { ThemeToggle };

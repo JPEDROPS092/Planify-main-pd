@@ -806,8 +806,8 @@ import { ref, computed, onMounted, watch, onBeforeMount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useProjectService } from '~/services/api/services/projectService';
 import { useUserService } from '~/services/api/services/userService';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
+import { useAuth } from '~/stores/composables/useAuth';
+import { useNotification } from '~/stores/composables/useNotification';
 
 const router = useRouter();
 const route = useRoute();
@@ -847,6 +847,12 @@ const editingProject = ref(null);
 // Lista de usuários para seleção de gerente
 const users = ref([]);
 const loadingUsers = ref(false);
+
+// Permissões baseadas em papel
+const userRole = computed(() => user?.role || 'viewer');
+const userCanCreate = computed(() => ['admin', 'manager'].includes(userRole.value));
+const userCanEdit = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanDelete = computed(() => ['admin', 'manager'].includes(userRole.value));
 
 // Projetos filtrados
 const filteredProjects = computed(() => {

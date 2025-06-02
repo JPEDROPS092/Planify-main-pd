@@ -173,8 +173,8 @@ import { useRiskService } from '~/services/api/services/riskService';
 import type { Risco, RiscoCreate, RiscoUpdate } from '~/services/api/types'; // Tipos atualizados
 import { useUserService } from '~/services/api/userService';
 import type { User } from '~/services/api/types';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
+import { useAuth } from '~/stores/composables/useAuth';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import RiskForm from '~/components/RiskForm.vue'; // Assumindo que você criará este componente

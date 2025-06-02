@@ -1,32 +1,35 @@
 <!--
   Avatar.vue
-  
-  Componente para exibir avatares de usuários ou entidades.
-  
+
+  Componente reutilizável para exibir avatares de usuários ou entidades.
+  Suporta variações de tamanho e formato, e aceita conteúdo via slot.
+
   Props:
-  - size: Tamanho do avatar (sm, base, lg)
-  - shape: Forma do avatar (circle, square)
-  - class: Classes CSS adicionais
-  
+  - size: Tamanho do avatar ('sm', 'base', 'lg') — padrão: 'sm'
+  - shape: Forma do avatar ('circle', 'square') — padrão: 'circle'
+  - class: Classes CSS adicionais para personalização
+
   Exemplo de uso:
   <Avatar size="base" shape="circle">
-    <AvatarImage src="/path/to/image.jpg" alt="Avatar do usuário" />
+    <AvatarImage src="/caminho/para/imagem.jpg" alt="Avatar do usuário" />
     <AvatarFallback>JP</AvatarFallback>
   </Avatar>
 -->
 
 <script setup lang="ts">
-// [Refatorado para padronização] - Importações atualizadas
 import type { HTMLAttributes } from 'vue';
-import { cn } from '@/lib/utils';
-import { AvatarRoot } from 'reka-ui';
-import { avatarVariant, type AvatarVariants } from './index';
+import { cn } from '@/lib/utils'; // Combina classes de forma segura
+import { AvatarRoot } from 'reka-ui'; // Componente base do Avatar
+import { avatarVariant } from '~/components/ui/display/avatar/variants'; // Variantes do avatar definidas em outro arquivo
+import { withDefaults } from 'vue'; // Função para definir valores padrão     
+import type { AvatarVariants } from '~/components/ui/display/avatar/variants';
 
+// Definição das props com valores padrão
 const props = withDefaults(
   defineProps<{
     class?: HTMLAttributes['class'];
-    size?: AvatarVariants['size'];
-    shape?: AvatarVariants['shape'];
+    size?: AvatarVariants['size'];   // ✅ Correto agora
+    shape?: AvatarVariants['shape']; // ✅ Correto agora
   }>(),
   {
     size: 'sm',
@@ -36,11 +39,12 @@ const props = withDefaults(
 </script>
 
 <template>
+  <!-- Componente raiz com variantes aplicadas dinamicamente -->
   <AvatarRoot :class="cn(avatarVariant({ size, shape }), props.class)">
     <slot />
   </AvatarRoot>
 </template>
 
 <style scoped>
-/* Adicione estilos específicos para o componente aqui, se necessário */
+/* Estilos adicionais podem ser aplicados aqui se necessário */
 </style>

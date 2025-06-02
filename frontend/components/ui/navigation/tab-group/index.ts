@@ -1,14 +1,14 @@
 /**
  * Componente TabGroup
  *
- * Este componente organiza conteúdo em abas, permitindo alternar entre diferentes seções
- * sem navegar para outra página.
+ * Componente para organização de conteúdo em abas.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import TabGroup from './TabGroup.vue';
-import type { Tab } from './TabGroup.vue';
 
-// Exportação explícita do componente e tipos
+// Exportação explícita do componente
 export { TabGroup };
-export type { Tab };
+
+// Exportação padrão para uso com importações default
+export default { TabGroup };

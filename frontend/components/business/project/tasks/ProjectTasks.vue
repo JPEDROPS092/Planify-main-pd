@@ -155,7 +155,7 @@ import { useTaskService } from '~/services/api/services/taskService';
 import type { Tarefa, TarefaCreate, TarefaUpdate } from '~/services/api/types';
 import { useUserService } from '~/services/api/userService'; // Para detalhes do responsável
 import type { User } from '~/services/api/types';
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import TaskForm from '~/components/TaskForm.vue';

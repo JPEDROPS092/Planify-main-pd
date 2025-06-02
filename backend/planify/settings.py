@@ -210,6 +210,11 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Documentação completa da API do sistema Planify.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Comentário: Registra a extensão de autenticação personalizada para que o drf-spectacular a reconheça.
+    # Isso é crucial para que a documentação da API reflita corretamente o esquema de autenticação JWT customizado.
+    'OPENAPI_AUTHENTICATION_EXTENSIONS': [
+        'users.openapi.CustomJWTAuthenticationScheme',
+    ],
     'COMPONENT_SPLIT_REQUEST': True,
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -240,11 +245,35 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Comunicações', 'description': 'Gerenciamento de comunicações'},
     ],
     'ENUM_NAME_OVERRIDES': {
+        # Comentário: Mapeia nomes de enumeração para os campos de choices nos modelos.
+        # Isso ajuda drf-spectacular a gerar nomes de enumeração consistentes e significativos na documentação da API.
         'UserRoleEnum': 'users.models.User.ROLE_CHOICES',
-        'TaskStatusEnum': 'tasks.models.Task.STATUS_CHOICES',
-        'TaskPriorityEnum': 'tasks.models.Task.PRIORITY_CHOICES',
-        'RiskSeverityEnum': 'risks.models.Risk.SEVERITY_CHOICES',
-        'RiskProbabilityEnum': 'risks.models.Risk.PROBABILITY_CHOICES',
+        
+        'TarefaStatusEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
+        'TarefaPriorityEnum': 'tasks.models.Tarefa.PRIORITY_CHOICES',
+        
+        'RiscoImpactoEnum': 'risks.models.Risco.IMPACTO_CHOICES', # Anteriormente RiskSeverityEnum
+        'RiscoProbabilidadeEnum': 'risks.models.Risco.PROBABILIDADE_CHOICES',
+        'RiscoStatusEnum': 'risks.models.Risco.STATUS_CHOICES',
+
+        'ProjetoStatusEnum': 'projects.models.Projeto.STATUS_CHOICES',
+        'ProjetoPrioridadeEnum': 'projects.models.Projeto.PRIORIDADE_CHOICES',
+
+        'SprintStatusEnum': 'projects.models.Sprint.STATUS_CHOICES',
+        
+        'DocumentoTipoEnum': 'documents.models.Documento.TIPO_CHOICES',
+        
+        'MembroProjetoPapelEnum': 'projects.models.MembroProjeto.PAPEL_CHOICES',
+
+        'NotificacaoTipoEnum': 'communications.models.Notificacao.TIPO_CHOICES',
+        'NotificacaoPrioridadeEnum': 'communications.models.Notificacao.PRIORIDADE_CHOICES',
+        'ConfigNotificacaoCanalEnum': 'communications.models.ConfiguracaoNotificacao.CANAL_CHOICES',
+
+        # Para campos em modelos de histórico que usam os mesmos choices,
+        # drf-spectacular geralmente os nomeia com sufixos.
+        # Se nomes mais explícitos forem desejados, podem ser adicionados aqui, por exemplo:
+        # 'HistoricoTarefaStatusAnteriorEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
+        # 'HistoricoTarefaNovoStatusEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
     },
 }
 

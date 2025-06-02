@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 import Notification from './Notification.vue';
 
 const { notifications, remove: removeNotification } = useNotification();

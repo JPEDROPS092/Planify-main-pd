@@ -1,98 +1,11 @@
 /**
- * Configuração base para os serviços da API do Planify
- * Fornece utilitários e configurações para comunicação com o backend
+ * Configuração do cliente API
+ * Configura o cliente Axios com base nas configurações do Nuxt
  */
-import { useRuntimeConfig } from '#app';
-import { useState } from '#imports';
 import axios from 'axios';
+import { setupInterceptors } from './interceptors';
 
-// Create and export the API client
-export const apiClient = axios.create({
-  baseURL: process.client ? useRuntimeConfig().public.apiBaseUrl : '',
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-});
-
-// Add request interceptor to include auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Add response interceptor to handle errors
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      throw new ApiError(
-        error.response.data?.detail || 'API Error',
-        error.response.status,
-        error.response.data
-      );
-    }
-    throw new Error(error.message || 'Network Error');
-  }
-);
-
-/**
- * Função para obter a configuração da API de forma lazy
- * Garante que a configuração seja obtida apenas quando necessário
- * @returns Configuração básica da API
- */
-export const getApiConfig = () => {
-  return {
-    baseURL: process.client ? useRuntimeConfig().public.apiBaseUrl : '',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-  };
-};
-
-/**
- * Configuração estática da API (compatibilidade com código existente)
- * @deprecated Use getApiConfig() para obter a configuração dinamicamente
- */
-export const API_CONFIG = {
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-};
-
-/**
- * Função para obter o token de autenticação atual
- * Prioriza o estado reativo do Nuxt e faz fallback para localStorage
- * @returns Token de autenticação ou null se não estiver autenticado
- */
-export const getAuthToken = (): string | null => {
-  // Usar o estado reativo do Nuxt para o token
-  const accessToken = useState<string | null>('auth.accessToken');
-
-  if (accessToken.value) {
-    return accessToken.value;
-  }
-
-  // Fallback para localStorage se o estado não estiver disponível
-  if (process.client && localStorage.getItem('auth_token')) {
-    const token = localStorage.getItem('auth_token');
-    // Sincronizar com o estado
-    accessToken.value = token;
-    return token;
-  }
-
-  return null;
-};
-
-// Classe para gerenciar erros da API
+// Classe para erros da API
 export class ApiError extends Error {
   status: number;
   data: any;
@@ -135,7 +48,88 @@ export class ApiError extends Error {
   }
 }
 
-// Função para criar FormData a partir de um objeto
+/**
+ * Configuração estática da API (compatibilidade com código existente)
+ * @deprecated Use useApiClient() para obter o cliente API configurado
+ */
+export const API_CONFIG = {
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+};
+
+// Variável para armazenar a instância do cliente no lado do cliente
+let clientInstance: any = null;
+
+/**
+ * Composable para obter o cliente API configurado
+ * Deve ser chamado dentro de componentes Vue, plugins, ou outros composables
+ */
+export const useApiClient = () => {
+  // Só criar a instância uma vez no lado do cliente
+  if (process.client && clientInstance) {
+    return clientInstance;
+  }
+
+  const runtimeConfig = useRuntimeConfig();
+  const baseURL = runtimeConfig.public.apiBaseUrl;
+
+  const client = axios.create({
+    baseURL,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    withCredentials: true,
+  });
+
+  // Configurar interceptores
+  setupInterceptors(client);
+
+  // Armazenar a instância para reutilização no lado do cliente
+  if (process.client) {
+    clientInstance = client;
+  }
+
+  return client;
+};
+
+/**
+ * Composable para obter o token de autenticação
+ */
+export const useAuthToken = () => {
+  // Usar o estado reativo do Nuxt para o token
+  const accessToken = useState<string | null>('auth.accessToken');
+
+  // Função para obter o token atual
+  const getToken = (): string | null => {
+    if (accessToken.value) {
+      return accessToken.value;
+    }
+
+    // Fallback para localStorage
+    if (process.client && localStorage.getItem('auth_token')) {
+      const token = localStorage.getItem('auth_token');
+      // Sincronizar com o estado
+      accessToken.value = token;
+      return token;
+    }
+
+    return null;
+  };
+
+  return {
+    getToken,
+    accessToken
+  };
+};
+
+// Funções de utilidade que não dependem de composables Nuxt
+
+/**
+ * Função para criar FormData a partir de um objeto
+ */
 export function createFormData(data: Record<string, any>): FormData {
   const formData = new FormData();
 
@@ -165,7 +159,9 @@ export function createFormData(data: Record<string, any>): FormData {
   return formData;
 }
 
-// Função para determinar o Content-Type baseado no corpo da requisição
+/**
+ * Função para determinar o Content-Type baseado no corpo da requisição
+ */
 export function getContentType(data: any): string {
   // Se for FormData, o navegador definirá o boundary automaticamente
   if (data instanceof FormData) {
@@ -176,7 +172,9 @@ export function getContentType(data: any): string {
   return 'application/json';
 }
 
-// Função para converter parâmetros de consulta em string de URL
+/**
+ * Função para converter parâmetros de consulta em string de URL
+ */
 export function formatQueryParams(params: Record<string, any>): string {
   if (!params || Object.keys(params).length === 0) {
     return '';

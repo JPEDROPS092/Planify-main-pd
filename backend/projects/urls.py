@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProjetoViewSet, SprintViewSet
+from .views import ProjetoViewSet, SprintViewSet, HistoricoStatusProjetoViewSet
 from .project_dashboard_views import ProjetoDashboardView, ProjetoKanbanView, ProjetoGanttView
 from .task_creation_views import ProjetoTarefaCreateView, ProjetoTarefasBulkCreateView
 from .export_views import ProjetoExportView
@@ -8,6 +8,7 @@ from .export_views import ProjetoExportView
 router = DefaultRouter()
 router.register(r'projetos', ProjetoViewSet)
 router.register(r'sprints', SprintViewSet)
+router.register(r'historico-status-projeto', HistoricoStatusProjetoViewSet, basename='historico-status-projeto')
 
 urlpatterns = [
     path('', include(router.urls)),

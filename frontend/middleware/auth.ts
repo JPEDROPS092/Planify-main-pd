@@ -1,31 +1,15 @@
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, refreshAuthToken, accessToken, checkAuth } =
-    useAuth();
-
-  // Verifica se há token no localStorage mas não no estado (caso de recarga da página)
-  if (!accessToken.value && process.client) {
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken) {
-      // Sincronizar o token do localStorage com o estado
-      accessToken.value = storedToken;
-
-      // Verificar se o token é válido tentando obter os dados do usuário
-      try {
-        await checkAuth();
-      } catch (error) {
-        console.error('Erro ao verificar token:', error);
-        try {
-          // Tentar renovar o token usando o refresh token
-          await refreshAuthToken();
-        } catch (refreshError) {
-          console.error('Erro ao renovar token:', refreshError);
-        }
-      }
-    }
-  }
-
+/**
+ * Middleware de autenticação
+ * Protege rotas que requerem autenticação
+ */
+export default defineNuxtRouteMiddleware((to, from) => {
+  const { $auth } = useNuxtApp();
+  
+  // Verificar se o usuário está autenticado usando o composable de autenticação
+  const isAuthenticated = $auth.isAuthenticated;
+  
   // Rotas protegidas que exigem autenticação
   const protectedRoutes = [
     '/projetos',
@@ -36,14 +20,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     '/riscos',
     '/documentos',
     '/custos',
+    '/perfil',
   ];
 
   // Rotas públicas que não exigem autenticação
   const publicRoutes = [
-    '/login',
-    '/register',
-    '/forgot-password',
-    '/reset-password',
+    '/auth/login',
+    '/auth/registro',
+    '/auth/esqueci-senha',
+    '/auth/reset-password',
+    '/', // Página inicial
   ];
 
   // Verificar se a rota atual é protegida
@@ -52,35 +38,36 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   );
   const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/';
 
-  // Apenas se estivermos no lado do cliente
-  if (process.client) {
-    // Não precisamos chamar useAuth novamente pois já temos a instância acima
-
-    // Verificar autenticação novamente para garantir
-    const isAuthValid = await checkAuth();
-
-    console.log('Middleware de autenticação:', {
-      isAuthValid,
-      isAuthenticated: isAuthenticated.value,
-      path: to.path,
-      isProtectedRoute,
-      isPublicRoute,
+  // Se não está autenticado e a rota é protegida, redirecionar para o login
+  if (!isAuthenticated && isProtectedRoute) {
+    console.log(
+      'Redirecionando para login: usuário não autenticado em rota protegida'
+    );
+    // Preservar a rota original como parâmetro de query para redirecionamento após login
+    return navigateTo({
+      path: '/auth/login',
+      query: { redirect: to.fullPath }
     });
+  }
 
-    // Se não está autenticado e a rota é protegida, redirecionar para o login
-    if (!isAuthenticated.value && isProtectedRoute) {
-      console.log(
-        'Redirecionando para login: usuário não autenticado em rota protegida'
-      );
-      return navigateTo('/login');
-    }
+  // Se está autenticado e está tentando acessar uma rota pública, redirecionar para o dashboard
+  if (isAuthenticated && isPublicRoute) {
+    console.log(
+      'Redirecionando para dashboard: usuário autenticado em rota pública'
+    );
+    return navigateTo('/dashboard');
+  }
 
-    // Se está autenticado e está tentando acessar uma rota pública, redirecionar para o dashboard
-    if (isAuthenticated.value && isPublicRoute) {
-      console.log(
-        'Redirecionando para dashboard: usuário autenticado em rota pública'
-      );
-      return navigateTo('/dashboard');
-    }
+  // Verificação baseada em metadados de rota
+  // Se a rota requer autenticação explicitamente e o usuário não está autenticado
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Armazenar a rota original para redirecionar após o login
+    const query = { redirect: to.fullPath };
+    return navigateTo({ path: '/auth/login', query });
+  }
+
+  // Se a rota é só para visitantes e o usuário está autenticado
+  if (to.meta.guestOnly && isAuthenticated) {
+    return navigateTo('/dashboard');
   }
 });

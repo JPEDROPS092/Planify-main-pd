@@ -2,7 +2,7 @@
  * Cálculos relacionados a custos
  * Fornece funções para análise financeira e orçamentária
  */
-import { Cost } from '../../api/endpoints/costs';
+import type { Cost } from '../../api/endpoints/costs';
 
 /**
  * Calcula o custo total de uma lista de custos
@@ -10,7 +10,8 @@ import { Cost } from '../../api/endpoints/costs';
  * @returns Valor total dos custos
  */
 export const calculateTotalCost = (costs: Cost[]): number => {
-  return costs.reduce((total, cost) => total + (cost.valor || 0), 0);
+  // Corrigido para usar a propriedade 'amount' da interface Cost
+  return costs.reduce((total, cost) => total + (cost.amount || 0), 0);
 };
 
 /**
@@ -22,8 +23,10 @@ export const calculateCostByCategory = (costs: Cost[]): Record<string, number> =
   const costByCategory: Record<string, number> = {};
   
   costs.forEach(cost => {
-    const category = cost.categoria || 'Sem categoria';
-    costByCategory[category] = (costByCategory[category] || 0) + (cost.valor || 0);
+    // Corrigido para usar a propriedade 'category' da interface Cost
+    const categoryName = cost.category || 'Sem categoria';
+    // Corrigido para usar a propriedade 'amount' da interface Cost
+    costByCategory[categoryName] = (costByCategory[categoryName] || 0) + (cost.amount || 0);
   });
   
   return costByCategory;
@@ -96,15 +99,5 @@ export const calculateEstimateAtCompletion = (
   return actualCost + (remainingBudget / cpi);
 };
 
-/**
- * Formata um valor monetário para exibição
- * @param value Valor a ser formatado
- * @param currency Moeda (padrão: BRL)
- * @returns String formatada
- */
-export const formatCurrency = (value: number, currency: string = 'BRL'): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency
-  }).format(value);
-};
+// A função formatCurrency foi removida daqui para usar a versão global
+// de frontend/services/utils/formatters.ts que será auto-importada.

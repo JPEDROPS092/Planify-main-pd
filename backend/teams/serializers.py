@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field # Adicionado para type hints
+from drf_spectacular.types import OpenApiTypes # Adicionado para tipos OpenAPI
 from .models import Equipe, MembroEquipe, PermissaoEquipe
 from django.contrib.auth import get_user_model
 
@@ -31,10 +33,11 @@ class MembroEquipeSerializer(serializers.ModelSerializer):
 
 
 class EquipeSerializer(serializers.ModelSerializer):
-    membros = MembroEquipeSerializer(many=True, read_only=True)
-    permissoes = PermissaoEquipeSerializer(many=True, read_only=True)
-    criado_por_nome = serializers.CharField(source='criado_por.full_name', read_only=True)
-    total_membros = serializers.SerializerMethodField()
+    membros = MembroEquipeSerializer(many=True, read_only=True, help_text="Lista de membros desta equipe.")
+    permissoes = PermissaoEquipeSerializer(many=True, read_only=True, help_text="Lista de permissões associadas a esta equipe.")
+    criado_por_nome = serializers.CharField(source='criado_por.full_name', read_only=True, help_text="Nome completo do usuário que criou a equipe.")
+    # Comentário: Número total de membros na equipe.
+    total_membros = serializers.SerializerMethodField(help_text="Número total de membros nesta equipe.")
     
     class Meta:
         model = Equipe
@@ -42,7 +45,9 @@ class EquipeSerializer(serializers.ModelSerializer):
                   'criado_em', 'atualizado_em', 'membros', 'permissoes', 'total_membros']
         read_only_fields = ['criado_em', 'atualizado_em']
     
+    @extend_schema_field(OpenApiTypes.INT)
     def get_total_membros(self, obj):
+        # Comentário: Retorna a contagem de membros associados à equipe.
         return obj.membros.count()
     
     def create(self, validated_data):
@@ -63,14 +68,17 @@ class EquipeSerializer(serializers.ModelSerializer):
 
 class EquipeListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listagem de equipes"""
-    total_membros = serializers.SerializerMethodField()
-    criado_por_nome = serializers.CharField(source='criado_por.full_name', read_only=True)
+    # Comentário: Número total de membros na equipe.
+    total_membros = serializers.SerializerMethodField(help_text="Número total de membros nesta equipe.")
+    criado_por_nome = serializers.CharField(source='criado_por.full_name', read_only=True, help_text="Nome completo do criador da equipe.")
     
     class Meta:
         model = Equipe
         fields = ['id', 'nome', 'criado_por_nome', 'criado_em', 'total_membros']
     
+    @extend_schema_field(OpenApiTypes.INT)
     def get_total_membros(self, obj):
+        # Comentário: Retorna a contagem de membros associados à equipe.
         return obj.membros.count()
 
 

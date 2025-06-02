@@ -212,9 +212,9 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { z } from 'zod';
 import { useCostService } from '~/services/api'; // Updated import from central API service
 import { useDocumentService } from '~/services/api'; // Updated import from central API service
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 import { useFormValidation } from '~/composables/useFormValidation';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 import type { Cost, CostResponse, Document } from '~/services/api/endpoints/costs'; // Updated types import
 import type { DocumentResponse } from '~/services/api/endpoints/documents'; // Added document types
 import Button from '../Button.vue';

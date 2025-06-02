@@ -189,7 +189,7 @@ import {
   retrieveProjeto,
   destroyProjeto,
 } from '~/services/api';
-import { useApiService } from '~/composables/useApiService';
+import { useApiService } from '~/stores/composables/useApiService';
 import type { ProjetoList, ProjetoRequest } from '~/services/api/types';
 
 export default defineComponent({

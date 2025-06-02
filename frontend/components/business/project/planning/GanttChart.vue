@@ -199,7 +199,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, onMounted } from 'vue';
 import { useTaskService } from '~/services/api/services/taskService';
-import { useNotification } from '~/composables/useNotification';
+import { useNotification } from '~/stores/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';
 import Modal from '~/components/ui/Modal.vue';

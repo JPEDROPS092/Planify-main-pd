@@ -1,15 +1,14 @@
 /**
  * Componente FileUploader
  *
- * Este componente é usado para upload de arquivos com suporte a drag-and-drop,
- * visualização de progresso e validação de tipos de arquivo.
+ * Componente para upload de arquivos.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import FileUploader from './FileUploader.vue';
 
 // Exportação explícita do componente
 export { FileUploader };
 
-// Renomear arquivo para evitar conflito de nome
-// Novo nome sugerido: UiFileUploader.ts
+// Exportação padrão para uso com importações default
+export default { FileUploader };

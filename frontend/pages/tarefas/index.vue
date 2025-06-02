@@ -3,10 +3,11 @@
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold tracking-tight">Tarefas</h1>
-        <button
-          @click="openNewTaskModal"
-          class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700"
-        >
+        <RoleBasedContent :roles="['admin', 'manager', 'editor']">
+          <button
+            @click="openNewTaskModal"
+            class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700"
+          >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -23,7 +24,8 @@
             <path d="M12 5v14"></path>
           </svg>
           Nova Tarefa
-        </button>
+          </button>
+        </RoleBasedContent>
       </div>
 
       <!-- Filtros -->
@@ -246,24 +248,33 @@
                 </td>
                 <td class="px-4 py-3 text-sm">
                   <div class="flex space-x-2">
+                    <!-- Botão Ver (disponível para todos os papéis) -->
                     <button
                       @click="viewTask(task.id)"
                       class="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                     >
                       Ver
                     </button>
-                    <button
-                      @click="editTask(task)"
-                      class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      @click="confirmDeleteTask(task)"
-                      class="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
-                    >
-                      Excluir
-                    </button>
+                    
+                    <!-- Botão Editar (apenas para admin, manager, editor) -->
+                    <RoleBasedContent :roles="['admin', 'manager', 'editor']">
+                      <button
+                        @click="editTask(task)"
+                        class="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                      >
+                        Editar
+                      </button>
+                    </RoleBasedContent>
+                    
+                    <!-- Botão Excluir (apenas para admin, manager) -->
+                    <RoleBasedContent :roles="['admin', 'manager']">
+                      <button
+                        @click="confirmDeleteTask(task)"
+                        class="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                      >
+                        Excluir
+                      </button>
+                    </RoleBasedContent>
                   </div>
                 </td>
               </tr>
@@ -511,7 +522,8 @@ import { ref, computed, onMounted, watch, onBeforeMount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useTaskService } from '~/services/api/services/taskService';
 import { useProjectService } from '~/services/api/services/projectService';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
+import RoleBasedContent from '~/components/shared/RoleBasedContent.vue';
 
 definePageMeta({
   middleware: ['auth'],
@@ -520,6 +532,12 @@ definePageMeta({
 const router = useRouter();
 const route = useRoute();
 const { $api } = useNuxtApp();
+const { userRole } = useAuth();
+
+// Propriedades computadas para verificar permissões baseadas no papel do usuário
+const userCanCreate = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanEdit = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanDelete = computed(() => ['admin', 'manager'].includes(userRole.value));
 
 // Estado
 const tasks = ref([]);
@@ -736,6 +754,12 @@ const getProjectName = (projectId) => {
 
 // Abrir modal de nova tarefa
 const openNewTaskModal = () => {
+  // Verificar se o usuário tem permissão para criar tarefas
+  if (!userCanCreate.value) {
+    alert('Você não tem permissão para criar novas tarefas.');
+    return;
+  }
+  
   editingTask.value = null;
   taskForm.value = {
     titulo: '',
@@ -753,6 +777,12 @@ const openNewTaskModal = () => {
 
 // Editar tarefa
 const editTask = async (task) => {
+  // Verificar se o usuário tem permissão para editar tarefas
+  if (!userCanEdit.value) {
+    alert('Você não tem permissão para editar tarefas.');
+    return;
+  }
+
   try {
     // Buscar detalhes completos da tarefa usando o novo serviço de API
     const taskDetails = await retrieveTarefa(task.id);
@@ -775,6 +805,21 @@ const editTask = async (task) => {
     error.value =
       'Não foi possível carregar os detalhes da tarefa para edição.';
   }
+  
+  editingTask.value = task;
+  // Preencher o formulário com os dados da tarefa
+  taskForm.value = {
+    titulo: task.titulo,
+    descricao: task.descricao || '',
+    projeto: task.projeto,
+    responsavel: task.responsavel || null,
+    prioridade: task.prioridade,
+    status: task.status,
+    data_inicio: task.data_inicio || '',
+    data_fim: task.data_termino || '',
+    estimativa_horas: task.estimativa_horas || '',
+  };
+  showTaskModal.value = true;
 };
 
 // Salvar tarefa
@@ -831,6 +876,12 @@ const viewTask = async (id) => {
 
 // Confirmar exclusão de tarefa
 const confirmDeleteTask = (task) => {
+  // Verificar se o usuário tem permissão para excluir tarefas
+  if (!userCanDelete.value) {
+    alert('Você não tem permissão para excluir tarefas.');
+    return;
+  }
+  
   if (confirm(`Tem certeza que deseja excluir a tarefa "${task.titulo}"?`)) {
     deleteTask(task.id);
   }

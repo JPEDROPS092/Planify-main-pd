@@ -3,10 +3,11 @@
  * Otimizado com cache via Pinia
  */
 import { ref } from 'vue';
-import * as risksApi from './risks';
-import { useApiService } from '~/composables/useApiService';
-import { useAuth } from '~/composables/useAuth';
-import { useRiskStore } from '~/stores/riskStore';
+import * as risksApi from '../endpoints/risks';
+import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
+// Importando defineStore para criar a store localmente
+import { defineStore } from 'pinia';
 
 export const useRiskService = () => {
   const { user, hasPermission } = useAuth();
@@ -15,6 +16,40 @@ export const useRiskService = () => {
   const risks = ref([]);
   const isLoading = ref(false);
   const error = ref(null);
+
+  // Definindo store de riscos localmente para evitar dependência externa
+  const useRiskStore = defineStore('risks', () => {
+    const risks = ref([]);
+    const isLoading = ref(false);
+    
+    function setRisks(newRisks) {
+      risks.value = newRisks;
+    }
+    
+    function addRisk(risk) {
+      risks.value.push(risk);
+    }
+    
+    function updateRiskInStore(id, updatedRisk) {
+      const index = risks.value.findIndex(r => r.id === id);
+      if (index !== -1) {
+        risks.value[index] = { ...risks.value[index], ...updatedRisk };
+      }
+    }
+    
+    function removeRisk(id) {
+      risks.value = risks.value.filter(r => r.id !== id);
+    }
+    
+    return {
+      risks,
+      isLoading,
+      setRisks,
+      addRisk,
+      updateRiskInStore,
+      removeRisk
+    };
+  });
 
   // Carregar todos os riscos
   const fetchRisks = async (projectId = null, useCache = true) => {

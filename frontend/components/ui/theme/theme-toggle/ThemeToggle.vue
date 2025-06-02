@@ -10,8 +10,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useTheme } from '@/composables/useTheme';
-import { Button } from '@/components/ui/button';
+import { useTheme } from '@/stores/composables/useTheme';
+import { Button } from '@/components/ui/input/button';
 import { Sun, Moon, Monitor, Plus, Minus } from 'lucide-vue-next';
 
 // Obter controles de tema do composable

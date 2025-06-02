@@ -7,10 +7,11 @@
         >
           Riscos
         </h1>
-        <button
-          @click="openNewRiskModal"
-          class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-        >
+        <RoleBasedContent :roles="['admin', 'manager', 'editor']">
+          <button
+            @click="openNewRiskModal"
+            class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+          >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -27,7 +28,8 @@
             <path d="M12 5v14"></path>
           </svg>
           Novo Risco
-        </button>
+          </button>
+        </RoleBasedContent>
       </div>
 
       <!-- Filtros -->
@@ -536,7 +538,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRiskService } from '~/services/api/services/riskService';
 import { useProjectService } from '~/services/api/services/projectService';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/stores/composables/useAuth';
 import EmptyState from '~/components/EmptyState.vue';
 
 definePageMeta({
@@ -545,6 +547,12 @@ definePageMeta({
 
 const router = useRouter();
 const { $api } = useNuxtApp();
+const { userRole } = useAuth();
+
+// Propriedades computadas para verificar permissões baseadas no papel do usuário
+const userCanCreate = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanEdit = computed(() => ['admin', 'manager', 'editor'].includes(userRole.value));
+const userCanDelete = computed(() => ['admin', 'manager'].includes(userRole.value));
 
 // Estado
 const risks = ref([]);

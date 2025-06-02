@@ -6,7 +6,7 @@
 
 // Importação dos componentes e módulos
 import * as Loading from './loading';
-import * as Notification from './notification';
+import * as Notification from '~/components/shared/feedback/notification';
 
 // Exportação explícita dos componentes
 export {

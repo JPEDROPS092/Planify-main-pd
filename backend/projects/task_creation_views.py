@@ -3,12 +3,30 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 
 from .models import Projeto, MembroProjeto, Sprint
 from tasks.models import Tarefa, AtribuicaoTarefa
 from tasks.serializers import TarefaSerializer
+from .api_schemas import TarefaCreateSerializer, TarefasBulkCreateSerializer, ErrorResponseSerializer
 
 
+@extend_schema(
+    summary="Criar tarefa no projeto",
+    description="Cria uma nova tarefa no contexto de um projeto específico",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
+    ],
+    request=TarefaCreateSerializer,
+    responses={
+        201: TarefaSerializer,
+        400: ErrorResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Tarefas"]
+)
 class ProjetoTarefaCreateView(APIView):
     """
     View para criar tarefas diretamente a partir da visualização de um projeto.
@@ -77,6 +95,21 @@ class ProjetoTarefaCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Criar múltiplas tarefas no projeto",
+    description="Cria várias tarefas de uma vez no contexto de um projeto específico",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
+    ],
+    request=TarefasBulkCreateSerializer,
+    responses={
+        201: OpenApiTypes.OBJECT,
+        400: ErrorResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Tarefas"]
+)
 class ProjetoTarefasBulkCreateView(APIView):
     """
     View para criar múltiplas tarefas de uma vez no contexto de um projeto.

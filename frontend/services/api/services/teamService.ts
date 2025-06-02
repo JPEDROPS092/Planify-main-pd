@@ -4,8 +4,8 @@
 import { ref, computed } from 'vue';
 import * as teamsApi from '../endpoints/teams';
 import type { Team, TeamMember, TeamResponse } from '../endpoints/teams';
-import { useApiService } from '~/composables/useApiService';
-import { useAuth } from '~/composables/useAuth';
+import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
 
 export const useTeamService = () => {
   const { user, hasPermission } = useAuth();

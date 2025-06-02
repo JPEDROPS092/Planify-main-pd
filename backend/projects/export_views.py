@@ -6,11 +6,34 @@ from django.http import HttpResponse
 import csv
 import json
 from datetime import datetime
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 
 from .models import Projeto, MembroProjeto, Sprint
 from tasks.models import Tarefa, AtribuicaoTarefa
+from .api_schemas import ExportResponseSerializer, ErrorResponseSerializer
 
 
+@extend_schema(
+    summary="Exportar dados do projeto",
+    description="Exporta dados do projeto em diferentes formatos (CSV, JSON)",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int),
+        OpenApiParameter(name='format', description='Formato de exportação (csv, json)', required=False, type=str, default='csv'),
+        OpenApiParameter(name='include_project', description='Incluir dados do projeto', required=False, type=bool, default=True),
+        OpenApiParameter(name='include_tasks', description='Incluir tarefas do projeto', required=False, type=bool, default=True),
+        OpenApiParameter(name='include_team', description='Incluir equipe do projeto', required=False, type=bool, default=False),
+        OpenApiParameter(name='include_risks', description='Incluir riscos do projeto', required=False, type=bool, default=False),
+        OpenApiParameter(name='include_costs', description='Incluir custos do projeto', required=False, type=bool, default=False)
+    ],
+    responses={
+        200: OpenApiTypes.BINARY,
+        400: ErrorResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Exportação"]
+)
 class ProjetoExportView(APIView):
     """
     View para exportar dados do projeto em diferentes formatos (CSV, JSON).

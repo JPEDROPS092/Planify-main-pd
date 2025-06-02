@@ -215,7 +215,7 @@
         :max-files="5"
         @files-selected="handleFilesSelected"
         class="border-dashed border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4"
-      />
+      ></FileUploader>
     </div>
 
     <!-- Botões -->
@@ -243,17 +243,16 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { z } from 'zod';
 import { useProjectService } from '~/services/api/services/projectService';
-import { useDocumentService } from '~/services/api/documentService';
-import type { Projeto, Documento } from '~/services/api/types';
-import { useUserService } from '~/services/api/userService';
-import type { User } from '~/services/api/types';
-import { useNotification } from '~/composables/useNotification';
-import { useFormValidation } from '~/composables/useFormValidation';
-import { useAuth } from '~/composables/useAuth';
-import LoadingButton from '../LoadingButton.vue';
-import Button from '../Button.vue';
-import FileUploader from '../file-uploader/FileUploader.vue';
-
+import { useDocumentService } from '~/services/api/services/documentService';
+import type { Projeto, Documento } from '~/services/utils/types.ts';
+import { useUserService } from '~/services/api/services/userService';
+import type { User } from '~/services/utils/types.ts';
+import { useNotification } from '~/stores/composables/useNotification';
+import { useFormValidation } from '~/stores/composables/useFormValidation';
+import { useAuth } from '~/stores/composables/useAuth';
+import LoadingButton from '~/components/shared/feedback/loading'
+import Button from '~/components/ui/input';
+import FileUploader from '~/components/ui/input/file-uploader/FileUploader.vue'
 const props = defineProps({
   project: {
     type: Object as () => Projeto | null,

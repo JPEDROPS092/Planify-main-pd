@@ -1,27 +1,48 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  // Ativa devtools para facilitar o debug durante o desenvolvimento
   devtools: { enabled: true },
-  css: ['~/assets/css/tailwind.css'],
+  
+  // Compatibility date for Nitro
+  nitro: {
+    compatibilityDate: '2025-06-02'
+  },
+
+  // Estilos globais (main.css para customizações, Tailwind CSS é injetado pelo módulo)
+  css: [
+    '~/assets/css/main.css',
+  ],
+
+  // Módulos utilizados no projeto
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@nuxt/image',
-    '@nuxtjs/sentry',
   ],
 
+  // TailwindCSS config extra (se houver)
+  tailwindcss: {
+    viewer: false,
+  },
 
+  // Modo de cor do sistema (dark/light)
   colorMode: {
     classSuffix: '',
     preference: 'system',
     fallback: 'light',
+    storageKey: 'nuxt-color-mode',
   },
+
+  // Variáveis de ambiente públicas e privadas
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
     },
+    // private: { chave: valor } // (se precisar de variáveis privadas no futuro)
   },
+
+  // Configurações da aplicação (SEO básico e favicon)
   app: {
     head: {
       title: 'Planify - Gerenciamento de Projetos',
@@ -30,82 +51,76 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content:
-            'Sistema de Gerenciamento de Projetos de Pesquisa e Desenvolvimento',
+          content: 'Sistema de Gerenciamento de Projetos de Pesquisa e Desenvolvimento',
         },
       ],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      ],
     },
   },
-  // Configurações do Vite integradas ao Nuxt
-  vite: {
-    resolve: {
-      alias: {
 
-        '~': './frontend',
-         '@': './frontend',
-      },
-    },
-    build: {
-      // Otimização do tamanho do bundle
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-        },
-      },
-      
-      // Divisão de chunks para melhorar o carregamento
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            // Separar dependências do Vue em um chunk próprio
-            'vue-core': ['vue', 'vue-router', 'pinia'],
-            
-            // Separar bibliotecas de UI em um chunk próprio
-            'ui-libs': ['chart.js', 'vue-chartjs'],
-            
-            // Separar utilitários em um chunk próprio
-            'utils': ['zod', 'date-fns'],
-          },
-          
-          // Nomear os chunks de forma consistente
-          chunkFileNames: 'assets/js/[name]-[hash].js',
-          entryFileNames: 'assets/js/[name]-[hash].js',
-          assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-        },
-      },
-      
-      // Habilitar tree-shaking agressivo
-      cssCodeSplit: true,
-      assetsInlineLimit: 4096, // Inline de assets pequenos (< 4kb)
-      sourcemap: false, // Desabilitar sourcemaps em produção
-      
-      // Comprimir o output
-      reportCompressedSize: false, // Melhorar performance do build
-    },
-    
-    // Otimizações de desenvolvimento
-    optimizeDeps: {
-      include: [
-        'vue',
-        'vue-router',
-        'pinia',
-        'zod',
-        'chart.js',
-      ],
-      exclude: ['vue-demi'],
-    },
-    
-    // Configurações de servidor de desenvolvimento
-    server: {
-      hmr: {
-        overlay: true,
-      },
-      fs: {
-        strict: true,
-      },
-    },
+  // Aliases para melhorar a legibilidade dos imports
+  alias: {
+    '@composables': '~/composables',
+    '@components': '~/components',
+    '@shared': '~/components/shared',
+    '@business': '~/components/business',
+    '@ui': '~/components/ui',
+    '@assets': '~/assets',
+    '@services': '~/services',
+    '@plugins': '~/plugins',
+    '@pages': '~/pages',
+    '@lib': '~/lib',
+  },
+
+  // Configuração de auto-imports. Nuxt 3 auto-importa de '~/composables', '~/utils' por padrão.
+  // Adicionamos 'stores/composables/**' explicitamente para cobrir composables dentro da store.
+  imports: {
+    autoImport: true, // Habilita os auto-imports padrões do Nuxt
+    dirs: [
+      'composables/**', // Padrão do Nuxt, mas bom ser explícito
+      'utils/**',       // Padrão do Nuxt
+      'stores/composables/**', // Para composables específicos de stores
+      'stores/**' // Para auto-importar stores Pinia (ex: useAuthStore de stores/auth.ts)
+    ],
+  },
+
+  // Configuração para auto-importação de componentes.
+  // Nuxt 3 escaneia o diretório '~/components' recursivamente.
+  // Com 'pathPrefix: true' (ou omitindo pathPrefix, pois é o padrão para entradas de objeto),
+  // os componentes são prefixados com o nome do diretório.
+  // Ex: components/ui/Button.vue -> <UiButton />
+  // Ex: components/shared/Card.vue -> <SharedCard />
+  // Se você quiser que componentes na raiz de '~/components' não tenham prefixo,
+  // e os de subdiretórios tenham, você pode configurar múltiplas entradas.
+  // Para uma estrutura como a atual (business, shared, ui), o prefixo é geralmente desejável.
+  components: [
+    { 
+      path: '~/components',
+      // Excluir arquivos index.ts para evitar conflitos de componentes
+      extensions: ['.vue'],
+      // pathPrefix: true, // true é o padrão para objetos, então pode ser omitido.
+      // global: true, // Se quiser que todos sejam globais sem necessidade de import explícito em scripts (raro)
+    }
+    // Alternativamente, para controle mais granular:
+    // { path: '~/components/global', global: true }, // Componentes globais sem prefixo
+    // { path: '~/components/business', prefix: 'Business' },
+    // { path: '~/components/shared', prefix: 'Shared' },
+    // { path: '~/components/ui', prefix: 'Ui' },
+  ],
+
+  // Transpile arquivos se necessário (por exemplo, bibliotecas externas em ESM)
+  // transpile: [],
+
+  // Plugins personalizados (registro automático)
+  plugins: [
+    '~/plugins/api.ts',
+    '~/plugins/auth.ts',
+  ],
+
+  // Diretório base para assets públicos
+  dir: {
+    public: 'public',
   },
 });

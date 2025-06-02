@@ -25,7 +25,7 @@
 import { computed } from 'vue';
 import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/display/card';
 import {
   ArrowUpIcon,
   ArrowDownIcon,

@@ -5,13 +5,34 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 
 from .models import Projeto, MembroProjeto, Sprint
 from tasks.models import Tarefa, AtribuicaoTarefa
 from .serializers import ProjetoSerializer, SprintSerializer
 from tasks.serializers import TarefaSerializer
+from .api_schemas import (
+    ProjetoDashboardResponseSerializer,
+    KanbanResponseSerializer,
+    GanttResponseSerializer,
+    ErrorResponseSerializer
+)
 
 
+@extend_schema(
+    summary="Dashboard do projeto",
+    description="Fornece dados para o dashboard de um projeto específico, incluindo visualizações Kanban e Gantt",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
+    ],
+    responses={
+        200: ProjetoDashboardResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Dashboard"]
+)
 class ProjetoDashboardView(APIView):
     """
     View para fornecer dados para o dashboard de um projeto específico,
@@ -133,11 +154,25 @@ class ProjetoDashboardView(APIView):
         return Response(response_data)
 
 
+@extend_schema(
+    summary="Visualização Kanban do projeto",
+    description="Fornece dados para a visualização Kanban de um projeto, com tarefas agrupadas por status",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
+    ],
+    responses={
+        200: KanbanResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Kanban"]
+)
 class ProjetoKanbanView(APIView):
     """
     View específica para fornecer dados para a visualização Kanban de um projeto.
     """
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = KanbanResponseSerializer
     
     def get(self, request, projeto_id):
         # Buscar o projeto pelo ID
@@ -241,6 +276,19 @@ class ProjetoKanbanView(APIView):
         return Response({"detail": "Status atualizado com sucesso."})
 
 
+@extend_schema(
+    summary="Visualização Gantt do projeto",
+    description="Fornece dados para a visualização Gantt de um projeto, com tarefas e suas dependências",
+    parameters=[
+        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
+    ],
+    responses={
+        200: GanttResponseSerializer,
+        403: ErrorResponseSerializer,
+        404: ErrorResponseSerializer
+    },
+    tags=["Projetos", "Gantt"]
+)
 class ProjetoGanttView(APIView):
     """
     View específica para fornecer dados para a visualização Gantt de um projeto.

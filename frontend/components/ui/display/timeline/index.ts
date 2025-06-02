@@ -1,14 +1,14 @@
 /**
  * Componente Timeline
  *
- * Este componente exibe eventos em ordem cronológica.
- * Útil para históricos de projetos, atividades e marcos.
+ * Componente para exibição de eventos em formato de linha do tempo.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import Timeline from './Timeline.vue';
-import type { TimelineItem } from './Timeline.vue';
 
-// Exportação explícita do componente e tipos
+// Exportação explícita do componente
 export { Timeline };
-export type { TimelineItem };
+
+// Exportação padrão para uso com importações default
+export default { Timeline };

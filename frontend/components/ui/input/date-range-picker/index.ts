@@ -1,15 +1,14 @@
 /**
  * Componente DateRangePicker
  *
- * Este componente é usado para seleção de intervalos de datas.
- * Útil para filtros, relatórios e qualquer funcionalidade que precise de um período de tempo.
+ * Componente para seleção de intervalos de datas.
  */
 
-// Importação direta para evitar duplicação de componentes no registro automático do Nuxt
+// Importação do componente
 import DateRangePicker from './DateRangePicker.vue';
 
 // Exportação explícita do componente
 export { DateRangePicker };
 
-// Renomear arquivo para evitar conflito de nome
-// Novo nome sugerido: UiDateRangePicker.ts
+// Exportação padrão para uso com importações default
+export default { DateRangePicker };
