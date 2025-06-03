@@ -1,0 +1,14 @@
+# Configurações da API
+NUXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+
+# Configurações de autenticação
+NUXT_AUTH_SECRET=seu_segredo_aqui
+
+# Outras configurações
+NODE_ENV=development
+
+# Instruções:
+# 1. Copie este arquivo para .env no diretório frontend:
+#    cp env-config.txt .env
+# 2. Ajuste os valores conforme necessário para seu ambiente
+# 3. Reinicie o servidor de desenvolvimento do Nuxt
