@@ -2,12 +2,19 @@ from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.utils import timezone
 import logging
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+class AccountLockedException(AuthenticationFailed):
+    """Exceção personalizada para contas bloqueadas"""
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Account is locked due to multiple failed login attempts. Please contact an administrator."
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -19,7 +26,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             # Verifica se a conta está bloqueada
             if user.is_locked:
                 logger.warning(f"Tentativa de login em conta bloqueada: {username}")
-                raise Exception("Account is locked due to multiple failed login attempts. Please contact an administrator.")
+                raise AccountLockedException("Account is locked due to multiple failed login attempts. Please contact an administrator.")
             
             # Tenta validar as credenciais
             try:
@@ -44,7 +51,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 
                 if user.is_locked:
                     logger.warning(f"Conta bloqueada após múltiplas tentativas: {username}")
-                    raise Exception("Account is now locked due to multiple failed login attempts. Please contact an administrator.")
+                    raise AccountLockedException("Account is now locked due to multiple failed login attempts. Please contact an administrator.")
                 
                 # Re-lança a exceção original
                 raise e
@@ -62,22 +69,19 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         try:
             response = super().post(request, *args, **kwargs)
             return response
+        except AccountLockedException as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except AuthenticationFailed as e:
+            return Response(
+                {"detail": "Invalid username or password"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         except Exception as e:
-            error_message = str(e)
-            
-            if "Account is locked" in error_message:
-                return Response(
-                    {"detail": error_message},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            elif "No active account found" in error_message:
-                return Response(
-                    {"detail": "Invalid username or password"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            else:
-                logger.error(f"Erro durante autenticação: {error_message}")
-                return Response(
-                    {"detail": "Authentication failed"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+            logger.error(f"Erro durante autenticação: {str(e)}")
+            return Response(
+                {"detail": "Authentication failed"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )

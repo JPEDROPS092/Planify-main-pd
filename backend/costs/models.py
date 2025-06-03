@@ -32,13 +32,13 @@ class Custo(models.Model):
         ('RECORRENTE', 'Custo Recorrente'),
     )
     
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='custos')
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='custos_do_projeto') # Changed related_name
     tarefa = models.ForeignKey(
         Tarefa, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
-        related_name='custos'
+        related_name='custos_da_tarefa'  # Changed related_name
     )
     categoria = models.ForeignKey(
         Categoria, 

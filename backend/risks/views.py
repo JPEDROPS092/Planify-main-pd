@@ -35,32 +35,32 @@ class RiscoViewSet(viewsets.ModelViewSet):
         queryset = Risco.objects.all()
         
         # Filtra por projeto
-        projeto_id = self.request.query_params.get('projeto')
+        projeto_id = self.request.GET.get('projeto')
         if projeto_id:
             queryset = queryset.filter(projeto_id=projeto_id)
         
         # Filtra por status
-        status_param = self.request.query_params.get('status')
+        status_param = self.request.GET.get('status')
         if status_param:
             queryset = queryset.filter(status=status_param)
         
         # Filtra por nível de risco
-        nivel_risco = self.request.query_params.get('nivel_risco')
+        nivel_risco = self.request.GET.get('nivel_risco')
         if nivel_risco:
             # Filtra com base na propriedade calculada nivel_risco
             riscos_filtrados = []
             for risco in queryset:
                 if risco.nivel_risco == nivel_risco:
-                    riscos_filtrados.append(risco.id)
+                    riscos_filtrados.append(risco.pk)
             queryset = queryset.filter(id__in=riscos_filtrados)
         
         # Filtra por responsável
-        responsavel_id = self.request.query_params.get('responsavel')
+        responsavel_id = self.request.GET.get('responsavel')
         if responsavel_id:
             queryset = queryset.filter(responsavel_mitigacao_id=responsavel_id)
         
         # Filtra por texto (busca em descrição, plano de mitigação e plano de contingência)
-        texto = self.request.query_params.get('texto')
+        texto = self.request.GET.get('texto')
         if texto:
             queryset = queryset.filter(
                 Q(descricao__icontains=texto) | 
@@ -71,7 +71,7 @@ class RiscoViewSet(viewsets.ModelViewSet):
         return queryset
     
     @action(detail=True, methods=['get'])
-    def historico(self, request, pk=None):
+    def historico(self, pk=None):
         """
         Retorna o histórico de alterações do risco.
         """
@@ -81,7 +81,7 @@ class RiscoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
-    def atualizar_status(self, request, pk=None):
+    def atualizar_status(self, pk=None):
         """
         Atualiza o status de um risco.
         """

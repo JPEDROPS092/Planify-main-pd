@@ -1,11 +1,16 @@
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from users.models import User
+from typing import cast
 from communications.models import ChatMensagem
 
 class CommunicationAPITests(APITestCase):
+    user_manager = User.objects
+
     def setUp(self):
-        self.admin = User.objects.create_superuser(
+        from django.contrib.auth.models import UserManager  # Import UserManager
+        user_manager = cast(UserManager, User.objects)
+        self.admin = user_manager.create_superuser(
             email='admin@planify.com',
             username='admin',
             full_name='Administrador',

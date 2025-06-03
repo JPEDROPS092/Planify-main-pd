@@ -107,9 +107,10 @@ class CustomJWTAuthentication(JWTAuthentication):
         """
         Verifica CSRF para requisições que usam cookies para autenticação.
         """
-        check = CSRFCheck()
+        from django.http import HttpResponse
+        check = CSRFCheck(get_response=lambda request: HttpResponse())
         check.process_request(request)
-        reason = check.process_view(request, None, (), {})
+        reason = check.process_view(request, lambda req: HttpResponse(), (), {})
         if reason:
             logger.warning(f"Verificação CSRF falhou: {reason}")
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)

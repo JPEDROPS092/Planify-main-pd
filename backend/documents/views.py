@@ -143,22 +143,22 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         queryset = Documento.objects.all()
         
         # Filtra por projeto
-        projeto_id = self.request.query_params.get('projeto')
+        projeto_id = self.request.GET.get('projeto')
         if projeto_id:
             queryset = queryset.filter(projeto_id=projeto_id)
         
         # Filtra por tarefa
-        tarefa_id = self.request.query_params.get('tarefa')
+        tarefa_id = self.request.GET.get('tarefa')
         if tarefa_id:
             queryset = queryset.filter(tarefa_id=tarefa_id)
         
         # Filtra por tipo
-        tipo = self.request.query_params.get('tipo')
+        tipo = self.request.GET.get('tipo')
         if tipo:
             queryset = queryset.filter(tipo=tipo)
         
         # Filtra por tipo de arquivo
-        tipo_arquivo = self.request.query_params.get('tipo_arquivo')
+        tipo_arquivo = self.request.GET.get('tipo_arquivo')
         if tipo_arquivo:
             queryset = queryset.filter(tipo_arquivo__icontains=tipo_arquivo)
         

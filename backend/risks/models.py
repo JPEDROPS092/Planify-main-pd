@@ -68,7 +68,7 @@ class Risco(models.Model):
         return matriz_risco.get((self.probabilidade, self.impacto), 'MEDIO')
     
     def __str__(self):
-        return f"Risco: {self.descricao[:50]}... ({self.get_status_display()})"
+        return f"Risco: {self.descricao[:50]}{'...' if len(self.descricao) > 50 else ''} ({self.status})"
     
     class Meta:
         verbose_name = 'Risco'

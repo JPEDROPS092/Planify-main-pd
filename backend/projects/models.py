@@ -112,7 +112,7 @@ class Sprint(models.Model):
         ('CANCELADO', 'Cancelado'),
     )
     
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='sprints')
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='sprints', null=True, blank=True)
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
     data_inicio = models.DateField()

@@ -37,7 +37,6 @@ class Tarefa(models.Model):
         null=True,
         related_name='tarefas_atualizadas'
     )
-    custos = models.ManyToManyField('costs.Custo', through='costs.Custo', related_name='tarefas')
     def __str__(self):
         return self.titulo
     

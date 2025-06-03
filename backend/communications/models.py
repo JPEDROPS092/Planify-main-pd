@@ -176,7 +176,7 @@ class Notificacao(models.Model):
                 raise ValidationError({'url': 'URL inválida. Forneça uma URL completa e válida.'})
     
     def __str__(self):
-        return f"{self.get_tipo_display()}: {self.titulo} para {self.usuario.username}"
+        return f"{self.get_tipo_display()}: {self.titulo} para {self.usuario.username}"  # type: ignore
     
     class Meta:
         verbose_name = 'Notificação'
@@ -272,11 +272,25 @@ class Comunicacao(models.Model):
     destinatários no contexto de um projeto específico. Diferente das mensagens
     de chat, estas são mais estruturadas e formais.
     """
+    TIPO_CHOICES = (
+        ('ATA', 'Ata de Reunião'),
+        ('MEMORANDO', 'Memorando'),
+        ('RELATORIO', 'Relatório'),
+        ('OFICIO', 'Ofício'),
+        ('COMUNICADO', 'Comunicado Geral'),
+        ('OUTRO', 'Outro'),
+    )
     projeto = models.ForeignKey(
         Projeto, 
         on_delete=models.CASCADE, 
         related_name='comunicacoes',
         help_text='Projeto ao qual esta comunicação está associada'
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='OUTRO',
+        help_text='Tipo de comunicação formal'
     )
     titulo = models.CharField(
         max_length=200,

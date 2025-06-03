@@ -10,30 +10,46 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+import logging
+
 from .models import UserProfile, AccessProfile, Permission, UserAccessProfile
 from .serializers import (
     UserSerializer, UserCreateSerializer, ChangePasswordSerializer,
     ResetPasswordSerializer, SetNewPasswordSerializer, UserProfileSerializer,
     AccessProfileSerializer, PermissionSerializer, UserAccessProfileSerializer
 )
+from .permissions import HasModulePermission
+from .utils import update_user_password
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de usuários."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
+        """Seleciona o serializer apropriado com base na ação."""
         if self.action == 'create':
             return UserCreateSerializer
         return UserSerializer
     
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'reset_password':
-            return [IsAdminUser()]
-        return super().get_permissions()
+        """Define permissões com base na ação."""
+        if self.action == 'create':
+            return [HasModulePermission('USERS', 'CREATE')]
+        elif self.action == 'reset_password':
+            return [HasModulePermission('USERS', 'EDIT')]
+        elif self.action in ['update', 'partial_update']:
+            return [HasModulePermission('USERS', 'EDIT')]
+        elif self.action == 'destroy':
+            return [HasModulePermission('USERS', 'DELETE')]
+        elif self.action == 'list':
+            return [HasModulePermission('USERS', 'VIEW')]
+        return [IsAuthenticated()]
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
@@ -67,56 +83,70 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
+        """Altera a senha do usuário autenticado."""
         user = request.user
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
             serializer.save()
-            return Response({'detail': 'Password changed successfully'}, status=status.HTTP_200_OK)
+            logger.info(f"Senha alterada com sucesso para o usuário: {user.username} (ID: {user.id})")
+            return Response({'detail': 'Senha alterada com sucesso'}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def reset_password(self, request, pk=None):
+        """Redefine a senha do usuário para uma senha temporária e envia por e-mail."""
         user = self.get_object()
         # Generate a temporary password
         temp_password = User.objects.make_random_password()
-        user.set_password(temp_password)
+        
+        # Usar a função utilitária para atualizar a senha
+        user = update_user_password(user, temp_password)
+        
+        # Marcar que a senha precisa ser alterada no próximo login
         user.password_change_required = True
         user.save()
         
         # Send email with temporary password
         send_mail(
-            'Password Reset',
-            f'Your temporary password is: {temp_password}\nPlease change it after logging in.',
+            'Redefinição de Senha',
+            f'Sua senha temporária é: {temp_password}\nPor favor, altere-a após fazer login.',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )
         
-        return Response({'detail': 'Temporary password sent to user email'}, status=status.HTTP_200_OK)
+        logger.info(f"Senha temporária enviada para o usuário: {user.username} (ID: {user.id})")
+        return Response({'detail': 'Senha temporária enviada para o e-mail do usuário'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def activate(self, request, pk=None):
+        """Ativa um usuário."""
         user = self.get_object()
         user.is_active = True
         user.save()
-        return Response({'detail': 'User activated successfully'}, status=status.HTTP_200_OK)
+        logger.info(f"Usuário ativado: {user.username} (ID: {user.id})")
+        return Response({'detail': 'Usuário ativado com sucesso'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def deactivate(self, request, pk=None):
+        """Desativa um usuário."""
         user = self.get_object()
         user.is_active = False
         user.save()
-        return Response({'detail': 'User deactivated successfully'}, status=status.HTTP_200_OK)
+        logger.info(f"Usuário desativado: {user.username} (ID: {user.id})")
+        return Response({'detail': 'Usuário desativado com sucesso'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def unlock(self, request, pk=None):
+        """Desbloqueia um usuário após tentativas de login malsucedidas."""
         user = self.get_object()
         user.is_locked = False
         user.failed_login_attempts = 0
         user.save()
-        return Response({'detail': 'User unlocked successfully'}, status=status.HTTP_200_OK)
+        logger.info(f"Usuário desbloqueado: {user.username} (ID: {user.id})")
+        return Response({'detail': 'Usuário desbloqueado com sucesso'}, status=status.HTTP_200_OK)
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -131,27 +161,34 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 
 class AccessProfileViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de perfis de acesso."""
     queryset = AccessProfile.objects.all()
     serializer_class = AccessProfileSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [HasModulePermission('USERS', 'EDIT')]
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de permissões."""
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [HasModulePermission('USERS', 'EDIT')]
     filterset_fields = ['access_profile', 'module', 'action']
 
 
 class UserAccessProfileViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de associações entre usuários e perfis de acesso."""
     serializer_class = UserAccessProfileSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [HasModulePermission('USERS', 'EDIT')]
     
     def get_queryset(self):
+        """Retorna todas as associações entre usuários e perfis de acesso."""
         return UserAccessProfile.objects.all()
     
     def perform_create(self, serializer):
-        serializer.save(user_id=self.kwargs['user_pk'])
+        """Cria uma nova associação entre usuário e perfil de acesso."""
+        user_id = self.kwargs.get('user_pk')
+        serializer.save(user_id=user_id)
+        logger.info(f"Perfil de acesso atribuído ao usuário ID: {user_id}")
 
 
 class ForgotPasswordView(generics.GenericAPIView):
@@ -186,10 +223,12 @@ class ForgotPasswordView(generics.GenericAPIView):
 
 
 class ResetPasswordConfirmView(generics.GenericAPIView):
+    """View para confirmar a redefinição de senha com token."""
     serializer_class = SetNewPasswordSerializer
     permission_classes = [AllowAny]
     
     def post(self, request):
+        """Processa a redefinição de senha com token."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -203,13 +242,14 @@ class ResetPasswordConfirmView(generics.GenericAPIView):
             user = User.objects.get(pk=uid)
             
             if default_token_generator.check_token(user, token):
-                user.set_password(password)
-                user.password_change_required = False
-                user.last_password_change = timezone.now()
-                user.save()
+                # Usar a função utilitária para atualizar a senha
+                update_user_password(user, password)
                 
-                return Response({'detail': 'Password has been reset successfully'}, status=status.HTTP_200_OK)
+                logger.info(f"Senha redefinida com sucesso para o usuário: {user.username} (ID: {user.id})")
+                return Response({'detail': 'Senha redefinida com sucesso'}, status=status.HTTP_200_OK)
             else:
-                return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+                logger.warning(f"Tentativa de redefinição de senha com token inválido para o usuário ID: {uid}")
+                return Response({'detail': 'Token inválido'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.error(f"Erro ao redefinir senha: {str(e)}")
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)

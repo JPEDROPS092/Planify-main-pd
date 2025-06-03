@@ -49,6 +49,9 @@ class MembroEquipe(models.Model):
         verbose_name = 'Membro da Equipe'
         verbose_name_plural = 'Membros da Equipe'
     
+    def get_papel_display(self):
+        return dict(self.PAPEL_CHOICES).get(self.papel, self.papel)
+
     def __str__(self):
         return f"{self.usuario.username} - {self.equipe.nome} ({self.get_papel_display()})"
     
@@ -87,4 +90,13 @@ class PermissaoEquipe(models.Model):
         verbose_name_plural = 'Permissões de Equipe'
     
     def __str__(self):
-        return f"{self.equipe.nome} - {self.get_papel_display()} - {self.get_modulo_display()} - {self.get_permissao_display()}"
+            return f"{self.equipe.nome} - {self.get_papel_display()} - {self.get_modulo_display()} - {self.get_permissao_display()}"
+    
+    def get_papel_display(self):
+            return dict(MembroEquipe.PAPEL_CHOICES).get(self.papel, self.papel)
+        
+    def get_modulo_display(self):
+            return dict(self.MODULO_CHOICES).get(self.modulo, self.modulo)
+        
+    def get_permissao_display(self):
+            return dict(self.PERMISSAO_CHOICES).get(self.permissao, self.permissao)

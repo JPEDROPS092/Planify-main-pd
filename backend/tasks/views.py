@@ -87,7 +87,9 @@ class TarefaFilter(FilterSet):
         if value is None or not hasattr(self.request, 'user'):
             return queryset
         if value:
-            return queryset.filter(atribuicoes__usuario=self.request.user)
+            if self.request and hasattr(self.request, 'user'):
+                return queryset.filter(atribuicoes__usuario=self.request.user)
+            return queryset
         return queryset
     
     def filter_sem_sprint(self, queryset, name, value):

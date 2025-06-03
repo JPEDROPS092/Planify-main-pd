@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Sum, F, DecimalField, Value, Case, When, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from datetime import timedelta
 from decimal import Decimal
 from .models import Categoria, Custo, OrcamentoProjeto, OrcamentoTarefa, Alerta
 from .serializers import (
@@ -244,9 +245,9 @@ class CustoViewSet(viewsets.ModelViewSet):
         
         # Gastos por mês (últimos 12 meses)
         from django.db.models.functions import TruncMonth
-        
-        # Obter data 12 meses atrás
-        data_limite = timezone.now().date().replace(day=1) - timezone.timedelta(days=365)
+        from datetime import timedelta
+        data_limite = timezone.now().date().replace(day=1) - timedelta(days=365)
+
         
         gastos_mensais = Custo.objects.filter(
             filtro_projeto, 
@@ -466,6 +467,7 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
     ViewSet para gerenciamento de orçamentos de projetos.
     Inclui anotações para calcular campos derivados diretamente no banco de dados.
     """
+    queryset = OrcamentoProjeto.objects.all()
     serializer_class = OrcamentoProjetoSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
@@ -610,6 +612,7 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
     ViewSet para gerenciamento de orçamentos de tarefas.
     Inclui anotações para calcular campos derivados diretamente no banco de dados.
     """
+    queryset = OrcamentoTarefa.objects.all()
     serializer_class = OrcamentoTarefaSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]

@@ -19,15 +19,15 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(MembroProjeto)
 class ProjectMemberAdmin(admin.ModelAdmin):
-    list_display = ['projeto', 'usuario', 'papel', 'data_entrada']
-    list_filter = ['papel', 'data_entrada']
+    list_display = ['projeto', 'usuario', 'papel']  # Removed 'data_entrada'
+    list_filter = ['papel']  # Removed 'data_entrada'
     search_fields = ['projeto__titulo', 'usuario__username', 'usuario__email']
     autocomplete_fields = ['projeto', 'usuario']
 
 @admin.register(HistoricoStatusProjeto)
 class ProjectStatusHistoryAdmin(admin.ModelAdmin):
-    list_display = ['projeto', 'status_anterior', 'novo_status', 'alterado_por', 'alterado_em']
-    list_filter = ['status_anterior', 'novo_status', 'alterado_em']
+    list_display = ['projeto', 'status_anterior', 'alterado_por', 'alterado_em']  # Removed 'novo_status'
+    list_filter = ['status_anterior', 'alterado_em']  # Removed 'novo_status'
     search_fields = ['projeto__titulo']
     readonly_fields = ['alterado_em']
     autocomplete_fields = ['projeto', 'alterado_por']

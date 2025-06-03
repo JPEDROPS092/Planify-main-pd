@@ -40,17 +40,17 @@ class EquipeViewSet(viewsets.ModelViewSet):
         queryset = Equipe.objects.all()
         
         # Filtra por membro
-        usuario_id = self.request.query_params.get('usuario')
+        usuario_id = self.request.GET.get('usuario')
         if usuario_id:
             queryset = queryset.filter(membros__usuario__id=usuario_id)
         
         # Filtra minhas equipes
-        minhas_equipes = self.request.query_params.get('minhas_equipes')
+        minhas_equipes = self.request.GET.get('minhas_equipes')
         if minhas_equipes and minhas_equipes.lower() == 'true':
             queryset = queryset.filter(membros__usuario=self.request.user)
         
         # Filtra por texto (busca em nome e descrição)
-        texto = self.request.query_params.get('texto')
+        texto = self.request.GET.get('texto')
         if texto:
             queryset = queryset.filter(
                 Q(nome__icontains=texto) | Q(descricao__icontains=texto)

@@ -97,7 +97,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             return True
             
         # Verificar permissões específicas através dos perfis de acesso
-        for user_profile in self.access_profiles.all():
+        for user_profile in UserAccessProfile.objects.filter(user=self):
             if user_profile.access_profile.permissions.filter(module=module, action=action).exists():
                 return True
                 
@@ -165,12 +165,15 @@ class Permission(models.Model):
     access_profile = models.ForeignKey(AccessProfile, on_delete=models.CASCADE, related_name='permissions')
     module = models.CharField(max_length=20, choices=MODULE_CHOICES)
     action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+
+    def get_action_display(self):
+        return dict(self.ACTION_CHOICES).get(self.action, self.action)
     
     class Meta:
         unique_together = ('access_profile', 'module', 'action')
     
     def __str__(self):
-        return f"{self.access_profile.name} - {self.get_module_display()} - {self.get_action_display()}"
+        return f"{self.access_profile.name} - {dict(self.MODULE_CHOICES).get(self.module, self.module)} - {self.get_action_display()}"
 
 
 class UserAccessProfile(models.Model):

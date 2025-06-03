@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ChatMensagem, ChatMensagemLeitura, Notificacao, ConfiguracaoNotificacao
+from .models import ChatMensagem, ChatMensagemLeitura, Notificacao, ConfiguracaoNotificacao, Comunicacao
 
 
 class ChatMensagemLeituraSerializer(serializers.ModelSerializer):
@@ -66,3 +66,32 @@ class ConfiguracaoNotificacaoSerializer(serializers.ModelSerializer):
         except ConfiguracaoNotificacao.DoesNotExist:
             # Cria uma nova configuração
             return super().create(validated_data)
+
+
+class ComunicacaoSerializer(serializers.ModelSerializer):
+    """
+    Serializer para o modelo Comunicacao.
+    
+    Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+    Inclui campos calculados para exibir informações relacionadas de forma mais amigável.
+    """
+    remetente_nome = serializers.CharField(source='remetente.full_name', read_only=True)
+    remetente_username = serializers.CharField(source='remetente.username', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    destinatarios_info = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = Comunicacao
+        fields = ['id', 'projeto', 'projeto_nome', 'tipo', 'tipo_display', 'titulo', 'texto', 
+                  'remetente', 'remetente_nome', 'remetente_username', 
+                  'destinatarios', 'destinatarios_info', 'criada_em', 'atualizada_em']
+        read_only_fields = ['remetente', 'criada_em', 'atualizada_em']
+    
+    def get_destinatarios_info(self, obj):
+        """Retorna informações básicas sobre os destinatários."""
+        return [{
+            'id': user.id,
+            'username': user.username,
+            'nome': user.full_name
+        } for user in obj.destinatarios.all()]

@@ -270,27 +270,17 @@ class HistoricoStatusProjetoSerializer(serializers.ModelSerializer):
     Registra as mudanças de status com informações sobre quem e quando alterou.
     """
     status_anterior_display = serializers.CharField(source='get_status_anterior_display', read_only=True, help_text="Nome do status anterior para exibição")
-    novo_status_display = serializers.CharField(source='get_novo_status_display', read_only=True, help_text="Nome do novo status para exibição")
     alterado_por_username = serializers.CharField(source='alterado_por.username', read_only=True, help_text="Nome de usuário de quem alterou o status")
     projeto_titulo = serializers.CharField(source='projeto.titulo', read_only=True, help_text="Título do projeto")
     
     class Meta:
         model = HistoricoStatusProjeto
         fields = ['id', 'projeto', 'projeto_titulo', 'status_anterior', 'status_anterior_display', 
-                 'novo_status', 'novo_status_display', 'alterado_por', 'alterado_por_username', 'alterado_em']
+                 'alterado_por', 'alterado_por_username', 'alterado_em']
         read_only_fields = ['alterado_em']
     
     def validate(self, data):
-        """Validação personalizada para garantir que o status anterior seja diferente do novo status."""
-        if data.get('status_anterior') == data.get('novo_status'):
-            raise serializers.ValidationError(_('O status anterior e o novo status não podem ser iguais.'))
+        """Validação personalizada para o histórico de status."""
         return data
     
-    def validate_novo_status(self, value):
-        """Valida se o novo status é válido."""
-        valid_statuses = dict(Projeto.STATUS_CHOICES).keys()
-        if value not in valid_statuses:
-            raise serializers.ValidationError(
-                _('Status inválido. Escolha entre: {}').format(", ".join(valid_statuses))
-            )
-        return value
+

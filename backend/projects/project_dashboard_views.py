@@ -1,12 +1,11 @@
-from rest_framework import status, permissions
+from rest_framework import status as http_status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Q
+from django.db.models import Prefetch
 from django.utils import timezone
 from datetime import timedelta
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from .models import Projeto, MembroProjeto, Sprint
 from tasks.models import Tarefa, AtribuicaoTarefa
@@ -18,6 +17,17 @@ from .api_schemas import (
     GanttResponseSerializer,
     ErrorResponseSerializer
 )
+
+# Constants for status values to avoid hardcoding
+STATUS_A_FAZER = 'A_FAZER'
+STATUS_EM_ANDAMENTO = 'EM_ANDAMENTO'
+STATUS_FEITO = 'FEITO'
+STATUS_CHOICES = [STATUS_A_FAZER, STATUS_EM_ANDAMENTO, STATUS_FEITO]
+
+# Sprint status constants
+SPRINT_PLANEJADO = 'PLANEJADO'
+SPRINT_EM_ANDAMENTO = 'EM_ANDAMENTO'
+SPRINT_CONCLUIDO = 'CONCLUIDO'
 
 
 @extend_schema(
@@ -41,57 +51,74 @@ class ProjetoDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request, projeto_id):
-        # Buscar o projeto pelo ID
-        projeto = get_object_or_404(Projeto, id=projeto_id)
-        
-        # Verificar se o usuário tem acesso ao projeto
-        if not MembroProjeto.objects.filter(projeto=projeto, usuario=request.user).exists() and not request.user.is_staff:
-            return Response(
-                {"detail": "Você não tem permissão para acessar este projeto."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Obter dados do projeto
-        projeto_serializer = ProjetoSerializer(projeto)
-        
-        # Obter sprints do projeto
-        sprints = Sprint.objects.filter(projeto=projeto)
-        sprints_serializer = SprintSerializer(sprints, many=True)
-        
-        # Obter tarefas para o Kanban agrupadas por status
-        tarefas_kanban = {
-            'A_FAZER': [],
-            'EM_ANDAMENTO': [],
-            'FEITO': []
-        }
-        
-        tarefas = Tarefa.objects.filter(projeto=projeto)
-        for status in tarefas_kanban.keys():
-            tarefas_status = tarefas.filter(status=status)
-            tarefas_kanban[status] = TarefaSerializer(tarefas_status, many=True).data
-        
-        # Obter dados para o gráfico Gantt
-        tarefas_gantt = []
-        for tarefa in tarefas:
-            responsaveis = AtribuicaoTarefa.objects.filter(tarefa=tarefa).values_list('usuario__username', flat=True)
+        try:
+            # Buscar o projeto pelo ID com select_related para otimizar consultas
+            projeto = get_object_or_404(Projeto, id=projeto_id)
             
-            tarefa_gantt = {
-                'id': tarefa.id,
-                'titulo': tarefa.titulo,
-                'inicio': tarefa.data_inicio.isoformat(),
-                'fim': tarefa.data_termino.isoformat(),
-                'progresso': 100 if tarefa.status == 'FEITO' else (50 if tarefa.status == 'EM_ANDAMENTO' else 0),
-                'responsaveis': list(responsaveis),
-                'status': tarefa.status,
-                'prioridade': tarefa.prioridade
+            # Verificar se o usuário tem acesso ao projeto
+            if not MembroProjeto.objects.filter(projeto=projeto, usuario=request.user).exists() and not request.user.is_staff:
+                return Response(
+                    {"detail": "Você não tem permissão para acessar este projeto."},
+                    status=http_status.HTTP_403_FORBIDDEN
+                )
+            
+            # Obter dados do projeto
+            projeto_serializer = ProjetoSerializer(projeto)
+            
+            # Obter sprints do projeto
+            sprints = Sprint.objects.filter(projeto=projeto).select_related('projeto')
+            sprints_serializer = SprintSerializer(sprints, many=True)
+            
+            # Obter tarefas para o Kanban agrupadas por status usando constantes
+            tarefas_kanban = {
+                STATUS_A_FAZER: [],
+                STATUS_EM_ANDAMENTO: [],
+                STATUS_FEITO: []
             }
-            tarefas_gantt.append(tarefa_gantt)
-        
-        # Estatísticas do projeto
-        total_tarefas = tarefas.count()
-        tarefas_concluidas = tarefas.filter(status='FEITO').count()
-        tarefas_em_andamento = tarefas.filter(status='EM_ANDAMENTO').count()
-        tarefas_a_fazer = tarefas.filter(status='A_FAZER').count()
+            
+            # Otimizar consulta com select_related para evitar múltiplas consultas
+            tarefas = Tarefa.objects.filter(projeto=projeto).select_related('sprint', 'criado_por').select_related('sprint', 'criado_por')
+            
+            # Prefetch atribuições para evitar consultas N+1
+            atribuicoes = AtribuicaoTarefa.objects.filter(tarefa__projeto=projeto).select_related('usuario', 'tarefa')
+            atribuicoes_por_tarefa = {}
+            for atribuicao in atribuicoes:
+                if atribuicao.tarefa_id not in atribuicoes_por_tarefa:
+                    atribuicoes_por_tarefa[atribuicao.tarefa_id] = []
+                atribuicoes_por_tarefa[atribuicao.tarefa_id].append(atribuicao.usuario.username)
+            
+            # Processar tarefas para o Kanban
+            for tarefa_status_key in tarefas_kanban.keys():
+                tarefas_por_status = tarefas.filter(status=tarefa_status_key)
+                tarefas_kanban[tarefa_status_key] = TarefaSerializer(tarefas_por_status, many=True).data
+            
+            # Obter dados para o gráfico Gantt de forma mais eficiente
+            tarefas_gantt = []
+            for tarefa in tarefas:
+                responsaveis = atribuicoes_por_tarefa.get(tarefa.id, [])
+                
+                tarefa_gantt = {
+                    'id': tarefa.id,
+                    'titulo': tarefa.titulo,
+                    'inicio': tarefa.data_inicio.isoformat(),
+                    'fim': tarefa.data_termino.isoformat(),
+                    'progresso': 100 if tarefa.status == STATUS_FEITO else (50 if tarefa.status == STATUS_EM_ANDAMENTO else 0),
+                    'responsaveis': responsaveis,
+                    'status': tarefa.status,
+                    'prioridade': tarefa.prioridade
+                }
+                tarefas_gantt.append(tarefa_gantt)
+            
+            # Estatísticas do projeto usando agregação para melhor performance
+            total_tarefas = tarefas.count()
+            tarefas_concluidas = tarefas.filter(status=STATUS_FEITO).count()
+            tarefas_em_andamento = tarefas.filter(status=STATUS_EM_ANDAMENTO).count()
+        except Exception as e:
+            return Response(
+                {"detail": f"Erro ao processar dados do dashboard: {str(e)}"},
+                status=http_status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        tarefas_a_fazer = tarefas.filter(status=STATUS_A_FAZER).count()
         
         # Calcular progresso geral do projeto
         progresso = 0
@@ -182,14 +209,14 @@ class ProjetoKanbanView(APIView):
         if not MembroProjeto.objects.filter(projeto=projeto, usuario=request.user).exists() and not request.user.is_staff:
             return Response(
                 {"detail": "Você não tem permissão para acessar este projeto."},
-                status=status.HTTP_403_FORBIDDEN
+                status=http_status.HTTP_403_FORBIDDEN
             )
         
-        # Obter tarefas agrupadas por status
+        # Obter tarefas agrupadas por status usando constantes
         tarefas_kanban = {
-            'A_FAZER': [],
-            'EM_ANDAMENTO': [],
-            'FEITO': []
+            STATUS_A_FAZER: [],
+            STATUS_EM_ANDAMENTO: [],
+            STATUS_FEITO: []
         }
         
         # Filtrar por sprint se especificado
@@ -202,11 +229,11 @@ class ProjetoKanbanView(APIView):
             else:
                 tarefas_query = tarefas_query.filter(sprint_id=sprint_id)
         
-        for status in tarefas_kanban.keys():
-            tarefas_status = tarefas_query.filter(status=status)
+        for tarefa_status_key in tarefas_kanban.keys():
+            tarefas_por_status = tarefas_query.filter(status=tarefa_status_key)
             tarefas_serialized = []
             
-            for tarefa in tarefas_status:
+            for tarefa in tarefas_por_status:
                 # Obter responsáveis pela tarefa
                 responsaveis = AtribuicaoTarefa.objects.filter(tarefa=tarefa).values(
                     'usuario__id', 'usuario__username', 'usuario__full_name'
@@ -216,7 +243,7 @@ class ProjetoKanbanView(APIView):
                 tarefa_data['responsaveis'] = list(responsaveis)
                 tarefas_serialized.append(tarefa_data)
             
-            tarefas_kanban[status] = tarefas_serialized
+            tarefas_kanban[tarefa_status_key] = tarefas_serialized
         
         return Response(tarefas_kanban)
     
@@ -231,7 +258,7 @@ class ProjetoKanbanView(APIView):
         if not MembroProjeto.objects.filter(projeto=projeto, usuario=request.user).exists() and not request.user.is_staff:
             return Response(
                 {"detail": "Você não tem permissão para acessar este projeto."},
-                status=status.HTTP_403_FORBIDDEN
+                status=http_status.HTTP_403_FORBIDDEN
             )
         
         tarefa_id = request.data.get('tarefa_id')
@@ -240,27 +267,27 @@ class ProjetoKanbanView(APIView):
         if not tarefa_id or not novo_status:
             return Response(
                 {"detail": "ID da tarefa e novo status são obrigatórios."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=http_status.HTTP_400_BAD_REQUEST
             )
         
-        # Verificar se o status é válido
-        if novo_status not in dict(Tarefa.STATUS_CHOICES):
+        # Verificar se o status é válido usando constantes
+        if novo_status not in STATUS_CHOICES:
             return Response(
                 {"detail": f"Status inválido. Opções válidas: {dict(Tarefa.STATUS_CHOICES).keys()}"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=http_status.HTTP_400_BAD_REQUEST
             )
         
-        # Buscar a tarefa
+        # Buscar a tarefa com select_related para otimizar consultas
         try:
-            tarefa = Tarefa.objects.get(id=tarefa_id, projeto=projeto)
+            tarefa = Tarefa.objects.select_related('projeto', 'sprint').get(id=tarefa_id, projeto=projeto)
         except Tarefa.DoesNotExist:
             return Response(
                 {"detail": "Tarefa não encontrada neste projeto."},
-                status=status.HTTP_404_NOT_FOUND
+                status=http_status.HTTP_404_NOT_FOUND
             )
         
         # Salvar o status anterior
-        status_anterior = tarefa.status
+        tarefa_status_anterior = tarefa.status
         
         # Atualizar o status
         tarefa.status = novo_status
@@ -268,7 +295,7 @@ class ProjetoKanbanView(APIView):
         
         # Registrar mudança no histórico
         tarefa.historico_status.create(
-            status_anterior=status_anterior,
+            status_anterior=tarefa_status_anterior,
             novo_status=novo_status,
             alterado_por=request.user
         )
@@ -294,41 +321,41 @@ class ProjetoGanttView(APIView):
     View específica para fornecer dados para a visualização Gantt de um projeto.
     """
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request, projeto_id):
         # Buscar o projeto pelo ID
         projeto = get_object_or_404(Projeto, id=projeto_id)
-        
+
         # Verificar se o usuário tem acesso ao projeto
         if not MembroProjeto.objects.filter(projeto=projeto, usuario=request.user).exists() and not request.user.is_staff:
             return Response(
                 {"detail": "Você não tem permissão para acessar este projeto."},
-                status=status.HTTP_403_FORBIDDEN
+                status=http_status.HTTP_403_FORBIDDEN
             )
-        
+
         # Filtrar por sprint se especificado
         sprint_id = request.query_params.get('sprint')
         tarefas_query = Tarefa.objects.filter(projeto=projeto)
-        
+
         if sprint_id:
             if sprint_id == 'null':
                 tarefas_query = tarefas_query.filter(sprint__isnull=True)
             else:
                 tarefas_query = tarefas_query.filter(sprint_id=sprint_id)
-        
+
         # Obter dados para o gráfico Gantt
         tarefas_gantt = []
         for tarefa in tarefas_query:
             responsaveis = AtribuicaoTarefa.objects.filter(tarefa=tarefa).values(
                 'usuario__id', 'usuario__username', 'usuario__full_name'
             )
-            
+
             tarefa_gantt = {
                 'id': tarefa.id,
                 'titulo': tarefa.titulo,
                 'inicio': tarefa.data_inicio.isoformat(),
                 'fim': tarefa.data_termino.isoformat(),
-                'progresso': 100 if tarefa.status == 'FEITO' else (50 if tarefa.status == 'EM_ANDAMENTO' else 0),
+                'progresso': 100 if tarefa.status == STATUS_FEITO else (50 if tarefa.status == STATUS_EM_ANDAMENTO else 0),
                 'responsaveis': list(responsaveis),
                 'status': tarefa.status,
                 'prioridade': tarefa.prioridade,
@@ -347,8 +374,8 @@ class ProjetoGanttView(APIView):
                 'inicio': sprint.data_inicio.isoformat(),
                 'fim': sprint.data_fim.isoformat(),
                 'tipo': 'sprint',
-                'progresso': 100 if sprint.status == 'CONCLUIDO' else (
-                    50 if sprint.status == 'EM_ANDAMENTO' else 0
+                'progresso': 100 if sprint.status == SPRINT_CONCLUIDO else (
+                    50 if sprint.status == SPRINT_EM_ANDAMENTO else 0
                 ),
                 'status': sprint.status
             }
@@ -362,7 +389,7 @@ class ProjetoGanttView(APIView):
             'fim': projeto.data_fim.isoformat(),
             'tipo': 'projeto',
             'progresso': 100 if projeto.status == 'CONCLUIDO' else (
-                50 if projeto.status == 'EM_ANDAMENTO' else 0
+                50 if projeto.status == SPRINT_EM_ANDAMENTO else 0
             ),
             'status': projeto.status
         }

@@ -185,7 +185,7 @@ def create_tasks():
     # Verificar tarefas existentes por projeto
     for project in projects:
         try:
-            project_sprints = project.sprints.all()
+            project_sprints = Sprint.objects.filter(projeto=project)
             
             # Obter tarefas existentes para este projeto
             existing_tasks = set(Tarefa.objects.filter(projeto=project).values_list('titulo', flat=True))
@@ -353,7 +353,7 @@ def create_communications():
             comunicacao = Comunicacao.objects.create(
                 projeto=project,
                 titulo=f'Comunicação sobre {project.titulo}',
-                texto=f'Esta é uma comunicação de teste enviada por {remetente.username}',
+                texto=f'Esta é uma comunicação de teste enviada por {remetente.get_username()}',
                 remetente=remetente,
                 criada_em=timezone.now() - timedelta(days=random.randint(0, 30))
             )
@@ -416,7 +416,7 @@ def create_chat_messages():
             mensagem = ChatMensagem.objects.create(
                 projeto=project,
                 autor=autor,
-                texto=f'Mensagem de teste enviada por {autor.username}: ' + \
+                texto=f'Mensagem de teste enviada por {autor.get_username()}: ' + \
                       ''.join(random.choice(string.ascii_letters + ' ') for _ in range(random.randint(20, 100))),
                 enviado_em=timezone.now() - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23)),
                 editado=random.choice([True, False])
@@ -443,7 +443,7 @@ def create_task_comments():
             ComentarioTarefa.objects.create(
                 tarefa=task,
                 autor=autor,
-                texto=f'Comentário de {autor.username}: ' + \
+                texto=f'Comentário de {autor.get_username()}: ' + \
                       ''.join(random.choice(string.ascii_letters + ' ,.!?') for _ in range(random.randint(20, 150))),
                 criado_em=timezone.now() - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23))
             )

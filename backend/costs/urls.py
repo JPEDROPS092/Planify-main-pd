@@ -9,7 +9,7 @@ router = DefaultRouter()
 router.register(r'categorias', CategoriaViewSet)
 router.register(r'custos', CustoViewSet)
 router.register(r'orcamentos-projeto', OrcamentoProjetoViewSet)
-router.register(r'orcamentos-tarefa', OrcamentoTarefaViewSet)
+router.register(r'orcamentos-tarefa', OrcamentoTarefaViewSet, basename='orcamentotarefa')
 router.register(r'alertas', AlertaViewSet)
 
 urlpatterns = [

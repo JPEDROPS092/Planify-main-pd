@@ -39,8 +39,12 @@ class Documento(models.Model):
     data_upload = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
     
+    def get_tipo_display_value(self):
+        """Retorna o valor de exibição do tipo."""
+        return dict(self.TIPO_CHOICES).get(self.tipo, self.tipo)
+
     def __str__(self):
-        return f"{self.titulo} - {self.get_tipo_display()} (v{self.versao})"
+        return f"{self.titulo} - {self.get_tipo_display_value()} (v{self.versao})"
     
     class Meta:
         verbose_name = 'Documento'
