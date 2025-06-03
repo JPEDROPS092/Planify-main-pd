@@ -1,13 +1,14 @@
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from users.models import User
+from users.models import User,UserManager
 from projects.models import Projeto
 from costs.models import OrcamentoProjeto
 from datetime import date, timedelta
-
+from typing import cast  # Importar cast para dicas de tipo
 class CostAPITests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(
+        user_manager = cast(UserManager, User.objects)
+        self.admin = user_manager.create_superuser(
             email='admin@planify.com',
             username='admin',
             full_name='Administrador',
@@ -28,7 +29,7 @@ class CostAPITests(APITestCase):
     def test_create_project_budget(self):
         url = reverse('orcamentoprojeto-list')
         data = {
-            'projeto': self.projeto.id,
+            'projeto': self.projeto,  # Ensure 'projeto' is correctly set in the model
             'valor_total': 10000.0,
             'descricao': 'Orçamento inicial'
         }

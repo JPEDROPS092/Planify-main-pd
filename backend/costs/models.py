@@ -1,9 +1,14 @@
+"""
+Definição dos modelos de dados para o sistema de gerenciamento de custos.
+Inclui modelos para Categorias de Custo, Custos, Orçamentos de Projeto,
+Orçamentos de Tarefa e Alertas de Orçamento.
+"""
 from django.db import models
 from django.conf import settings
 from projects.models import Projeto
 from tasks.models import Tarefa
 from decimal import Decimal
-
+from django.db.models import Sum
 
 class Categoria(models.Model):
     """Categoria de custos para classificação"""
@@ -82,25 +87,6 @@ class OrcamentoProjeto(models.Model):
     def __str__(self):
         return f"Orçamento de {self.projeto.titulo} - R$ {self.valor_total}"
     
-    @property
-    def valor_utilizado(self):
-        """Retorna o valor total já utilizado no projeto"""
-        if self.projeto:
-            return self.projeto.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
-        return Decimal('0.00')
-    
-    @property
-    def valor_restante(self):
-        """Retorna o valor restante do orçamento"""
-        return self.valor_total - self.valor_utilizado
-    
-    @property
-    def percentual_utilizado(self):
-        """Retorna o percentual do orçamento já utilizado"""
-        if self.valor_total == 0:
-            return 0
-        return (self.valor_utilizado / self.valor_total) * 100
-    
     class Meta:
         verbose_name = 'Orçamento de Projeto'
         verbose_name_plural = 'Orçamentos de Projetos'
@@ -122,24 +108,8 @@ class OrcamentoTarefa(models.Model):
     def __str__(self):
         return f"Orçamento para {self.tarefa.titulo} - R$ {self.valor}"
     
-    @property
-    def valor_utilizado(self):
-        """Retorna o valor total já utilizado na tarefa"""
-        if self.tarefa:
-            return self.tarefa.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
-        return Decimal('0.00')
-    
-    @property
-    def valor_restante(self):
-        """Retorna o valor restante do orçamento da tarefa"""
-        return self.valor - self.valor_utilizado
-    
-    @property
-    def percentual_utilizado(self):
-        """Retorna o percentual do orçamento já utilizado"""
-        if self.valor == 0:
-            return 0
-        return (self.valor_utilizado / self.valor) * 100
+    # Os campos valor_utilizado, valor_restante e percentual_utilizado
+    # serão calculados diretamente na query via anotações no ViewSet
     
     class Meta:
         verbose_name = 'Orçamento de Tarefa'
