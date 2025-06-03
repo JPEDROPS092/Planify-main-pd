@@ -35,6 +35,13 @@ class Projeto(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
     arquivado = models.BooleanField(default=False)
+    custos = models.ForeignKey(
+        'costs.Custo',
+        on_delete=models.CASCADE,
+        related_name='projeto_custos',
+        null=True,
+        blank=True
+    )
 
     def clean(self):
         from django.core.exceptions import ValidationError

@@ -80,12 +80,14 @@ class OrcamentoProjeto(models.Model):
     observacoes = models.TextField(blank=True, null=True)
     
     def __str__(self):
-        return f"Orçamento de {self.projeto.nome} - R$ {self.valor_total}"
+        return f"Orçamento de {self.projeto.titulo} - R$ {self.valor_total}"
     
     @property
     def valor_utilizado(self):
         """Retorna o valor total já utilizado no projeto"""
-        return self.projeto.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
+        if self.projeto:
+            return self.projeto.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
+        return Decimal('0.00')
     
     @property
     def valor_restante(self):
@@ -123,7 +125,9 @@ class OrcamentoTarefa(models.Model):
     @property
     def valor_utilizado(self):
         """Retorna o valor total já utilizado na tarefa"""
-        return self.tarefa.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
+        if self.tarefa:
+            return self.tarefa.custos.aggregate(total=models.Sum('valor'))['total'] or Decimal('0.00')
+        return Decimal('0.00')
     
     @property
     def valor_restante(self):
@@ -179,8 +183,8 @@ class Alerta(models.Model):
     
     def __str__(self):
         if self.tipo == 'PROJETO':
-            return f"Alerta de {self.percentual}% para {self.projeto.nome}"
-        return f"Alerta de {self.percentual}% para {self.tarefa.titulo}"
+            return f"Alerta de {self.percentual}% para {self.projeto.titulo}"
+        return f"Alerta de {self.percentual}% para {self.tarefa.titulo}" if self.tarefa else f"Alerta de {self.percentual}% para projeto"
     
     class Meta:
         verbose_name = 'Alerta de Orçamento'

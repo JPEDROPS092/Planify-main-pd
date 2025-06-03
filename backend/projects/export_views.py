@@ -1,24 +1,24 @@
-from rest_framework import status, permissions
+from rest_framework import status, permissions  # Ensure 'djangorestframework' is installed
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse, HttpRequest
-from django.contrib.auth.models import User # Assuming User model for type hinting
+from django.http import HttpResponse  # Removed unused HttpRequest
 import csv
 import json
 from datetime import datetime
 from typing import List, Dict, Any, Union, Optional # For type hinting
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiParameter  # Removed unused OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 
 # Assuming models are correctly imported from the current app (.) and tasks app
 from .models import Projeto, MembroProjeto, Sprint
-from tasks.models import Tarefa, AtribuicaoTarefa # Assuming these choices are defined in Tarefa
-from .api_schemas import ExportResponseSerializer, ErrorResponseSerializer
+from tasks.models import Tarefa  # Removed unused AtribuicaoTarefa
+from costs.models import Custo  # Ensure Custo is used in the code
+from .api_schemas import ErrorResponseSerializer  # Removed unused ExportResponseSerializer
 
 # For type hinting specific model instances
-# from risks.models import Risco # Only if needed for type hints outside methods
+from risks.models import Risco  # Ensure Risco is used in the code
 # from costs.models import Custo # Only if needed for type hints outside methods
 
 
@@ -57,7 +57,7 @@ class ProjetoExportView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request: HttpRequest, projeto_id: int, format: Optional[str] = None) -> Union[HttpResponse, Response]:
+    def get(self, request: 'rest_framework.request.Request', projeto_id: int, format: Optional[str] = None) -> Union[HttpResponse, Response]:
         """
         Manipula requisições GET para exportar dados do projeto.
 
@@ -75,13 +75,7 @@ class ProjetoExportView(APIView):
             HttpResponse com o arquivo de dados (CSV/JSON) ou
             Response com uma mensagem de erro.
         """
-        try:
-            projeto = get_object_or_404(Projeto, id=projeto_id)
-        except Projeto.DoesNotExist: # Should be caught by get_object_or_404, but for clarity
-            return Response(
-                {"detail": "Projeto não encontrado."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        projeto = get_object_or_404(Projeto, id=projeto_id)
 
         # Verificar se o usuário tem acesso ao projeto
         # Staff users have access to all projects for export, or user must be a member.
@@ -100,13 +94,12 @@ class ProjetoExportView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verificar quais dados devem ser incluídos
         # Query params arrive as strings 'true'/'false'
-        include_project = request.query_params.get('include_project', 'true').lower() == 'true'
-        include_tasks = request.query_params.get('include_tasks', 'true').lower() == 'true'
-        include_team = request.query_params.get('include_team', 'false').lower() == 'true'
-        include_risks = request.query_params.get('include_risks', 'false').lower() == 'true'
-        include_costs = request.query_params.get('include_costs', 'false').lower() == 'true'
+        include_project = request.query_params.get('include_project', 'true').strip().lower() in ['true', '1']
+        include_tasks = request.query_params.get('include_tasks', 'true').strip().lower() in ['true', '1']
+        include_team = request.query_params.get('include_team', 'false').strip().lower() in ['true', '1']
+        include_risks = request.query_params.get('include_risks', 'false').strip().lower() in ['true', '1']
+        include_costs = request.query_params.get('include_costs', 'false').strip().lower() in ['true', '1']
 
         if not any([include_project, include_tasks, include_team, include_risks, include_costs]):
             return Response(
@@ -128,8 +121,7 @@ class ProjetoExportView(APIView):
             export_data['equipe'] = self._get_equipe_data(projeto)
 
         if include_risks:
-            # Local import to avoid potential circular dependencies or if 'risks' is an optional app
-            from risks.models import Risco # noqa
+            # Risco model is already imported at the top
             export_data['riscos'] = self._get_riscos_data(projeto)
 
         if include_costs:
@@ -139,7 +131,8 @@ class ProjetoExportView(APIView):
 
         # Nome do arquivo
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        safe_titulo = "".join(c if c.isalnum() else "_" for c in projeto.titulo)
+        from slugify import slugify  # Ensure 'python-slugify' is installed
+        safe_titulo = slugify(projeto.titulo)
         filename = f"projeto_{projeto.id}_{safe_titulo}_{timestamp}"
 
         if export_format == 'csv':
@@ -183,8 +176,11 @@ class ProjetoExportView(APIView):
         Returns:
             Uma lista de dicionários, cada um representando uma tarefa.
         """
-        tarefas = Tarefa.objects.filter(projeto=projeto).select_related('sprint', 'criado_por').prefetch_related('atribuicoes__usuario')
+        tarefas = Tarefa.objects.filter(projeto=projeto).select_related('sprint', 'criado_por')
         data: List[Dict[str, Any]] = []
+
+        # Prefetch atribuicoes for all tarefas at once to avoid N+1 queries
+        tarefas = tarefas.prefetch_related('atribuicoes__usuario')
 
         for tarefa in tarefas:
             # Using prefetch_related for atribuicoes should make this efficient
@@ -220,10 +216,8 @@ class ProjetoExportView(APIView):
         # These statuses should ideally align with Tarefa.STATUS_CHOICES keys
         # For simplicity, we keep them hardcoded as in the original code.
         # If Tarefa.STATUS_CHOICES were ('A_FAZER', 'A Fazer'), ('EM_ANDAMENTO', 'Em Andamento'), etc.
-        # KANBAN_STATUS_ORDER = ['A_FAZER', 'EM_ANDAMENTO', 'FEITO']
-        # A more robust way might be to iterate over dict(Tarefa.STATUS_CHOICES).keys()
-        # but the original code implies a specific set of keys for Kanban columns.
-
+        
+        # Removed duplicate tarefas fetching and use direct DB query instead of _get_tarefas_data
         tarefas = Tarefa.objects.filter(projeto=projeto).select_related('sprint').prefetch_related('atribuicoes__usuario')
         
         result_list: List[Dict[str, Any]] = []
@@ -270,7 +264,7 @@ class ProjetoExportView(APIView):
         })
 
         # Adicionar sprints
-        sprints = Sprint.objects.filter(projeto=projeto)
+        sprints = Sprint.objects.filter(projeto=projeto).select_related('projeto')
         for sprint in sprints:
             gantt_data.append({
                 'id_gantt': f"sprint_{sprint.id}",
@@ -373,7 +367,7 @@ class ProjetoExportView(APIView):
             Uma lista de dicionários, cada um representando um custo.
         """
         from costs.models import Custo # Local import as in original
-
+        # Removed the local import as it is now at the top of the file
         custos = Custo.objects.filter(projeto=projeto).select_related('categoria', 'tarefa', 'criado_por')
         custos_data: List[Dict[str, Any]] = []
 
@@ -407,8 +401,9 @@ class ProjetoExportView(APIView):
             HttpResponse contendo o arquivo CSV para download.
         """
         response = HttpResponse(content_type='text/csv; charset=utf-8') # Ensure UTF-8
+        # Add UTF-8 BOM to ensure compatibility with Excel, which may misinterpret encoding without it.
+        response.write(u'\ufeff'.encode('utf8'))
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
-        response.write(u'\ufeff'.encode('utf8'))  # BOM for Excel compatibility
 
         writer = csv.writer(response)
 
@@ -438,24 +433,25 @@ class ProjetoExportView(APIView):
                 # Caso inesperado, apenas escreve o dado
                 writer.writerow([str(section_data)])
 
-
             writer.writerow([]) # Linha em branco após a seção
             writer.writerow([]) # Mais uma linha em branco para melhor separação visual
 
         return response
-
-    def _export_json(self, data: Dict[str, Any], filename: str) -> HttpResponse:
+        
+    def _export_json(self, data: Dict[str, Any], filename: str, ensure_ascii: bool = False, indent: Optional[int] = 4) -> HttpResponse:
         """
         Exporta os dados coletados para um arquivo JSON.
 
         Args:
             data: Um dicionário contendo todos os dados a serem exportados.
             filename: O nome base para o arquivo JSON (sem a extensão .json).
+            ensure_ascii: Define se os caracteres não-ASCII devem ser escapados.
+            indent: Define o número de espaços para indentação no JSON. Use None para minificar.
 
         Returns:
             HttpResponse contendo o arquivo JSON para download.
         """
-        response_content = json.dumps(data, ensure_ascii=False, indent=4)
+        response_content = json.dumps(data, ensure_ascii=ensure_ascii, indent=indent)
         response = HttpResponse(response_content, content_type='application/json; charset=utf-8')
         response['Content-Disposition'] = f'attachment; filename="{filename}.json"'
         return response

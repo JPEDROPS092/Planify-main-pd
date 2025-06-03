@@ -32,7 +32,12 @@ class Tarefa(models.Model):
     )
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
-    
+    atualizado_por = models.ForeignKey  (settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='tarefas_atualizadas'
+    )
+    custos = models.ManyToManyField('costs.Custo', through='costs.Custo', related_name='tarefas')
     def __str__(self):
         return self.titulo
     
