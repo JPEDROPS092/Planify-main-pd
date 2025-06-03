@@ -1,12 +1,15 @@
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from users.models import User
-from projects.models import Project
+from users.models import User, UserManager  # Importar UserManager explicitamente
+from projects.models import Projeto
 from datetime import date, timedelta
+from typing import cast  # Importar cast para dicas de tipo
 
 class ProjectAPITests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(
+        # Usar cast para indicar que estamos usando um UserManager com create_superuser
+        user_manager = cast(UserManager, User.objects)
+        self.admin = user_manager.create_superuser(
             email='admin@planify.com',
             username='admin',
             full_name='Administrador',
@@ -28,7 +31,7 @@ class ProjectAPITests(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(Project.objects.filter(name='Projeto Teste').exists())
+        self.assertTrue(Projeto.objects.filter(name='Projeto Teste').exists())
 
     def test_list_projects(self):
         url = reverse('project-list')
