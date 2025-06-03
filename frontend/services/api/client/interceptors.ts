@@ -13,14 +13,14 @@ import { tokenUtils } from '../auth/service';
  * @param options Opções opcionais para configuração
  */
 export function setupInterceptors(api, options = {}) {
-  // Estas variáveis agora serão passadas pelo useApiClient 
+  // Estas variáveis agora serão passadas pelo useApiClient
   // ou acessadas dentro de funções de callback (closures)
-  
+
   // Interceptor para adicionar o token de autenticação em cada requisição
   api.interceptors.request.use((config) => {
     // Acessando o estado dentro da função de callback
     const accessToken = useState<string | null>('auth.accessToken');
-    
+
     // Usar o tokenUtils para obter tokens armazenados
     const { access } = tokenUtils.getStoredTokens();
 
@@ -46,7 +46,7 @@ export function setupInterceptors(api, options = {}) {
       const runtimeConfig = useRuntimeConfig();
       const accessToken = useState<string | null>('auth.accessToken');
       const refreshToken = useState<string | null>('auth.refreshToken');
-      
+
       const originalRequest = error.config;
 
       // Se o erro for 401 (não autorizado) e não for uma tentativa de refresh

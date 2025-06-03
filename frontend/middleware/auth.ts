@@ -6,10 +6,10 @@ import { useAuth } from '~/stores/composables/useAuth';
  */
 export default defineNuxtRouteMiddleware((to, from) => {
   const { $auth } = useNuxtApp();
-  
+
   // Verificar se o usuário está autenticado usando o composable de autenticação
   const isAuthenticated = $auth.isAuthenticated;
-  
+
   // Rotas protegidas que exigem autenticação
   const protectedRoutes = [
     '/projetos',

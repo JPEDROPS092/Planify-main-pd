@@ -13,7 +13,7 @@ class ChatMensagem(models.Model):
     editado = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Mensagem de {self.autor.username} em {self.projeto.name}"
+        return f"Mensagem de {self.autor.username} em {self.projeto.titulo}"
     
     class Meta:
         verbose_name = 'Mensagem de Chat'
@@ -26,6 +26,9 @@ class ChatMensagemLeitura(models.Model):
     mensagem = models.ForeignKey(ChatMensagem, on_delete=models.CASCADE, related_name='leituras')
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mensagens_lidas')
     lido_em = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Mensagem de {self.mensagem.autor.username} em {self.mensagem.projeto.titulo} lida por {self.usuario.username}"
     
     class Meta:
         unique_together = ('mensagem', 'usuario')

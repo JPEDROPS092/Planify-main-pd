@@ -4,6 +4,7 @@
  */
 import axios from 'axios';
 import { setupInterceptors } from './interceptors';
+import { useRuntimeConfig } from '#app';
 
 // Classe para erros da API
 export class ApiError extends Error {
@@ -72,8 +73,14 @@ export const useApiClient = () => {
     return clientInstance;
   }
 
-  const runtimeConfig = useRuntimeConfig();
-  const baseURL = runtimeConfig.public.apiBaseUrl;
+  // Tentar obter a configuração do runtime
+  let baseURL = 'http://localhost:8000';
+  try {
+    const runtimeConfig = useRuntimeConfig();
+    baseURL = runtimeConfig.public.apiBaseUrl || baseURL;
+  } catch (e) {
+    console.warn('useRuntimeConfig não disponível, usando URL padrão');
+  }
 
   const client = axios.create({
     baseURL,

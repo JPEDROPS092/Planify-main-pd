@@ -5,6 +5,7 @@
  */
 import { ApiError, createFormData, formatQueryParams } from '../client/config';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { getAxiosInstance } from '../client/axios';
 
 // Types for API requests
 export type ApiResponse<T = any> = {
@@ -23,29 +24,12 @@ export type ApiRequestConfig = {
 /**
  * API Client que utiliza o plugin Axios configurado
  */
-const createApiClient = () => {
-  // Função para obter a instância do Axios configurada pelo plugin
-  const getAxiosInstance = (): AxiosInstance => {
-    // No contexto do Nuxt, usamos a instância global configurada pelo plugin
-    if (process.client) {
-      const nuxtApp = useNuxtApp();
-      if (nuxtApp.$api) {
-        return nuxtApp.$api;
-      }
-    }
-    
-    // Fallback para uma nova instância (não deve acontecer em produção)
-    console.warn('API client: Usando fallback para axios. O plugin pode não estar carregado.');
-    const config = useRuntimeConfig();
-    const axios = require('axios');
-    return axios.create({
-      baseURL: config.public.apiBaseUrl,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      withCredentials: true
-    });
+export const createApiClient = () => {
+  /**
+   * Função para obter a instância do Axios configurada
+   */
+  const getClientInstance = (): AxiosInstance => {
+    return getAxiosInstance();
   };
 
   /**
@@ -66,15 +50,15 @@ const createApiClient = () => {
   const handleApiError = (error: any): never => {
     if (error.response) {
       const { status, data, statusText } = error.response;
-      const message = 
-        data?.detail || 
-        data?.message || 
-        statusText || 
+      const message =
+        data?.detail ||
+        data?.message ||
+        statusText ||
         'Erro na requisição';
-        
+
       throw new ApiError(message, status, data);
     }
-    
+
     // Network ou outros erros
     throw new ApiError(
       error.message || 'Erro de conexão',
@@ -89,17 +73,17 @@ const createApiClient = () => {
   return {
     get: async <T = any>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> => {
       try {
-        const api = getAxiosInstance();
+        const api = getClientInstance();
         const response = await api.get(endpoint, config);
         return processResponse<T>(response);
       } catch (error) {
         return handleApiError(error);
       }
     },
-      
+
     post: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
       try {
-        const api = getAxiosInstance();
+        const api = getClientInstance();
         // Converter para FormData se necessário
         if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
           data = createFormData(data);
@@ -111,10 +95,10 @@ const createApiClient = () => {
         return handleApiError(error);
       }
     },
-      
+
     put: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
       try {
-        const api = getAxiosInstance();
+        const api = getClientInstance();
         if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
           data = createFormData(data);
         }
@@ -124,10 +108,10 @@ const createApiClient = () => {
         return handleApiError(error);
       }
     },
-      
+
     patch: async <T = any>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> => {
       try {
-        const api = getAxiosInstance();
+        const api = getClientInstance();
         if (data && typeof data === 'object' && !(data instanceof FormData) && config.isFormData) {
           data = createFormData(data);
         }
@@ -137,10 +121,10 @@ const createApiClient = () => {
         return handleApiError(error);
       }
     },
-      
+
     delete: async <T = any>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> => {
       try {
-        const api = getAxiosInstance();
+        const api = getClientInstance();
         const response = await api.delete(endpoint, config);
         return processResponse<T>(response);
       } catch (error) {

@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   // Ativa devtools para facilitar o debug durante o desenvolvimento
   devtools: { enabled: true },
-  
+
   // Compatibility date for Nitro
   nitro: {
     compatibilityDate: '2025-06-02'
@@ -34,12 +34,15 @@ export default defineNuxtConfig({
     storageKey: 'nuxt-color-mode',
   },
 
-  // Variáveis de ambiente públicas e privadas
+  // Configuração de runtime para o Nuxt
   runtimeConfig: {
+    // Chaves privadas que são expostas apenas no servidor
+    apiSecret: process.env.NUXT_API_SECRET || 'default_secret',
+
+    // Chaves públicas que são expostas ao cliente
     public: {
-      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
     },
-    // private: { chave: valor } // (se precisar de variáveis privadas no futuro)
   },
 
   // Configurações da aplicação (SEO básico e favicon)
@@ -96,7 +99,7 @@ export default defineNuxtConfig({
   // e os de subdiretórios tenham, você pode configurar múltiplas entradas.
   // Para uma estrutura como a atual (business, shared, ui), o prefixo é geralmente desejável.
   components: [
-    { 
+    {
       path: '~/components',
       // Excluir arquivos index.ts para evitar conflitos de componentes
       extensions: ['.vue'],

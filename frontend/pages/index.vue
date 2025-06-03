@@ -1,34 +1,41 @@
 <template>
-  <!-- Esta página serve como redirecionamento da rota raiz para o dashboard ou login -->
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  <!-- Landing Page da aplicação -->
+  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">
+    <h1 class="text-4xl font-bold text-blue-600 mb-4">Bem-vindo ao Planify</h1>
+    <p class="text-lg text-gray-700 mb-8">
+      Organize suas tarefas e projetos de forma simples e eficiente.
+    </p>
+    <div class="flex space-x-4">
+      <button
+        @click="navigateToLogin"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        Fazer Login
+      </button>
+      <button
+        @click="navigateToSignup"
+        class="px-6 py-3 bg-gray-200 text-blue-600 rounded-lg hover:bg-gray-300"
+      >
+        Criar Conta
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuth } from '~/stores/composables/useAuth';
 
 const router = useRouter();
-const auth = useAuth();
 
-onMounted(async () => {
-  try {
-    // Verifica se o usuário está autenticado
-    await auth.checkAuth();
-    
-    if (auth.isAuthenticated) {
-      // Se autenticado, redireciona para o dashboard
-      router.push('/dashboard');
-    } else {
-      // Se não autenticado, redireciona para a página de login
-      router.push('/auth/login');
-    }
-  } catch (error) {
-    console.error('Erro ao verificar autenticação:', error);
-    // Em caso de erro, redireciona para a página de login
-    router.push('/auth/login');
-  }
-});
+const navigateToLogin = () => {
+  router.push('/auth/login');
+};
+
+const navigateToSignup = () => {
+  router.push('/auth/signup');
+};
 </script>
+
+<style scoped>
+/* Adicione estilos personalizados, se necessário */
+</style>

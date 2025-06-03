@@ -121,8 +121,8 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
-import { useAuth } from "~/stores/composables/useAuth";
-import { useNotification } from "~/stores/composables/useNotification";
+import { useAuth } from "~/composables/useAuth";
+import { useNotification } from "~/composables/useNotification";
 import { useRouter } from 'vue-router';
 
 // Definir metadados da página

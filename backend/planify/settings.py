@@ -55,9 +55,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'users.middleware.PermissionMiddleware',  # Middleware de permissões personalizado
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.PermissionMiddleware',  # Middleware de permissões personalizado - movido para o final da lista
 ]
 
 ROOT_URLCONF = 'planify.urls'

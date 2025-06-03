@@ -107,8 +107,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAuth } from '~/stores/composables/useAuth';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useAuth } from '~/composables/useAuth';
+import { useNotification } from '~/composables/useNotification';
 import { useRouter, useRoute } from 'vue-router';
 
 // Definir metadados da página
@@ -168,7 +168,7 @@ const handleLogin = async () => {
   } catch (error) {
     console.error('Erro no login:', error);
     // A mensagem de erro já foi exibida pelo withLoading
-    errorMessage.value = error.message || 'Ocorreu um erro durante o login. Tente novamente.';
+    errorMessage.value = (error instanceof Error && error.message) || 'Ocorreu um erro durante o login. Tente novamente.';
   } finally {
     isLoading.value = false;
   }

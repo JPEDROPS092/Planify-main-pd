@@ -2,10 +2,10 @@
  * Endpoints de autenticação
  * Define funções para interagir com a API de autenticação
  */
-import { useApiClient } from '../client';
-import type { 
-  LoginCredentials, 
-  TokenResponse, 
+import { apiClient } from '../services/apiClient';
+import type {
+  LoginCredentials,
+  TokenResponse,
   ExtendedUserProfile,
   PasswordResetConfirmData,
   PasswordResetResponse
@@ -15,7 +15,6 @@ import type {
  * Composable que fornece funções de endpoints de autenticação
  */
 export const useAuthEndpoints = () => {
-  const apiClient = useApiClient();
 
   /**
    * Cria um token de autenticação (login)
