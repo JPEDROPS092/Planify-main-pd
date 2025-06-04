@@ -56,18 +56,21 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuth } from '~/stores/composables/useAuth'
-import { useNotification } from '~/stores/composables/useNotification'
+import { useAuth } from '~/composables/useAuth'
+import { useNotification } from '~/composables/useNotification'
+import { useApiService } from '~/composables/useApiService'
 
 definePageMeta({
   layout: 'auth',
-  middleware: ['guest-only']
+  // Removendo o middleware aqui para evitar loops de redirecionamento
+  // middleware: ['auth']  
 })
 
 const router = useRouter()
 const route = useRoute()
-const { login } = useAuth()
+const { login, isAuthenticated } = useAuth()
 const { error: showError, success: showSuccess } = useNotification()
+const api = useApiService()
 
 const email = ref('')
 const password = ref('')
@@ -77,16 +80,28 @@ const handleLogin = async () => {
   loading.value = true
   
   try {
-    await login(email.value, password.value)
+    const result = await api.withLoading(
+      async () => await login({
+        username: email.value,
+        password: password.value
+      }),
+      {
+        loadingMessage: 'Entrando...',
+        successMessage: 'Login realizado com sucesso!',
+        errorMessage: 'Falha na autenticação. Verifique suas credenciais.',
+        showSuccess: true,
+        showError: true
+      }
+    )
     
-    // Redirecionamento após login bem-sucedido
-    const redirectPath = route.query.redirect || '/dashboard'
-    router.push(redirectPath)
-    
-    showSuccess('Login realizado com sucesso!')
+    if (result && result.success) {
+      // Redirecionamento após login bem-sucedido
+      const redirectPath = route.query.redirect || '/dashboard'
+      router.push(redirectPath)
+    }
   } catch (err) {
     console.error('Erro ao fazer login:', err)
-    showError(err?.response?.data?.detail || 'Falha na autenticação. Verifique suas credenciais.')
+    showError(err?.message || 'Falha na autenticação. Verifique suas credenciais.')
   } finally {
     loading.value = false
   }

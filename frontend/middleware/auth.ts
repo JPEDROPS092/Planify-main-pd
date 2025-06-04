@@ -1,16 +1,26 @@
-import { useAuth } from '~/stores/composables/useAuth';
+// Importa o composable de autenticação personalizado
+import { useAuth } from '@/composables/useAuth';
 
 /**
- * Middleware de autenticação
- * Protege rotas que requerem autenticação
+ * Middleware de autenticação centralizado
+ * Este middleware:
+ * 1. Protege rotas que requerem autenticação
+ * 2. Impede usuários autenticados de acessar páginas de login/registro
  */
 export default defineNuxtRouteMiddleware((to, from) => {
-  const { $auth } = useNuxtApp();
+  // Verificar se estamos no lado do cliente para acessar localStorage
+  if (process.server) {
+    // No SSR, vamos permitir a navegação e deixar o cliente decidir os redirecionamentos
+    return;
+  }
 
-  // Verificar se o usuário está autenticado usando o composable de autenticação
-  const isAuthenticated = $auth.isAuthenticated;
+  // Usar diretamente o composable para evitar problemas com o plugin
+  const { isAuthenticated } = useAuth();
 
-  // Rotas protegidas que exigem autenticação
+  /**
+   * Definição de rotas protegidas
+   * Estas rotas só podem ser acessadas por usuários autenticados
+   */
   const protectedRoutes = [
     '/projetos',
     '/tarefas',
@@ -23,51 +33,77 @@ export default defineNuxtRouteMiddleware((to, from) => {
     '/perfil',
   ];
 
-  // Rotas públicas que não exigem autenticação
-  const publicRoutes = [
+  /**
+   * Definição de rotas de autenticação
+   * Estas rotas só podem ser acessadas por usuários NÃO autenticados
+   */
+  const authRoutes = [
     '/auth/login',
     '/auth/registro',
     '/auth/esqueci-senha',
     '/auth/reset-password',
+    '/login',
+    '/registro'
+  ];
+
+  /**
+   * Definição de rotas públicas
+   * Estas rotas estão acessíveis independente do estado de autenticação
+   */
+  const publicRoutes = [
     '/', // Página inicial
   ];
 
-  // Verificar se a rota atual é protegida
+  /**
+   * Verifica se a rota atual é protegida
+   * Utiliza `startsWith` para considerar rotas filhas
+   */
   const isProtectedRoute = protectedRoutes.some((route) =>
     to.path.startsWith(route)
   );
-  const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/';
 
-  // Se não está autenticado e a rota é protegida, redirecionar para o login
-  if (!isAuthenticated && isProtectedRoute) {
+  /**
+   * Verifica se a rota é uma página de autenticação
+   */
+  const isAuthRoute = authRoutes.includes(to.path);
+
+  /**
+   * Verifica se a rota é explicitamente pública
+   */
+  const isPublicRoute = publicRoutes.includes(to.path);
+
+  /**
+   * CASO 1: Usuário não autenticado tentando acessar rota protegida
+   * Redireciona para a tela de login, mantendo a rota original na query.
+   */
+  if (!isAuthenticated.value && isProtectedRoute) {
     console.log(
       'Redirecionando para login: usuário não autenticado em rota protegida'
     );
-    // Preservar a rota original como parâmetro de query para redirecionamento após login
     return navigateTo({
       path: '/auth/login',
       query: { redirect: to.fullPath }
     });
   }
 
-  // Se está autenticado e está tentando acessar uma rota pública, redirecionar para o dashboard
-  if (isAuthenticated && isPublicRoute) {
+  /**
+   * CASO 2: Usuário autenticado tentando acessar página de autenticação
+   * Redireciona para o dashboard, pois já está logado
+   */
+  if (isAuthenticated.value && isAuthRoute) {
     console.log(
-      'Redirecionando para dashboard: usuário autenticado em rota pública'
+      'Redirecionando para dashboard: usuário autenticado tentando acessar página de login/registro'
     );
     return navigateTo('/dashboard');
   }
 
-  // Verificação baseada em metadados de rota
-  // Se a rota requer autenticação explicitamente e o usuário não está autenticado
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    // Armazenar a rota original para redirecionar após o login
+  /**
+   * Verificação adicional baseada em metadados da rota
+   */
+  if (to.meta.requiresAuth && !isAuthenticated.value) {
     const query = { redirect: to.fullPath };
     return navigateTo({ path: '/auth/login', query });
   }
 
-  // Se a rota é só para visitantes e o usuário está autenticado
-  if (to.meta.guestOnly && isAuthenticated) {
-    return navigateTo('/dashboard');
-  }
+  // Caso contrário, o middleware permite o acesso à rota normalmente
 });

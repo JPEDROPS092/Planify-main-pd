@@ -73,8 +73,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuth } from '~/stores/composables/useAuth';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useAuth } from '~/composables/useAuth';
+import { useNotification } from '~/composables/useNotification';
 
 // Definir metadados da página
 definePageMeta({

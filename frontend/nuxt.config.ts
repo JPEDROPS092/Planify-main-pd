@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   // Ativa devtools para facilitar o debug durante o desenvolvimento
   devtools: { enabled: true },
 
-  // Compatibility date for Nitro
+  // Set compatibility date to fix the warning
   nitro: {
     compatibilityDate: '2025-06-04'
   },
@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxt/image',
     '@nuxt/icon'
+    // @phosphor-icons/vue is not a Nuxt module, it's used through our icons plugin
   ],
 
   // Modo de cor do sistema (dark/light)
@@ -117,6 +118,7 @@ export default defineNuxtConfig({
   plugins: [
     '~/plugins/api.ts',
     '~/plugins/auth.ts',
+    '~/plugins/icons.ts', // Add our new icons plugin
   ],
 
   // Diretório base para assets públicos

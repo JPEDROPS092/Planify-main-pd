@@ -127,8 +127,8 @@ import { useRouter } from 'vue-router';
 
 // Definir metadados da página
 definePageMeta({
-  layout: false,
-  middleware: ['guest-only']
+  layout: 'auth',
+  middleware: ['auth'] // Alterado para usar o middleware centralizado
 });
 
 // Composables
