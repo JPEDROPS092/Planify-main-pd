@@ -5,7 +5,7 @@ export default defineNuxtConfig({
 
   // Compatibility date for Nitro
   nitro: {
-    compatibilityDate: '2025-06-02'
+    compatibilityDate: '2025-06-04'
   },
 
   // Estilos globais (main.css para customizações, Tailwind CSS é injetado pelo módulo)
@@ -23,6 +23,7 @@ export default defineNuxtConfig({
   ],
 
   // Modo de cor do sistema (dark/light)
+  // Configuration for @nuxtjs/color-mode module
   colorMode: {
     classSuffix: '',
     preference: 'system',
