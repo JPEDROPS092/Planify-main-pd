@@ -581,8 +581,8 @@ import {
   onBeforeUnmount,
 } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useAuth } from '~/stores/composables/useAuth';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useAuth } from '~/composables/useAuth';
+import { useNotification } from '~/composables/useNotification';
 import { useProjectService } from '~/services/api/services/projectService';
 import { useTaskService } from '~/services/api/services/taskService';
 import Modal from '~/components/ui/Modal.vue';
@@ -773,11 +773,10 @@ const initializeDropdown = () => {
   }
 };
 
-// Logout usando o novo serviço de autenticação
+// Logout usando o serviço de autenticação
 const logout = () => {
-  // Usar o novo serviço de autenticação em vez do useAuth
-  const auth = useAuthService();
-  auth.logout('/auth/login');
+  const { logout: authLogout } = useAuth();
+  authLogout();
 };
 
 // Toggle sidebar

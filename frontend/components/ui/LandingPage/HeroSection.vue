@@ -18,7 +18,7 @@
         </p>
         <div class="flex flex-col sm:flex-row justify-center md:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
         <button
-          @click="navigateToLogin"
+          @click="checkAuthAndNavigate"
           class="px-8 py-4 bg-white text-blue-700 font-semibold rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105 hover:bg-blue-50 animate__animated animate__fadeInUp animate__delay-3s"
         >
           <Icon name="ph:sign-in-bold" class="inline-block mr-2" /> Fazer Login
@@ -31,16 +31,17 @@
         </button>
         </div>
       </div>
-      <div class="md:w-1/2 flex justify-center animate__animated animate__fadeInRight animate__delay-2s">
+      <div class="md:w-1/2 flex justify-center animate__animated animate__fadeInRight animate__delay-3s">
         <img 
         src="public/svg/logop.svg" 
         alt="Planify Dashboard Preview" 
-        class="rounded-lg shadow-2xl max-w-sm md:max-w-md lg:max-w-lg transform hover:rotate-2 transition-transform duration-500"
+        class="rounded-full shadow-2xl w-120 h-80 transform hover:rotate-2 transition-transform duration-500 object-cover"
         style="background: none;"
-        >
+          >
       </div>
       </div>
-    </div>
+      </div>
+ 
     
     <!-- Ondas decorativas no fundo -->
     <div class="absolute bottom-0 left-0 right-0">
@@ -53,12 +54,29 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { useAuth } from '~/composables/useAuth';
+import { getCurrentInstance } from 'vue';
 import 'animate.css';
 
 const router = useRouter();
+const { isAuthenticated } = useAuth();
 
-const navigateToLogin = () => {
-  router.push('/auth/login');
+// Busca o método definido no componente pai (index.vue)
+const parent = getCurrentInstance()?.parent;
+
+// Verifica autenticação e navega para o dashboard ou login
+const checkAuthAndNavigate = () => {
+  if (parent?.exposed?.redirectToDashboardOrLogin) {
+    // Usa o método do componente pai se estiver disponível
+    parent.exposed.redirectToDashboardOrLogin();
+  } else {
+    // Fallback - verifica autenticação localmente
+    if (isAuthenticated.value) {
+      router.push('/dashboard');
+    } else {
+      router.push('/auth/login');
+    }
+  }
 };
 
 const navigateToSignup = () => {
@@ -78,8 +96,10 @@ const navigateToSignup = () => {
   100% { transform: translateY(0px); }
 }
 
-.hero-image {
-  mix-blend-mode: multiply; /* Tenta remover fundo branco */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
 .floating {
