@@ -5,38 +5,46 @@ Django settings for planify project.
 import os
 from pathlib import Path
 from datetime import timedelta
+from typing import List, Dict, Any # Moved typing imports to the top
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Define o diretório base do projeto (duas pastas acima deste arquivo)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Chave secreta do Django usada para segurança (mantenha em segredo em produção)
 SECRET_KEY = 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# Define se o projeto está em modo DEBUG (exibe erros detalhados, usando em desenvolvimento)
 DEBUG = True
 
+# Define quais hosts podem acessar a aplicação (em produção deve conter o domínio real)
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
+# Lista de apps registrados no projeto, incluindo apps padrão, de terceiros e locais
 INSTALLED_APPS = [
+    # Apps padrão do Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',               # Ferramenta de depuração para desenvolvimento
+    # Apps de terceiros usados para funcionalidades extras
+    'rest_framework',              # Framework para APIs REST
+    'rest_framework_simplejwt',    # JWT para autenticação via tokens
+    'djoser',                      # REST framework views for user management
+    'corsheaders',                 # Configuração CORS para permitir acesso cross-origin
+    'django_filters',              # Filtros para DRF
+    'colorfield',                  # Campo de cores personalizado
+    'chartjs',                    # Integração com Chart.js para gráficos
+    'django_seed',                 # Para popular banco com dados de teste
+    'drf_spectacular',             # Documentação automática da API
     
-    # Third-party apps
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    'django_filters',
-    'colorfield',
-    'chartjs',
-    'django_seed',
-    'drf_spectacular',  # Desabilitado temporariamente
-    
-    # Local apps
+    # Apps locais do projeto
     'users',
     'projects',
     'tasks',
@@ -47,33 +55,34 @@ INSTALLED_APPS = [
     'documents',
 ]
 
+# Middleware são componentes que processam requisições e respostas
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve arquivos estáticos em produção
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',       # Middleware para CORS
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',   # Proteção contra CSRF
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'users.middleware.PermissionMiddleware',  
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'rest_framework.authentication.SessionAuthentication',
+    'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
+    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
+    # 'django.middleware.common.CommonMiddleware',   # Middleware duplicado, REMOVED
+    # 'django.middleware.csrf.CsrfViewMiddleware',   # Middleware duplicado, REMOVED
 ]
 
+# Arquivo raiz de URLs do projeto
 ROOT_URLCONF = 'planify.urls'
 
-from typing import List, Dict, Any
-
+# Configuração dos templates (HTML) do Django
 TEMPLATES: List[Dict[str, Any]] = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # Engine padrão
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Diretório customizado para templates
+        'APP_DIRS': True,                               # Permite carregar templates dos apps
         'OPTIONS': {
-            'context_processors': [
+            'context_processors': [                    # Variáveis e funções globais para templates
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -83,19 +92,18 @@ TEMPLATES: List[Dict[str, Any]] = [
     },
 ]
 
+# WSGI application entry point
 WSGI_APPLICATION = 'planify.wsgi.application'
 
-# Database
-DATABASES = { # type: ignore
+# Configuração do banco de dados (SQLite para desenvolvimento)
+DATABASES = { 
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',  # Motor SQLite
+        'NAME': BASE_DIR / 'db.sqlite3',         
     }
 }
 
-# Password validation
-from typing import List, Dict
-
+# Validação de senhas para o usuário
 AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -103,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 8,
+            'min_length': 8,  # Senha mínima de 8 caracteres
         }
     },
     {
@@ -114,114 +122,144 @@ AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
     },
 ]
 
-# Custom user model
+# Define modelo de usuário customizado do app 'users'
 AUTH_USER_MODEL = 'users.User'
 
-# Internationalization
-LANGUAGE_CODE = 'pt-br'
-TIME_ZONE = 'America/Sao_Paulo'
-USE_I18N = True
-USE_TZ = True
+# Configuração para permitir debug toolbar só no localhost
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Configurações de internacionalização e fuso horário
+LANGUAGE_CODE = 'pt-br'  # Idioma padrão português do Brasil
+TIME_ZONE = 'America/Sao_Paulo'  # Fuso horário de São Paulo
+USE_I18N = True  # Ativa tradução de strings
+USE_TZ = True    # Usa timezone-aware datetimes
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Configurações para arquivos estáticos (CSS, JS, imagens fixas)
+STATIC_URL = 'static/'  # URL base para arquivos estáticos
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Pasta onde os arquivos estáticos são coletados para produção
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  
+# Armazenamento otimizado para servir arquivos estáticos com compressão e cache
 
-# Default primary key field type
+# Configuração para arquivos de mídia (uploads, imagens do usuário, documentos)
+MEDIA_URL = '/media/'  # URL base para arquivos de mídia
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Diretório onde arquivos de mídia são armazenados
+
+# Tipo padrão para chaves primárias (ID) nas models
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST Framework settings
+# Configurações do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.authentication.CustomJWTAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        'users.authentication.CustomJWTAuthentication',  # Autenticação JWT customizada
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT padrão
+        'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticated',  # Requer autenticação para todas views por padrão
     ),
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
+        'django_filters.rest_framework.DjangoFilterBackend',  # Suporte a filtros em consultas
+        'rest_framework.filters.SearchFilter',                # Pesquisa por texto
+        'rest_framework.filters.OrderingFilter',              # Ordenação de resultados
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
-    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Desabilitado temporariamente
-    'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',  # Paginação por número de página
+    'PAGE_SIZE': 10,  # Itens por página
+
+    # Exceções personalizadas para API
+    # TODO: Ensure 'core.utils.custom_exception_handler' exists or remove/replace this line.
+    # 'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
+
+    # Renderizadores padrão para respostas
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.JSONRenderer',         # Resposta JSON
+        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Geração automática do esquema OpenAPI
+
+    # Parsers para requisições
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.JSONParser',      # JSON
+        'rest_framework.parsers.FormParser',      # Formulários
+        'rest_framework.parsers.MultiPartParser', # Upload de arquivos
     ],
-    # Configurações para documentação em português
-    'DOC_EXPANSION': 'list',
-    'DOCS_TEMPLATE': 'rest_framework/docs/index.html',
+    # Old doc settings removed as drf-spectacular handles this
+    # 'DOC_EXPANSION': 'list',
+    # 'DOCS_TEMPLATE': 'rest_framework/docs/index.html',
 }
 
-# Simple JWT settings
+# Customizações do Swagger UI (These are handled by SPECTACULAR_SETTINGS['SWAGGER_UI_SETTINGS'])
+# SWAGGER_UI_SETTINGS = { ... } # REMOVED standalone block
+    
+# Configurações específicas do Simple JWT para tokens
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Token válido por 7 dias (as per code)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30), # Refresh token válido por 30 dias (as per code)
+    'ROTATE_REFRESH_TOKENS': True,                # Gera refresh token novo a cada uso
+    'BLACKLIST_AFTER_ROTATION': True,             # Blacklist do token antigo após rotação
+    'UPDATE_LAST_LOGIN': True,                    # Atualiza o campo last_login do usuário
+    'AUTH_HEADER_TYPES': ('Bearer',),             # Prefixo do token no header Authorization
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Classe de token permitida
 }
-
-# DJOSER settings
+    
+# Configurações para a biblioteca DJOSER (facilita endpoints de autenticação)
 DJOSER = {
-    'LOGIN_FIELD': 'username',
-    'USER_CREATE_PASSWORD_RETYPE': True,
+    'LOGIN_FIELD': 'username', # Djoser uses 'email' or 'username' or your custom field. 'username' is common.
+    'USER_CREATE_PASSWORD_RETYPE': True,  # Usuário deve confirmar senha na criação
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
     'SEND_CONFIRMATION_EMAIL': False,
-    'SET_PASSWORD_RETYPE': True,
+    'SET_PASSWORD_RETYPE': True,           # Confirmação para alteração de senha
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
-    'SERIALIZERS': {
+    'SERIALIZERS': {  # Serializadores customizados para os endpoints
         'user': 'users.serializers.UserSerializer',
         'user_create': 'users.serializers.UserCreateSerializer',
-        'user_delete': 'users.serializers.UserSerializer',
-        'password_reset': 'users.serializers.ResetPasswordSerializer',
+        'user_delete': 'users.serializers.UserSerializer', # Make sure this exists and is appropriate for delete
+        'password_reset': 'users.serializers.ResetPasswordSerializer', # Ensure 'ResetPasswordSerializer' exists
         'password_reset_confirm': 'users.serializers.SetNewPasswordSerializer',
-        'set_password': 'users.serializers.ChangePasswordSerializer',
+        'set_password': 'users.serializers.ChangePasswordSerializer', # Ensure 'ChangePasswordSerializer' exists
         'current_user': 'users.serializers.UserSerializer',
     },
-    'EMAIL': {
+    'EMAIL': {  # Classes para envio de emails customizados
         'activation': 'users.email.ActivationEmail',
         'confirmation': 'users.email.ConfirmationEmail',
         'password_reset': 'users.email.PasswordResetEmail',
         'password_changed_confirmation': 'users.email.PasswordChangedConfirmationEmail',
     },
-    'ACTIVATION_REQUIRED': False,
+    'ACTIVATION_REQUIRED': False,  # Ativação via email desabilitada
 }
-
+    
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG' if DEBUG else 'INFO', # Tie logging level to DEBUG
+    },
+}
+# Configurações para drf-spectacular (Swagger/OpenAPI)
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Planify API',
-    'DESCRIPTION': 'Documentação completa da API do sistema Planify.',
+    'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # Comentário: Registra a extensão de autenticação personalizada para que o drf-spectacular a reconheça.
-    # Isso é crucial para que a documentação da API reflita corretamente o esquema de autenticação JWT customizado.
-    'OPENAPI_AUTHENTICATION_EXTENSIONS': [
-        'users.openapi.CustomJWTAuthenticationScheme',
-    ],
+    'SCHEMA_PATH_PREFIX': '/api/', # Ensure your API URLs are prefixed with /api/ or adjust this
     'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX_TRIM': True,
+    'AUTHENTICATION_WHITELIST': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
+
+    # Customizações do Swagger UI
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
-        'persistAuthorization': True,
         'displayOperationId': False,
         'defaultModelsExpandDepth': 3,
         'defaultModelExpandDepth': 3,
@@ -234,146 +272,43 @@ SPECTACULAR_SETTINGS = {
         'supportedSubmitMethods': ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
         'tryItOutEnabled': True,
     },
-    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@3.35.0',
-    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@3.35.0/favicon-32x32.png',
-    'REDOC_DIST': '//unpkg.com/redoc@2.0.0-rc.48/bundles/redoc.standalone.js',
+    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3', # Updated to a more recent version
+    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
+    'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
     'TAGS': [
         {'name': 'Autenticação', 'description': 'Endpoints para autenticação e gerenciamento de usuários'},
-        {'name': 'Projetos', 'description': 'Gerenciamento de projetos'},
-        {'name': 'Tarefas', 'description': 'Gerenciamento de tarefas'},
-        {'name': 'Equipes', 'description': 'Gerenciamento de equipes e membros'},
-        {'name': 'Riscos', 'description': 'Gerenciamento de riscos do projeto'},
-        {'name': 'Custos', 'description': 'Gerenciamento de custos e orçamentos'},
-        {'name': 'Documentos', 'description': 'Gerenciamento de documentos do projeto'},
-        {'name': 'Comunicações', 'description': 'Gerenciamento de comunicações'},
+        {'name': 'Projetos', 'description': 'Endpoints para gerenciamento de projetos e sprints'},
+        {'name': 'Tarefas', 'description': 'Endpoints para gerenciamento de tarefas'},
+        {'name': 'Equipes', 'description': 'Endpoints para gerenciamento de equipes e membros'},
+        {'name': 'Riscos', 'description': 'Endpoints para gerenciamento de riscos'},
+        {'name': 'Custos', 'description': 'Endpoints para controle de orçamentos e gastos'},
+        {'name': 'Documentos', 'description': 'Endpoints para gerenciamento de documentos'},
+        {'name': 'Comunicações', 'description': 'Endpoints para mensagens e notificações'},
+        {'name': 'Dashboard', 'description': 'Endpoints para painéis e métricas'},
+        {'name': 'Saúde do Sistema', 'description': 'Endpoints para verificação de status da API'},
     ],
-    'ENUM_NAME_OVERRIDES': {
-        # Comentário: Mapeia nomes de enumeração para os campos de choices nos modelos.
-        # Isso ajuda drf-spectacular a gerar nomes de enumeração consistentes e significativos na documentação da API.
-        'UserRoleEnum': 'users.models.User.ROLE_CHOICES',
-        
-        'TarefaStatusEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
-        'TarefaPriorityEnum': 'tasks.models.Tarefa.PRIORITY_CHOICES',
-        
-        'RiscoImpactoEnum': 'risks.models.Risco.IMPACTO_CHOICES', # Anteriormente RiskSeverityEnum
-        'RiscoProbabilidadeEnum': 'risks.models.Risco.PROBABILIDADE_CHOICES',
-        'RiscoStatusEnum': 'risks.models.Risco.STATUS_CHOICES',
-
-        'ProjetoStatusEnum': 'projects.models.Projeto.STATUS_CHOICES',
-        'ProjetoPrioridadeEnum': 'projects.models.Projeto.PRIORIDADE_CHOICES',
-
-        'SprintStatusEnum': 'projects.models.Sprint.STATUS_CHOICES',
-        
-        'DocumentoTipoEnum': 'documents.models.Documento.TIPO_CHOICES',
-        
-        'MembroProjetoPapelEnum': 'projects.models.MembroProjeto.PAPEL_CHOICES',
-
-        'NotificacaoTipoEnum': 'communications.models.Notificacao.TIPO_CHOICES',
-        'NotificacaoPrioridadeEnum': 'communications.models.Notificacao.PRIORIDADE_CHOICES',
-        'ConfigNotificacaoCanalEnum': 'communications.models.ConfiguracaoNotificacao.CANAL_CHOICES',
-
-        # Para campos em modelos de histórico que usam os mesmos choices,
-        # drf-spectacular geralmente os nomeia com sufixos.
-        # Se nomes mais explícitos forem desejados, podem ser adicionados aqui, por exemplo:
-        # 'HistoricoTarefaStatusAnteriorEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
-        # 'HistoricoTarefaNovoStatusEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
-    },
 }
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOW_CREDENTIALS = True
+
+'''
+# Configurações CORS (Cross-Origin Resource Sharing)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://192.168.137.132:3000"
+    "http://127.0.0.1:3000",
 ]
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+'''
+#liberado para desenvolvimento, permite que qualquer origem acesse a API
+CORS_ALLOW_ALL_ORIGINS = True
 
-# Email settings (for password reset)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Configurações para envio de emails via SMTP (Gmail)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Backend SMTP padrão do Django
+EMAIL_HOST = 'smtp.gmail.com'     # Servidor SMTP do Gmail
+EMAIL_PORT = 587                  # Porta para TLS
+EMAIL_USE_TLS = True              # Usa TLS para segurança
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'seuemail@gmail.com')  # Usuário do email (use env var)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'suasenha') # Senha do email (use env var)
 
-# Logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '\033[1;36m[{asctime}]\033[0m \033[1;33m[{levelname}]\033[0m \033[1;35m[{name}]\033[0m {message}',
-            'style': '{',
-        },
-        'auth': {
-            'format': '\033[1;36m[{asctime}]\033[0m \033[1;32m[AUTH]\033[0m \033[1;33m[{levelname}]\033[0m {message}',
-            'style': '{',
-        },
-        'middleware': {
-            'format': '\033[1;36m[{asctime}]\033[0m \033[1;34m[MIDDLEWARE]\033[0m \033[1;33m[{levelname}]\033[0m {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'auth_console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'auth',
-        },
-        'middleware_console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'middleware',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'users.authentication': {
-            'handlers': ['auth_console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'users.middleware': {
-            'handlers': ['middleware_console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
+# Variáveis personalizadas
+LOGO_PATH = 'static/img/logo.png'  # Caminho do logo do sistema
+SITE_NAME = 'Planify'              # Nome do sistema
+

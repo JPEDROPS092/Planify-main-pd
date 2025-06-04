@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
-# Imports adicionados para drf-spectacular e serializadores
+# Imports para drf-spectacular e serializadores
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers
@@ -18,60 +18,70 @@ from costs.models import Custo
 from .decorators import swagger_schema_with_examples
 from .openapi import dashboard_schema, health_check_schema
 
-# Serializers para drf-spectacular
-# Comentário: Serializadores para definir os esquemas de resposta para drf-spectacular.
-# Estes serializadores ajudam a gerar uma documentação da API clara e precisa.
+# Serializadores para documentação API
+# Estes serializadores definem os esquemas de resposta para a documentação automática da API
 
-class TarefaStatusCountSerializer(serializers.Serializer):
-    # Comentário: Representa a contagem de tarefas para um status específico.
+class ContadorTarefaStatusSerializer(serializers.Serializer):
+    """Serializador para contagem de tarefas por status."""
     status = serializers.CharField(help_text="Status da tarefa (ex: Pendente, Em Andamento, Concluída)")
     count = serializers.IntegerField(help_text="Quantidade de tarefas com este status")
 
 class VisaoGeralDashboardSerializer(serializers.Serializer):
-    # Comentário: Define a estrutura dos dados para a visão geral do dashboard.
+    """Serializador para visão geral do dashboard do sistema."""
     total_projetos = serializers.IntegerField(help_text="Número total de projetos no sistema")
     total_tarefas = serializers.IntegerField(help_text="Número total de tarefas no sistema")
-    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Lista detalhada da contagem de tarefas por cada status")
+    tarefas_por_status = ContadorTarefaStatusSerializer(many=True, help_text="Lista detalhada da contagem de tarefas por cada status")
 
 class MetricasProjetoSerializer(serializers.Serializer):
-    # Comentário: Define a estrutura dos dados para as métricas de um projeto específico.
-    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Contagem de tarefas do projeto, agrupadas por status")
+    """Serializador para métricas detalhadas de um projeto específico."""
+    tarefas_por_status = ContadorTarefaStatusSerializer(many=True, help_text="Contagem de tarefas do projeto, agrupadas por status")
     progresso = serializers.FloatField(help_text="Percentual de conclusão do projeto (0-100)")
     riscos_ativos = serializers.IntegerField(help_text="Número de riscos atualmente ativos para o projeto")
     custos_totais = serializers.FloatField(help_text="Soma dos custos registrados para o projeto")
     dias_restantes = serializers.IntegerField(help_text="Número de dias restantes até a data final planejada do projeto")
 
-class ErrorSerializer(serializers.Serializer):
-    # Comentário: Serializador padrão para respostas de erro.
+class ErroSerializer(serializers.Serializer):
+    """Serializador padrão para respostas de erro."""
     error = serializers.CharField(help_text="Mensagem descrevendo o erro ocorrido")
 
 class ProximaTarefaSerializer(serializers.Serializer):
-    # Comentário: Define a estrutura para os detalhes de uma próxima tarefa.
+    """Serializador para detalhes de próximas tarefas agendadas."""
     titulo = serializers.CharField(help_text="Título da tarefa")
     data_inicio = serializers.DateTimeField(help_text="Data e hora de início planejadas para a tarefa")
     projeto__titulo = serializers.CharField(help_text="Título do projeto ao qual esta tarefa pertence")
 
 class DashboardUsuarioSerializer(serializers.Serializer):
-    # Comentário: Define a estrutura dos dados para o dashboard pessoal do usuário.
+    """Serializador para dashboard pessoal do usuário."""
     projetos_gerenciados = serializers.IntegerField(help_text="Número de projetos onde o usuário é o gerente")
-    tarefas_por_status = TarefaStatusCountSerializer(many=True, help_text="Contagem das tarefas do usuário, agrupadas por status")
+    tarefas_por_status = ContadorTarefaStatusSerializer(many=True, help_text="Contagem das tarefas do usuário, agrupadas por status")
     tarefas_atrasadas = serializers.IntegerField(help_text="Número de tarefas atribuídas ao usuário que estão atrasadas")
     proximas_tarefas = ProximaTarefaSerializer(many=True, help_text="Lista das próximas tarefas agendadas para o usuário")
 
+# Mapeamento de status para exibição amigável
+# Esta constante centraliza as traduções dos status técnicos para labels amigáveis ao usuário
+STATUS_AMIGAVEL = {
+    'A_FAZER': 'Pendente',
+    'EM_ANDAMENTO': 'Em Andamento',
+    'FEITO': 'Concluída',
+    'BLOQUEADA': 'Bloqueada',
+    'CANCELADA': 'Cancelada'
+}
+
 @extend_schema(
-    exclude=True,  # Comentário: Esta view é um redirecionamento, não precisa aparecer na documentação da API.
+    exclude=True,
     tags=['Outros'] 
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def documentacao_api(request):
     """
-    Redireciona para a documentação da API.
+    Redireciona para a documentação interativa da API Swagger/OpenAPI.
+    Este endpoint facilita o acesso à documentação sem precisar digitar a URL completa.
     """
-    return redirect('openapi-schema')
+    return redirect('schema-swagger-ui')
 
 @extend_schema(
-    operation_id='health_check_retrieve',
+    operation_id='verificacao_saude_simples',
     summary="Verificação de Saúde Simples",
     description="Endpoint simples para verificar se a API está operacional. Retorna 'ok' se estiver tudo certo.",
     responses={
@@ -84,29 +94,15 @@ def documentacao_api(request):
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
-@extend_schema(
-    summary="Verificar status da API",
-    description="Endpoint para verificar se a API está funcionando corretamente",
-    responses={200: OpenApiTypes.OBJECT},
-    examples=[
-        OpenApiExample(
-            'Exemplo de resposta',
-            value={
-                'status': 'ok',
-                'database': 'connected',
-                'version': '1.0.0'
-            }
-        )
-    ]
-)
-def checagem_saude(request):
+def verificacao_saude(request):
     """
-    Endpoint para verificar se a API está funcionando
+    Endpoint básico para verificar se a API está respondendo.
+    Utilizado para health checks de infraestrutura e monitoramento.
     """
     return Response({"status": "ok"})
 
 @extend_schema(
-    operation_id='health_check_original_retrieve',
+    operation_id='verificacao_saude_detalhada',
     summary="Verificação de Saúde Detalhada",
     description="Endpoint para verificar o estado da API, incluindo versão e ambiente. Não requer autenticação.",
     responses={
@@ -127,23 +123,11 @@ def checagem_saude(request):
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
-@extend_schema(
-    summary="Verificar status da API (versão original)",
-    description="Endpoint simples para verificar se a API está funcionando. Não requer autenticação.",
-    responses={200: OpenApiTypes.OBJECT},
-    examples=[
-        OpenApiExample(
-            'Exemplo de resposta',
-            value={
-                'status': 'ok'
-            }
-        )
-    ]
-)
-def checagem_saude_original(request):
+def verificacao_saude_detalhada(request):
     """
-    Endpoint simples para verificar se a API está funcionando.
-    Não requer autenticação.
+    Endpoint para verificação detalhada do estado da API.
+    Retorna informações sobre versão, ambiente e timestamp atual.
+    Utilizado para monitoramento avançado e diagnóstico.
     """
     return Response({
         "status": "online",
@@ -153,9 +137,11 @@ def checagem_saude_original(request):
     })
 
 # Aliases para manter compatibilidade com código existente
+# Estes aliases permitem que o código cliente continue funcionando
+# enquanto migramos para a nomenclatura padronizada em português
 api_documentation = documentacao_api
-health_check = checagem_saude
-health_check_original = checagem_saude_original
+health_check = verificacao_saude
+health_check_original = verificacao_saude_detalhada
 
 @extend_schema(
     operation_id='visao_geral_dashboard_retrieve',
@@ -185,44 +171,30 @@ health_check_original = checagem_saude_original
     tags=['Dashboard']
 )
 @api_view(['GET'])
-@extend_schema(
-    summary="Visão geral do dashboard",
-    description="Endpoint para obter dados gerais do dashboard",
-    responses={
-        200: VisaoGeralDashboardSerializer,
-        400: ErrorSerializer,
-        401: ErrorSerializer
-    }
-)
 def visao_geral_dashboard(request):
     """
-    Endpoint para obter dados do dashboard
+    Retorna dados consolidados para o dashboard principal do sistema.
+    Inclui contagem de projetos, tarefas e distribuição de tarefas por status.
+    Esta visão é independente do usuário e mostra métricas de todo o sistema.
     """
     total_projetos = Projeto.objects.count()
     total_tarefas = Tarefa.objects.count()
     tarefas_por_status = Tarefa.objects.values('status').annotate(count=Count('id'))
     
-    # Converter os status para nomes mais amigáveis
-    status_map = {
-        'A_FAZER': 'Pendente',
-        'EM_ANDAMENTO': 'Em Andamento',
-        'FEITO': 'Concluída',
-        'BLOQUEADA': 'Bloqueada',
-        'CANCELADA': 'Cancelada'
-    }
-    
-    tarefas_por_status_formatted = [
-        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+    # Converter os status para nomes amigáveis usando o mapeamento centralizado
+    tarefas_por_status_formatado = [
+        {'status': STATUS_AMIGAVEL.get(item['status'], item['status']), 'count': item['count']}
         for item in tarefas_por_status
     ]
     
-    data = {
+    dados = {
         'total_projetos': total_projetos,
         'total_tarefas': total_tarefas,
-        'tarefas_por_status': tarefas_por_status_formatted
+        'tarefas_por_status': tarefas_por_status_formatado
     }
-    return Response(data)
+    return Response(dados)
 
+# Alias mantido para compatibilidade
 dashboard_overview = visao_geral_dashboard
 
 @extend_schema(
@@ -231,7 +203,7 @@ dashboard_overview = visao_geral_dashboard
     description="Fornece métricas detalhadas para um projeto específico, como distribuição de tarefas por status, progresso, riscos ativos, custos e dias restantes. Acessível publicamente para fins de demonstração ou integração externa.",
     parameters=[
         OpenApiParameter(
-            name='project_id',
+            name='id_projeto',
             location=OpenApiParameter.PATH,
             description="ID numérico do projeto para o qual as métricas são solicitadas.",
             required=True,
@@ -261,7 +233,7 @@ dashboard_overview = visao_geral_dashboard
             ]
         ),
         404: OpenApiResponse(
-            response=ErrorSerializer,
+            response=ErroSerializer,
             description="O projeto com o ID especificado não foi encontrado.",
             examples=[
                 OpenApiExample(
@@ -275,26 +247,22 @@ dashboard_overview = visao_geral_dashboard
     tags=['Projetos', 'Dashboard']
 )
 @api_view(['GET'])
-@permission_classes([AllowAny]) # Mantido conforme original
-@extend_schema(
-    summary="Métricas de projeto",
-    description="Retorna métricas específicas de um projeto",
-    parameters=[
-        OpenApiParameter(name='project_id', description='ID do projeto', required=True, type=int)
-    ],
-    responses={
-        200: MetricasProjetoSerializer,
-        400: ErrorSerializer,
-        401: ErrorSerializer,
-        404: ErrorSerializer
-    }
-)
-def metricas_projeto(request, project_id):
+@permission_classes([AllowAny])
+def metricas_projeto(request, id_projeto):
     """
-    Retorna métricas específicas de um projeto.
+    Retorna métricas detalhadas para um projeto específico.
+    
+    Inclui:
+    - Distribuição de tarefas por status
+    - Percentual de progresso do projeto
+    - Número de riscos ativos
+    - Custos totais acumulados
+    - Dias restantes até a data final planejada
+    
+    Este endpoint está disponível publicamente para facilitar integrações.
     """
     try:
-        projeto = Projeto.objects.get(id=project_id)
+        projeto = Projeto.objects.get(id=id_projeto)
     except Projeto.DoesNotExist:
         return Response(
             {"error": "Projeto não encontrado"},
@@ -322,28 +290,21 @@ def metricas_projeto(request, project_id):
     # Dias restantes
     dias_restantes = (projeto.data_fim - timezone.now()).days if projeto.data_fim > timezone.now() else 0
     
-    # Converter os status para nomes mais amigáveis
-    status_map = {
-        'A_FAZER': 'Pendente',
-        'EM_ANDAMENTO': 'Em Andamento',
-        'FEITO': 'Concluída',
-        'BLOQUEADA': 'Bloqueada',
-        'CANCELADA': 'Cancelada'
-    }
-    
-    tarefas_por_status_formatted = [
-        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+    # Converter os status para nomes amigáveis usando o mapeamento centralizado
+    tarefas_por_status_formatado = [
+        {'status': STATUS_AMIGAVEL.get(item['status'], item['status']), 'count': item['count']}
         for item in tarefas_por_status
     ]
     
     return Response({
-        'tarefas_por_status': tarefas_por_status_formatted,
+        'tarefas_por_status': tarefas_por_status_formatado,
         'progresso': progresso,
         'riscos_ativos': riscos_ativos,
         'custos_totais': custos_totais['total'] or 0,
         'dias_restantes': dias_restantes
     })
 
+# Alias mantido para compatibilidade
 project_metrics = metricas_projeto
 
 @extend_schema(
@@ -386,17 +347,18 @@ project_metrics = metricas_projeto
     tags=['Dashboard', 'Usuários']
 )
 @api_view(['GET'])
-@extend_schema(
-    summary="Dashboard do usuário",
-    description="Retorna dados específicos para o dashboard do usuário logado",
-    responses={
-        200: DashboardUsuarioSerializer,
-        401: ErrorSerializer
-    }
-)
 def dashboard_usuario(request):
     """
-    Retorna dados específicos para o dashboard do usuário.
+    Retorna dados personalizados para o dashboard do usuário autenticado.
+    
+    Inclui:
+    - Número de projetos onde o usuário é gerente
+    - Distribuição de suas tarefas por status
+    - Número de tarefas atrasadas
+    - Lista das próximas tarefas agendadas
+    
+    Este endpoint requer autenticação e os dados retornados são específicos
+    para o usuário que faz a solicitação.
     """
     user = request.user
     
@@ -418,25 +380,18 @@ def dashboard_usuario(request):
         data_inicio__gte=timezone.now()
     ).order_by('data_inicio')[:5].values('titulo', 'data_inicio', 'projeto__titulo')
     
-    # Converter os status para nomes mais amigáveis
-    status_map = {
-        'A_FAZER': 'Pendente',
-        'EM_ANDAMENTO': 'Em Andamento',
-        'FEITO': 'Concluída',
-        'BLOQUEADA': 'Bloqueada',
-        'CANCELADA': 'Cancelada'
-    }
-    
-    tarefas_por_status_formatted = [
-        {'status': status_map.get(item['status'], item['status']), 'count': item['count']}
+    # Converter os status para nomes amigáveis usando o mapeamento centralizado
+    tarefas_por_status_formatado = [
+        {'status': STATUS_AMIGAVEL.get(item['status'], item['status']), 'count': item['count']}
         for item in tarefas_por_status
     ]
     
     return Response({
         'projetos_gerenciados': projetos_gerenciados,
-        'tarefas_por_status': tarefas_por_status_formatted,
+        'tarefas_por_status': tarefas_por_status_formatado,
         'tarefas_atrasadas': tarefas_atrasadas,
         'proximas_tarefas': proximas_tarefas
     })
 
+# Alias mantido para compatibilidade
 user_dashboard = dashboard_usuario

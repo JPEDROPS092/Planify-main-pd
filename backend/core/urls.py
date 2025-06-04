@@ -1,18 +1,23 @@
 from django.urls import path
-from . import views
+from .views import (
+    documentacao_api, verificacao_saude, verificacao_saude_detalhada,
+    visao_geral_dashboard, metricas_projeto, dashboard_usuario
+)
 
-app_name = 'api-core'
+app_name = 'core'
 
 urlpatterns = [
-    # API Root - Documentação principal da API
-    path('', views.documentacao_api, name='api-root'),
+    # Endpoints de documentação e verificação de saúde
+    path('docs/', documentacao_api, name='api_docs'),
+    path('health/', verificacao_saude, name='health_check'),
+    path('health/detailed/', verificacao_saude_detalhada, name='health_check_detailed'),
     
-    # Endpoints de saúde e monitoramento
-    path('saude/', views.checagem_saude, name='checagem-saude'),
-    path('saude/detalhes/', views.checagem_saude_original, name='checagem-saude-detalhes'),
-    
-    # Endpoints de dashboard e métricas
-    path('dashboard/', views.visao_geral_dashboard, name='visao-geral-dashboard'),
-    path('projetos/<int:project_id>/metricas/', views.metricas_projeto, name='metricas-projeto'),
-    path('usuario/dashboard/', views.dashboard_usuario, name='dashboard-usuario'),
+    # Endpoints de dashboard
+    path('dashboard/', visao_geral_dashboard, name='dashboard_overview'),
+    path('projects/<int:id_projeto>/metrics/', metricas_projeto, name='project_metrics'),
+    path('user/dashboard/', dashboard_usuario, name='user_dashboard'),
 ]
+
+# Aliases para nomes em inglês (compatibilidade com código existente)
+# Estes aliases não afetam as rotas, apenas permitem referências programáticas
+# aos mesmos endpoints por nomes diferentes

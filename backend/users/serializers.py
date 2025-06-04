@@ -132,7 +132,9 @@ class ChangePasswordSerializer(serializers.Serializer):
     def save(self):
         """Salva a nova senha e atualiza campos relacionados."""
         user = self.context['request'].user
-        new_password = self.validated_data['new_password']
+        new_password = self.validated_data.get('new_password') if isinstance(self.validated_data, dict) else None
+        if new_password is None:
+            raise serializers.ValidationError("New password is missing.")
         return update_user_password(user, new_password)
 
 

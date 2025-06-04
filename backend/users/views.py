@@ -68,7 +68,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Obter todos os perfis de acesso do usuário
         user_access_profiles = UserAccessProfile.objects.filter(user=user)
-        access_profile_ids = [uap.access_profile_id for uap in user_access_profiles]
+        access_profile_ids = [uap.access_profile.id for uap in user_access_profiles]
         
         # Obter todas as permissões associadas a esses perfis de acesso
         permissions = Permission.objects.filter(access_profile_id__in=access_profile_ids)

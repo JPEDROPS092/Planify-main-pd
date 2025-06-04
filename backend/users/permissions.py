@@ -111,12 +111,46 @@ class HasModulePermission(BasePermission):
     """
     Permissão personalizada para verificar se o usuário tem permissão para um módulo e ação específicos.
     """
-    def __init__(self, module, action):
-        self.module = module
-        self.action = action
+    module = None
+    action = None
+    
+    def __new__(cls, module=None, action=None):
+        """
+        Cria uma nova instância da classe com os parâmetros fornecidos.
+        Este método permite que a classe seja usada tanto diretamente
+        como classe (para o schema generator) quanto como instância (para verificações reais).
+        """
+        instance = super(HasModulePermission, cls).__new__(cls)
+        if module is not None:
+            instance.module = module
+        if action is not None:
+            instance.action = action
+        return instance
+    
+    def __init__(self, module=None, action=None):
+        """
+        Inicializa a instância com os parâmetros fornecidos.
+        Permite que a classe seja instanciada com ou sem parâmetros.
+        """
+        self.initialized = True  # Mark the instance as initialized
+        if module is not None:
+            self.module = module
+        if action is not None:
+            self.action = action
+    
+    def __call__(self):
+        """
+        Make the permission class callable, which returns itself.
+        This is needed for DRF's permission system which tries to instantiate permissions.
+        """
+        return self
     
     def has_permission(self, request, view):
         user = request.user
+        
+        # Verificar se o módulo e a ação estão definidos
+        if not self.module or not self.action:
+            return False
         
         # Verificar se o usuário está autenticado
         if not user or not user.is_authenticated:

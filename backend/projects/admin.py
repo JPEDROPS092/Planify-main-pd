@@ -5,7 +5,7 @@ def get_all_fields(model):
     return [field.name for field in model._meta.fields]
 
 @admin.register(Projeto)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjetoAdmin(admin.ModelAdmin):
     list_display = ['titulo', 'status', 'prioridade', 'data_inicio', 'data_fim', 'criado_por', 'arquivado']
     list_filter = ['status', 'prioridade', 'arquivado']
     search_fields = ['titulo', 'descricao']

@@ -88,5 +88,5 @@ def create_user_with_profile(validated_data):
     else:
         UserProfile.objects.create(user=user)
     
-    logger.info(f"Usuário criado: {user.username} (ID: {user.id})")
+    logger.info(f"Usuário criado: {getattr(user, 'username', 'N/A')} (ID: {getattr(user, 'id', 'N/A')})")
     return user

@@ -158,8 +158,17 @@ const handleLogin = async () => {
     );
 
     if (result && result.user) {
-      // Redirecionar para o dashboard ou página de origem após login bem-sucedido
-      const redirectPath = route.query.redirect || '/dashboard';
+      // Redirecionamento baseado no papel do usuário
+      let dashboardPath = '/dashboard';
+      const role = result.user.role?.toLowerCase();
+      if (role === 'admin') dashboardPath = '/dashboard';
+      else if (role === 'project_manager') dashboardPath = '/dashboard';
+      else if (role === 'team_leader') dashboardPath = '/dashboard';
+      else if (role === 'team_member') dashboardPath = '/dashboard';
+      else if (role === 'stakeholder') dashboardPath = '/dashboard';
+      else if (role === 'auditor') dashboardPath = '/dashboard';
+      // Se veio de rota protegida, prioriza o redirect original
+      const redirectPath = route.query.redirect || dashboardPath;
       router.push(redirectPath.toString());
     } else {
       // Login falhou mas não lançou erro (caso improvável)

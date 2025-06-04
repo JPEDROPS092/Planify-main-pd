@@ -1,181 +1,131 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
     <title>Planify API - Documentação</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
+    <link rel="stylesheet" type="text/css" href="{% static 'swagger-ui/swagger-ui.css' %}" />
     <style>
-        html {
-            box-sizing: border-box;
-            overflow: -moz-scrollbars-vertical;
-            overflow-y: scroll;
+        :root {
+            --primary: #3f51b5;
+            --secondary: #2196F3;
+            --success: #4CAF50;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --info: #9C27B0;
+            --background: #f4f6fb;
+            --card-bg: #fff;
+            --border-radius: 12px;
+            --shadow: 0 4px 24px rgba(60,72,100,.12);
         }
-        
-        *,
-        *:before,
-        *:after {
-            box-sizing: inherit;
-        }
-        
-        body {
+        html, body {
+            background: var(--background);
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
             margin: 0;
-            background: #fafafa;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 0;
         }
-        
-        .swagger-ui .topbar {
-            background-color: #3f51b5;
-        }
-        
-        .swagger-ui .info .title {
-            color: #3f51b5;
-        }
-        
-        .swagger-ui .btn.execute {
-            background-color: #3f51b5;
-            color: #fff;
-            border-color: #3f51b5;
-        }
-        
-        .swagger-ui .btn.authorize {
-            color: #3f51b5;
-            border-color: #3f51b5;
-        }
-        
-        .swagger-ui .btn.authorize svg {
-            fill: #3f51b5;
-        }
-        
-        .swagger-ui .opblock.opblock-post {
-            border-color: #3f51b5;
-            background: rgba(63, 81, 181, 0.1);
-        }
-        
-        .swagger-ui .opblock.opblock-post .opblock-summary-method {
-            background: #3f51b5;
-        }
-        
-        .swagger-ui .opblock.opblock-post .opblock-summary {
-            border-color: #3f51b5;
-        }
-        
-        .swagger-ui .opblock.opblock-get {
-            border-color: #2196F3;
-            background: rgba(33, 150, 243, 0.1);
-        }
-        
-        .swagger-ui .opblock.opblock-get .opblock-summary-method {
-            background: #2196F3;
-        }
-        
-        .swagger-ui .opblock.opblock-get .opblock-summary {
-            border-color: #2196F3;
-        }
-        
-        .swagger-ui .opblock.opblock-put {
-            border-color: #FF9800;
-            background: rgba(255, 152, 0, 0.1);
-        }
-        
-        .swagger-ui .opblock.opblock-put .opblock-summary-method {
-            background: #FF9800;
-        }
-        
-        .swagger-ui .opblock.opblock-put .opblock-summary {
-            border-color: #FF9800;
-        }
-        
-        .swagger-ui .opblock.opblock-delete {
-            border-color: #F44336;
-            background: rgba(244, 67, 54, 0.1);
-        }
-        
-        .swagger-ui .opblock.opblock-delete .opblock-summary-method {
-            background: #F44336;
-        }
-        
-        .swagger-ui .opblock.opblock-delete .opblock-summary {
-            border-color: #F44336;
-        }
-        
-        .swagger-ui .opblock.opblock-patch {
-            border-color: #9C27B0;
-            background: rgba(156, 39, 176, 0.1);
-        }
-        
-        .swagger-ui .opblock.opblock-patch .opblock-summary-method {
-            background: #9C27B0;
-        }
-        
-        .swagger-ui .opblock.opblock-patch .opblock-summary {
-            border-color: #9C27B0;
-        }
-        
         .header {
-            background-color: #3f51b5;
-            padding: 20px;
-            color: white;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: #fff;
+            padding: 32px 0 20px 0;
             text-align: center;
-            margin-bottom: 20px;
+            box-shadow: var(--shadow);
         }
-        
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
         }
-        
         .header p {
             margin: 10px 0 0 0;
-            font-size: 16px;
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
-        
         .nav-tabs {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin: 24px 0 16px 0;
+            gap: 10px;
         }
-        
         .nav-tabs a {
-            padding: 10px 20px;
-            margin: 0 5px;
-            background-color: #e0e0e0;
-            color: #333;
+            padding: 10px 28px;
+            background: #fff;
+            color: var(--primary);
+            border-radius: var(--border-radius);
             text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            font-weight: 500;
+            box-shadow: var(--shadow);
+            transition: background 0.2s, color 0.2s;
         }
-        
-        .nav-tabs a:hover {
-            background-color: #d0d0d0;
+        .nav-tabs a.active, .nav-tabs a:hover {
+            background: var(--primary);
+            color: #fff;
         }
-        
-        .nav-tabs a.active {
-            background-color: #3f51b5;
-            color: white;
+        #swagger-ui {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin: 0 auto 32px auto;
+            max-width: 1100px;
+            padding: 32px 24px 24px 24px;
+        }
+        /* Swagger UI custom colors */
+        .swagger-ui .topbar { background: var(--primary); }
+        .swagger-ui .info .title { color: var(--primary); }
+        .swagger-ui .btn.execute { background: var(--primary); }
+        .swagger-ui .opblock.opblock-get {
+            border-color: var(--secondary);
+            background: rgba(33, 150, 243, 0.07);
+        }
+        .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--secondary); }
+        .swagger-ui .opblock.opblock-get .opblock-summary { border-color: var(--secondary); }
+        .swagger-ui .opblock.opblock-post {
+            border-color: var(--success);
+            background: rgba(76, 175, 80, 0.07);
+        }
+        .swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--success); }
+        .swagger-ui .opblock.opblock-post .opblock-summary { border-color: var(--success); }
+        .swagger-ui .opblock.opblock-delete {
+            border-color: var(--danger);
+            background: rgba(244, 67, 54, 0.07);
+        }
+        .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--danger); }
+        .swagger-ui .opblock.opblock-delete .opblock-summary { border-color: var(--danger); }
+        .swagger-ui .opblock.opblock-put {
+            border-color: var(--warning);
+            background: rgba(255, 152, 0, 0.07);
+        }
+        .swagger-ui .opblock.opblock-put .opblock-summary-method { background: var(--warning); }
+        .swagger-ui .opblock.opblock-put .opblock-summary { border-color: var(--warning); }
+        .swagger-ui .opblock.opblock-patch {
+            border-color: var(--info);
+            background: rgba(156, 39, 176, 0.07);
+        }
+        .swagger-ui .opblock.opblock-patch .opblock-summary-method { background: var(--info); }
+        .swagger-ui .opblock.opblock-patch .opblock-summary { border-color: var(--info); }
+        @media (max-width: 900px) {
+            #swagger-ui { padding: 12px 2vw; }
+            .header { padding: 24px 0 12px 0; }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Planify API - Documentação</h1>
-        <p>Sistema de Gerenciamento de Projetos de P&D</p>
+        <p>Sistema de Gerenciamento de Projetos</p>
     </div>
-    
     <div class="nav-tabs">
-        <a href="/swagger/" class="active">Swagger UI</a>
-        <a href="/redoc/">ReDoc</a>
+        <a href="{% url 'schema-swagger-ui' %}" class="active">Swagger UI</a>
+        <a href="{% url 'schema-redoc' %}">ReDoc</a>
     </div>
-
     <div id="swagger-ui"></div>
-
-    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+    <script src="{% static 'swagger-ui/swagger-ui-bundle.js' %}"></script>
+    <script src="{% static 'swagger-ui/swagger-ui-standalone-preset.js' %}"></script>
     <script>
     window.onload = function() {
         const ui = SwaggerUIBundle({
-            url: "{% url 'schema-json' '.json' %}",
+            url: "{% url 'schema' %}",
             dom_id: '#swagger-ui',
             deepLinking: true,
             presets: [

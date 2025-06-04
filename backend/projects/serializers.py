@@ -23,10 +23,9 @@ class MembroProjetoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MembroProjeto
-        fields = ['id', 'usuario', 'usuario_id', 'username', 'full_name', 'papel', 'papel_display', 'data_entrada']
+        fields = ['id', 'usuario', 'usuario_id', 'username', 'full_name', 'papel', 'papel_display']
         extra_kwargs = {
-            'usuario': {'write_only': True},
-            'data_entrada': {'read_only': True}
+            'usuario': {'write_only': True}
         }
         validators = [
             UniqueTogetherValidator(
@@ -282,5 +281,5 @@ class HistoricoStatusProjetoSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validação personalizada para o histórico de status."""
         return data
-    
+
 

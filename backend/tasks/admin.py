@@ -7,13 +7,13 @@ def get_all_fields(model):
 class AtribuicaoTarefaInline(admin.TabularInline):
     model = AtribuicaoTarefa
     extra = 1
-    autocomplete_fields = ['usuario', 'atribuido_por']
+    autocomplete_fields = ['tarefa']
 
 class ComentarioTarefaInline(admin.TabularInline):
     model = ComentarioTarefa
     extra = 1
     readonly_fields = ['criado_em']
-    autocomplete_fields = ['autor']
+    autocomplete_fields = []
 
 class HistoricoStatusTarefaInline(admin.TabularInline):
     model = HistoricoStatusTarefa
@@ -29,7 +29,7 @@ class TarefaAdmin(admin.ModelAdmin):
     search_fields = ['titulo', 'descricao']
     date_hierarchy = 'data_inicio'
     readonly_fields = ['criado_em', 'atualizado_em']
-    autocomplete_fields = ['projeto', 'sprint', 'criado_por']
+    autocomplete_fields = ['projeto']
     inlines = [AtribuicaoTarefaInline, ComentarioTarefaInline, HistoricoStatusTarefaInline]
     fieldsets = [
         ('Informações Básicas', {'fields': ['titulo', 'descricao', 'status', 'prioridade']}),
@@ -44,7 +44,7 @@ class AtribuicaoTarefaAdmin(admin.ModelAdmin):
     list_filter = ['atribuido_em']
     search_fields = ['tarefa__titulo', 'usuario__username', 'usuario__email']
     date_hierarchy = 'atribuido_em'
-    autocomplete_fields = ['tarefa', 'usuario', 'atribuido_por']
+    autocomplete_fields = ['tarefa']
 
 @admin.register(ComentarioTarefa)
 class ComentarioTarefaAdmin(admin.ModelAdmin):
@@ -53,7 +53,7 @@ class ComentarioTarefaAdmin(admin.ModelAdmin):
     search_fields = ['tarefa__titulo', 'autor__username', 'texto']
     date_hierarchy = 'criado_em'
     readonly_fields = ['criado_em']
-    autocomplete_fields = ['tarefa', 'autor']
+    autocomplete_fields = ['tarefa']
     
     def texto_resumido(self, obj):
         return obj.texto[:50] + '...' if len(obj.texto) > 50 else obj.texto
@@ -66,4 +66,4 @@ class HistoricoStatusTarefaAdmin(admin.ModelAdmin):
     search_fields = ['tarefa__titulo']
     date_hierarchy = 'alterado_em'
     readonly_fields = ['alterado_em']
-    autocomplete_fields = ['tarefa', 'alterado_por']
+    autocomplete_fields = ['tarefa']

@@ -1,200 +1,1022 @@
 {% extends "admin/base.html" %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Planify Admin') }}{% endblock %}
 
-{% block branding %}
-<h1 id="site-name">
-    <a href="{% url 'admin:index' %}">
-        <span style="color: #f7f9fa;">Planify</span> - Sistema de Gestão de Projetos
-    </a>
-</h1>
-{% endblock %}
-
 {% block extrastyle %}
 {{ block.super }}
+{#
+  Inclusão de fontes, ícones e variáveis CSS customizadas para o admin.
+  Estes estilos garantem responsividade e uma UI moderna e eficiente.
+  Utilize as variáveis para manter o padrão visual em todo o admin.
+#}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-    :root {
-        --primary: #2980b9;
-        --secondary: #f8f9fa;
-        --accent: #16a085;
-        --primary-fg: #ffffff;
-        --body-fg: #333333;
-        --body-bg: #ffffff;
-        --header-color: #ffffff;
-        --header-branding-color: var(--accent);
-        --header-bg: var(--primary);
-        --header-link-color: var(--primary-fg);
-        
-        /* New color variables for better visibility */
-        --link-hover: #1a5276;
-        --text-muted: #6c757d;
-        --border-color: #dee2e6;
-        --success: #27ae60;
-        --warning: #f39c12;
-        --danger: #e74c3c;
-        --info: #3498db;
+  /*
+    =========================================================================
+    ROOT VARIABLES: Colors, Fonts, Spacing, Shadows
+    Use estas variáveis para manter a consistência visual e facilitar temas.
+    =========================================================================
+  */
+  :root {
+    --primary-color: #007bff; /* Azul principal vibrante */
+    --primary-color-dark: #0056b3;
+    --primary-color-light: #e6f2ff; /* Para fundos sutis de elementos ativos */
+    --secondary-color: #6c757d; /* Cinza neutro */
+    --secondary-color-dark: #545b62;
+    --accent-color: #17a2b8; /* Acento teal para destaque */
+    --accent-color-dark: #117a8b;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0; /* Azul claro para informações */
+
+    --text-color: #212529; /* Preto suave para texto principal */
+    --text-color-muted: #6c757d; /* Cinza para texto secundário */
+    --text-color-light: #f8f9fa; /* Branco para texto em fundos escuros */
+    --body-bg: #f4f6f9; /* Fundo do corpo ligeiramente mais suave */
+    --component-bg: #ffffff; /* Fundo branco para componentes como cards, sidebar */
+    --border-color: #dee2e6; /* Cor de borda padrão */
+    --link-hover-color: var(--primary-color-dark);
+
+    --font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    --box-shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+    --box-shadow: 0 .5rem 1rem rgba(0,0,0,.1);
+    --box-shadow-lg: 0 1rem 3rem rgba(0,0,0,.125);
+    --border-radius: .375rem; /* Bootstrap 5 like radius */
+    --border-radius-sm: .25rem;
+    --border-radius-lg: .5rem;
+    --border-radius-xl: 1rem; /* Para cards maiores */
+
+    --sidebar-width: 260px;
+    --header-height: 60px; /* Ajuste conforme o padding do header */
+  }
+
+  /*
+    =========================================================================
+    GLOBAL STYLES: Body, Links, Headings
+    =========================================================================
+  */
+  body {
+    font-family: var(--font-family-sans-serif);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-color);
+    background-color: var(--body-bg);
+    font-size: 16px; /* Base font size */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+  }
+  a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color); /* Slightly darker than body text if needed */
+  }
+
+  /*
+    =========================================================================
+    HEADER: Branding, User Tools
+    =========================================================================
+  */
+  #header {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: var(--text-color-light);
+    box-shadow: var(--box-shadow);
+    padding: 0 1.5rem;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #branding h1, #site-name { /* #site-name is what you used in branding block */
+    font-weight: var(--font-weight-bold);
+    font-size: 1.6rem;
+    margin: 0;
+  }
+  #branding h1 a, #site-name a {
+    color: var(--text-color-light);
+    display: flex;
+    align-items: center;
+  }
+  #branding h1 a:hover, #site-name a:hover {
+    text-decoration: none;
+    opacity: 0.9;
+  }
+  #site-name i.fa-cogs {
+    margin-right: 0.75rem;
+    font-size: 1.5rem; /* Slightly smaller than text */
+  }
+
+  #user-tools {
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-medium);
+  }
+  #user-tools a, #user-tools .button-link {
+    color: var(--text-color-light);
+    padding: 0.5em 0.8em;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    margin-left: 0.25rem;
+  }
+  #user-tools a:hover, #user-tools .button-link:hover {
+    background-color: rgba(255,255,255,0.15);
+    text-decoration: none;
+  }
+  #user-tools .button-link { /* For the logout button */
+    background: none !important;
+    border: none;
+    padding: 0.5em 0.8em !important; /* Match padding of other links */
+    cursor: pointer;
+    font: inherit; /* Ensures font matches surrounding text */
+    vertical-align: baseline;
+  }
+
+  /*
+    =========================================================================
+    MAIN LAYOUT: Container, Content, Sidebar
+    =========================================================================
+  */
+  #container {
+    display: flex;
+    min-height: calc(100vh - var(--header-height));
+  }
+  /* Handling Django 4.x+ specific selector if present */
+  .main > .content {
+    width:100%;
+    display: flex;
+    min-height: calc(100vh - var(--header-height));
+  }
+  #content-main, .main > .content > #content-main {
+    flex-grow: 1;
+    padding: 1.5rem; /* 24px */
+    overflow-y: auto; /* For scrollable content area */
+  }
+
+  /*
+    =========================================================================
+    CUSTOM SIDEBAR NAVIGATION (#nav-sidebar)
+    =========================================================================
+  */
+  #nav-sidebar {
+    background-color: var(--component-bg);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    box-shadow: var(--box-shadow-sm);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding-top: 1.5rem;
+    transition: margin-left 0.3s ease-in-out; /* For potential toggle */
+  }
+  .nav-section-title {
+    padding: 0.75rem 1.5rem 0.5rem;
+    font-size: 0.7rem; /* Slightly smaller */
+    font-weight: var(--font-weight-bold);
+    color: var(--text-color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em; /* More spacing */
+    margin-top: 1rem;
+  }
+  .nav-section-title:first-of-type {
+    margin-top: 0;
+  }
+  ul.nav-sidebar-menu {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.5rem 0 1rem 0; /* Add some margin around menu groups */
+  }
+  .nav-item {
+    margin: 0;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem; /* Slightly taller links */
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-left-color 0.2s ease-in-out;
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-medium);
+    border-left: 4px solid transparent; /* Thicker active indicator */
+    margin: 0.1rem 0; /* Small vertical margin between links */
+  }
+  .nav-link:hover {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    text-decoration: none;
+    border-left-color: var(--primary-color);
+  }
+  .nav-link.active {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    font-weight: var(--font-weight-semibold); /* Bolder active link */
+    border-left-color: var(--primary-color);
+  }
+  .nav-link i.fa-fw {
+    margin-right: 1rem; /* More space for icon */
+    width: 22px;
+    text-align: center;
+    font-size: 1.1em;
+    opacity: 0.7;
+    transition: opacity 0.2s ease-in-out;
+  }
+  .nav-link:hover i.fa-fw, .nav-link.active i.fa-fw {
+    opacity: 1;
+  }
+
+  /*
+    =========================================================================
+    CONTENT ELEMENTS: Breadcrumbs, Messages, Modules, Tables
+    =========================================================================
+  */
+  div.breadcrumbs {
+    background: var(--component-bg);
+    color: var(--text-color-muted);
+    padding: 0.8rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow-sm);
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .breadcrumbs a {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-medium);
+  }
+  .breadcrumbs a:hover {
+    color: var(--link-hover-color);
+  }
+
+  /* Message List Styling (Django messages framework) */
+  ul.messagelist {
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    list-style: none;
+  }
+  ul.messagelist li {
+    display: flex; /* Align icon and text */
+    align-items: center;
+    padding: 0.8rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    font-weight: var(--font-weight-medium);
+    box-shadow: var(--box-shadow-sm);
+  }
+  ul.messagelist li::before { /* Icon for messages */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-right: 0.75rem;
+    font-size: 1.1em;
+  }
+  ul.messagelist li.success {
+    color: #0f5132; background-color: #d1e7dd; border-color: #badbcc;
+  }
+  ul.messagelist li.success::before { content: "\f058"; /* fas fa-check-circle */ }
+  ul.messagelist li.warning {
+    color: #664d03; background-color: #fff3cd; border-color: #ffecb5;
+  }
+  ul.messagelist li.warning::before { content: "\f071"; /* fas fa-exclamation-triangle */ }
+  ul.messagelist li.error {
+    color: #58151c; background-color: #f8d7da; border-color: #f5c2c7;
+  }
+  ul.messagelist li.error::before { content: "\f057"; /* fas fa-times-circle */ }
+  ul.messagelist li.info, ul.messagelist li.debug {
+    color: #055160; background-color: #cff4fc; border-color: #b6effb;
+  }
+  ul.messagelist li.info::before, ul.messagelist li.debug::before { content: "\f05a"; /* fas fa-info-circle */ }
+
+
+  .module {
+    background: var(--component-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden; /* To contain table radius */
+  }
+  .module table {
+    width: 100%;
+    border-collapse: collapse; /* Cleaner look */
+  }
+  .module caption, .module h2, .inline-group h2 {
+    background: var(--primary-color); /* Could be a lighter shade or gradient */
+    color: var(--text-color-light);
+    padding: 0.8rem 1.25rem;
+    font-size: 1.15rem;
+    font-weight: var(--font-weight-semibold);
+    margin: 0; /* Remove default h2 margin */
+    border-bottom: 1px solid var(--primary-color-dark);
+  }
+  /* For modules without tables, ensure h2 has bottom radius */
+  .module > h2:only-child {
+      border-radius: var(--border-radius-lg);
+  }
+
+  /* Table specific styles */
+  #result_list thead th {
+    background: #e9ecef; /* Light gray for table headers */
+    color: var(--text-color);
+    font-weight: var(--font-weight-semibold);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+  }
+  #result_list tbody tr:hover {
+    background-color: #f8f9fa; /* Subtle hover for rows */
+  }
+  #result_list td, #result_list th {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+  }
+  #result_list tbody tr:last-child td {
+      border-bottom: none;
+  }
+
+  /*
+    =========================================================================
+    BUTTONS & ACTIONS
+    =========================================================================
+  */
+  .button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: var(--primary-color);
+    color: var(--text-color-light) !important;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.1s ease;
+    padding: 0.6em 1.2em; /* Balanced padding */
+    border: none;
+    font-weight: var(--font-weight-medium);
+    box-shadow: var(--box-shadow-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background: var(--primary-color-dark);
+    color: var(--text-color-light) !important;
+    box-shadow: var(--box-shadow);
+    transform: translateY(-1px);
+  }
+  .button:active, input[type=submit]:active, input[type=button]:active, .submit-row input:active, a.button:active {
+      transform: translateY(0px);
+  }
+  .button.default, input[type=submit].default, .submit-row input.default {
+    background: var(--accent-color);
+  }
+  .button.default:hover, input[type=submit].default:hover, .submit-row input.default:hover {
+    background: var(--accent-color-dark);
+  }
+  .button.cancel-link, a.cancel-link {
+    background-color: var(--secondary-color) !important;
+  }
+  .button.cancel-link:hover, a.cancel-link:hover {
+    background-color: var(--secondary-color-dark) !important;
+  }
+  .object-tools a:link, .object-tools a:visited {
+    background-color: var(--secondary-color);
+    color: var(--text-color-light) !important;
+    border-radius: var(--border-radius);
+    padding: 0.5em 1em;
+    font-weight: var(--font-weight-medium);
+  }
+  .object-tools a:hover {
+    background-color: var(--secondary-color-dark);
+    text-decoration: none;
+  }
+  .actions {
+    background-color: #f8f9fa;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg); /* If at bottom of module */
+  }
+  .actions select { /* Style the actions dropdown */
+      padding: .4rem .75rem;
+      border-radius: var(--border-radius-sm);
+      border: 1px solid var(--border-color);
+      margin-right: 0.5rem;
+  }
+  .submit-row {
+    background: var(--component-bg); /* Match module background */
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  }
+  .object-tools { /* Usually in change_form.html */
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--component-bg);
+  }
+
+  /*
+    =========================================================================
+    FORM CONTROLS
+    =========================================================================
+  */
+  input[type=text], input[type=password], input[type=email], input[type=url], input[type=number],
+  input[type=tel], textarea, select, .vTextField {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    padding: .6rem .85rem;
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    font-size: 0.9rem;
+    background-color: var(--component-bg);
+    color: var(--text-color);
+    width: 100%; /* Make form fields take available width by default */
+    max-width: 450px; /* But not too wide */
+  }
+  input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, input[type=url]:focus,
+  input[type=number]:focus, input[type=tel]:focus, textarea:focus, select:focus, .vTextField:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+    outline: 0;
+  }
+  .aligned label { /* Ensure labels align well */
+    padding-top: calc(.6rem + 2px); /* Match input padding + border */
+    font-weight: var(--font-weight-medium);
+  }
+  .form-row {
+    padding: 1rem 0;
+  }
+  fieldset .form-row {
+      padding-left: 1.5rem; /* Indent form rows within fieldsets */
+      padding-right: 1.5rem;
+  }
+  fieldset {
+      border: none; /* Remove default fieldset border */
+      padding: 0;
+      margin-bottom: 1rem;
+  }
+  fieldset legend {
+      font-size: 1.1rem;
+      font-weight: var(--font-weight-semibold);
+      padding: 0.5rem 0;
+      color: var(--primary-color);
+  }
+
+  /*
+    =========================================================================
+    CHANGELIST & CHANGEFORM SPECIFICS
+    =========================================================================
+  */
+  #changelist-filter {
+    background-color: var(--component-bg);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+    margin-left: 1.5rem; /* If using Django's default layout */
+  }
+  #changelist-filter h2 {
+    background-color: transparent;
+    color: var(--text-color);
+    padding: 0 0 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+  }
+  #changelist-filter ul { list-style: none; padding-left: 0; }
+  #changelist-filter li { margin-bottom: 0.5rem; }
+  #changelist-filter a { font-weight: var(--font-weight-medium); }
+  #changelist-filter li.selected a { color: var(--primary-color); font-weight: var(--font-weight-bold); }
+
+  /*
+    =========================================================================
+    DASHBOARD SPECIFIC STYLES (for admin/index.html)
+    =========================================================================
+  */
+  .admin-dashboard-fancy {
+    margin: 0;
+    padding: 0;
+  }
+  .dashboard-header {
+    margin-bottom: 2rem;
+  }
+  .dashboard-header h1 {
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-color);
+  }
+  .dashboard-header p {
+    font-size: 1.1rem;
+    color: var(--text-color-muted);
+  }
+
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .dashboard-card {
+    background: var(--component-bg);
+    color: var(--text-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border-left: 5px solid var(--primary-color);
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-lg);
+  }
+  .dashboard-card .card-icon {
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    height: 44px; /* Fixed height for alignment */
+    line-height: 44px;
+  }
+  .dashboard-card .card-title {
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color-muted);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .dashboard-card .card-value {
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-color);
+    margin-top: auto;
+  }
+  .dashboard-card.accent-teal { border-left-color: var(--accent-color); }
+  .dashboard-card.accent-teal .card-icon { color: var(--accent-color); }
+  .dashboard-card.accent-success { border-left-color: var(--success-color); }
+  .dashboard-card.accent-success .card-icon { color: var(--success-color); }
+  .dashboard-card.accent-warning { border-left-color: var(--warning-color); }
+  .dashboard-card.accent-warning .card-icon { color: var(--warning-color); }
+  .dashboard-card.accent-danger { border-left-color: var(--danger-color); }
+  .dashboard-card.accent-danger .card-icon { color: var(--danger-color); }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .dashboard-chart-container, .dashboard-quick-links-container {
+    background: var(--component-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+  }
+  .dashboard-chart-container h2, .dashboard-quick-links-container h2 {
+    font-size: 1.35rem;
+    font-weight: var(--font-weight-semibold);
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+  }
+  #dashboardMainChart {
+    max-height: 380px;
+  }
+
+  .quick-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .quick-links-list li a {
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 0.5rem; /* More vertical padding */
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    font-weight: var(--font-weight-medium);
+  }
+  .quick-links-list li a:hover {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+  .quick-links-list li a i.fa-fw {
+    margin-right: 12px;
+    color: var(--secondary-color);
+    transition: color 0.2s ease-in-out;
+    font-size: 1.1em;
+  }
+  .quick-links-list li a:hover i.fa-fw {
+    color: var(--primary-color);
+  }
+
+  /*
+    =========================================================================
+    RESPONSIVE ADJUSTMENTS
+    =========================================================================
+  */
+  @media (max-width: 992px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr; /* Stack chart and links */
     }
-    
-    /* Base styling */
-    body {
-        color: var(--body-fg);
-        background: var(--body-bg);
+    #changelist-filter {
+        margin-left: 0; /* Stack filter on top on smaller screens */
+        margin-bottom: 1.5rem;
     }
-    
-    /* Header styling */
+  }
+
+  @media (max-width: 768px) {
+    #sidebar-toggler-button {
+      display: flex;
+    }
+    #nav-sidebar {
+      display: block;
+      left: calc(-1 * var(--sidebar-width));
+      position: fixed;
+      top: 0;
+      height: 100vh;
+      z-index: 1000;
+      transition: left 0.3s ease-in-out;
+    }
+    body.sidebar-visible #nav-sidebar {
+      left: 0;
+      box-shadow: 0 0 0 100vw rgba(0,0,0,0.25);
+    }
+    #container {
+      flex-direction: column;
+    }
+
     #header {
-        background: var(--primary);
-        color: var(--header-color);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 0 1rem;
     }
-    
-    #branding h1 {
-        color: var(--header-color);
-        font-weight: 600;
+    #branding h1, #site-name {
+      font-size: 1.25rem;
     }
-    
-    /* Module headers */
-    .module h2, .module caption, .inline-group h2 {
-        background: var(--primary);
-        color: var(--primary-fg);
-        padding: 10px 15px;
-        font-weight: 500;
+    #site-name i.fa-cogs { font-size: 1.2rem; }
+    #user-tools { font-size: 0.8rem; }
+    #user-tools a, #user-tools .button-link { padding: 0.4em 0.6em; }
+
+    #content-main, .main > .content > #content-main {
+      padding: 1rem;
     }
-    
-    /* Breadcrumbs with better contrast */
-    div.breadcrumbs {
-        background: var(--secondary);
-        color: var(--body-fg);
-        border-bottom: 1px solid var(--border-color);
-        padding: 10px 15px;
+    .dashboard-cards {
+      grid-template-columns: 1fr; /* Single column cards */
     }
-    
-    div.breadcrumbs a {
-        color: var(--primary);
-    }
-    
-    div.breadcrumbs a:hover {
-        color: var(--link-hover);
-    }
-    
-    /* Links with better contrast */
-    a:link, a:visited {
-        color: var(--primary);
-        text-decoration: none;
-    }
-    
-    a:hover {
-        color: var(--link-hover);
-        text-decoration: underline;
-    }
-    
-    /* Buttons with better hover states */
-    .button, input[type=submit], input[type=button], .submit-row input, a.button {
-        background: var(--primary);
-        color: var(--primary-fg);
-        border-radius: 4px;
-        font-weight: 500;
-        padding: 8px 16px;
-        border: none;
-    }
-    
-    .button:hover, input[type=submit]:hover, input[type=button]:hover {
-        background: var(--link-hover);
-        color: var(--primary-fg);
-    }
-    
-    .button.default, input[type=submit].default, .submit-row input.default {
-        background: var(--accent);
-        color: var(--primary-fg);
-    }
-    
-    .button.default:hover, input[type=submit].default:hover {
-        background: #0e8066; /* Darker shade of accent */
-    }
-    
-    /* Table headers */
-    .dashboard .module table th {
-        background: var(--secondary);
-        color: var(--body-fg);
-        font-weight: 600;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    /* Form elements */
-    input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], 
+    input[type=text], input[type=password], input[type=email], input[type=url], input[type=number],
     input[type=tel], textarea, select, .vTextField {
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 8px 12px;
+        max-width: 100%; /* Allow full width on mobile */
     }
-    
-    /* Selector styling */
-    .selector-chosen h2 {
-        background: var(--primary) !important;
-        color: var(--primary-fg) !important;
-    }
-    
-    .selector-available h2 {
-        background: var(--secondary) !important;
-        color: var(--body-fg) !important;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    /* Paginator with better contrast */
-    .paginator {
-        margin: 15px 0;
-        padding: 10px 0;
-        border-top: 1px solid var(--border-color);
-    }
-    
-    .paginator a:link, .paginator a:visited {
-        background: var(--primary) !important;
-        color: var(--primary-fg) !important;
-        border-radius: 4px;
-        padding: 6px 12px;
-    }
-    
-    .paginator a:hover {
-        background: var(--link-hover) !important;
-    }
-    
-    /* Message styling */
-    .messagelist li.success {
-        background: var(--success);
-        color: white;
-    }
-    
-    .messagelist li.warning {
-        background: var(--warning);
-        color: white;
-    }
-    
-    .messagelist li.error {
-        background: var(--danger);
-        color: white;
-    }
-    
-    /* List filter styling */
-    .list-filter {
-        background: var(--secondary);
-        border-radius: 4px;
-        margin-bottom: 15px;
-    }
-    
-    .list-filter h3 {
-        background: var(--primary);
-        color: var(--primary-fg);
-        padding: 8px 15px;
-        border-radius: 4px 4px 0 0;
-        margin: 0;
-    }
-    
-    /* Help text with better visibility */
-    .help, p.help, form p.help, div.help, form div.help, div.help li {
-        color: var(--text-muted);
-        font-size: 0.9em;
-        margin-top: 5px;
-    }
+  }
+
+  /* Utility class for clearing floats */
+  .clear { clear: both; }
+  /* Sidebar toggle button (hamburger) */
+  #sidebar-toggler-button {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color-light);
+    font-size: 1.7rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 40px;
+  }
+  /* Accessibility: sr-only class */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+  }
+  /* Sidebar footer */
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-color-muted);
+    border-top: 1px solid var(--border-color);
+    background: var(--component-bg);
+    text-align: center;
+  }
 </style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} with-custom-sidebar{% endblock %}
+
+{% block branding %}
+<div style="display: flex; align-items: center;">
+  <button id="sidebar-toggler-button" aria-label="Toggle sidebar" title="Toggle sidebar">
+    <i class="fas fa-bars"></i>
+    <span class="sr-only">Toggle navigation</span>
+  </button>
+  <div id="site-name">
+    <a href="{% url 'admin:index' %}">
+      <i class="fas fa-cogs fa-fw"></i>
+      <span>{{ site_header|default:_('Planify Administration') }}</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block usertools %}
+{#
+  Bloco de ferramentas do usuário logado.
+  Inclui links para visualizar o site, documentação, trocar senha e logout.
+#}
+{% if has_permission %}
+<div id="user-tools">
+    {% block userlinks %}
+        {% if site_url %}
+            <a href="{{ site_url }}" target="_blank" title="{% translate 'View site' %}">
+              <i class="fas fa-external-link-alt"></i> <span class="sr-only">{% translate 'View site' %}</span>
+            </a> /
+        {% endif %}
+        {% if user.is_active and user.is_staff %}
+            {% url 'django-admindocs-docroot' as docsroot %}
+            {% if docsroot %}
+                <a href="{{ docsroot }}" title="{% translate 'Documentation' %}">
+                  <i class="fas fa-book"></i> <span class="sr-only">{% translate 'Documentation' %}</span>
+                </a> /
+            {% endif %}
+        {% endif %}
+        {% if user.has_usable_password %}
+        <a href="{% url 'admin:password_change' %}" title="{% translate 'Change password' %}">
+          <i class="fas fa-key"></i> <span class="sr-only">{% translate 'Change password' %}</span>
+        </a> /
+        {% endif %}
+        <form id="logout-form" method="post" action="{% url 'admin:logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="button-link" title="{% translate 'Log out' %}">
+              <i class="fas fa-sign-out-alt"></i> <span class="sr-only">{% translate 'Log out' %}</span>
+            </button>
+        </form>
+    {% endblock %}
+</div>
+{% comment %}
+  sr-only class for accessibility if you choose to hide text and only show icons on smaller screens.
+  Add this to your CSS if you use it:
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+  }
+{% endcomment %}
+{% endif %}
+{% endblock %}
+
+
+{# Custom Sidebar - Replaces nav-global #}
+{% block nav-global %}{% endblock %} {# Remove navegação global padrão do Django admin #}
+
+{% block content %}
+{#
+  Estrutura principal do admin.
+  O dashboard e demais páginas são renderizados dentro de #content-main.
+  O sidebar à esquerda é responsivo e contém navegação para todos os módulos.
+#}
+<div id="container" class="{% if is_popup %}popup {% endif %}">
+    {% if not is_popup %}
+    <div id="nav-sidebar">
+        {# You could add a logo or site name here too if desired #}
+        {# <div class="sidebar-brand"><a href="{% url 'admin:index' %}">Planify</a></div> #}
+
+        <h3 class="nav-section-title">{% translate "Navigation" %}</h3>
+        <ul class="nav-sidebar-menu">
+            <li class="nav-item">
+                <a href="{% url 'admin:index' %}" class="nav-link{% if request.resolver_match.view_name == 'admin:index' %} active{% endif %}">
+                    <i class="fas fa-tachometer-alt fa-fw"></i> {% translate "Dashboard" %}
+                </a>
+            </li>
+        </ul>
+
+        <h3 class="nav-section-title">{% translate "Core Management" %}</h3>
+        <ul class="nav-sidebar-menu">
+            {% comment %}
+            For a more dynamic menu based on registered apps (if you ever need it):
+            {% get_app_list request as app_list %}
+            {% for app in app_list %}
+              {% if app.app_label == 'projects' or app.app_label == 'tasks' or app.app_label == 'teams' %}
+              <li class="nav-item">
+                <a href="{{ app.app_url }}" class="nav-link {% if app.app_label == request.resolver_match.app_name %}active-app{% endif %}">
+                  <i class="fas fa-folder fa-fw"></i> {{ app.name }}
+                </a>
+                <ul> {# Sub-menu for models #}
+                {% for model in app.models %}
+                  <li class="nav-sub-item">
+                    <a href="{{ model.admin_url }}" class="nav-link {% if model.object_name|lower == request.resolver_match.model_name %}active{% endif %}">
+                       {{ model.name }}
+                    </a>
+                  </li>
+                {% endfor %}
+                </ul>
+              </li>
+              {% endif %}
+            {% endfor %}
+            {% endcomment %}
+
+            {# Hardcoded links as per your original structure - good for specific projects #}
+            <li class="nav-item">
+                <a href="{% url 'admin:projects_project_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'projects' and request.resolver_match.model_name == 'project' %} active{% endif %}">
+                    <i class="fas fa-project-diagram fa-fw"></i> {% translate "Projects" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:tasks_task_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'tasks' and request.resolver_match.model_name == 'task' %} active{% endif %}">
+                    <i class="fas fa-tasks fa-fw"></i> {% translate "Tasks" %}
+                </a>
+            </li>
+             <li class="nav-item">
+                <a href="{% url 'admin:teams_team_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'teams' and request.resolver_match.model_name == 'team' %} active{% endif %}">
+                    <i class="fas fa-users fa-fw"></i> {% translate "Teams" %}
+                </a>
+            </li>
+        </ul>
+
+        <h3 class="nav-section-title">{% translate "Supporting Modules" %}</h3>
+        <ul class="nav-sidebar-menu">
+            <li class="nav-item">
+                <a href="{% url 'admin:risks_risk_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'risks' and request.resolver_match.model_name == 'risk' %} active{% endif %}">
+                    <i class="fas fa-exclamation-triangle fa-fw"></i> {% translate "Risks" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:costs_cost_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'costs' and request.resolver_match.model_name == 'cost' %} active{% endif %}">
+                    <i class="fas fa-dollar-sign fa-fw"></i> {% translate "Costs" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:documents_document_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'documents' and request.resolver_match.model_name == 'document' %} active{% endif %}">
+                    <i class="fas fa-file-alt fa-fw"></i> {% translate "Documents" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:communications_message_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'communications' and request.resolver_match.model_name == 'message' %} active{% endif %}">
+                     <i class="fas fa-comments fa-fw"></i> {% translate "Communications" %}
+                </a>
+            </li>
+        </ul>
+
+        {% if user.is_superuser %}
+        <h3 class="nav-section-title">{% translate "Administration" %}</h3>
+        <ul class="nav-sidebar-menu">
+            <li class="nav-item">
+                <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'auth' and request.resolver_match.model_name == 'user' %} active{% endif %}">
+                    <i class="fas fa-users-cog fa-fw"></i> {% translate "Users" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:auth_group_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'auth' and request.resolver_match.model_name == 'group' %} active{% endif %}">
+                    <i class="fas fa-layer-group fa-fw"></i> {% translate "Groups" %}
+                </a>
+            </li>
+            {# Example for other admin apps like 'sites' if used #}
+            {# <li class="nav-item">
+                <a href="{% url 'admin:sites_site_changelist' %}" class="nav-link{% if request.resolver_match.app_name == 'sites' and request.resolver_match.model_name == 'site' %} active{% endif %}">
+                    <i class="fas fa-globe fa-fw"></i> {% translate "Sites" %}
+                </a>
+            </li> #}
+        </ul>
+        {% endif %}
+        <div class="sidebar-footer">
+            <small>© {% now "Y" %} Planify. Version 1.0</small>
+        </div>
+    </div>
+    {% endif %} {# end if not is_popup #}
+
+    <div id="content-main">
+        {% if not is_popup %}
+            {% block breadcrumbs %}
+            <div class="breadcrumbs">
+                <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+                {% if title %} › {{ title }}{% endif %}
+            </div>
+            {% endblock %}
+        {% endif %}
+
+        {% block messages %}
+            {% if messages %}
+            <ul class="messagelist">{% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message.message|capfirst }}</li>
+            {% endfor %}</ul>
+            {% endif %}
+        {% endblock messages %}
+
+        <!-- Content blocks -->
+        {% block pretitle %}{% endblock %}
+        {% block content_title %}{% if title %}<h1 class="page-title">{{ title }}</h1>{% endif %}{% endblock %}
+        <style> .page-title { font-size: 1.8rem; font-weight: var(--font-weight-bold); margin-bottom: 1.5rem; color: var(--text-color); } </style>
+        {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
+
+        {% block object-tools %}{% endblock %} {# Standard Django block for object tools (history, view on site) #}
+
+        {{ content }} {# Main content from child templates #}
+
+        {% block sidebar %}{% endblock %} {# Standard Django block for right sidebar (e.g., filters) #}
+        <br class="clear">
+    </div>
+</div>
+
+<script>
+// JavaScript for handling active sidebar links and potential responsive toggle.
+// The template's `request.resolver_match` is usually more reliable for active states,
+// this script can supplement or handle cases not covered by simple template logic.
+
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('#nav-sidebar .nav-link');
+    const adminIndexUrl = "{% url 'admin:index' %}"; // Crucial for correct index matching
+
+    // Primary active link logic is handled by Django template tags for robustness.
+    // This JS can enhance it, e.g., by ensuring only one 'active' class if logic overlaps.
+    // Or, it can be simplified if template logic is comprehensive.
+
+    // Example: Ensure only one link is truly "active" if multiple template conditions match.
+    let anActiveLinkIsSet = false;
+    navLinks.forEach(link => {
+        if (link.classList.contains('active')) {
+            if (anActiveLinkIsSet) {
+                link.classList.remove('active'); // Remove subsequent actives if one is already set
+            } else {
+                anActiveLinkIsSet = true;
+            }
+        }
+    });
+
+    // If no link was set active by the template, try a more generic match.
+    // This is useful for add/change/history pages where the direct changelist URL isn't the current path.
+    if (!anActiveLinkIsSet) {
+        let bestMatch = null;
+        let bestMatchLength = 0;
+
+        navLinks.forEach(link => {
+            const linkHref = link.getAttribute('href');
+            // Check if currentPath starts with linkHref, but linkHref is not just "/" or adminIndexUrl (unless it's an exact match)
+            if (linkHref !== '/' && currentPath.startsWith(linkHref)) {
+                if (linkHref.length > bestMatchLength) {
+                    // Prioritize longer matches (more specific)
+                    // This helps if you have /admin/app/ and /admin/app/model/
+                    bestMatch = link;
+                    bestMatchLength = linkHref.length;
+                }
+            }
+        });
+
+        if (bestMatch && bestMatch.getAttribute('href') === adminIndexUrl && currentPath !== adminIndexUrl) {
+            // Don't activate dashboard link if we are on a sub-path unless it's an exact match
+            // (already handled by template if currentPath IS adminIndexUrl)
+        } else if (bestMatch) {
+            bestMatch.classList.add('active');
+        }
+    }
+
+    // Simple sidebar toggle example (if you implement a hamburger button)
+    const sidebarToggler = document.getElementById('sidebar-toggler-button');
+    const body = document.body;
+    if (sidebarToggler) {
+      sidebarToggler.addEventListener('click', function(e) {
+        e.preventDefault();
+        body.classList.toggle('sidebar-visible');
+      });
+    }
+
+    // Close sidebar when clicking outside (mobile)
+    document.addEventListener('click', function(e) {
+      if (body.classList.contains('sidebar-visible')) {
+        const sidebar = document.getElementById('nav-sidebar');
+        if (sidebar && !sidebar.contains(e.target) && !sidebarToggler.contains(e.target)) {
+          body.classList.remove('sidebar-visible');
+        }
+      }
+    });
+});
+</script>
 {% endblock %}
