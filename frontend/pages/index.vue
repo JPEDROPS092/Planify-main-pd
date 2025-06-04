@@ -1,44 +1,46 @@
 <template>
-  <!-- Landing Page da aplicação -->
-  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">
-    <h1 class="text-4xl font-bold text-blue-600 mb-4">Bem-vindo ao Planify</h1>
-    <p class="text-lg text-gray-700 mb-4">
-      Organize projetos, equipes, tarefas, custos e riscos em um só lugar. Gestão visual, dashboards inteligentes e colaboração em tempo real.
-    </p>
-    <p class="text-base text-gray-500 mb-8">
-      Planifique, acompanhe e entregue resultados com mais eficiência.
-    </p>
-    <div class="flex space-x-4">
-      <button
-        @click="navigateToLogin"
-        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Fazer Login
-      </button>
-      <button
-        @click="navigateToSignup"
-        class="px-6 py-3 bg-gray-200 text-blue-600 rounded-lg hover:bg-gray-300"
-      >
-        Criar Conta
-      </button>
+  <div>
+    <HeroSection />
+    <div id="features"> <!-- Adiciona um ID para navegação interna -->
+      <FeaturesSection />
     </div>
+    <div id="mission"> <!-- Adiciona um ID para navegação interna -->
+      <MissionSection />
+    </div>
+    <CallToAction />
+    <!-- Você pode adicionar mais seções aqui, como "Tecnologias Utilizadas", "Como Contribuir", etc. -->
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
 
-const router = useRouter();
+ import HeroSection from '~/components/ui/LandingPage/HeroSection.vue';
+ import FeaturesSection from '~/components/ui/LandingPage/FeaturesSection.vue';
+ import MissionSection from '~/components/ui/LandingPage/MissionSection.vue';
+ import CallToAction from '~/components/ui/LandingPage/CallToAction.vue';
 
-const navigateToLogin = () => {
-  router.push('/auth/login');
-};
-
-const navigateToSignup = () => {
-  router.push('/auth/registro');
-};
+// SEO e Metadados da Página
+useHead({
+  title: 'Planify - Gestão de Projetos de P&D Simplificada',
+  meta: [
+    { name: 'description', content: 'Planify: Organize projetos, equipes, tarefas, custos e riscos em um só lugar. Gestão visual, dashboards inteligentes e colaboração em tempo real para P&D.' },
+    { name: 'keywords', content: 'Planify, gestão de projetos, P&D, pesquisa e desenvolvimento, kanban, tarefas, equipes, riscos, custos, colaboração' },
+    { property: 'og:title', content: 'Planify - Gestão de Projetos de P&D Simplificada' },
+    { property: 'og:description', content: 'Organize projetos, equipes, tarefas, custos e riscos em um só lugar com Planify.' },
+    { property: 'og:image', content: '/image/README/1748802879852.png' }, // Caminho para sua imagem de preview
+    { property: 'og:url', content: 'https://seusite.com' }, // Substitua pela URL real do seu site
+    { name: 'twitter:card', content: 'summary_large_image' },
+  ],
+  link: [
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' } // Certifique-se de ter um favicon.ico em public/
+  ]
+})
 </script>
 
-<style scoped>
-/* Adicione estilos personalizados, se necessário */
+<style>
+/* Estilos globais que podem ser aplicados a esta página, se necessário. */
+/* Por exemplo, para smooth scroll ao clicar nos links do footer: */
+html {
+  scroll-behavior: smooth;
+}
 </style>

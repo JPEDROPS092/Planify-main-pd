@@ -1,15 +1,21 @@
+// tailwind.config.js - Configuração do Tailwind CSS para o projeto
+// Documentação: https://tailwindcss.com/docs/configuration
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ['class'],
+  // Ativa o modo escuro via classe CSS (ex: <body class="dark">)
+  darkMode: 'class',
+  // Define os caminhos dos arquivos onde o Tailwind irá buscar classes utilizadas
   content: [
-    './components/**/*.{js,vue,ts}',
-    './layouts/**/*.vue',
-    './pages/**/*.vue',
-    './plugins/**/*.{js,ts}',
-    './app.vue',
-    './error.vue',
+    './components/**/*.{js,vue,ts}', // Componentes Vue, JS e TS
+    './layouts/**/*.vue',            // Layouts Vue
+    './pages/**/*.vue',              // Páginas Vue
+    './plugins/**/*.{js,ts}',        // Plugins JS e TS
+    './app.vue',                     // Arquivo principal
+    './error.vue',                   // Página de erro
   ],
   theme: {
+    // Configuração do container centralizado
     container: {
       center: true,
       padding: '2rem',
@@ -17,7 +23,9 @@ module.exports = {
         '2xl': '1400px',
       },
     },
+    // Extensões de tema personalizadas
     extend: {
+      // Cores customizadas baseadas em variáveis CSS
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -60,27 +68,21 @@ module.exports = {
           5: 'hsl(var(--chart-5))',
         },
       },
+      // Bordas arredondadas baseadas em variáveis CSS
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // Animações customizadas
       keyframes: {
         'accordion-down': {
-          from: {
-            height: 0,
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { height: 0 },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: 0,
-          },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: 0 },
         },
       },
       animation: {
@@ -89,5 +91,8 @@ module.exports = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  // Plugin para animações (opcional, pode ser removido se não for usado)
+  plugins: [],
 };
+// DICA: Se não estiver usando variáveis CSS para cores ou animações customizadas, simplifique removendo as extensões em 'extend'.
+// Mantenha apenas o necessário para evitar conflitos e facilitar a manutenção.

@@ -19,12 +19,8 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@nuxt/image',
+    '@nuxt/icon'
   ],
-
-  // TailwindCSS config extra (se houver)
-  tailwindcss: {
-    viewer: false,
-  },
 
   // Modo de cor do sistema (dark/light)
   colorMode: {
