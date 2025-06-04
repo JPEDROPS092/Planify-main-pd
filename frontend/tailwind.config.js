@@ -92,7 +92,11 @@ module.exports = {
     },
   },
   // Plugin para animações (opcional, pode ser removido se não for usado)
-  plugins: [],
+  plugins: [
+    require('tailwindcss-animate'),
+    require('@tailwindcss/typography'),
+    // Outros plugins podem ser adicionados aqui
+  ],
 };
 // DICA: Se não estiver usando variáveis CSS para cores ou animações customizadas, simplifique removendo as extensões em 'extend'.
 // Mantenha apenas o necessário para evitar conflitos e facilitar a manutenção.

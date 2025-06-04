@@ -1,185 +1,94 @@
 <template>
-  <NuxtLayout name="auth">
-    <div class="flex flex-col space-y-2 text-center mb-6">
-      <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Entrar no Planify</h1>
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        Digite suas credenciais para acessar o sistema
-      </p>
-    </div>
-    <form @submit.prevent="handleLogin">
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <label
-            for="username"
-            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Usuário
-          </label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="Digite seu nome de usuário"
-            required
-          />
-        </div>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <label
-              for="password"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Senha
-            </label>
-            <NuxtLink
-              to="/auth/esqueci-senha"
-              class="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Esqueceu a senha?
-            </NuxtLink>
+  <div class="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div class="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+      <div class="text-center">
+        <img src="/img/logop.png" alt="Planify Logo" class="h-12 mx-auto" />
+        <h1 class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Entrar no Planify</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Acesse sua conta para gerenciar seus projetos</p>
+      </div>
+      
+      <form @submit.prevent="handleLogin" class="mt-8 space-y-6">
+        <div class="space-y-4">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <input v-model="email" id="email" type="email" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-            placeholder="Digite sua senha"
-            required
-          />
+          
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Senha</label>
+            <input v-model="password" id="password" type="password" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+          </div>
         </div>
+        
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <input
-              id="remember-me"
-              type="checkbox"
-              v-model="rememberMe"
-              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-            />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-              Lembrar-me
-            </label>
+            <input id="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Lembrar-me</label>
+          </div>
+          
+          <div class="text-sm">
+            <NuxtLink to="/auth/esqueci-senha" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              Esqueceu sua senha?
+            </NuxtLink>
           </div>
         </div>
-        <div v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400 mt-2">
-          {{ errorMessage }}
+        
+        <div>
+          <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <span v-if="loading">Entrando...</span>
+            <span v-else>Entrar</span>
+          </button>
         </div>
-        <button
-          type="submit"
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="isLoading"
-        >
-          <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span>{{ isLoading ? 'Entrando...' : 'Entrar' }}</span>
-        </button>
-      </div>
-    </form>
-    
-    <div class="mt-6">
-      <div class="relative">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-        </div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-            Ou
-          </span>
-        </div>
-      </div>
-
+      </form>
+      
       <div class="mt-6 text-center">
         <p class="text-sm text-gray-600 dark:text-gray-400">
-          Não tem uma conta?
-          <NuxtLink
-            to="/auth/registro"
-            class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          >
+          Não tem uma conta? 
+          <NuxtLink to="/auth/registro" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
             Registre-se
           </NuxtLink>
         </p>
       </div>
     </div>
-  </NuxtLayout>
+  </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-import { useAuth } from '~/composables/useAuth';
-import { useNotification } from '~/composables/useNotification';
-import { useRouter, useRoute } from 'vue-router';
+<script setup>
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '~/stores/composables/useAuth'
+import { useNotification } from '~/stores/composables/useNotification'
 
-// Definir metadados da página
 definePageMeta({
-  layout: false,
+  layout: 'auth',
   middleware: ['guest-only']
-});
+})
 
-// Composables
-const auth = useAuth();
-const notification = useNotification();
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
+const { login } = useAuth()
+const { error: showError, success: showSuccess } = useNotification()
 
-// Estado do formulário
-const username = ref('');
-const password = ref('');
-const rememberMe = ref(false);
-const isLoading = ref(false);
-const errorMessage = ref('');
+const email = ref('')
+const password = ref('')
+const loading = ref(false)
 
-// Função para realizar o login
 const handleLogin = async () => {
-  if (!username.value || !password.value) {
-    notification.error('Por favor, preencha todos os campos');
-    errorMessage.value = 'Por favor, preencha todos os campos';
-    return;
-  }
-
-  errorMessage.value = '';
-  isLoading.value = true;
+  loading.value = true
   
   try {
-    // Usar o método withLoading para gerenciar automaticamente as notificações
-    const result = await notification.withLoading(
-      auth.login({
-        username: username.value,
-        password: password.value,
-        remember: rememberMe.value
-      }),
-      {
-        loadingMessage: 'Autenticando...',
-        loadingTitle: 'Login',
-        successMessage: 'Login realizado com sucesso!',
-        errorMessage: 'Falha na autenticação. Verifique suas credenciais.'
-      }
-    );
-
-    if (result && result.user) {
-      // Redirecionamento baseado no papel do usuário
-      let dashboardPath = '/dashboard';
-      const role = result.user.role?.toLowerCase();
-      if (role === 'admin') dashboardPath = '/dashboard';
-      else if (role === 'project_manager') dashboardPath = '/dashboard';
-      else if (role === 'team_leader') dashboardPath = '/dashboard';
-      else if (role === 'team_member') dashboardPath = '/dashboard';
-      else if (role === 'stakeholder') dashboardPath = '/dashboard';
-      else if (role === 'auditor') dashboardPath = '/dashboard';
-      // Se veio de rota protegida, prioriza o redirect original
-      const redirectPath = route.query.redirect || dashboardPath;
-      router.push(redirectPath.toString());
-    } else {
-      // Login falhou mas não lançou erro (caso improvável)
-      errorMessage.value = 'Credenciais inválidas. Tente novamente.';
-    }
-  } catch (error) {
-    console.error('Erro no login:', error);
-    // A mensagem de erro já foi exibida pelo withLoading
-    errorMessage.value = (error instanceof Error && error.message) || 'Ocorreu um erro durante o login. Tente novamente.';
+    await login(email.value, password.value)
+    
+    // Redirecionamento após login bem-sucedido
+    const redirectPath = route.query.redirect || '/dashboard'
+    router.push(redirectPath)
+    
+    showSuccess('Login realizado com sucesso!')
+  } catch (err) {
+    console.error('Erro ao fazer login:', err)
+    showError(err?.response?.data?.detail || 'Falha na autenticação. Verifique suas credenciais.')
   } finally {
-    isLoading.value = false;
+    loading.value = false
   }
-};
+}
 </script>

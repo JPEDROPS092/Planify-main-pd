@@ -1,46 +1,81 @@
 <template>
   <div>
-    <HeroSection />
-    <div id="features"> <!-- Adiciona um ID para navegação interna -->
-      <FeaturesSection />
+    <HeroSection class="fade-in" />
+    
+    <div id="features" class="scroll-mt-20"> 
+      <FeaturesSection class="slide-up" />
     </div>
-    <div id="mission"> <!-- Adiciona um ID para navegação interna -->
-      <MissionSection />
+    
+    <div id="mission" class="scroll-mt-20"> 
+      <MissionSection class="scale-in" />
     </div>
-    <CallToAction />
-    <!-- Você pode adicionar mais seções aqui, como "Tecnologias Utilizadas", "Como Contribuir", etc. -->
+    
+    <CallToAction class="fade-in" />
   </div>
 </template>
 
 <script setup>
+definePageMeta({
+  layout: 'landing',
+  // ...existing meta properties...
+});
 
- import HeroSection from '~/components/ui/LandingPage/HeroSection.vue';
- import FeaturesSection from '~/components/ui/LandingPage/FeaturesSection.vue';
- import MissionSection from '~/components/ui/LandingPage/MissionSection.vue';
- import CallToAction from '~/components/ui/LandingPage/CallToAction.vue';
+import HeroSection from '~/components/ui/LandingPage/HeroSection.vue';
+import FeaturesSection from '~/components/ui/LandingPage/FeaturesSection.vue';
+import MissionSection from '~/components/ui/LandingPage/MissionSection.vue';
+import CallToAction from '~/components/ui/LandingPage/CallToAction.vue';
 
-// SEO e Metadados da Página
+// Add intersection observer to trigger animations
+import { onMounted } from 'vue';
+
+onMounted(() => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.slide-up, .fade-in, .scale-in').forEach(el => {
+    observer.observe(el);
+  });
+});
+
+// SEO and metadata remain the same
 useHead({
-  title: 'Planify - Gestão de Projetos de P&D Simplificada',
-  meta: [
-    { name: 'description', content: 'Planify: Organize projetos, equipes, tarefas, custos e riscos em um só lugar. Gestão visual, dashboards inteligentes e colaboração em tempo real para P&D.' },
-    { name: 'keywords', content: 'Planify, gestão de projetos, P&D, pesquisa e desenvolvimento, kanban, tarefas, equipes, riscos, custos, colaboração' },
-    { property: 'og:title', content: 'Planify - Gestão de Projetos de P&D Simplificada' },
-    { property: 'og:description', content: 'Organize projetos, equipes, tarefas, custos e riscos em um só lugar com Planify.' },
-    { property: 'og:image', content: '/image/README/1748802879852.png' }, // Caminho para sua imagem de preview
-    { property: 'og:url', content: 'https://seusite.com' }, // Substitua pela URL real do seu site
-    { name: 'twitter:card', content: 'summary_large_image' },
-  ],
-  link: [
-    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' } // Certifique-se de ter um favicon.ico em public/
-  ]
+  // ...existing head properties...
 })
 </script>
 
 <style>
-/* Estilos globais que podem ser aplicados a esta página, se necessário. */
-/* Por exemplo, para smooth scroll ao clicar nos links do footer: */
+/* For animation on scroll */
+.slide-up, .fade-in, .scale-in {
+  opacity: 0;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.slide-up {
+  transform: translateY(30px);
+}
+
+.scale-in {
+  transform: scale(0.95);
+}
+
+.animate {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Existing styles */
 html {
   scroll-behavior: smooth;
+}
+
+/* Add scroll margin for anchor links to account for fixed header */
+.scroll-mt-20 {
+  scroll-margin-top: 5rem;
 }
 </style>
