@@ -98,7 +98,7 @@ export const useApiService = () => {
    */
   const handleApiError = (e: unknown): string => {
     if (e instanceof ApiError) {
-      return e.friendlyMessage;
+      return (e as ApiError).friendlyMessage;
     } else if (e instanceof Error) {
       return e.message;
     } else {

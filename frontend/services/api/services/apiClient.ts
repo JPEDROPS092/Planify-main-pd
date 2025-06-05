@@ -36,6 +36,9 @@ export const createApiClient = () => {
    * Processa a resposta da API e extrai os dados
    */
   const processResponse = <T>(response: AxiosResponse): T => {
+    // Log the raw response data for debugging
+    console.log('API Response:', response.config.url, response.data);
+    
     // Para APIs que retornam { data: ... } como wrapper
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
       return response.data.data as T;
@@ -48,15 +51,44 @@ export const createApiClient = () => {
    * Processa erros da API de forma padronizada
    */
   const handleApiError = (error: any): never => {
+    // Log the complete error for debugging
+    console.error('API Error Full Details:', {
+      config: error.config,
+      response: error.response,
+      message: error.message
+    });
+
     if (error.response) {
       const { status, data, statusText } = error.response;
-      const message =
-        data?.detail ||
-        data?.message ||
-        statusText ||
-        'Erro na requisição';
+      
+      // Handling Django REST Framework specific error formats
+      let message = statusText || 'Erro na requisição';
+      let detailedData = data;
+      
+      // Handle different error response formats from Django
+      if (data) {
+        if (data.detail) {
+          message = data.detail;
+        } else if (data.message) {
+          message = data.message;
+        } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
+          // Django REST Framework often returns auth errors in non_field_errors
+          message = data.non_field_errors[0];
+        } else if (typeof data === 'string') {
+          message = data;
+        }
+        
+        // Handle specific auth errors
+        if (status === 401) {
+          if (message.includes('No active account') || message.includes('given credentials')) {
+            message = 'Usuário e/ou senha incorreto(s)';
+          } else if (message.includes('not found') || message.includes('inexistente')) {
+            message = 'Este usuário não existe no sistema';
+          }
+        }
+      }
 
-      throw new ApiError(message, status, data);
+      throw new ApiError(message, status, detailedData);
     }
 
     // Network ou outros erros

@@ -85,14 +85,39 @@ export function useNotification() {
   };
 
   // Shortcut methods, agora podem aceitar title e autoClose
-  const info = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean } = {}) => 
+  const info = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean; position?: string } = {}) => 
     addNotification(message, 'info', options);
-  const success = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean } = {}) =>
+  const success = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean; position?: string } = {}) =>
     addNotification(message, 'success', options);
-  const warning = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean } = {}) =>
+  const warning = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean; position?: string } = {}) =>
     addNotification(message, 'warning', options);
-  const error = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean } = {}) =>
-    addNotification(message, 'error', options);
+  const error = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean; position?: string } = {}) => {
+    // For login errors, set a longer duration by default
+    const isAuthError = options.title?.includes('Autenticação') || 
+                         message.includes('login') || 
+                         message.includes('senha') || 
+                         message.includes('usuário') ||
+                         message.includes('credenciais');
+                         
+    if (isAuthError && !options.duration) {
+      options.duration = 8000; // Longer duration (8 seconds) for auth errors
+      
+      // Store the error in localStorage for persistent display
+      if (process.client) {
+        localStorage.setItem('last_auth_error', JSON.stringify({
+          message,
+          title: options.title || 'Erro de Autenticação'
+        }));
+        
+        // Clear the error after 30 seconds
+        setTimeout(() => {
+          localStorage.removeItem('last_auth_error');
+        }, 30000);
+      }
+    }
+    
+    return addNotification(message, 'error', options);
+  }
   const loading = (message: string, options: { title?: string; duration?: number; id?: string; autoClose?: boolean } = {}): string => {
     // Loading notifications are typically persistent unless a duration and autoClose:true is specified.
     // Default duration 0 means persistent. Default autoClose for loading is false.

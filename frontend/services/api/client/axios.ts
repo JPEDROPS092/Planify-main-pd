@@ -10,22 +10,23 @@ import { useRuntimeConfig } from '#app'; // Uncommented for Nuxt 3
  */
 export const createAxiosInstance = (customBaseURL?: string): AxiosInstance => {
   // Priorize o customBaseURL passado pelo plugin
-  let baseURL = customBaseURL || 'http://localhost:8000';
+  let baseURL = customBaseURL || 'http://127.0.0.1:8000';
 
   // Se não tiver customBaseURL e estivermos no cliente, tentar usar a configuração do Nuxt
   if (!customBaseURL) {
-    if (process.client) {
-      try {
+    try {
+      if (process.client) {
         const config = useRuntimeConfig();
         if (config && config.public && config.public.apiBaseUrl) {
           baseURL = config.public.apiBaseUrl;
         }
-      } catch (e) {
-        console.warn("useRuntimeConfig não disponível. Usando baseURL padrão para cliente.");
+        console.log('Usando URL para API:', baseURL);
+      } else {
+        // No lado do servidor, tentar usar variáveis de ambiente
+        baseURL = process.env.NUXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || baseURL;
       }
-    } else {
-      // No lado do servidor, tentar usar variáveis de ambiente
-      baseURL = process.env.NUXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || baseURL;
+    } catch (e) {
+      console.warn("useRuntimeConfig não disponível. Usando baseURL padrão:", baseURL);
     }
   }
 
@@ -35,7 +36,7 @@ export const createAxiosInstance = (customBaseURL?: string): AxiosInstance => {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    withCredentials: true, // Importante para autenticação com cookies
+    withCredentials: false, // Changed to false since we're using JWT tokens in headers, not cookies
   });
 
   setupInterceptors(api);
@@ -48,7 +49,7 @@ let _axiosInstance: AxiosInstance | null = null;
 
 // Função para obter a instância global ou criar uma nova
 export const getAxiosInstance = (customBaseURL?: string): AxiosInstance => {
-  if (!_axiosInstance) {
+  if (!_axiosInstance || customBaseURL) {
     _axiosInstance = createAxiosInstance(customBaseURL);
   }
   return _axiosInstance;

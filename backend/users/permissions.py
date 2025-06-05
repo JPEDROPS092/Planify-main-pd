@@ -44,6 +44,9 @@ PUBLIC_PATHS = [
     r'^/api/auth/reset-password-confirm/?$',
     r'^/api/docs/?$',
     r'^/api/schema/?$',
+    # Caminhos administrativos - permitindo acesso à interface administrativa
+    r'^/admin/.*$',
+    r'^/static/admin/.*$',
 ]
 
 

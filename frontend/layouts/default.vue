@@ -1,51 +1,13 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-    <!-- Header simples -->
-    <header class="bg-white dark:bg-gray-800 shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-          <!-- Logo e nome -->
-          <div class="flex items-center">
-            <img class="h-8 w-auto" src="/img/logop.png" alt="Planify Logo" />
-            <span class="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Planify</span>
-          </div>
-          
-          <!-- Links de navegação -->
-          <nav class="flex space-x-4">
-            <NuxtLink to="/" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-              Início
-            </NuxtLink>
-            <NuxtLink to="/auth/login" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-              Login
-            </NuxtLink>
-            <NuxtLink to="/auth/registro" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium">
-              Registrar
-            </NuxtLink>
-          </nav>
-        </div>
-      </div>
-    </header>
+  <!-- Removido o container principal para permitir ocupação total da tela -->
+  <div>
+    <!-- Slot direto sem containers adicionais -->
+    <slot />
     
-    <!-- Conteúdo principal -->
-    <main class="flex-grow">
-      <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <slot />
-      </div>
-    </main>
-    
-    <!-- Footer -->
-    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          &copy; {{ new Date().getFullYear() }} Planify. Todos os direitos reservados.
-        </div>
-      </div>
-    </footer>
-    
-    <!-- Botão de alternar tema -->
+    <!-- Botão de alternar tema - mantido e reposicionado -->
     <button 
       @click="toggleTheme" 
-      class="fixed bottom-4 left-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+      class="fixed bottom-4 right-4 z-50 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       aria-label="Alternar tema"
     >
       <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -59,20 +21,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { computed } from 'vue';
 
 // Usar o composable nativo do Nuxt para color-mode
 const colorMode = useColorMode();
-const isDarkMode = ref(false);
 
-// Inicializar o tema
-onMounted(() => {
-  isDarkMode.value = colorMode.preference === 'dark';
-});
+// Derivar o estado de dark mode diretamente da preferência reativa
+const isDarkMode = computed(() => colorMode.preference === 'dark');
 
 // Alternar entre tema claro e escuro
 const toggleTheme = () => {
   colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark';
-  isDarkMode.value = colorMode.preference === 'dark';
 };
 </script>
+
+<style>
+/* Estilos globais para remover margens e bordas, garantindo tela cheia */
+html, 
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Garantir que o conteúdo do slot ocupe toda a tela disponível */
+#__nuxt {
+  height: 100%;
+  width: 100%;
+}
+
+/* Z-index para o botão toggle */
+.fixed {
+  z-index: 50;
+}
+</style>

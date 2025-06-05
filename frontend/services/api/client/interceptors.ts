@@ -43,7 +43,6 @@ export function setupInterceptors(api, options = {}) {
     (response) => response,
     async (error) => {
       // Acessando os composables dentro do callback para evitar erros
-      const runtimeConfig = useRuntimeConfig();
       const accessToken = useState<string | null>('auth.accessToken');
       const refreshToken = useState<string | null>('auth.refreshToken');
 
@@ -65,10 +64,10 @@ export function setupInterceptors(api, options = {}) {
         if (refresh) {
           try {
             console.log('Tentando atualizar token automaticamente');
-            const response = await axios.post(
-              `${runtimeConfig.public.apiBaseUrl}/api/auth/token/refresh/`,
-              { refresh }
-            );
+
+            // Usar a instância já configurada com a baseURL correta
+            // Aqui garantimos que estamos usando a URL correta do endpoint para refresh
+            const response = await api.post('/api/token/refresh/', { refresh });
 
             if (response.data.access) {
               console.log('Token atualizado com sucesso');

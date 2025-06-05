@@ -20,13 +20,15 @@ export default defineNuxtPlugin(nuxtApp => {
   let baseURL = 'http://127.0.0.1:8000'
   try {
     const config = useRuntimeConfig()
-    baseURL = config.public.apiBaseUrl || baseURL
+    if (config && config.public && config.public.apiBaseUrl) {
+      baseURL = config.public.apiBaseUrl
+    }
     console.log(`Configurando API com baseURL: ${baseURL}`)
   } catch (e) {
-    console.warn("useRuntimeConfig não disponível. Usando baseURL padrão.")
+    console.warn("useRuntimeConfig não disponível. Usando baseURL padrão:", baseURL)
   }
 
-  // Obter a instância do Axios (será a mesma se já existir)
+  // Obter a instância do Axios com a URL base correta
   const api = getAxiosInstance(baseURL)
   
   // Marcar como inicializado
@@ -35,6 +37,7 @@ export default defineNuxtPlugin(nuxtApp => {
   // Fornecer a API via provide/inject
   console.log('Plugin API carregado. Cliente Axios configurado com sucesso.')
   
+  // Usar apenas um método para fornecer o API
   return {
     provide: {
       api

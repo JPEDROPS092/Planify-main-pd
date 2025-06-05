@@ -2,7 +2,9 @@ import re
 import logging
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
+from django.utils import timezone
 from .permissions import get_required_permission, check_user_permission, log_unauthorized_access, PUBLIC_PATHS
+from users.models import AccessAttempt
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +14,11 @@ class PermissionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Obter o caminho da requisição
         path = request.path_info
+        
+        # Verificar se é um caminho administrativo do Django
+        if path.startswith('/admin/'):
+            # Deixa o sistema de autenticação do admin do Django lidar com isso
+            return None
         
         # Verificar se é um caminho público
         for pattern in PUBLIC_PATHS:
@@ -44,31 +51,28 @@ class PermissionMiddleware(MiddlewareMixin):
         if not check_user_permission(user, module, action):
             # Registrar tentativa de acesso não autorizado
             log_unauthorized_access(user, path, module, action)
-            return JsonResponse({"detail": "Você não tem permissão para acessar este recurso"}, status=403)
+            
+            # Obter o IP do cliente
+            client_ip = self.get_client_ip(request)
+
+            # Registrar a tentativa no banco de dados
+            AccessAttempt.objects.create(
+                user=request.user,
+                endpoint=request.path,
+                method=request.method,
+                ip_address=client_ip,
+                timestamp=timezone.now(),
+                success=False
+            )
+
+            # Retornar erro de permissão negada
+            logger.warning(f"Usuário {request.user.username} não tem permissão {module}.{action} para acessar {request.path} (IP: {client_ip})")
+            return JsonResponse({
+                'error': 'Forbidden',
+                'message': 'You do not have permission to access this resource'
+            }, status=403)
         
         return None
-        from django.utils import timezone
-        from users.models import AccessAttempt
-
-        # Obter o IP do cliente
-        client_ip = self.get_client_ip(request)
-
-        # Registrar a tentativa no banco de dados
-        AccessAttempt.objects.create(
-            user=request.user,
-            endpoint=request.path,
-            method=request.method,
-            ip_address=client_ip,
-            timestamp=timezone.now(),
-            success=False
-        )
-
-        # Retornar erro de permissão negada
-        logger.warning(f"Usuário {request.user.username} não tem permissão {permission_required['module']}.{permission_required['action']} para acessar {request.path} (IP: {client_ip})")
-        return JsonResponse({
-            'error': 'Forbidden',
-            'message': 'You do not have permission to access this resource'
-        }, status=403)
 
     def get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

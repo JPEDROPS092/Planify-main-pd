@@ -290,15 +290,16 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-'''
+
 # Configurações CORS (Cross-Origin Resource Sharing)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
-'''
+
+CORS_ALLOW_CREDENTIALS = True
 #liberado para desenvolvimento, permite que qualquer origem acesse a API
-CORS_ALLOW_ALL_ORIGINS = True
+#CORS_ALLOW_ALL_ORIGINS = True
 
 # Configurações para envio de emails via SMTP (Gmail)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Backend SMTP padrão do Django
@@ -311,4 +312,16 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'suasenha') # Senha 
 # Variáveis personalizadas
 LOGO_PATH = 'static/img/logo.png'  # Caminho do logo do sistema
 SITE_NAME = 'Planify'              # Nome do sistema
+
+LOGIN_REDIRECT_URL = '/admin/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
+
+# Admin site customization
+ADMIN_SITE_HEADER = "Planify - Administração"
+ADMIN_SITE_TITLE = "Planify - Sistema de Gerenciamento de Projetos"
+ADMIN_INDEX_TITLE = "Dashboard"
+
+# Session settings
+SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
+SESSION_SAVE_EVERY_REQUEST = True
 
