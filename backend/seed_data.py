@@ -4,8 +4,10 @@ import sys
 import django
 import random
 import string
+import traceback
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.conf import settings
 
 # Configurar ambiente Django
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,39 +15,99 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'planify.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from projects.models import Projeto, Sprint
+from users.models import UserProfile, AccessProfile, Permission, UserAccessProfile
+from projects.models import Projeto, Sprint, MembroProjeto, HistoricoStatusProjeto
 from tasks.models import Tarefa, AtribuicaoTarefa, ComentarioTarefa, HistoricoStatusTarefa
-from teams.models import Equipe, MembroEquipe
+from teams.models import Equipe, MembroEquipe, PermissaoEquipe
 from risks.models import Risco, HistoricoRisco
-from costs.models import Categoria, Custo, OrcamentoProjeto
+from costs.models import Categoria, Custo, OrcamentoProjeto, OrcamentoTarefa, Alerta
 from documents.models import Documento, HistoricoDocumento, Comentario
 from communications.models import Comunicacao, Notificacao, ConfiguracaoNotificacao, ChatMensagem, ChatMensagemLeitura
 
 User = get_user_model()
 
 def create_users():
-    """Criar usuários de exemplo"""
+    """Criar usuários de exemplo com diferentes papéis"""
     users_data = [
-        {'username': 'admin', 'email': 'admin@planify.com', 'password': 'admin123', 'is_staff': True, 'is_superuser': True},
-        {'username': 'gerente', 'email': 'gerente@planify.com', 'password': 'gerente123'},
-        {'username': 'dev1', 'email': 'dev1@planify.com', 'password': 'dev123'},
-        {'username': 'dev2', 'email': 'dev2@planify.com', 'password': 'dev123'},
-        {'username': 'analista', 'email': 'analista@planify.com', 'password': 'analista123'},
+        {
+            'username': 'admin',
+            'email': 'admin@planify.com',
+            'password': 'admin123',
+            'full_name': 'Administrador Sistema',
+            'is_staff': True,
+            'is_superuser': True,
+            'role': 'ADMIN'
+        },
+        {
+            'username': 'gerente',
+            'email': 'gerente@planify.com',
+            'password': 'gerente123',
+            'full_name': 'Gerente de Projetos',
+            'role': 'PROJECT_MANAGER'
+        },
+        {
+            'username': 'lider',
+            'email': 'lider@planify.com',
+            'password': 'lider123',
+            'full_name': 'Líder de Equipe',
+            'role': 'TEAM_LEADER'
+        },
+        {
+            'username': 'dev1',
+            'email': 'dev1@planify.com',
+            'password': 'dev123',
+            'full_name': 'Desenvolvedor 1',
+            'role': 'TEAM_MEMBER'
+        },
+        {
+            'username': 'dev2',
+            'email': 'dev2@planify.com',
+            'password': 'dev123',
+            'full_name': 'Desenvolvedor 2',
+            'role': 'TEAM_MEMBER'
+        },
+        {
+            'username': 'analista',
+            'email': 'analista@planify.com',
+            'password': 'analista123',
+            'full_name': 'Analista de Sistemas',
+            'role': 'TEAM_MEMBER'
+        },
+        {
+            'username': 'stakeholder',
+            'email': 'stakeholder@planify.com',
+            'password': 'stake123',
+            'full_name': 'Stakeholder Cliente',
+            'role': 'STAKEHOLDER'
+        }
     ]
     
     created_users = []
     for data in users_data:
-        user, created = User.objects.get_or_create(
-            username=data['username'],
-            email=data['email'],
-            defaults={
-                'is_staff': data.get('is_staff', False),
-                'is_superuser': data.get('is_superuser', False)
-            }
-        )
-        if created:
-            user.set_password(data['password'])
+        try:
+            user = User.objects.get(username=data['username'])
+            print(f"Usuário {data['username']} já existe.")
+        except User.DoesNotExist:
+            user = User.objects.create_user(
+                email=data['email'],
+                username=data['username'],
+                full_name=data['full_name'],
+                password=data['password']
+            )
+            user.is_staff = data.get('is_staff', False)
+            user.is_superuser = data.get('is_superuser', False)
+            user.role = data['role']
             user.save()
+            
+            # Criar perfil do usuário
+            UserProfile.objects.create(
+                user=user,
+                theme_preference='SYSTEM',
+                email_notifications=True,
+                system_notifications=True
+            )
+            print(f"Usuário {data['username']} criado com sucesso.")
+            
         created_users.append(user)
     return created_users
 
@@ -580,8 +642,6 @@ def create_document_comments():
                       ''.join(random.choice(string.ascii_letters + ' ,.!?') for _ in range(random.randint(20, 150))),
                 criado_em=timezone.now() - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23))
             )
-
-import traceback
 
 def run_seeds():
     print("Iniciando seed do banco de dados...")

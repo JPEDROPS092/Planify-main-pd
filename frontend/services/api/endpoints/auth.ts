@@ -16,7 +16,10 @@ import type {
  * @returns Tokens de acesso e refresh
  */
 export const createAuthToken = async (credentials: LoginCredentials): Promise<TokenObtainPair> => {
-  return await apiClient.post<TokenObtainPair>('/api/auth/token/', credentials);
+  console.log('Making auth request to Django backend with:', { username: credentials.username, password: '******' });
+  
+  // Updated to match the correct Django backend URL pattern
+  return await apiClient.post<TokenObtainPair>('/api/token/', credentials);
 };
 
 /**
@@ -25,7 +28,8 @@ export const createAuthToken = async (credentials: LoginCredentials): Promise<To
  * @returns Novo token de acesso (e possivelmente novo token de refresh)
  */
 export const refreshAuthToken = async (data: { refresh: string }): Promise<TokenRefresh> => {
-  return await apiClient.post<TokenRefresh>('/api/auth/token/refresh/', data);
+  // Updated to match the correct Django backend URL pattern
+  return await apiClient.post<TokenRefresh>('/api/token/refresh/', data);
 };
 
 /**
@@ -33,7 +37,8 @@ export const refreshAuthToken = async (data: { refresh: string }): Promise<Token
  * @returns Perfil completo do usuário
  */
 export const retrieveAuthUsersMe = async (): Promise<ExtendedUserProfile> => {
-  return await apiClient.get<ExtendedUserProfile>('/api/auth/users/me/');
+  // Updated to match correct endpoint for retrieving user profile
+  return await apiClient.get<ExtendedUserProfile>('/api/users/me/');
 };
 
 /**
@@ -42,7 +47,8 @@ export const retrieveAuthUsersMe = async (): Promise<ExtendedUserProfile> => {
  * @returns Perfil do usuário criado
  */
 export const registerUser = async (userData: Partial<ExtendedUserProfile>): Promise<ExtendedUserProfile> => {
-  return await apiClient.post<ExtendedUserProfile>('/api/auth/users/', userData);
+  // Updated to match correct endpoint for user registration
+  return await apiClient.post<ExtendedUserProfile>('/api/users/', userData);
 };
 
 /**
@@ -51,7 +57,8 @@ export const registerUser = async (userData: Partial<ExtendedUserProfile>): Prom
  * @returns Resposta da API
  */
 export const requestPasswordReset = async (email: string): Promise<any> => {
-  return await apiClient.post('/api/auth/users/reset_password/', { email });
+  // Updated to match correct endpoint for password reset request
+  return await apiClient.post('/api/users/reset_password/', { email });
 };
 
 /**
@@ -60,5 +67,6 @@ export const requestPasswordReset = async (email: string): Promise<any> => {
  * @returns Resposta da API
  */
 export const confirmPasswordReset = async (data: { uid: string; token: string; new_password: string }): Promise<any> => {
-  return await apiClient.post('/api/auth/users/reset_password_confirm/', data);
+  // Updated to match correct endpoint for password reset confirmation
+  return await apiClient.post('/api/users/reset_password_confirm/', data);
 };

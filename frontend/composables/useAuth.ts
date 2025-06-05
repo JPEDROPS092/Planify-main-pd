@@ -43,6 +43,19 @@ export function useAuth() {
   const isAuthenticated = computed(() => !!globalAccessToken.value && !!user.value);
 
   /**
+   * Retorna o papel/função do usuário (se disponível)
+   */
+  const userRole = computed(() => user.value?.role || null);
+
+  /**
+   * Checa se o input é um email
+   */
+  const isEmail = (input: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(input);
+  };
+
+  /**
    * Realiza o login do usuário utilizando a API.
    */
   const login = async (credentials: LoginCredentials): Promise<{ user: ExtendedUserProfile | null; accessToken: string | null; success: boolean }> => {
@@ -52,9 +65,24 @@ export function useAuth() {
     console.log('useAuth().login() - Attempting API login.');
 
     try {
+      // Determinar se o input é um email ou username
+      const isEmailInput = isEmail(credentials.username);
+      
+      // Criar objeto de credenciais para a API
+      const loginData = {
+        username: credentials.username,
+        password: credentials.password,
+        // Adicionar flag indicando se é email ou username
+        is_email: isEmailInput
+      };
+
+      // Log request for debugging (without password)
+      console.log('Login request to:', '/api/auth/token/', 
+        { username: loginData.username, password: '******', is_email: loginData.is_email });
+
       // Obter token com feedback visual
       const tokenData = await api.withLoading<TokenObtainPair>(
-        async () => await createAuthToken(credentials),
+        async () => await createAuthToken(loginData),
         {
           loadingMessage: 'Realizando login...',
           showSuccess: false,
@@ -65,6 +93,9 @@ export function useAuth() {
       if (!tokenData) {
         throw new Error('Falha ao obter token de acesso');
       }
+
+      // Log successful token response (without showing actual token)
+      console.log('Token obtained successfully, fetching user data');
 
       // Armazenar tokens
       localAccessToken.value = tokenData.access;
@@ -95,15 +126,45 @@ export function useAuth() {
         if (localRefreshToken.value) {
           localStorage.setItem('refreshToken', localRefreshToken.value);
         }
+        // Store remember me preference if provided
+        if (credentials.remember) {
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberMe');
+        }
       }
       
       console.log('Login successful, user data fetched:', user.value?.username);
+      
+      // Após login bem-sucedido, redirecionar para a página de dashboard
+      if (process.client) {
+        // Usar o router do Nuxt para redirecionar
+        const router = useRouter();
+        // Verificar se há um parâmetro redirect na URL
+        const route = useRoute();
+        const redirectPath = route.query.redirect as string || '/dashboard';
+        router.push(redirectPath);
+      }
+      
       return { user: user.value, accessToken: localAccessToken.value, success: true };
 
     } catch (e: unknown) {
       const apiError = e as ApiError;
       console.error('Erro no login via API:', apiError.message, apiError.data);
-      error.value = apiError.friendlyMessage || 'Falha no login. Verifique suas credenciais.';
+      
+      // Enhanced error handling for common Django REST auth errors
+      let errorMessage = apiError.friendlyMessage || 'Falha no login. Verifique suas credenciais.';
+      
+      // Extract specific error messages from Django response formats
+      if (apiError.data) {
+        if (apiError.data.detail) {
+          errorMessage = apiError.data.detail;
+        } else if (apiError.data.non_field_errors && Array.isArray(apiError.data.non_field_errors)) {
+          errorMessage = apiError.data.non_field_errors[0];
+        }
+      }
+      
+      error.value = errorMessage;
       
       // Limpar estado em caso de falha
       user.value = null;
@@ -352,6 +413,7 @@ export function useAuth() {
     // Apenas o globalAccessToken deve ser a referência para o token de acesso atual.
     // accessToken: globalAccessToken, // Expor o globalAccessToken (useState)
     isAuthenticated, // computed
+    userRole, // computed - added for dashboard
     login,
     logout,
     checkAuth,

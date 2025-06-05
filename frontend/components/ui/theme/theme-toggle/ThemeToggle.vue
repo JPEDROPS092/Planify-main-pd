@@ -21,9 +21,13 @@ const { theme, isDark, setTheme, toggleTheme } = useTheme();
 const isOpen = ref(false);
 
 // Tamanho da fonte
-const fontSize = ref(
-  parseInt(localStorage.getItem('planify-font-size') || '16')
-);
+const fontSize = ref(16); // Default to avoid hydration mismatch
+
+// Only set from localStorage on client-side
+onMounted(() => {
+  fontSize.value = parseInt(localStorage.getItem('planify-font-size') || '16');
+  applyFontSize();
+});
 
 // Ícone a ser exibido com base no tema atual
 const currentIcon = computed(() => {
@@ -65,8 +69,10 @@ const decreaseFontSize = () => {
 
 // Aplicar o tamanho da fonte
 const applyFontSize = () => {
-  document.documentElement.style.fontSize = `${fontSize.value}px`;
-  localStorage.setItem('planify-font-size', fontSize.value.toString());
+  if (process.client) {
+    document.documentElement.style.fontSize = `${fontSize.value}px`;
+    localStorage.setItem('planify-font-size', fontSize.value.toString());
+  }
 };
 
 // Fechar o menu ao clicar fora
