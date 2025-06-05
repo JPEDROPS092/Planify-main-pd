@@ -154,9 +154,6 @@ Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](./LIC
 - **Documentação**: [Planify Docs](https://planify-docs.com)
 
 ---
-<<<<<<< HEAD
-=======
 
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JPEDROPS092/Planify-main-pd)
->>>>>>> e971ce6d181ca8c03d61748f745c3d0d936b029c
