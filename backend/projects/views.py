@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, DateFromToRangeFilter, CharFilter, BooleanFilter
-from django.db.models import Q, Count, Prefetch, F, ExpressionWrapper, BooleanField, Case, When
+from django.db.models import Q, Count, Prefetch, F, ExpressionWrapper, BooleanField, FloatField, Case, When
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
