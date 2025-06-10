@@ -1,46 +1,33 @@
-/**
- * Plugin de API para o Planify
- * Configura o cliente Axios global para o Nuxt
- */
-import { defineNuxtPlugin } from '#app'
-import { getAxiosInstance } from '~/services/api/client/axios'
-import { useRuntimeConfig } from '#app'
+// plugins/api.ts (versão nova e correta)
+import { OpenAPI } from '~/lib/api-client';
+import { useAuthStore } from '~/stores/auth'; // Supondo que você tenha uma store de auth
 
-// Variável para controlar se o plugin já foi inicializado
-let initialized = false;
+export default defineNuxtPlugin((nuxtApp) => {
+  // Define a URL base da sua API
+  OpenAPI.BASE = os.BACKEND_URL; // Use variáveis de ambiente aqui!
 
-export default defineNuxtPlugin(nuxtApp => {
-  // Evitar inicialização múltipla
-  if (initialized) {
-    console.log('Plugin API já inicializado, pulando...')
-    return
-  }
-  
-  // Obter a configuração do Nuxt
-  let baseURL = 'http://127.0.0.1:8000'
-  try {
-    const config = useRuntimeConfig()
-    if (config && config.public && config.public.apiBaseUrl) {
-      baseURL = config.public.apiBaseUrl
+  // Interceptor para adicionar o token de autenticação em cada requisição
+  OpenAPI.interceptors.request.use((request) => {
+    const authStore = useAuthStore();
+    const token = authStore.token; // Pega o token da sua store
+
+    if (token && request.headers) {
+      request.headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log(`Configurando API com baseURL: ${baseURL}`)
-  } catch (e) {
-    console.warn("useRuntimeConfig não disponível. Usando baseURL padrão:", baseURL)
-  }
+    return request;
+  });
 
-  // Obter a instância do Axios com a URL base correta
-  const api = getAxiosInstance(baseURL)
-  
-  // Marcar como inicializado
-  initialized = true
-  
-  // Fornecer a API via provide/inject
-  console.log('Plugin API carregado. Cliente Axios configurado com sucesso.')
-  
-  // Usar apenas um método para fornecer o API
-  return {
-    provide: {
-      api
+  // Opcional: Interceptor para tratar erros 401 (token expirado) globalmente
+  OpenAPI.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.status === 401) {
+        const authStore = useAuthStore();
+        authStore.logout(); // Ex: Forçar logout
+        // Redirecionar para a página de login
+        // return navigateTo('/auth/login');
+      }
+      return Promise.reject(error);
     }
-  }
-})
+  );
+});
