@@ -3,18 +3,17 @@
  * Gerado a partir da especificação OpenAPI
  * Otimizado com cache via Pinia
  */
+import { ref, useState } from '#imports';
 import { useAuth } from '~/stores/composables/useAuth';
 import { apiClient } from './apiClient';
-import { createFormData } from '../client/config';
-import { useState, computed, ref } from '#imports';
 // Usando defineStore para criar a store de tarefas localmente se necessário
 import { defineStore } from 'pinia';
 import type {
-  Tarefa,
-  TarefaRequest,
-  TarefaList,
   PaginatedResponse,
-} from '../types';
+  Tarefa,
+  TarefaList,
+  TarefaRequest,
+} from '../services/api/types';
 
 // Função para obter a instância do cliente fetch apenas quando necessário
 const getApi = () => {
@@ -25,26 +24,26 @@ const getApi = () => {
 const useTaskStore = defineStore('tasks', () => {
   const tasks = ref([]);
   const isLoading = ref(false);
-  
+
   function setTasks(newTasks) {
     tasks.value = newTasks;
   }
-  
+
   function addTask(task) {
     tasks.value.push(task);
   }
-  
+
   function updateTaskInStore(id, updatedTask) {
     const index = tasks.value.findIndex(t => t.id === id);
     if (index !== -1) {
       tasks.value[index] = { ...tasks.value[index], ...updatedTask };
     }
   }
-  
+
   function removeTask(id) {
     tasks.value = tasks.value.filter(t => t.id !== id);
   }
-  
+
   return {
     tasks,
     isLoading,
@@ -373,7 +372,7 @@ export const useTaskService = () => {
     status?: string;
   }, useCache: boolean = true) => {
     const taskStore = useTaskStore();
-    
+
     // Verificar se podemos usar o cache
     if (useCache && !params?.page && !params?.search && taskStore.isTasksCacheValid) {
       return {
@@ -382,19 +381,19 @@ export const useTaskService = () => {
         data: taskStore.tasks
       };
     }
-    
+
     isLoading.value = true;
     error.value = null;
     taskStore.setFetching(true);
 
     try {
       const response = await listTarefas(params);
-      
+
       // Armazenar no cache apenas se não houver filtros específicos
       if (!params?.search && !params?.page) {
         taskStore.setTasks(response.results || []);
       }
-      
+
       return response;
     } catch (err: any) {
       error.value = err.message || 'Erro ao buscar tarefas';
@@ -408,14 +407,14 @@ export const useTaskService = () => {
   // Função para buscar uma tarefa específica
   const fetchTask = async (id: number, useCache: boolean = true) => {
     const taskStore = useTaskStore();
-    
+
     // Verificar se podemos usar o cache
     if (useCache && taskStore.isTaskDetailCacheValid(id)) {
       const cachedTask = taskStore.taskDetails[id];
       currentTask.value = cachedTask;
       return cachedTask;
     }
-    
+
     isLoading.value = true;
     error.value = null;
     taskStore.setFetching(true);
@@ -423,10 +422,10 @@ export const useTaskService = () => {
     try {
       const task = await retrieveTarefa(id);
       currentTask.value = task;
-      
+
       // Armazenar no cache
       taskStore.setTaskDetail(task);
-      
+
       return task;
     } catch (err: any) {
       error.value = err.message || `Erro ao buscar tarefa ${id}`;
@@ -450,11 +449,11 @@ export const useTaskService = () => {
       }
 
       const newTask = await createTarefa(taskData);
-      
+
       // Atualizar o cache
       taskStore.setTaskDetail(newTask);
       taskStore.clearCache(); // Limpar o cache da lista para forçar uma nova busca
-      
+
       return newTask;
     } catch (err: any) {
       error.value = err.message || 'Erro ao criar tarefa';
@@ -477,7 +476,7 @@ export const useTaskService = () => {
       if (currentTask.value && currentTask.value.id === id) {
         currentTask.value = updatedTask;
       }
-      
+
       // Atualizar o cache
       taskStore.setTaskDetail(updatedTask);
 
@@ -528,7 +527,7 @@ export const useTaskService = () => {
       if (currentTask.value && currentTask.value.id === id) {
         currentTask.value = null;
       }
-      
+
       // Remover do cache
       taskStore.removeTask(id);
 

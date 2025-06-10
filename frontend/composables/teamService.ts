@@ -1,11 +1,11 @@
 /**
  * Serviço de equipes - adaptador para o novo sistema de API
  */
-import { ref, computed } from 'vue';
-import * as teamsApi from '../endpoints/teams';
-import type { Team, TeamMember, TeamResponse } from '../endpoints/teams';
+import { computed, ref } from 'vue';
 import { useApiService } from '~/stores/composables/useApiService';
 import { useAuth } from '~/stores/composables/useAuth';
+import type { Team, TeamMember, TeamResponse } from '../services/api/endpoints/teams';
+import * as teamsApi from '../services/api/endpoints/teams';
 
 export const useTeamService = () => {
   const { user, hasPermission } = useAuth();

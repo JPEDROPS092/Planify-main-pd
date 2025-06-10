@@ -3,10 +3,10 @@
  * Refatorado para usar o novo sistema de API
  * Mantém cache via Pinia e suporte para feedback visual
  */
-import { ref, computed } from 'vue';
-import * as projectsApi from '../endpoints/projects';
-import { useAuth } from '~/stores/composables/useAuth';
+import { ref } from 'vue';
 import { useApiService } from '~/stores/composables/useApiService';
+import { useAuth } from '~/stores/composables/useAuth';
+import * as projectsApi from '../services/api/endpoints/projects';
 // Importando defineStore para criar a store localmente
 import { defineStore } from 'pinia';
 
@@ -14,26 +14,26 @@ import { defineStore } from 'pinia';
 const useProjectStore = defineStore('projects', () => {
   const projects = ref([]);
   const isLoading = ref(false);
-  
+
   function setProjects(newProjects) {
     projects.value = newProjects;
   }
-  
+
   function addProject(project) {
     projects.value.push(project);
   }
-  
+
   function updateProjectInStore(id, updatedProject) {
     const index = projects.value.findIndex(p => p.id === id);
     if (index !== -1) {
       projects.value[index] = { ...projects.value[index], ...updatedProject };
     }
   }
-  
+
   function removeProject(id) {
     projects.value = projects.value.filter(p => p.id !== id);
   }
-  
+
   return {
     projects,
     isLoading,
@@ -49,7 +49,7 @@ export const useProjectService = () => {
   const { user, isAuthenticated } = useAuth();
   const { handleApiError, withLoading } = useApiService();
   const projectStore = useProjectStore();
-  
+
   const projects = ref([]);
   const currentProject = ref(null);
   const isLoading = ref(false);
@@ -65,7 +65,7 @@ export const useProjectService = () => {
         data: projectStore.projects
       };
     }
-    
+
     isLoading.value = true;
     error.value = null;
     projectStore.setFetching(true);
@@ -75,14 +75,14 @@ export const useProjectService = () => {
       if (user.value && !params.owner_id && isAuthenticated.value) {
         params = { ...params, owner_id: user.value.id };
       }
-      
+
       const response = await projectsApi.listProjects(params);
-      
+
       // Armazenar no cache apenas se não houver filtros específicos
       if (!params?.search && !params?.page) {
         projectStore.setProjects(response.results || []);
       }
-      
+
       projects.value = response.results;
       return response;
     } catch (err) {
@@ -102,7 +102,7 @@ export const useProjectService = () => {
       currentProject.value = cachedProject;
       return cachedProject;
     }
-    
+
     isLoading.value = true;
     error.value = null;
     projectStore.setFetching(true);
@@ -110,10 +110,10 @@ export const useProjectService = () => {
     try {
       const project = await projectsApi.retrieveProject(id);
       currentProject.value = project;
-      
+
       // Armazenar no cache
       projectStore.setProjectDetail(project);
-      
+
       return project;
     } catch (err) {
       error.value = handleApiError(err);
@@ -141,11 +141,11 @@ export const useProjectService = () => {
         loadingMessage: 'Criando projeto...',
         successMessage: 'Projeto criado com sucesso!'
       });
-      
+
       // Atualizar o cache
       projectStore.setProjectDetail(newProject);
       projectStore.clearCache(); // Limpar o cache da lista para forçar uma nova busca
-      
+
       return newProject;
     } catch (err) {
       error.value = handleApiError(err);
@@ -178,7 +178,7 @@ export const useProjectService = () => {
       if (currentProject.value && currentProject.value.id === id) {
         currentProject.value = updatedProject;
       }
-      
+
       // Atualizar o cache
       projectStore.setProjectDetail(updatedProject);
 
@@ -214,7 +214,7 @@ export const useProjectService = () => {
       if (currentProject.value && currentProject.value.id === id) {
         currentProject.value = updatedProject;
       }
-      
+
       // Atualizar o cache
       projectStore.setProjectDetail(updatedProject);
 
@@ -250,7 +250,7 @@ export const useProjectService = () => {
       if (currentProject.value && currentProject.value.id === id) {
         currentProject.value = null;
       }
-      
+
       // Remover do cache
       projectStore.removeProject(id);
 

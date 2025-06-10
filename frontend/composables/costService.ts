@@ -3,28 +3,28 @@
  * Provides composable functions for cost management in Vue components
  * Refactored to use the new API structure
  */
-import { ref, computed } from 'vue';
-import * as costsApi from '../endpoints/costs';
-import type { Cost, CostResponse, CostCategory, CostCategoryResponse, BudgetSummary } from '../endpoints/costs';
+import { computed, ref } from 'vue';
 import { useApiService } from '~/stores/composables/useApiService';
 import { useAuth } from '~/stores/composables/useAuth';
+import type { BudgetSummary, Cost, CostCategory, CostCategoryResponse, CostResponse } from '../services/api/endpoints/costs';
+import * as costsApi from '../services/api/endpoints/costs';
 
 export const useCostService = () => {
   const { handleApiError, withLoading } = useApiService();
   const { user } = useAuth();
-  
+
   // State
   const costs = ref<CostResponse[]>([]);
   const categories = ref<CostCategoryResponse[]>([]);
   const budgetSummary = ref<BudgetSummary | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  
+
   // Fetch costs with optional filtering
   const fetchCosts = async (params: Record<string, any> = {}) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await costsApi.listCosts(params);
       costs.value = response.results;
@@ -36,12 +36,12 @@ export const useCostService = () => {
       isLoading.value = false;
     }
   };
-  
+
   // Fetch a specific cost by ID
   const fetchCost = async (id: number) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await costsApi.retrieveCost(id);
       return response;
@@ -52,7 +52,7 @@ export const useCostService = () => {
       isLoading.value = false;
     }
   };
-  
+
   // Create a new cost
   const createCost = async (data: Cost) => {
     return withLoading(async () => {
@@ -61,7 +61,7 @@ export const useCostService = () => {
         if (!data.created_by && user.value) {
           data.created_by = user.value.id;
         }
-        
+
         const response = await costsApi.createCost(data);
         costs.value = [response, ...costs.value];
         return response;
@@ -74,19 +74,19 @@ export const useCostService = () => {
       successMessage: 'Custo registrado com sucesso!'
     });
   };
-  
+
   // Update an existing cost
   const updateCost = async (id: number, data: Partial<Cost>) => {
     return withLoading(async () => {
       try {
         const response = await costsApi.updateCost(id, data);
-        
+
         // Update in the local array if present
         const index = costs.value.findIndex(c => c.id === id);
         if (index !== -1) {
           costs.value[index] = response;
         }
-        
+
         return response;
       } catch (err) {
         error.value = handleApiError(err);
@@ -97,16 +97,16 @@ export const useCostService = () => {
       successMessage: 'Custo atualizado com sucesso!'
     });
   };
-  
+
   // Delete a cost
   const deleteCost = async (id: number) => {
     return withLoading(async () => {
       try {
         await costsApi.destroyCost(id);
-        
+
         // Remove from the local array if present
         costs.value = costs.value.filter(c => c.id !== id);
-        
+
         return true;
       } catch (err) {
         error.value = handleApiError(err);
@@ -117,12 +117,12 @@ export const useCostService = () => {
       successMessage: 'Custo excluído com sucesso!'
     });
   };
-  
+
   // Fetch cost categories
   const fetchCategories = async (params: Record<string, any> = {}) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await costsApi.listCostCategories(params);
       categories.value = response;
@@ -134,7 +134,7 @@ export const useCostService = () => {
       isLoading.value = false;
     }
   };
-  
+
   // Create a new cost category
   const createCategory = async (data: CostCategory) => {
     return withLoading(async () => {
@@ -151,19 +151,19 @@ export const useCostService = () => {
       successMessage: 'Categoria criada com sucesso!'
     });
   };
-  
+
   // Update an existing category
   const updateCategory = async (id: number, data: Partial<CostCategory>) => {
     return withLoading(async () => {
       try {
         const response = await costsApi.updateCostCategory(id, data);
-        
+
         // Update in the local array if present
         const index = categories.value.findIndex(c => c.id === id);
         if (index !== -1) {
           categories.value[index] = response;
         }
-        
+
         return response;
       } catch (err) {
         error.value = handleApiError(err);
@@ -174,16 +174,16 @@ export const useCostService = () => {
       successMessage: 'Categoria atualizada com sucesso!'
     });
   };
-  
+
   // Delete a category
   const deleteCategory = async (id: number) => {
     return withLoading(async () => {
       try {
         await costsApi.destroyCostCategory(id);
-        
+
         // Remove from the local array if present
         categories.value = categories.value.filter(c => c.id !== id);
-        
+
         return true;
       } catch (err) {
         error.value = handleApiError(err);
@@ -194,12 +194,12 @@ export const useCostService = () => {
       successMessage: 'Categoria excluída com sucesso!'
     });
   };
-  
+
   // Get budget summary for a project
   const fetchBudgetSummary = async (projectId: number) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await costsApi.getProjectBudgetSummary(projectId);
       budgetSummary.value = response;
@@ -211,50 +211,50 @@ export const useCostService = () => {
       isLoading.value = false;
     }
   };
-  
+
   // Calculate total cost
   const totalCost = computed(() => {
     return costs.value.reduce((sum, cost) => sum + cost.amount, 0);
   });
-  
+
   // Group costs by category
   const costsByCategory = computed(() => {
     const grouped: Record<string, { total: number, items: CostResponse[] }> = {};
-    
+
     costs.value.forEach(cost => {
       const category = cost.category || 'OUTROS';
-      
+
       if (!grouped[category]) {
         grouped[category] = { total: 0, items: [] };
       }
-      
+
       grouped[category].total += cost.amount;
       grouped[category].items.push(cost);
     });
-    
+
     return grouped;
   });
-  
+
   // Costs per month for charts
   const costsPerMonth = computed(() => {
     const monthData: Record<string, number> = {};
-    
+
     costs.value.forEach(cost => {
       if (!cost.date) return;
-      
+
       const date = new Date(cost.date);
       const month = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-      
+
       if (!monthData[month]) {
         monthData[month] = 0;
       }
-      
+
       monthData[month] += cost.amount;
     });
-    
+
     return monthData;
   });
-  
+
   return {
     // State
     costs,
@@ -262,12 +262,12 @@ export const useCostService = () => {
     budgetSummary,
     isLoading,
     error,
-    
+
     // Computed
     totalCost,
     costsByCategory,
     costsPerMonth,
-    
+
     // Methods
     fetchCosts,
     fetchCost,
@@ -276,7 +276,7 @@ export const useCostService = () => {
     deleteCost,
     fetchCategories,
     createCategory,
-    updateCategory, 
+    updateCategory,
     deleteCategory,
     fetchBudgetSummary
   };

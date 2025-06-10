@@ -5,9 +5,9 @@
 import { ref } from 'vue';
 import { useApiService } from '~/stores/composables/useApiService';
 import { useAuth } from '~/stores/composables/useAuth';
-import { apiClient } from './apiClient';
-import { createFormData, ApiError } from '../client/config';
 import { useNotification } from '~/stores/composables/useNotification';
+import { ApiError } from '../services/api/client/config';
+import { apiClient } from './apiClient';
 
 // Definição dos tipos de documento
 interface Documento {
@@ -73,7 +73,7 @@ const parseApiError = (error: any, defaultMessage: string): string => {
 // Utilitário para processar payloads com FormData
 const processPayload = <T>(payload: T, path: string, method: 'post' | 'put', id?: number): Promise<Documento> => {
   const url = id ? `${path}/${id}/` : `${path}/`;
-  
+
   // Se for FormData, usar como está
   if (payload instanceof FormData) {
     return getApi()[method]<Documento>(url, payload, {
@@ -82,7 +82,7 @@ const processPayload = <T>(payload: T, path: string, method: 'post' | 'put', id?
       }
     }).then(response => response.data);
   }
-  
+
   // Se for objeto comum, enviar como JSON
   return getApi()[method]<Documento>(url, payload)
     .then(response => response.data);
@@ -126,13 +126,13 @@ export const useDocumentService = () => {
       if (projectId) {
         params.projeto = projectId;
       }
-      
+
       const response = await withLoading(
         listDocumentos(params),
         projectId ? 'Carregando documentos do projeto...' : 'Carregando documentos...',
         'Documentos carregados com sucesso'
       );
-      
+
       documents.value = response.results;
       return documents.value;
     } catch (err: any) {
@@ -167,7 +167,7 @@ export const useDocumentService = () => {
   const createDocument = async (documentData: DocumentoCreateDTO | FormData) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       // Se documentData não for FormData, associar automaticamente o usuário atual como criador
       if (!(documentData instanceof FormData) && !documentData.criado_por && user.value?.id) {
@@ -193,13 +193,13 @@ export const useDocumentService = () => {
   const updateDocument = async (documentId: number, documentData: DocumentoUpdateDTO | FormData) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       // Verificar permissão
       if (!hasPermission('document', 'update')) {
         throw new Error('Você não tem permissão para atualizar este documento');
       }
-      
+
       const updatedDocument = await withLoading(
         updateDocumento(documentId, documentData),
         'Atualizando documento...',
@@ -224,7 +224,7 @@ export const useDocumentService = () => {
   const deleteDocument = async (documentId: number) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       // Verificar permissão
       if (!hasPermission('document', 'delete')) {
@@ -255,7 +255,7 @@ export const useDocumentService = () => {
   const downloadDocument = async (documentId: number) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const url = await withLoading(
         downloadDocumento(documentId),
@@ -279,18 +279,18 @@ export const useDocumentService = () => {
 
   // Obter documentos por risco ou custo usando uma função comum
   const getDocumentosByFilter = async (
-    filterType: 'risco' | 'custo', 
+    filterType: 'risco' | 'custo',
     filterId: number,
     loadingMessage: string,
     errorMessage: string
   ) => {
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const params: DocumentoQueryParams = {};
       params[filterType] = filterId;
-      
+
       const response = await withLoading(
         listDocumentos(params),
         loadingMessage,
@@ -308,9 +308,9 @@ export const useDocumentService = () => {
   // Obter documentos por risco
   const getDocumentosByRisco = async (riscoId: number) => {
     return getDocumentosByFilter(
-      'risco', 
-      riscoId, 
-      'Carregando documentos do risco...', 
+      'risco',
+      riscoId,
+      'Carregando documentos do risco...',
       `Erro ao carregar documentos do risco ${riscoId}`
     );
   };
@@ -318,9 +318,9 @@ export const useDocumentService = () => {
   // Obter documentos por custo
   const getDocumentosByCusto = async (custoId: number) => {
     return getDocumentosByFilter(
-      'custo', 
-      custoId, 
-      'Carregando documentos do custo...', 
+      'custo',
+      custoId,
+      'Carregando documentos do custo...',
       `Erro ao carregar documentos do custo ${custoId}`
     );
   };
@@ -401,6 +401,6 @@ export async function destroyDocumento(id: number): Promise<void> {
  * @param id ID do documento
  */
 export async function downloadDocumento(id: number): Promise<string> {
-  return getApi().get<{url: string}>(`/api/documents/documentos/${id}/download/`)
+  return getApi().get<{ url: string }>(`/api/documents/documentos/${id}/download/`)
     .then(response => response.data.url);
 }

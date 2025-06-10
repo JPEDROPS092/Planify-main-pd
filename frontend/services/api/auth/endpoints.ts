@@ -2,13 +2,13 @@
  * Endpoints de autenticação
  * Define funções para interagir com a API de autenticação
  */
-import { apiClient } from '../services/apiClient';
+import { apiClient } from '../../../composables/apiClient';
 import type {
-  LoginCredentials,
-  TokenResponse,
   ExtendedUserProfile,
+  LoginCredentials,
   PasswordResetConfirmData,
-  PasswordResetResponse
+  PasswordResetResponse,
+  TokenResponse
 } from './types';
 
 /**

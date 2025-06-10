@@ -2,22 +2,23 @@
  * Serviço de autenticação
  * Gerencia autenticação, sessão de usuário e permissões
  */
-import { useState, navigateTo } from 'nuxt/app';
-import type { 
-  LoginCredentials, 
-  TokenResponse,
+import { navigateTo, useState } from 'nuxt/app';
+import type {
   ExtendedUserProfile // Adicionar importação
-} from '../endpoints/auth';
+  ,
+  LoginCredentials,
+  TokenResponse
+} from '../services/api/endpoints/auth';
 import {
-  createAuthToken, 
-  refreshAuthToken, 
-  retrieveAuthUsersMe, 
-  registerUser, 
-  requestPasswordReset, 
-  confirmPasswordReset
-} from '../endpoints/auth';
+  confirmPasswordReset,
+  createAuthToken,
+  refreshAuthToken,
+  registerUser,
+  requestPasswordReset,
+  retrieveAuthUsersMe
+} from '../services/api/endpoints/auth';
 // Remover importação de UserProfile daqui, pois ExtendedUserProfile será usado
-// import type { UserProfile } from '../../utils/types'; 
+// import type { UserProfile } from '../../utils/types';
 
 // Interfaces para tipos de retorno
 export interface PasswordResetResponse {
@@ -63,14 +64,14 @@ const tokenUtils = {
       localStorage.setItem('refresh_token', refresh);
     }
   },
-  
+
   clearTokens: (): void => {
     if (process.client) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
     }
   },
-  
+
   getStoredTokens: (): { access: string | null, refresh: string | null } => {
     if (process.client) {
       return {
@@ -90,43 +91,43 @@ const handleAuthError = (error: any): AuthError => {
   if (error?.response) {
     const status = error.response.status;
     const data = error.response.data;
-    
+
     if (status === 401) {
       if (data?.detail?.includes('expired')) {
-        return { 
-          type: AuthErrorType.TOKEN_EXPIRED, 
+        return {
+          type: AuthErrorType.TOKEN_EXPIRED,
           message: 'Sua sessão expirou. Por favor, faça login novamente.',
-          originalError: error 
+          originalError: error
         };
       }
-      return { 
-        type: AuthErrorType.INVALID_CREDENTIALS, 
+      return {
+        type: AuthErrorType.INVALID_CREDENTIALS,
         message: 'Credenciais inválidas. Verifique seu usuário e senha.',
-        originalError: error 
+        originalError: error
       };
     }
-    
+
     if (status === 403 && data?.detail?.includes('inactive')) {
-      return { 
-        type: AuthErrorType.USER_INACTIVE, 
+      return {
+        type: AuthErrorType.USER_INACTIVE,
         message: 'Esta conta está desativada. Entre em contato com o administrador.',
-        originalError: error 
+        originalError: error
       };
     }
   }
-  
+
   if (error?.message?.includes('Network Error')) {
-    return { 
-      type: AuthErrorType.NETWORK_ERROR, 
+    return {
+      type: AuthErrorType.NETWORK_ERROR,
       message: 'Erro de conexão. Verifique sua internet e tente novamente.',
-      originalError: error 
+      originalError: error
     };
   }
-  
-  return { 
-    type: AuthErrorType.UNKNOWN_ERROR, 
+
+  return {
+    type: AuthErrorType.UNKNOWN_ERROR,
     message: 'Ocorreu um erro inesperado. Por favor, tente novamente.',
-    originalError: error 
+    originalError: error
   };
 };
 
@@ -150,23 +151,23 @@ export const useAuthService = () => {
   const login = async (credentials: LoginCredentials): Promise<ExtendedUserProfile> => { // Alterar para ExtendedUserProfile
     isLoading.value = true;
     lastError.value = null;
-    
+
     try {
       // Obter tokens de autenticação
       const tokenResponse = await createAuthToken(credentials);
-      
+
       // Armazenar tokens
       accessToken.value = tokenResponse.access;
       refreshToken.value = tokenResponse.refresh;
-      
+
       // Salvar no localStorage
       tokenUtils.saveTokens(tokenResponse.access, tokenResponse.refresh);
-      
+
       // Obter dados do usuário
       const userData = await retrieveAuthUsersMe();
       user.value = userData;
       isAuthenticated.value = true;
-      
+
       return userData;
     } catch (error) {
       const authError = handleAuthError(error);
@@ -189,10 +190,10 @@ export const useAuthService = () => {
     user.value = null;
     isAuthenticated.value = false;
     lastError.value = null;
-    
+
     // Remover do localStorage
     tokenUtils.clearTokens();
-    
+
     // Redirecionar para a página especificada
     navigateTo(redirectPath);
   };
@@ -207,14 +208,14 @@ export const useAuthService = () => {
       isAuthenticated.value = true;
       return true;
     }
-    
+
     // Verificar se temos token no localStorage
     const { access, refresh } = tokenUtils.getStoredTokens();
-    
+
     if (access) {
       accessToken.value = access;
       if (refresh) refreshToken.value = refresh;
-      
+
       try {
         // Tentar obter dados do usuário com o token
         const userData = await retrieveAuthUsersMe();
@@ -228,9 +229,9 @@ export const useAuthService = () => {
             const newTokens = await refreshAuthToken({ refresh });
             accessToken.value = newTokens.access;
             refreshToken.value = newTokens.refresh;
-            
+
             tokenUtils.saveTokens(newTokens.access, newTokens.refresh);
-            
+
             // Tentar novamente com o novo token
             const userData = await retrieveAuthUsersMe();
             user.value = userData;
@@ -249,7 +250,7 @@ export const useAuthService = () => {
         }
       }
     }
-    
+
     isAuthenticated.value = false;
     return false;
   };
@@ -283,7 +284,7 @@ export const useAuthService = () => {
   const register = async (userData: Partial<ExtendedUserProfile>): Promise<RegisterResponse> => { // Alterar para ExtendedUserProfile
     isLoading.value = true;
     lastError.value = null;
-    
+
     try {
       const newUser = await registerUser(userData);
       return newUser;
@@ -305,7 +306,7 @@ export const useAuthService = () => {
   const requestPasswordResetEmail = async (email: string): Promise<PasswordResetResponse> => {
     isLoading.value = true;
     lastError.value = null;
-    
+
     try {
       return await requestPasswordReset(email);
     } catch (error) {
@@ -326,7 +327,7 @@ export const useAuthService = () => {
   const confirmPasswordResetToken = async (data: PasswordResetConfirmData): Promise<PasswordResetResponse> => {
     isLoading.value = true;
     lastError.value = null;
-    
+
     try {
       return await confirmPasswordReset(data);
     } catch (error) {
@@ -345,12 +346,12 @@ export const useAuthService = () => {
    */
   const refreshAccessToken = async (): Promise<TokenResponse | null> => {
     if (!refreshToken.value) return null;
-    
+
     try {
       const tokens = await refreshAuthToken({ refresh: refreshToken.value });
       accessToken.value = tokens.access;
       refreshToken.value = tokens.refresh;
-      
+
       tokenUtils.saveTokens(tokens.access, tokens.refresh);
       return tokens;
     } catch (error) {
@@ -370,17 +371,17 @@ export const useAuthService = () => {
     if (!user.value || !user.value.id) {
       throw new Error('Usuário não está autenticado');
     }
-    
+
     isLoading.value = true;
     lastError.value = null;
-    
+
     try {
       // Excluir a conta do usuário
       // TODO: A função destroyAuthUser não está definida em ../endpoints/auth.ts.
       // A funcionalidade de exclusão de conta precisa ser revisada ou implementada corretamente.
-      // await destroyAuthUser(user.value.id); 
+      // await destroyAuthUser(user.value.id);
       console.warn('A funcionalidade de excluir conta (destroyAuthUser) não está implementada.');
-      
+
       // Fazer logout após exclusão
       logout('/login');
     } catch (error) {
@@ -401,7 +402,7 @@ export const useAuthService = () => {
     accessToken,
     refreshToken,
     lastError,
-    
+
     // Métodos
     login,
     logout,

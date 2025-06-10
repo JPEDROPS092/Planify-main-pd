@@ -3,9 +3,9 @@
  * Central utility for making API requests with proper authentication and error handling
  * Usa o plugin Axios configurado em vez de implementação personalizada
  */
-import { ApiError, createFormData, formatQueryParams } from '../client/config';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getAxiosInstance } from '../client/axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
+import { getAxiosInstance } from '../services/api/client/axios';
+import { ApiError, createFormData } from '../services/api/client/config';
 
 // Types for API requests
 export type ApiResponse<T = any> = {
@@ -38,7 +38,7 @@ export const createApiClient = () => {
   const processResponse = <T>(response: AxiosResponse): T => {
     // Log the raw response data for debugging
     console.log('API Response:', response.config.url, response.data);
-    
+
     // Para APIs que retornam { data: ... } como wrapper
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
       return response.data.data as T;
@@ -60,11 +60,11 @@ export const createApiClient = () => {
 
     if (error.response) {
       const { status, data, statusText } = error.response;
-      
+
       // Handling Django REST Framework specific error formats
       let message = statusText || 'Erro na requisição';
       let detailedData = data;
-      
+
       // Handle different error response formats from Django
       if (data) {
         if (data.detail) {
@@ -77,7 +77,7 @@ export const createApiClient = () => {
         } else if (typeof data === 'string') {
           message = data;
         }
-        
+
         // Handle specific auth errors
         if (status === 401) {
           if (message.includes('No active account') || message.includes('given credentials')) {
