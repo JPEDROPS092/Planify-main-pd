@@ -252,7 +252,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '/api/', # Ensure your API URLs are prefixed with /api/ or adjust this
+    'SCHEMA_PATH_PREFIX': '', # Ensure your API URLs are prefixed with /api/ or adjust this
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX_TRIM': True,
     'AUTHENTICATION_WHITELIST': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
@@ -276,6 +276,7 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
     'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
     'TAGS': [
+        '''
         {'name': 'Autenticação', 'description': 'Endpoints para autenticação e gerenciamento de usuários'},
         {'name': 'Projetos', 'description': 'Endpoints para gerenciamento de projetos e sprints'},
         {'name': 'Tarefas', 'description': 'Endpoints para gerenciamento de tarefas'},
@@ -286,6 +287,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Comunicações', 'description': 'Endpoints para mensagens e notificações'},
         {'name': 'Dashboard', 'description': 'Endpoints para painéis e métricas'},
         {'name': 'Saúde do Sistema', 'description': 'Endpoints para verificação de status da API'},
+        '''
     ],
 }
 

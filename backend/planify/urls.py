@@ -48,7 +48,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API Root - Endpoint específico para /api/
-    path('api/', api_root, name='api-root'),
+    #path('api/', api_root, name='api-root'),
     
     # === ROTAS DE AUTENTICAÇÃO ===
     # Rotas de autenticação JWT do Djoser (mantidas como padrão primário)
@@ -59,7 +59,7 @@ urlpatterns = [
     
     # === MÓDULOS DO SISTEMA ===
     # Core (saúde, dashboard, métricas)
-    path('api/', include('core.urls')),
+    #path('api/', include('core.urls')),
     
     # Módulos principais
     path('api/projects/', include('projects.urls')),
