@@ -1,37 +1,33 @@
-"""
-Configurações para a documentação da API usando drf-yasg (Swagger/ReDoc).
-"""
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+"""Configuração do schema para a API Planify."""
+from drf_spectacular.extensions import OpenApiViewExtension
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.openapi import AutoSchema
 
-schema_info = openapi.Info(
-    title="Planify API",
-    default_version='v1',
-    description="""
-    API para o sistema Planify - Gerenciamento de Projetos de P&D
+class FlatApiSchema(AutoSchema):
+    """Schema personalizado para uma documentação mais plana."""
     
-    O Planify é um sistema completo para gerenciamento de projetos de Pesquisa e Desenvolvimento,
-    oferecendo funcionalidades para:
-    
-    * Usuários - Autenticação, perfis e permissões
-    * Projetos - Gerenciamento de projetos e sprints
-    * Tarefas - Gerenciamento de tarefas e atribuições
-    * Equipes - Gerenciamento de equipes e membros
-    * Riscos - Identificação e mitigação de riscos
-    * Custos - Controle de orçamentos e gastos
-    * Documentos - Gerenciamento de documentação
-    * Comunicações - Chat integrado e notificações
-    
-    Esta documentação fornece detalhes sobre todos os endpoints disponíveis na API.
-    """,
-    terms_of_service="https://www.planify.com/terms/",
-    contact=openapi.Contact(email="contato@planify.com"),
-    license=openapi.License(name="MIT License"),
-)
+    def get_tags(self):
+        """Remove as tags para ter uma documentação sem divisões."""
+        return []
 
-schema_view = get_schema_view(
-    schema_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
+    def get_operation_id(self):
+        """Gera IDs de operação mais limpos e diretos."""
+        method = self.method.lower()
+        path = self.path.replace('{', '').replace('}', '').replace('/', '_')
+        return f"{method}_{path}"
+
+    def get_description(self):
+        """Gera descrições padronizadas para operações."""
+        doc = self.view.get_view_description()
+        if doc:
+            return doc
+
+        method_descriptions = {
+            'GET': 'Retorna os dados solicitados',
+            'POST': 'Cria um novo registro',
+            'PUT': 'Atualiza o registro completamente',
+            'PATCH': 'Atualiza o registro parcialmente',
+            'DELETE': 'Remove o registro'
+        }
+        return method_descriptions.get(self.method, '')

@@ -3,6 +3,7 @@ Django settings for planify project.
 """
 
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 from typing import List, Dict, Any # Moved typing imports to the top
@@ -32,7 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',               # Ferramenta de depuração para desenvolvimento
+    
     # Apps de terceiros usados para funcionalidades extras
     'rest_framework',              # Framework para APIs REST
     'rest_framework_simplejwt',    # JWT para autenticação via tokens
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',                 # Configuração CORS para permitir acesso cross-origin
     'django_filters',              # Filtros para DRF
     'colorfield',                  # Campo de cores personalizado
-    'chartjs',                    # Integração com Chart.js para gráficos
+    'chartjs',                     # Integração com Chart.js para gráficos
     'django_seed',                 # Para popular banco com dados de teste
     'drf_spectacular',             # Documentação automática da API
     
@@ -67,9 +68,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
-    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
-    # 'django.middleware.common.CommonMiddleware',   # Middleware duplicado, REMOVED
-    # 'django.middleware.csrf.CsrfViewMiddleware',   # Middleware duplicado, REMOVED
 ]
 
 # Arquivo raiz de URLs do projeto
@@ -151,46 +149,59 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT padrão
-        'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',  # Allow unauthenticated access by default
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',  # Suporte a filtros em consultas
-        'rest_framework.filters.SearchFilter',                # Pesquisa por texto
-        'rest_framework.filters.OrderingFilter',              # Ordenação de resultados
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',  # Paginação por número de página
-    'PAGE_SIZE': 10,  # Itens por página
-
-    # Exceções personalizadas para API
-    # TODO: Ensure 'core.utils.custom_exception_handler' exists or remove/replace this line.
-    # 'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
-
-    # Renderizadores padrão para respostas
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',         # Resposta JSON
-        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
-
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Geração automática do esquema OpenAPI
-
-    # Parsers para requisições
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',      # JSON
-        'rest_framework.parsers.FormParser',      # Formulários
-        'rest_framework.parsers.MultiPartParser', # Upload de arquivos
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
-    # Old doc settings removed as drf-spectacular handles this
-    # 'DOC_EXPANSION': 'list',
-    # 'DOCS_TEMPLATE': 'rest_framework/docs/index.html',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# Customizações do Swagger UI (These are handled by SPECTACULAR_SETTINGS['SWAGGER_UI_SETTINGS'])
-# SWAGGER_UI_SETTINGS = { ... } # REMOVED standalone block
+# Configurações do drf-spectacular para Swagger/OpenAPI
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Planify API',
+    'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'SERVE_PUBLIC': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'filter': True,
+        'displayRequestDuration': True,
+        'displayOperationId': False,
+        'defaultModelsExpandDepth': -1,
+        'docExpansion': 'none',
+    },
+    'SECURITY': [{'Bearer': []}],
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX_TRIM': True,
+    'SERVE_AUTHENTICATION': None,
+    
+    # Enums naming configuration
+    'ENUM_NAME_OVERRIDES': {
+        'TipoEnum': 'communications.models.Comunicacao.TIPO_CHOICES',
+        'StatusProjetoEnum': 'projects.models.Projeto.STATUS_CHOICES',
+        'StatusTarefaEnum': 'tasks.models.Tarefa.STATUS_CHOICES',
+        'StatusSprintEnum': 'projects.models.Sprint.STATUS_CHOICES',
+        'StatusRiscoEnum': 'risks.models.Risco.STATUS_CHOICES',
+        'PrioridadeEnum': 'projects.models.Projeto.PRIORIDADE_CHOICES',
+        'PapelMembroEnum': 'projects.models.MembroProjeto.PAPEL_CHOICES',
+        'TipoDocumentoEnum': 'documents.models.Documento.TIPO_CHOICES',
+    },
+    'ENUM_GENERATE_CHOICE_LABELS': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'POSTPROCESSING_HOOKS': [],
+}
     
 # Configurações específicas do Simple JWT para tokens
 SIMPLE_JWT = {
@@ -266,102 +277,4 @@ LOGGING = {
         'level': 'DEBUG' if DEBUG else 'INFO', # Tie logging level to DEBUG
     },
 }
-# Configurações para drf-spectacular (Swagger/OpenAPI)
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Planify API',
-    'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'SERVE_PUBLIC': True,  # Torna a documentação pública
-    'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX_TRIM': True,
-    'SERVE_AUTHENTICATION': None,  # Remove autenticação para acessar docs
-    'SECURITY': [{'Bearer': []}],  # Define o esquema de segurança
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization',
-            'description': 'Token JWT no formato: "Bearer {seu_token}"'
-        }
-    },
-
-    # Customizações do Swagger UI
-    'SWAGGER_UI_SETTINGS': {
-        'deepLinking': True,
-        'displayOperationId': False,
-        'defaultModelsExpandDepth': 3,
-        'defaultModelExpandDepth': 3,
-        'defaultModelRendering': 'model',
-        'displayRequestDuration': True,
-        'docExpansion': 'list',
-        'filter': True,
-        'showExtensions': True,
-        'showCommonExtensions': True,
-        'supportedSubmitMethods': ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
-        'tryItOutEnabled': True,
-    },
-    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3', # Updated to a more recent version
-    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
-    'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
-}
-
-
-
-# Configurações CORS (Cross-Origin Resource Sharing)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
-
-# Configurações adicionais do CORS
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-# Configurações para envio de emails via SMTP (Gmail)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Backend SMTP padrão do Django
-EMAIL_HOST = 'smtp.gmail.com'     # Servidor SMTP do Gmail
-EMAIL_PORT = 587                  # Porta para TLS
-EMAIL_USE_TLS = True              # Usa TLS para segurança
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'seuemail@gmail.com')  # Usuário do email (use env var)
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'suasenha') # Senha do email (use env var)
-
-# Variáveis personalizadas
-LOGO_PATH = 'static/img/logo.png'  # Caminho do logo do sistema
-SITE_NAME = 'Planify'              # Nome do sistema
-
-LOGIN_REDIRECT_URL = '/admin/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
-
-# Admin site customization
-ADMIN_SITE_HEADER = "Planify - Administração"
-ADMIN_SITE_TITLE = "Planify - Sistema de Gerenciamento de Projetos"
-ADMIN_INDEX_TITLE = "Dashboard"
-
-# Session settings
-SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
-SESSION_SAVE_EVERY_REQUEST = True
 

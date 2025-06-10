@@ -42,26 +42,6 @@
             font-size: 1.1rem;
             opacity: 0.9;
         }
-        .nav-tabs {
-            display: flex;
-            justify-content: center;
-            margin: 24px 0 16px 0;
-            gap: 10px;
-        }
-        .nav-tabs a {
-            padding: 10px 28px;
-            background: #fff;
-            color: var(--primary);
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            font-weight: 500;
-            box-shadow: var(--shadow);
-            transition: background 0.2s, color 0.2s;
-        }
-        .nav-tabs a.active, .nav-tabs a:hover {
-            background: var(--primary);
-            color: #fff;
-        }
         #swagger-ui {
             background: var(--card-bg);
             border-radius: var(--border-radius);
@@ -71,39 +51,32 @@
             padding: 32px 24px 24px 24px;
         }
         /* Swagger UI custom colors */
-        .swagger-ui .topbar { background: var(--primary); }
+        .swagger-ui .topbar { display: none; }
         .swagger-ui .info .title { color: var(--primary); }
         .swagger-ui .btn.execute { background: var(--primary); }
-        .swagger-ui .opblock.opblock-get {
-            border-color: var(--secondary);
-            background: rgba(33, 150, 243, 0.07);
+        .swagger-ui .opblock {
+            border-color: var(--primary);
+            background: rgba(63, 81, 181, 0.07);
+            margin: 8px 0;
         }
-        .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--secondary); }
-        .swagger-ui .opblock.opblock-get .opblock-summary { border-color: var(--secondary); }
-        .swagger-ui .opblock.opblock-post {
-            border-color: var(--success);
-            background: rgba(76, 175, 80, 0.07);
+        .swagger-ui .opblock .opblock-summary-method {
+            background: var(--primary);
+            border-radius: var(--border-radius);
         }
-        .swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--success); }
-        .swagger-ui .opblock.opblock-post .opblock-summary { border-color: var(--success); }
-        .swagger-ui .opblock.opblock-delete {
-            border-color: var(--danger);
-            background: rgba(244, 67, 54, 0.07);
+        .swagger-ui .opblock .opblock-summary {
+            border-color: var(--primary);
         }
-        .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--danger); }
-        .swagger-ui .opblock.opblock-delete .opblock-summary { border-color: var(--danger); }
-        .swagger-ui .opblock.opblock-put {
-            border-color: var(--warning);
-            background: rgba(255, 152, 0, 0.07);
+        .swagger-ui .opblock-tag {
+            border: none;
+            margin: 0;
+            padding: 0;
         }
-        .swagger-ui .opblock.opblock-put .opblock-summary-method { background: var(--warning); }
-        .swagger-ui .opblock.opblock-put .opblock-summary { border-color: var(--warning); }
-        .swagger-ui .opblock.opblock-patch {
-            border-color: var(--info);
-            background: rgba(156, 39, 176, 0.07);
+        .swagger-ui .opblock-tag-section {
+            margin: 0;
         }
-        .swagger-ui .opblock.opblock-patch .opblock-summary-method { background: var(--info); }
-        .swagger-ui .opblock.opblock-patch .opblock-summary { border-color: var(--info); }
+        .swagger-ui .expand-operation {
+            display: none;
+        }
         @media (max-width: 900px) {
             #swagger-ui { padding: 12px 2vw; }
             .header { padding: 24px 0 12px 0; }
@@ -112,38 +85,33 @@
 </head>
 <body>
     <div class="header">
-        <h1>Planify API - Documentação</h1>
-        <p>Sistema de Gerenciamento de Projetos</p>
-    </div>
-    <div class="nav-tabs">
-        <a href="{% url 'schema-swagger-ui' %}" class="active">Swagger UI</a>
-        <a href="{% url 'schema-redoc' %}">ReDoc</a>
+        <h1>Planify API</h1>
+        <p>Documentação completa da API</p>
     </div>
     <div id="swagger-ui"></div>
     <script src="{% static 'swagger-ui/swagger-ui-bundle.js' %}"></script>
-    <script src="{% static 'swagger-ui/swagger-ui-standalone-preset.js' %}"></script>
     <script>
-    window.onload = function() {
         const ui = SwaggerUIBundle({
             url: "{% url 'schema' %}",
             dom_id: '#swagger-ui',
             deepLinking: true,
-            presets: [
-                SwaggerUIBundle.presets.apis,
-                SwaggerUIStandalonePreset
-            ],
-            plugins: [
-                SwaggerUIBundle.plugins.DownloadUrl
-            ],
-            layout: "StandaloneLayout",
-            docExpansion: "none",
-            defaultModelsExpandDepth: 1,
-            defaultModelExpandDepth: 1,
             filter: true,
-            persistAuthorization: true,
+            displayRequestDuration: true,
+            displayOperationId: false,
+            docExpansion: "list",  // Expande todos os endpoints
+            defaultModelsExpandDepth: -1,  // Esconde os modelos por padrão
+            operationsSorter: function(a, b) {
+                // Ordenação por método e path
+                const methods = ['get', 'post', 'put', 'patch', 'delete'];
+                const aMethod = methods.indexOf(a.get("method"));
+                const bMethod = methods.indexOf(b.get("method"));
+                if (aMethod === bMethod) {
+                    return a.get("path").localeCompare(b.get("path"));
+                }
+                return aMethod - bMethod;
+            },
+            tagsSorter: "alpha",
         });
-        window.ui = ui;
-    };
     </script>
 </body>
 </html>

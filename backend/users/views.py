@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 import logging
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import UserProfile, AccessProfile, Permission, UserAccessProfile
 from .serializers import (
@@ -24,7 +25,38 @@ from .utils import update_user_password
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar usuários",
+        description="Retorna uma lista de todos os usuários.",
+        tags=['Auth']
+    ),
+    create=extend_schema(
+        summary="Criar usuário",
+        description="Cria um novo usuário no sistema.",
+        tags=['Auth']
+    ),
+    retrieve=extend_schema(
+        summary="Obter usuário",
+        description="Retorna os detalhes de um usuário específico.",
+        tags=['Auth']
+    ),
+    update=extend_schema(
+        summary="Atualizar usuário",
+        description="Atualiza todos os campos de um usuário.",
+        tags=['Auth']
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar usuário parcialmente",
+        description="Atualiza parcialmente um usuário.",
+        tags=['Auth']
+    ),
+    destroy=extend_schema(
+        summary="Excluir usuário",
+        description="Remove um usuário do sistema.",
+        tags=['Auth']
+    )
+)
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de usuários."""
     queryset = User.objects.all()
