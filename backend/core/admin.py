@@ -12,7 +12,7 @@ from users.models import User
 from risks.models import Risco
 from costs.models import Custo
 from documents.models import Documento
-from communications.models import Mensagem, Notificacao
+from communications.models import Notificacao
 
 # Register models from various apps with default admin
 class CustomAdmin(admin.ModelAdmin):

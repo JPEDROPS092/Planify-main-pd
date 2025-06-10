@@ -3,6 +3,8 @@ import logging
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .permissions import get_required_permission, check_user_permission, log_unauthorized_access, PUBLIC_PATHS
 from users.models import AccessAttempt
 
@@ -11,6 +13,10 @@ logger = logging.getLogger(__name__)
 class PermissionMiddleware(MiddlewareMixin):
     """Middleware para verificar permissões de acesso."""
     
+    def __init__(self, get_response):
+        super().__init__(get_response)
+        self.jwt_auth = JWTAuthentication()
+
     def process_request(self, request):
         # Obter o caminho da requisição
         path = request.path_info
@@ -25,6 +31,30 @@ class PermissionMiddleware(MiddlewareMixin):
             if re.match(pattern, path):
                 return None
         
+        # Verificar o token JWT
+        try:
+            header = request.headers.get('Authorization', '')
+            if not header.startswith('Bearer '):
+                return JsonResponse(
+                    {"detail": "Autenticação JWT é necessária para acessar este recurso."},
+                    status=401
+                )
+                
+            token = header.split(' ')[1]
+            validated_token = self.jwt_auth.get_validated_token(token)
+            request.user = self.jwt_auth.get_user(validated_token)
+            
+        except (InvalidToken, TokenError):
+            return JsonResponse(
+                {"detail": "Token inválido ou expirado."},
+                status=401
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"detail": str(e)},
+                status=401
+            )
+
         # Verificar se o usuário está autenticado
         user = request.user
         if not user.is_authenticated:

@@ -37,16 +37,30 @@ URL_PERMISSION_MAPPING = [
 
 # Caminhos públicos que não requerem autenticação
 PUBLIC_PATHS = [
+    # Autenticação
     r'^/api/auth/token/?$',
     r'^/api/auth/token/refresh/?$',
     r'^/api/auth/register/?$',
     r'^/api/auth/forgot-password/?$',
     r'^/api/auth/reset-password-confirm/?$',
+    
+    # Documentação
     r'^/api/docs/?$',
     r'^/api/schema/?$',
-    # Caminhos administrativos - permitindo acesso à interface administrativa
+    r'^/api/schema/swagger-ui/?$',
+    r'^/api/schema/redoc/?$',
+    r'^/docs/?$',
+    r'^/swagger(?:-ui)?/?$',
+    r'^/redoc/?$',
+    
+    # Administrativo
     r'^/admin/.*$',
     r'^/static/admin/.*$',
+    r'^/static/.*$',  # Arquivos estáticos
+    r'^/media/.*$',   # Arquivos de mídia
+    
+    # Favicon e outros recursos comuns
+    r'^/favicon\.ico$',
 ]
 
 

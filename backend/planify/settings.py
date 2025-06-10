@@ -152,12 +152,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.authentication.CustomJWTAuthentication',  # Autenticação JWT customizada
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT padrão
         'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',  # Requer autenticação para todas views por padrão
+        'rest_framework.permissions.AllowAny',  # Allow unauthenticated access by default
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',  # Suporte a filtros em consultas
@@ -195,25 +194,46 @@ REST_FRAMEWORK = {
     
 # Configurações específicas do Simple JWT para tokens
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Token válido por 7 dias (as per code)
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30), # Refresh token válido por 30 dias (as per code)
-    'ROTATE_REFRESH_TOKENS': True,                # Gera refresh token novo a cada uso
-    'BLACKLIST_AFTER_ROTATION': True,             # Blacklist do token antigo após rotação
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_COOKIE': 'access_token',   # Cookie name
+    'AUTH_COOKIE_DOMAIN': None,      # Use None for localhost
+    'AUTH_COOKIE_SECURE': False,     # Set to True in production with HTTPS
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SAMESITE': 'Lax',
     'UPDATE_LAST_LOGIN': True,                    # Atualiza o campo last_login do usuário
     'AUTH_HEADER_TYPES': ('Bearer',),             # Prefixo do token no header Authorization
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Classe de token permitida
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',)  # Classe de token permitida
 }
     
 # Configurações para a biblioteca DJOSER (facilita endpoints de autenticação)
 DJOSER = {
-    'LOGIN_FIELD': 'username', # Djoser uses 'email' or 'username' or your custom field. 'username' is common.
-    'USER_CREATE_PASSWORD_RETYPE': True,  # Usuário deve confirmar senha na criação
+    'LOGIN_FIELD': 'username',
+    'USER_CREATE_PASSWORD_RETYPE': True,
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
     'SEND_CONFIRMATION_EMAIL': False,
-    'SET_PASSWORD_RETYPE': True,           # Confirmação para alteração de senha
+    'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'TOKEN_MODEL': None,  # We'll use JWT only
+    'SERIALIZERS': {
+        'user': 'users.serializers.UserSerializer',
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_list': ['rest_framework.permissions.IsAdminUser'],
+    },
+    'HIDE_USERS': False,
+    'AUTHENTICATION_BACKENDS': ['django.contrib.auth.backends.ModelBackend'],
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {  # Serializadores customizados para os endpoints
         'user': 'users.serializers.UserSerializer',
@@ -252,10 +272,19 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '/api/', # Ensure your API URLs are prefixed with /api/ or adjust this
+    'SERVE_PUBLIC': True,  # Torna a documentação pública
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX_TRIM': True,
-    'AUTHENTICATION_WHITELIST': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
+    'SERVE_AUTHENTICATION': None,  # Remove autenticação para acessar docs
+    'SECURITY': [{'Bearer': []}],  # Define o esquema de segurança
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Token JWT no formato: "Bearer {seu_token}"'
+        }
+    },
 
     # Customizações do Swagger UI
     'SWAGGER_UI_SETTINGS': {
@@ -275,18 +304,6 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3', # Updated to a more recent version
     'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
     'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
-    'TAGS': [
-        {'name': 'Autenticação', 'description': 'Endpoints para autenticação e gerenciamento de usuários'},
-        {'name': 'Projetos', 'description': 'Endpoints para gerenciamento de projetos e sprints'},
-        {'name': 'Tarefas', 'description': 'Endpoints para gerenciamento de tarefas'},
-        {'name': 'Equipes', 'description': 'Endpoints para gerenciamento de equipes e membros'},
-        {'name': 'Riscos', 'description': 'Endpoints para gerenciamento de riscos'},
-        {'name': 'Custos', 'description': 'Endpoints para controle de orçamentos e gastos'},
-        {'name': 'Documentos', 'description': 'Endpoints para gerenciamento de documentos'},
-        {'name': 'Comunicações', 'description': 'Endpoints para mensagens e notificações'},
-        {'name': 'Dashboard', 'description': 'Endpoints para painéis e métricas'},
-        {'name': 'Saúde do Sistema', 'description': 'Endpoints para verificação de status da API'},
-    ],
 }
 
 
@@ -295,11 +312,34 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-#liberado para desenvolvimento, permite que qualquer origem acesse a API
-#CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
+
+# Configurações adicionais do CORS
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Configurações para envio de emails via SMTP (Gmail)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Backend SMTP padrão do Django

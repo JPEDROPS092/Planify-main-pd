@@ -1,10 +1,7 @@
 """
 URL configuration for planify project.
-Define as rotas principais da aplicação Django, incluindo a documentação da API,
-autenticação, administração e os módulos funcionais.
 """
 
-# Importações padrão do Django para gerenciamento de URLs e admin
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -12,12 +9,6 @@ from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 from django.http import JsonResponse
 import debug_toolbar
-
-# Importações do Django REST Framework para autenticação via JWT
-from rest_framework_simplejwt.views import TokenRefreshView
-
-# Importação para o CustomTokenObtainPairView
-from users.auth_views import CustomTokenObtainPairView
 
 # Importações da drf_spectacular para geração de documentação OpenAPI
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -51,29 +42,48 @@ urlpatterns = [
     path('api/', api_root, name='api-root'),
     
     # === ROTAS DE AUTENTICAÇÃO ===
-    # Rotas de autenticação JWT do Djoser (mantidas como padrão primário)
-    path('api/auth/', include('djoser.urls')),
-    path('api/auth/', include('djoser.urls.jwt')),
-    path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/', include('users.urls')),  # Nossa implementação customizada
+    path('api/auth/', include('djoser.urls')),  # Endpoints adicionais do Djoser
     
     # === MÓDULOS DO SISTEMA ===
     # Core (saúde, dashboard, métricas)
     path('api/', include('core.urls')),
     
-    # Módulos principais
+    # Projects (projetos, sprints, tarefas)
     path('api/projects/', include('projects.urls')),
+
+    # Tasks (tarefas, checklists, comentários)
     path('api/tasks/', include('tasks.urls')),
+    
+    # Teams (equipes, membros, funções)
     path('api/teams/', include('teams.urls')),
+    
+    # Risks (riscos, avaliações, planos de mitigação)
     path('api/risks/', include('risks.urls')),
+    
+    # Costs (custos, orçamentos, despesas)
     path('api/costs/', include('costs.urls')),
+    
+    # Documents (documentos, arquivos, links)
     path('api/documents/', include('documents.urls')),
+    
+    # Communications (comunicações, anúncios, mensagens)
     path('api/communications/', include('communications.urls')),
+    
+    # Users (usuários, perfis, permissões)
     path('api/users/', include('users.urls')),
     
     # === DOCUMENTAÇÃO DA API ===
     # URLs para documentação da API com drf-spectacular
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    
+    # URLs principais para documentação (mais curtas e amigáveis)
+    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # URLs alternativas com prefixo api/ (mantidas por compatibilidade)
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='api-docs'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),
 ]
