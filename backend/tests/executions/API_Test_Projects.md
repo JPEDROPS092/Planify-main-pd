@@ -8,13 +8,13 @@ Autenticar como admin no Swagger. Utilizando o botão Authorize.
 ---
 
 ## Template
-`METHOD /api/route/`: **CODE** - Resumo
+`METHOD /api/route/`
 
 #### REQ_BODY: 
 
     Nobody
 
-#### RESPONSE:
+#### RESPONSE: **CODE** - Resumo
 
     Response body
 
@@ -1118,4 +1118,621 @@ A lista geral de históricos de status está vazia
     []
 
 #### OBSERVAÇÕES:
+
+---
+
+## Visualizar Dashboard do projeto
+`GET /api/projects/12/dashboard/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    Nobody
+
+#### RESPONSE: **200** - Informações retornadas
+
+    {
+    "projeto": {
+        "id": 12,
+        "titulo": "string",
+        "descricao": "string",
+        "data_inicio": "2025-06-10",
+        "data_fim": "2025-06-10",
+        "status": "CANCELADO",
+        "status_display": "Cancelado",
+        "prioridade": "BAIXA",
+        "prioridade_display": "Baixa",
+        "criado_por": 2,
+        "criador_username": "admin",
+        "criador_nome": "",
+        "criado_em": "2025-06-10T11:21:08.240436-03:00",
+        "atualizado_em": "2025-06-10T14:18:04.626968-03:00",
+        "arquivado": true,
+        "membros": [
+        {
+            "id": 2,
+            "usuario_id": 2,
+            "username": "admin",
+            "full_name": "",
+            "papel": "ADMIN",
+            "papel_display": "ADMIN"
+        }
+        ],
+        "sprints_count": 1,
+        "tasks_count": 0,
+        "progresso": 0,
+        "dias_restantes": 0,
+        "atrasado": true
+    },
+    "sprints": [
+        {
+        "id": 32,
+        "projeto": 12,
+        "projeto_nome": "string",
+        "nome": "Sprint 4 recriada",
+        "descricao": "Terminar backend. Apresentar alteração no frontent",
+        "data_inicio": "2025-06-02",
+        "data_fim": "2025-06-16",
+        "status": "EM_ANDAMENTO",
+        "status_display": "Em Andamento",
+        "criado_por": 2,
+        "criado_em": "2025-06-10T14:13:32.417059-03:00",
+        "tasks_count": 0,
+        "completed_tasks_count": 0,
+        "progresso": 0
+        }
+    ],
+    "kanban": {
+        "A_FAZER": [],
+        "EM_ANDAMENTO": [],
+        "FEITO": []
+    },
+    "gantt": [],
+    "estatisticas": {
+        "total_tarefas": 0,
+        "tarefas_concluidas": 0,
+        "tarefas_em_andamento": 0,
+        "tarefas_a_fazer": 0,
+        "tarefas_atrasadas": 0,
+        "progresso": 0
+    },
+    "proximos_prazos": [],
+    "membros": [
+        {
+        "id": 2,
+        "username": "admin",
+        "nome_completo": "",
+        "papel": "ADMIN",
+        "tarefas_total": 0,
+        "tarefas_concluidas": 0
+        }
+    ]
+    }
+
+#### OBSERVAÇÕES:
+Retirar necessidade do parâmetro na query
+
+---
+
+## Exportar dados do projeto
+`GET /api/projects/12/exportar/?format=json&include_costs=false&include_project=true&include_risks=false&include_tasks=true&include_team=false`
+
+#### REQ_BODY: 
+
+    Nobody
+
+#### RESPONSE: **500** - Erro ao pedir informação em JSON
+
+    AttributeError at /api/projects/12/exportar/
+    'Projeto' object has no attribute 'gerente'
+
+#### OBSERVAÇÕES:
+Ao pedir para exportar o mesmo projeto em CSV, ocorreu erro 404.
+
+---
+
+## Visualização Gantt do projeto
+`GET /api/projects/12/gantt/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    Nobody
+
+#### RESPONSE: **200** - Retornou informações das sprints
+
+    {
+    "projeto": {
+        "id": "projeto_12",
+        "titulo": "Projeto: string",
+        "inicio": "2025-06-10",
+        "fim": "2025-06-10",
+        "tipo": "projeto",
+        "progresso": 0,
+        "status": "CANCELADO"
+    },
+    "sprints": [
+        {
+        "id": "sprint_32",
+        "titulo": "Sprint: Sprint 4 recriada",
+        "inicio": "2025-06-02",
+        "fim": "2025-06-16",
+        "tipo": "sprint",
+        "progresso": 50,
+        "status": "EM_ANDAMENTO"
+        }
+    ],
+    "tarefas": []
+    }
+
+#### OBSERVAÇÕES:
+
+---
+
+## Criar tarefa no projeto
+`POST /api/projects/12/tarefas/criar/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    {
+    "titulo": "tarefa 1",
+    "descricao": "tarefa criada para teste",
+    "data_inicio": "2025-06-11",
+    "data_termino": "2025-07-11",
+    "prioridade": "ALTA",
+    "status": "A_FAZER",
+    "responsaveis": [
+        0
+    ]
+    }
+
+#### RESPONSE: **201** - Tarefa criada com sucesso
+
+    {
+    "id": 51,
+    "titulo": "tarefa 1",
+    "descricao": "tarefa criada para teste",
+    "projeto": 12,
+    "sprint": null,
+    "data_inicio": "2025-06-11",
+    "data_termino": "2025-07-11",
+    "prioridade": "ALTA",
+    "status": "A_FAZER",
+    "criado_por": {
+        "username": "admin",
+        "email": "admin@planify.com",
+        "full_name": "",
+        "role": "TEAM_MEMBER",
+        "profile": null,
+        "id": 2,
+        "is_active": true,
+        "date_joined": "2025-06-05T15:22:06.191229-03:00",
+        "access_profiles": []
+    },
+    "criado_em": "2025-06-11T12:44:17.348890-03:00",
+    "atualizado_em": "2025-06-11T12:44:17.348908-03:00",
+    "atribuicoes": [
+        {
+        "id": 51,
+        "tarefa": 51,
+        "usuario": 2,
+        "usuario_nome": "",
+        "atribuido_em": "2025-06-11T12:44:17.352982-03:00",
+        "atribuido_por": 2,
+        "atribuido_por_nome": ""
+        }
+    ],
+    "responsaveis": [
+        {
+        "usuario__id": 2,
+        "usuario__username": "admin",
+        "usuario__full_name": ""
+        }
+    ]
+    }
+
+#### OBSERVAÇÕES:
+O corpo de requisição padrão está errado: `data_termino` estava como `data_fim` e prioridade estava com valor "PENDENTE", o qual não é aceito.
+
+---
+
+## Criar múltiplas tarefas no projeto
+`POST /api/projects/12/tarefas/criar-multiplas/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    {
+    "tarefas": [
+        {
+        "titulo": "primeira tarefa",
+        "descricao": "Primeira tarefa do lote",
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-06-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "responsaveis": [
+            0
+        ]
+        },
+        {
+        "titulo": "segunda tarefa",
+        "descricao": "Segunda tarefa do lote",
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-08-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "responsaveis": [
+            0
+        ]
+        }
+    ]
+    }
+
+#### RESPONSE: **201** - Tarefas criadas com sucesso
+
+    {
+    "tarefas_criadas": [
+        {
+        "id": 54,
+        "titulo": "primeira tarefa",
+        "descricao": "Primeira tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-06-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:48:26.619639-03:00",
+        "atualizado_em": "2025-06-11T12:48:26.619656-03:00",
+        "atribuicoes": [
+            {
+            "id": 54,
+            "tarefa": 54,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:48:26.620498-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        },
+        {
+        "id": 55,
+        "titulo": "segunda tarefa",
+        "descricao": "Segunda tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-08-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:48:26.622748-03:00",
+        "atualizado_em": "2025-06-11T12:48:26.622765-03:00",
+        "atribuicoes": [
+            {
+            "id": 55,
+            "tarefa": 55,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:48:26.623418-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        }
+    ],
+    "total_criadas": 2,
+    "erros": []
+    }
+
+#### OBSERVAÇÕES:
+
+---
+
+## Visualização Kanban do projeto
+`GET /api/projects/12/kanban/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    Nobody
+
+#### RESPONSE: **200** - Retornou as tarefas criadas
+
+    {
+    "A_FAZER": [
+        {
+        "id": 51,
+        "titulo": "tarefa 1",
+        "descricao": "tarefa criada para teste",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-06-11",
+        "data_termino": "2025-07-11",
+        "prioridade": "ALTA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:44:17.348890-03:00",
+        "atualizado_em": "2025-06-11T12:44:17.348908-03:00",
+        "atribuicoes": [
+            {
+            "id": 51,
+            "tarefa": 51,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:44:17.352982-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        },
+        {
+        "id": 52,
+        "titulo": "multitarefa1",
+        "descricao": "Primeira tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-06-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:47:37.669648-03:00",
+        "atualizado_em": "2025-06-11T12:47:37.669665-03:00",
+        "atribuicoes": [
+            {
+            "id": 52,
+            "tarefa": 52,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:47:37.670524-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        },
+        {
+        "id": 53,
+        "titulo": "multitarefa1",
+        "descricao": "Primeira tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-06-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:48:01.311652-03:00",
+        "atualizado_em": "2025-06-11T12:48:01.311669-03:00",
+        "atribuicoes": [
+            {
+            "id": 53,
+            "tarefa": 53,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:48:01.312882-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        },
+        {
+        "id": 54,
+        "titulo": "primeira tarefa",
+        "descricao": "Primeira tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-06-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:48:26.619639-03:00",
+        "atualizado_em": "2025-06-11T12:48:26.619656-03:00",
+        "atribuicoes": [
+            {
+            "id": 54,
+            "tarefa": 54,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:48:26.620498-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        },
+        {
+        "id": 55,
+        "titulo": "segunda tarefa",
+        "descricao": "Segunda tarefa do lote",
+        "projeto": 12,
+        "sprint": null,
+        "data_inicio": "2025-07-11",
+        "data_termino": "2025-08-11",
+        "prioridade": "BAIXA",
+        "status": "A_FAZER",
+        "criado_por": {
+            "username": "admin",
+            "email": "admin@planify.com",
+            "full_name": "",
+            "role": "TEAM_MEMBER",
+            "profile": null,
+            "id": 2,
+            "is_active": true,
+            "date_joined": "2025-06-05T15:22:06.191229-03:00",
+            "access_profiles": []
+        },
+        "criado_em": "2025-06-11T12:48:26.622748-03:00",
+        "atualizado_em": "2025-06-11T12:48:26.622765-03:00",
+        "atribuicoes": [
+            {
+            "id": 55,
+            "tarefa": 55,
+            "usuario": 2,
+            "usuario_nome": "",
+            "atribuido_em": "2025-06-11T12:48:26.623418-03:00",
+            "atribuido_por": 2,
+            "atribuido_por_nome": ""
+            }
+        ],
+        "responsaveis": [
+            {
+            "usuario__id": 2,
+            "usuario__username": "admin",
+            "usuario__full_name": ""
+            }
+        ]
+        }
+    ],
+    "EM_ANDAMENTO": [],
+    "FEITO": []
+    }
+
+#### OBSERVAÇÕES:
+
+---
+
+## Visualização Kanban do projeto
+`PATCH /api/projects/12/kanban/?projeto_id=12`
+
+#### REQ_BODY: 
+
+    {
+    "projeto": 12,
+    "titulo": "Qual e o nome mesmo?",
+    "colunas": [
+        {
+        "status": "EM_ANDAMENTO",
+        "titulo": "EM_ANDAMENTO tambem?",
+        "tarefas": [
+            {
+            "id": 51,
+            "titulo": "tarefa modificada",
+            "descricao": "modificação",
+            "status": "EM_ANDAMENTO",
+            "prioridade": "BAIXA",
+            "data_inicio": "2025-06-11",
+            "data_termino": "2025-06-11",
+            "responsaveis": [
+                {
+                "additionalProp1": "oi?",
+                "additionalProp2": "string",
+                "additionalProp3": "string"
+                }
+            ]
+            }
+        ]
+        }
+    ]
+    }
+
+#### RESPONSE: **400** - Bad request. Faltou o ID da tarefa aparentemente??
+
+    {
+    "detail": "ID da tarefa e novo status são obrigatórios."
+    }
+
+#### OBSERVAÇÕES:
+Para que serve essa rota? A descrição parece estar errada
 
