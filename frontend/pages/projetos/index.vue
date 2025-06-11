@@ -157,17 +157,68 @@ const createProject = async () => {
 };
 
 const updateProject = async () => {
-  if (!editingProject.value) return;
-  isSubmitting.value = true;
   formErrors.value = {};
+  isSubmitting.value = true;
+
   try {
-    await projectStore.updateProject(editingProject.value.id, editingProject.value);
+    // Validar campos obrigatórios
+    if (!editingProject.value.titulo) {
+      formErrors.value.titulo = 'Título é obrigatório';
+    }
+
+    if (!editingProject.value.data_inicio) {
+      formErrors.value.data_inicio = 'Data de início é obrigatória';
+    }
+
+    if (Object.keys(formErrors.value).length > 0) {
+      return;
+    }
+
+    // Preparar dados para envio
+    const projectData = {
+      nome: editingProject.value.titulo,
+      descricao: editingProject.value.descricao,
+      data_inicio: editingProject.value.data_inicio,
+      data_fim: editingProject.value.data_fim,
+      status: editingProject.value.status,
+      prioridade: editingProject.value.prioridade,
+      gerente: editingProject.value.gerente,
+      orcamento: editingProject.value.orcamento
+    };
+
+    // Usar a store para atualizar o projeto
+    await projectStore.updateProject(editingProject.value.id, projectData);
+
+    notification.success('Projeto atualizado com sucesso!', {
+      title: 'Sucesso',
+      duration: 5000,
+    });
+
     showEditProjectModal.value = false;
     editingProject.value = null;
-    notification.success('Projeto atualizado com sucesso!');
+
+    // Recarregar a lista de projetos para refletir as alterações
+    fetchProjects();
   } catch (err) {
-    formErrors.value = err.errors || {};
-    notification.error('Erro ao atualizar projeto.');
+    console.error('Erro ao atualizar projeto:', err);
+
+    if (err.response && err.response.data) {
+      // Mapear erros da API para o formulário
+      const apiErrors = err.response.data;
+      Object.keys(apiErrors).forEach((key) => {
+        formErrors.value[key] = Array.isArray(apiErrors[key])
+          ? apiErrors[key][0]
+          : apiErrors[key];
+      });
+    } else {
+      notification.error(
+        'Erro ao atualizar projeto. Por favor, tente novamente.',
+        {
+          title: 'Erro',
+          duration: 5000,
+        }
+      );
+    }
   } finally {
     isSubmitting.value = false;
   }
