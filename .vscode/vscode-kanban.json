@@ -1,0 +1,31 @@
+{
+  "todo": [],
+  "in-progress": [
+    {
+      "creation_time": "2025-06-10T13:46:29.009Z",
+      "description": {
+        "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "references": [],
+      "title": "Criar plano de teste da API"
+    },
+    {
+      "assignedTo": {
+        "name": "LUIZ-FELIPE3393"
+      },
+      "creation_time": "2025-06-15T14:32:49.634Z",
+      "description": {
+        "content": "Separar os endpoints pela primeira rota após \"/api/\"",
+        "mime": "text/markdown"
+      },
+      "id": "2",
+      "prio": 1,
+      "references": [],
+      "title": "Modularizar API Swagger"
+    }
+  ],
+  "testing": [],
+  "done": []
+}
