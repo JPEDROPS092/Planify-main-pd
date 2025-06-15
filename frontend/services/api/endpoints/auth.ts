@@ -19,7 +19,7 @@ export const createAuthToken = async (credentials: LoginCredentials): Promise<To
   console.log('Making auth request to Django backend with:', { username: credentials.username, password: '******' });
   
   // Updated to match the correct Django backend URL pattern
-  return await apiClient.post<TokenObtainPair>('/api/token/', credentials);
+  return await apiClient.post<TokenObtainPair>('/api/auth/token/', credentials);
 };
 
 /**
@@ -29,7 +29,7 @@ export const createAuthToken = async (credentials: LoginCredentials): Promise<To
  */
 export const refreshAuthToken = async (data: { refresh: string }): Promise<TokenRefresh> => {
   // Updated to match the correct Django backend URL pattern
-  return await apiClient.post<TokenRefresh>('/api/token/refresh/', data);
+  return await apiClient.post<TokenRefresh>('/api/auth/token/refresh/', data);
 };
 
 /**
