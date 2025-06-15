@@ -73,31 +73,37 @@ class ProjetoFilter(FilterSet):
 @extend_schema_view(
     list=extend_schema(
         summary="Listar projetos",
+        tags=["Projetos"],
         description="Retorna uma lista paginada de projetos.",
         responses={200: ProjetoListSerializer(many=True)}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes do projeto",
+        tags=["Projetos"],
         description="Retorna informações detalhadas de um projeto específico.",
         responses={200: ProjetoSerializer}
     ),
     create=extend_schema(
         summary="Criar novo projeto",
+        tags=["Projetos"],
         description="Cria um novo projeto.",
         responses={201: ProjetoSerializer}
     ),
     update=extend_schema(
         summary="Atualizar projeto",
+        tags=["Projetos"],
         description="Atualiza todos os campos de um projeto existente.",
         responses={200: ProjetoSerializer}
     ),
     partial_update=extend_schema(
         summary="Atualizar projeto parcialmente",
+        tags=["Projetos"],
         description="Atualiza parcialmente um projeto existente.",
         responses={200: ProjetoSerializer}
     ),
     destroy=extend_schema(
         summary="Excluir projeto",
+        tags=["Projetos"],
         description="Remove um projeto existente.",
         responses={204: None}
     )
@@ -162,6 +168,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Adicionar membro ao projeto",
+        tags=["Projetos"],
         description="Adiciona um novo membro ao projeto com o papel especificado.",
         request=MembroProjetoSerializer,
         responses={201: MembroProjetoSerializer}
@@ -198,6 +205,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Listar membros do projeto",
+        tags=["Projetos"],
         description="Retorna todos os membros associados ao projeto.",
         responses={200: MembroProjetoSerializer(many=True)}
     )
@@ -213,6 +221,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Remover membro do projeto",
+        tags=["Projetos"],
         description="Remove um membro do projeto pelo ID.",
         parameters=[
             OpenApiParameter(
@@ -259,6 +268,12 @@ class ProjetoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
+    @extend_schema(
+        summary="Listar membros",
+        tags=["Projetos"],
+        description="Lista os membros que estão participando do projeto.",
+        responses={200: OpenApiTypes.OBJECT}
+    )
     @action(detail=True, methods=['get'])
     def membros(self, request, pk=None):
         """
@@ -269,6 +284,12 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         serializer = MembroProjetoSerializer(membros, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Arquivar projeto",
+        tags=["Projetos"],
+        description="Arquiva ou desarquiva um projeto.",
+        responses={200: OpenApiTypes.OBJECT}
+    )
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):
         """
@@ -371,6 +392,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Métricas Detalhadas do Projeto",
+        tags=["Projetos"],
         description="Retorna métricas detalhadas sobre o projeto, incluindo progresso, custos, prazos e qualidade.",
         responses={200: OpenApiTypes.OBJECT}
     )
@@ -450,6 +472,7 @@ class SprintFilter(FilterSet):
 @extend_schema_view(
     list=extend_schema(
         summary="Listar sprints",
+        tags=["Projetos"],
         description="Retorna uma lista paginada de sprints com informações detalhadas.",
         parameters=[
             OpenApiParameter(name="projeto", description="Filtrar por ID do projeto", type=int),
@@ -462,26 +485,31 @@ class SprintFilter(FilterSet):
     ),
     retrieve=extend_schema(
         summary="Obter detalhes da sprint",
+        tags=["Projetos"],
         description="Retorna informações detalhadas de uma sprint específica.",
         responses={200: SprintSerializer}
     ),
     create=extend_schema(
         summary="Criar nova sprint",
+        tags=["Projetos"],
         description="Cria uma nova sprint associada a um projeto.",
         responses={201: SprintSerializer}
     ),
     update=extend_schema(
         summary="Atualizar sprint",
+        tags=["Projetos"],
         description="Atualiza todos os campos de uma sprint existente.",
         responses={200: SprintSerializer}
     ),
     partial_update=extend_schema(
         summary="Atualizar sprint parcialmente",
+        tags=["Projetos"],
         description="Atualiza parcialmente uma sprint existente.",
         responses={200: SprintSerializer}
     ),
     destroy=extend_schema(
         summary="Excluir sprint",
+        tags=["Projetos"],
         description="Remove permanentemente uma sprint.",
         responses={204: None}
     )
@@ -531,6 +559,7 @@ class SprintViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Listar tarefas da sprint",
+        tags=["Projetos"],
         description="Retorna todas as tarefas associadas a uma sprint específica.",
         parameters=[
             OpenApiParameter(
@@ -584,6 +613,7 @@ class SprintViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         summary="Resumo da sprint",
+        tags=["Projetos"],
         description="Retorna um resumo estatístico da sprint, incluindo progresso, tarefas por status e outros indicadores."
     )
     @action(detail=True, methods=['get'])
@@ -676,6 +706,7 @@ class HistoricoStatusProjetoFilter(FilterSet):
 @extend_schema_view(
     list=extend_schema(
         summary="Listar histórico de status",
+        tags=["Projetos"],
         description="Retorna uma lista paginada de alterações de status de projetos.",
         parameters=[
             OpenApiParameter(name="projeto", description="Filtrar por ID do projeto", type=int),
@@ -716,6 +747,7 @@ class HistoricoStatusProjetoViewSet(mixins.ListModelMixin,
     
     @extend_schema(
         summary="Resumo de alterações por projeto",
+        tags=["Projetos"],
         description="Retorna um resumo estatístico das alterações de status agrupadas por projeto."
     )
     @action(detail=False, methods=['get'])

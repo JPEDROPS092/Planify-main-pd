@@ -1,16 +1,6 @@
 {
-  "todo": [],
+  "todo-tasks": [],
   "in-progress": [
-    {
-      "creation_time": "2025-06-10T13:46:29.009Z",
-      "description": {
-        "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
-        "mime": "text/markdown"
-      },
-      "id": "1",
-      "references": [],
-      "title": "Criar plano de teste da API"
-    },
     {
       "assignedTo": {
         "name": "LUIZ-FELIPE3393"
@@ -24,8 +14,36 @@
       "prio": 1,
       "references": [],
       "title": "Modularizar API Swagger"
+    },
+    {
+      "creation_time": "2025-06-10T13:46:29.009Z",
+      "description": {
+        "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "references": [],
+      "title": "Criar plano de teste da API"
     }
   ],
   "testing": [],
-  "done": []
+  "done": [],
+  "todo": [
+    {
+      "assignedTo": {
+        "name": "LUIZ-FELIPE3393"
+      },
+      "category": "backend",
+      "creation_time": "2025-06-15T15:08:50.395Z",
+      "description": {
+        "content": "Pré-condição:\nNão estar autenticado\nEstar com checkbox \"histórico\" ativa\n\nProcedimentos:\nTentar fazer a autenticação com a rota `POST::/api/auth/token`\n\nFalha:\nSer redirecionado para uma página 401 (UNAUTHORIZED) em branco",
+        "mime": "text/markdown"
+      },
+      "id": "3",
+      "prio": 3,
+      "references": [],
+      "title": "Swagger-ui: Falha em autenticar com histórico",
+      "type": "bug"
+    }
+  ]
 }
