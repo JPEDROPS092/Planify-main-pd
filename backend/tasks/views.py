@@ -121,26 +121,31 @@ class TarefaFilter(FilterSet):
     create=extend_schema(
         summary="Criar tarefa",
         description="Cria uma nova tarefa com os dados fornecidos.",
+        tags=["Tarefas"],
         responses={201: TarefaSerializer}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes da tarefa",
         description="Retorna informações detalhadas de uma tarefa específica.",
+        tags=["Tarefas"],
         responses={200: TarefaSerializer}
     ),
     update=extend_schema(
         summary="Atualizar tarefa",
         description="Atualiza todos os campos de uma tarefa existente.",
+        tags=["Tarefas"],
         responses={200: TarefaSerializer}
     ),
     partial_update=extend_schema(
         summary="Atualizar tarefa parcialmente",
         description="Atualiza parcialmente os campos de uma tarefa existente.",
+        tags=["Tarefas"],
         responses={200: TarefaSerializer}
     ),
     destroy=extend_schema(
         summary="Excluir tarefa",
         description="Remove permanentemente uma tarefa.",
+        tags=["Tarefas"],
         responses={204: None}
     )
 )
@@ -217,6 +222,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['usuario_id']
             }
         },
+        tags=["Tarefas"],
         responses={
             201: AtribuicaoTarefaSerializer,
             400: OpenApiTypes.OBJECT,
@@ -272,6 +278,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['usuario_id']
             }
         },
+        tags=["Tarefas"],
         responses={
             204: None,
             400: OpenApiTypes.OBJECT,
@@ -321,6 +328,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['texto']
             }
         },
+        tags=["Tarefas"],
         responses={
             201: ComentarioTarefaSerializer,
             400: OpenApiTypes.OBJECT,
@@ -368,6 +376,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['sprint_id']
             }
         },
+        tags=["Tarefas"],
         responses={
             200: TarefaSerializer,
             400: OpenApiTypes.OBJECT,
@@ -423,6 +432,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['status']
             }
         },
+        tags=["Tarefas"],
         responses={
             200: TarefaSerializer,
             400: OpenApiTypes.OBJECT,
@@ -494,6 +504,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Obter histórico de status da tarefa",
         description="Retorna o histórico de alterações de status da tarefa.",
+        tags=["Tarefas"],
         responses={200: HistoricoStatusTarefaSerializer(many=True)}
     )
     @action(detail=True, methods=['get'])
@@ -521,21 +532,25 @@ class TarefaViewSet(viewsets.ModelViewSet):
             OpenApiParameter(name="tarefa", description="Filtrar por ID da tarefa", type=int),
             OpenApiParameter(name="usuario", description="Filtrar por ID do usuário", type=int),
         ],
+        tags=["Tarefas"],
         responses={200: AtribuicaoTarefaSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Criar atribuição de tarefa",
         description="Atribui uma tarefa a um usuário.",
+        tags=["Tarefas"],
         responses={201: AtribuicaoTarefaSerializer}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes de atribuição",
         description="Retorna informações detalhadas de uma atribuição específica.",
+        tags=["Tarefas"],
         responses={200: AtribuicaoTarefaSerializer}
     ),
     destroy=extend_schema(
         summary="Remover atribuição",
         description="Remove a atribuição de uma tarefa a um usuário.",
+        tags=["Tarefas"],
         responses={204: None}
     )
 )
@@ -575,31 +590,37 @@ class AtribuicaoTarefaViewSet(viewsets.ModelViewSet):
             OpenApiParameter(name="autor", description="Filtrar por ID do autor", type=int),
             OpenApiParameter(name="ordering", description="Ordenar resultados (ex: -criado_em)", type=str),
         ],
+        tags=["Tarefas"],
         responses={200: ComentarioTarefaSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Criar comentário",
         description="Adiciona um novo comentário a uma tarefa.",
+        tags=["Tarefas"],
         responses={201: ComentarioTarefaSerializer}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes de comentário",
         description="Retorna informações detalhadas de um comentário específico.",
+        tags=["Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     update=extend_schema(
         summary="Atualizar comentário",
         description="Atualiza o texto de um comentário existente.",
+        tags=["Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     partial_update=extend_schema(
         summary="Atualizar comentário parcialmente",
         description="Atualiza parcialmente o texto de um comentário existente.",
+        tags=["Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     destroy=extend_schema(
         summary="Excluir comentário",
         description="Remove permanentemente um comentário.",
+        tags=["Tarefas"],
         responses={204: None}
     )
 )

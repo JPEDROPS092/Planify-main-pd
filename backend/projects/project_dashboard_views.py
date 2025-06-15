@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch
 from django.utils import timezone
 from datetime import timedelta
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from .models import Projeto, MembroProjeto, Sprint
 from tasks.models import Tarefa, AtribuicaoTarefa
@@ -181,26 +181,23 @@ class ProjetoDashboardView(APIView):
         return Response(response_data)
 
 
-@extend_schema(
-    summary="Visualização Kanban do projeto",
-    description="Fornece dados para a visualização Kanban de um projeto, com tarefas agrupadas por status",
-    parameters=[
-        OpenApiParameter(name='projeto_id', description='ID do projeto', required=True, type=int)
-    ],
-    responses={
-        200: KanbanResponseSerializer,
-        403: ErrorResponseSerializer,
-        404: ErrorResponseSerializer
-    },
-    tags=["Projetos"]
-)
 class ProjetoKanbanView(APIView):
     """
     View específica para fornecer dados para a visualização Kanban de um projeto.
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = KanbanResponseSerializer
-    
+
+    @extend_schema(
+        summary="Visualização Kanban do projeto",
+        tags=["Projetos"],
+        description="Fornece dados para a visualização Kanban de um projeto, com tarefas agrupadas por status",
+        responses={
+            200: KanbanResponseSerializer,
+            403: ErrorResponseSerializer,
+            404: ErrorResponseSerializer
+        }
+    )
     def get(self, request, projeto_id):
         # Buscar o projeto pelo ID
         projeto = get_object_or_404(Projeto, id=projeto_id)
@@ -247,6 +244,16 @@ class ProjetoKanbanView(APIView):
         
         return Response(tarefas_kanban)
     
+    @extend_schema(
+        summary="Atualizar Kanban do projeto",
+        tags=["Projetos"],
+        description="Atualiza os quadro Kanban de um projeto existente.",
+        responses={
+            200: KanbanResponseSerializer,
+            403: ErrorResponseSerializer,
+            404: ErrorResponseSerializer
+        },
+    )
     def patch(self, request, projeto_id):
         """
         Atualiza o status de uma tarefa (para arrastar e soltar no Kanban)

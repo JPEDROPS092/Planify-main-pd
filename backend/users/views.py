@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -24,7 +25,44 @@ from .utils import update_user_password
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar usuários",
+        tags=["Autenticação"],
+        description="Retorna uma lista paginada de usuários.",
+        responses={200: UserSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do usuário",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de um usuário específico.",
+        responses={200: UserSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo usuário",
+        tags=["Autenticação"],
+        description="Cria um novo usuário.",
+        responses={201: UserCreateSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar usuário",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de um usuário existente.",
+        responses={200: UserSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar usuário parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente um usuário existente.",
+        responses={200: UserSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir usuário",
+        tags=["Autenticação"],
+        description="Remove um usuário existente.",
+        responses={204: None}
+    )
+)
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de usuários."""
     queryset = User.objects.all()
@@ -51,6 +89,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return [HasModulePermission('USERS', 'VIEW')]
         return [IsAuthenticated()]
     
+    @extend_schema(
+        summary="Retornar minhas informações",
+        tags=["Autenticação"],
+        description="Retorna as informações do usuário autenticado.",
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """
@@ -58,7 +102,13 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
-        
+
+    @extend_schema(
+        summary="Retornar minhas permissões",
+        tags=["Autenticação"],
+        description="Retorna as permissões do usuário autenticado.",
+        responses={200: None}
+    ) 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def permissions(self, request):
         """
@@ -81,6 +131,12 @@ class UserViewSet(viewsets.ModelViewSet):
             'permissions': formatted_permissions
         })
     
+    @extend_schema(
+        summary="Alterar a minha senha",
+        tags=["Autenticação"],
+        description="Altera a senha do usuário autenticado.",
+        responses={200: None}
+    )
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
         """Altera a senha do usuário autenticado."""
@@ -94,6 +150,12 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @extend_schema(
+        summary="Redefinir para senha temporária",
+        tags=["Autenticação"],
+        description="Redefine a senha do usuário para uma senha temporária e envia por e-mail.",
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def reset_password(self, request, pk=None):
         """Redefine a senha do usuário para uma senha temporária e envia por e-mail."""
@@ -120,6 +182,12 @@ class UserViewSet(viewsets.ModelViewSet):
         logger.info(f"Senha temporária enviada para o usuário: {user.username} (ID: {user.id})")
         return Response({'detail': 'Senha temporária enviada para o e-mail do usuário'}, status=status.HTTP_200_OK)
     
+    @extend_schema(
+        summary="Ativar usuário",
+        tags=["Autenticação"],
+        description="Ativa um usuário.",
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def activate(self, request, pk=None):
         """Ativa um usuário."""
@@ -129,6 +197,12 @@ class UserViewSet(viewsets.ModelViewSet):
         logger.info(f"Usuário ativado: {user.username} (ID: {user.id})")
         return Response({'detail': 'Usuário ativado com sucesso'}, status=status.HTTP_200_OK)
     
+    @extend_schema(
+        summary="Desativar usuário",
+        tags=["Autenticação"],
+        description="Desativa um usuário.",
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def deactivate(self, request, pk=None):
         """Desativa um usuário."""
@@ -138,6 +212,12 @@ class UserViewSet(viewsets.ModelViewSet):
         logger.info(f"Usuário desativado: {user.username} (ID: {user.id})")
         return Response({'detail': 'Usuário desativado com sucesso'}, status=status.HTTP_200_OK)
     
+    @extend_schema(
+        summary="Desbloqueia um usuário",
+        tags=["Autenticação"],
+        description="Desbloqueia um usuário após tentativas de login malsucedidas.",
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def unlock(self, request, pk=None):
         """Desbloqueia um usuário após tentativas de login malsucedidas."""
@@ -148,7 +228,44 @@ class UserViewSet(viewsets.ModelViewSet):
         logger.info(f"Usuário desbloqueado: {user.username} (ID: {user.id})")
         return Response({'detail': 'Usuário desbloqueado com sucesso'}, status=status.HTTP_200_OK)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar perfis",
+        tags=["Autenticação"],
+        description="Retorna uma lista paginada de perfis.",
+        responses={200: UserSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do perfil",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de um perfil específico.",
+        responses={200: UserSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo perfil",
+        tags=["Autenticação"],
+        description="Cria um novo perfil.",
+        responses={201: UserCreateSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar perfil",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de um perfil existente.",
+        responses={200: UserSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar perfil parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente um perfil existente.",
+        responses={200: UserSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir perfil",
+        tags=["Autenticação"],
+        description="Remove um perfil existente.",
+        responses={204: None}
+    )
+)
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
@@ -159,21 +276,94 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar perfis de acesso",
+        tags=["Autenticação"],
+        description="Retorna uma lista paginada de perfis de acesso.",
+        responses={200: UserSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do perfil de acesso",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de um perfil de acesso específico.",
+        responses={200: UserSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo perfil de acesso",
+        tags=["Autenticação"],
+        description="Cria um novo perfil de acesso.",
+        responses={201: UserCreateSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar perfil de acesso",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de um perfil de acesso existente.",
+        responses={200: UserSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar perfil de acesso parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente um perfil de acesso existente.",
+        responses={200: UserSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir perfil de acesso",
+        tags=["Autenticação"],
+        description="Remove um perfil de acesso existente.",
+        responses={204: None}
+    )
+)
 class AccessProfileViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de perfis de acesso."""
     queryset = AccessProfile.objects.all()
     serializer_class = AccessProfileSerializer
     permission_classes = [HasModulePermission('USERS', 'EDIT')]
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar permissões",
+        tags=["Autenticação"],
+        description="Retorna uma lista paginada de permissões.",
+        responses={200: UserSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do permissão",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de uma permissão específica.",
+        responses={200: UserSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova permissão",
+        tags=["Autenticação"],
+        description="Cria uma nova permissão.",
+        responses={201: UserCreateSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar permissão",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de uma permissão existente.",
+        responses={200: UserSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar permissão parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente uma permissão existente.",
+        responses={200: UserSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir permissão",
+        tags=["Autenticação"],
+        description="Remove uma permissão existente.",
+        responses={204: None}
+    )
+)
 class PermissionViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de permissões."""
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
     permission_classes = [HasModulePermission('USERS', 'EDIT')]
     filterset_fields = ['access_profile', 'module', 'action']
-
 
 class UserAccessProfileViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de associações entre usuários e perfis de acesso."""
@@ -191,6 +381,12 @@ class UserAccessProfileViewSet(viewsets.ModelViewSet):
         logger.info(f"Perfil de acesso atribuído ao usuário ID: {user_id}")
 
 
+@extend_schema(
+    summary="Esqueci minha senha",
+    tags=["Autenticação"],
+    description="Cria um token para redefinição de senha e envia em um email.",
+    responses={200: UserSerializer(many=True)}
+)
 class ForgotPasswordView(generics.GenericAPIView):
     serializer_class = ResetPasswordSerializer
     permission_classes = [AllowAny]
@@ -221,7 +417,12 @@ class ForgotPasswordView(generics.GenericAPIView):
             # Don't reveal that the user doesn't exist
             return Response({'detail': 'Password reset email has been sent'}, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+    summary="Redefinir senha",
+    tags=["Autenticação"],
+    description="Confirma a redefinição de senha com token",
+    responses={200: UserSerializer(many=True)}
+)
 class ResetPasswordConfirmView(generics.GenericAPIView):
     """View para confirmar a redefinição de senha com token."""
     serializer_class = SetNewPasswordSerializer

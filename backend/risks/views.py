@@ -1,12 +1,50 @@
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from .models import Risco, HistoricoRisco
 from .serializers import RiscoSerializer, RiscoListSerializer, HistoricoRiscoSerializer
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar riscos",
+        tags=["Riscos"],
+        description="Retorna uma lista paginada de riscos.",
+        responses={200: RiscoSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do risco",
+        tags=["Riscos"],
+        description="Retorna informações detalhadas de um risco específico.",
+        responses={200: RiscoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo risco",
+        tags=["Riscos"],
+        description="Cria um novo risco.",
+        responses={201: RiscoListSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar risco",
+        tags=["Riscos"],
+        description="Atualiza todos os campos de um risco existente.",
+        responses={200: RiscoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar risco parcialmente",
+        tags=["Riscos"],
+        description="Atualiza parcialmente um risco existente.",
+        responses={200: RiscoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir risco",
+        tags=["Riscos"],
+        description="Remove um risco existente.",
+        responses={204: None}
+    )
+)
 class RiscoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de riscos.
@@ -70,6 +108,11 @@ class RiscoViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @extend_schema(
+        summary="Retorna histórico do risco",
+        tags=["Riscos"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['get'])
     def historico(self, pk=None):
         """
@@ -80,6 +123,11 @@ class RiscoViewSet(viewsets.ModelViewSet):
         serializer = HistoricoRiscoSerializer(historico, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Atualizar status do risco",
+        tags=["Riscos"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'])
     def atualizar_status(self, pk=None):
         """
@@ -125,6 +173,11 @@ class RiscoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(risco)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Excluir múltiplos riscos",
+        tags=["Riscos"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['delete'])
     def excluir_varios(self, request):
         """
@@ -157,7 +210,44 @@ class RiscoViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar históricos do risco",
+        tags=["Riscos"],
+        description="Retorna uma lista paginada de históricos do risco.",
+        responses={200: HistoricoRiscoSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do histórico do risco",
+        tags=["Riscos"],
+        description="Retorna o histórico detalhado de um risco específico.",
+        responses={200: HistoricoRiscoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo histórico do risco",
+        tags=["Riscos"],
+        description="Cria um novo histórico para o risco.",
+        responses={201: HistoricoRiscoSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar histórico do risco",
+        tags=["Riscos"],
+        description="Atualiza todos o histórico de um risco existente.",
+        responses={200: HistoricoRiscoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar histórico do risco parcialmente",
+        tags=["Riscos"],
+        description="Atualiza parcialmente o histórico de um risco existente.",
+        responses={200: HistoricoRiscoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir histórico do risco",
+        tags=["Riscos"],
+        description="Remove um histórico de um risco existente.",
+        responses={204: None}
+    )
+)
 class HistoricoRiscoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet para visualização do histórico de riscos.

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
@@ -14,7 +15,44 @@ from .serializers import (
     ComunicacaoSerializer
 )
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar mensagens",
+        tags=["Comunicação"],
+        description="Retorna uma lista paginada de mensagens.",
+        responses={200: ChatMensagemSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da mensagem",
+        tags=["Comunicação"],
+        description="Retorna informações detalhadas de uma mensagem específica.",
+        responses={200: ChatMensagemSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova mensagem",
+        tags=["Comunicação"],
+        description="Cria um nova mensagem.",
+        responses={201: ChatMensagemSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar mensagem",
+        tags=["Comunicação"],
+        description="Atualiza todos os campos de uma mensagem existente.",
+        responses={200: ChatMensagemSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar mensagem parcialmente",
+        tags=["Comunicação"],
+        description="Atualiza parcialmente uma mensagem existente.",
+        responses={200: ChatMensagemSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir mensagem",
+        tags=["Comunicação"],
+        description="Remove uma mensagem existente.",
+        responses={204: None}
+    )
+)
 class ChatMensagemViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de mensagens de chat.
@@ -97,6 +135,11 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @extend_schema(
+        summary="Marcar mensagem como lida",
+        tags=["Comunicação"],
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=True, methods=['post'])
     def marcar_como_lida(self, request, pk=None):  # noqa: Unused parameter
         """
@@ -132,6 +175,11 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @extend_schema(
+        summary="Listar mensagens não lidas",
+        tags=["Comunicação"],
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=False, methods=['get'])
     def mensagens_nao_lidas(self, request):
         """
@@ -186,7 +234,44 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar notificações",
+        tags=["Comunicação"],
+        description="Retorna uma lista paginada de notificações.",
+        responses={200: NotificacaoSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da notificação",
+        tags=["Comunicação"],
+        description="Retorna informações detalhadas de uma notificação específica.",
+        responses={200: NotificacaoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova notificação",
+        tags=["Comunicação"],
+        description="Cria um nova notificação.",
+        responses={201: NotificacaoSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar notificação",
+        tags=["Comunicação"],
+        description="Atualiza todos os campos de uma notificação existente.",
+        responses={200: NotificacaoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar notificação parcialmente",
+        tags=["Comunicação"],
+        description="Atualiza parcialmente uma notificação existente.",
+        responses={200: NotificacaoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir notificação",
+        tags=["Comunicação"],
+        description="Remove uma notificação existente.",
+        responses={204: None}
+    )
+)
 class NotificacaoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de notificações.
@@ -225,6 +310,11 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
             'usuario', 'projeto', 'tarefa'
         ).filter(usuario=self.request.user)
     
+    @extend_schema(
+        summary="Marcar notificação como lida",
+        tags=["Comunicação"],
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=True, methods=['post'])
     def marcar_como_lida(self, request, pk=None):
         """
@@ -261,6 +351,11 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @extend_schema(
+        summary="Marcar todas as notificações como lidas",
+        tags=["Comunicação"],
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=False, methods=['post'])
     def marcar_todas_como_lidas(self, request):
         """
@@ -294,6 +389,11 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @extend_schema(
+        summary="Listar notificações não lidas",
+        tags=["Comunicação"],
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=False, methods=['get'])
     def nao_lidas(self, request):
         """
@@ -342,7 +442,44 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar configurações",
+        tags=["Comunicação"],
+        description="Retorna uma lista paginada de configurações.",
+        responses={200: ConfiguracaoNotificacaoSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da configuração",
+        tags=["Comunicação"],
+        description="Retorna informações detalhadas de uma configuração específica.",
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova configuração",
+        tags=["Comunicação"],
+        description="Cria um nova configuração.",
+        responses={201: ConfiguracaoNotificacaoSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar configuração",
+        tags=["Comunicação"],
+        description="Atualiza todos os campos de uma configuração existente.",
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar configuração parcialmente",
+        tags=["Comunicação"],
+        description="Atualiza parcialmente uma configuração existente.",
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir configuração",
+        tags=["Comunicação"],
+        description="Remove uma configuração existente.",
+        responses={204: None}
+    )
+)
 class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de configurações de notificações.
@@ -397,7 +534,12 @@ class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
         serializer.save(usuario=self.request.user)
 
 
-    
+    @extend_schema(
+        summary="Ver minha configuração",
+        tags=["Comunicação"],
+        description="Retorna a configuração do usuário atual ou cria uma padrão se não existir.",
+        responses={200: ConfiguracaoNotificacaoSerializer}
+    )
     @action(detail=False, methods=['get'])
     def minha_configuracao(self, request):
         """

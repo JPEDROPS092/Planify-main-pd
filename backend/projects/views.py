@@ -328,7 +328,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(projects, many=True)
         return Response(serializer.data)
 
-    @extend_schema(
+    '''@extend_schema(
         summary="Dashboard projetos",
         tags=["Projetos"],
         description="Retorna as informações para dashboard do projeto.",
@@ -341,6 +341,11 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         # Implementação do dashboard
         return Response({"status": "dashboard data"})
 
+    @extend_schema(
+        summary="Kanban do projeto",
+        tags=["Projetos"],
+        description="Visualização Kanban do projeto."
+    )
     @action(detail=True, methods=['get'])
     def kanban(self, request, pk=None):
         """Visualização Kanban do projeto"""
@@ -348,21 +353,36 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         # Implementação do kanban
         return Response({"status": "kanban data"})
 
+    @extend_schema(
+        summary="Gantt do projeto",
+        tags=["Projetos"],
+        description="Visualização Gantt do projeto."
+    )
     @action(detail=True, methods=['get'])
     def gantt(self, request, pk=None):
         """Visualização Gantt do projeto"""
         projeto = self.get_object()
         # Implementação do gantt
-        return Response({"status": "gantt data"})
+        return Response({"status": "gantt data"})'''
 
+    @extend_schema(
+        summary="Histórico de status do projeto",
+        tags=["Projetos"],
+        description="Visualizar o histórico de mudanças de status do projeto."
+    )
     @action(detail=True, methods=['get'])
     def historico_status(self, request, pk=None):
-        """Histórico de status do projeto"""
+        """Visualizar o histórico de mudanças de status do projeto"""
         projeto = self.get_object()
         historico = HistoricoStatusProjeto.objects.filter(projeto=projeto)
         serializer = HistoricoStatusProjetoSerializer(historico, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Sprints do projeto",
+        tags=["Projetos"],
+        description="Listar sprints do projeto."
+    )
     @action(detail=True, methods=['get'])
     def sprints(self, request, pk=None):
         """Listar sprints do projeto"""
@@ -371,6 +391,11 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         serializer = SprintSerializer(sprints, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Criar Sprint no projeto",
+        tags=["Projetos"],
+        description="Cria uma nova sprint para um projeto."
+    )
     @action(detail=True, methods=['post'])
     def criar_sprint(self, request, pk=None):
         """Criar nova sprint no projeto"""
@@ -381,7 +406,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
+    '''@action(detail=True, methods=['post'])
     def criar_tarefa(self, request, pk=None):
         """Criar nova tarefa no projeto"""
         projeto = self.get_object()
@@ -393,11 +418,16 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         """Criar múltiplas tarefas no projeto"""
         projeto = self.get_object()
         # Implementação da criação de múltiplas tarefas
-        return Response({"status": "tarefas criadas"})
+        return Response({"status": "tarefas criadas"})'''
 
+    @extend_schema(
+        summary="Exportar dados do projeto",
+        tags=["Projetos"],
+        description="Exporta os dados do projeto."
+    )
     @action(detail=True, methods=['get'])
     def exportar(self, request, pk=None):
-        """Exportar dados do projeto"""
+        """Exporta os dados do projeto."""
         projeto = self.get_object()
         # Implementação da exportação
         return Response({"status": "dados exportados"})

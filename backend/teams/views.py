@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -12,7 +13,44 @@ from .serializers import (
 
 User = get_user_model()
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar equipes",
+        tags=["Equipes"],
+        description="Retorna uma lista paginada de equipes.",
+        responses={200: EquipeListSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da equipe",
+        tags=["Equipes"],
+        description="Retorna informações detalhadas de uma equipe específica.",
+        responses={200: EquipeSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova equipe",
+        tags=["Equipes"],
+        description="Cria uma novo equipe.",
+        responses={201: EquipeSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar equipe",
+        tags=["Equipes"],
+        description="Atualiza todos os campos de uma equipe existente.",
+        responses={200: EquipeSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar equipe parcialmente",
+        tags=["Equipes"],
+        description="Atualiza parcialmente uma equipe existente.",
+        responses={200: EquipeSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir equipe",
+        tags=["Equipes"],
+        description="Remove uma equipe existente.",
+        responses={204: None}
+    )
+)
 class EquipeViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de equipes.
@@ -58,6 +96,11 @@ class EquipeViewSet(viewsets.ModelViewSet):
         
         return queryset.distinct()
     
+    @extend_schema(
+        summary="Listar membros da equipe",
+        tags=["Equipes"],
+        responses={200: Response}
+    )
     @action(detail=True, methods=['get'])
     def membros(self, request, pk=None):
         """
@@ -68,6 +111,11 @@ class EquipeViewSet(viewsets.ModelViewSet):
         serializer = MembroEquipeSerializer(membros, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Adicionar membro à equipe",
+        tags=["Equipes"],
+        responses={200: Response}
+    )
     @action(detail=True, methods=['post'])
     def adicionar_membro(self, request, pk=None):
         """
@@ -115,6 +163,11 @@ class EquipeViewSet(viewsets.ModelViewSet):
         serializer = MembroEquipeSerializer(membro)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
+    @extend_schema(
+        summary="Remover membro de equipe",
+        tags=["Equipes"],
+        responses={200: Response}
+    )
     @action(detail=True, methods=['post'])
     def remover_membro(self, request, pk=None):
         """
@@ -155,6 +208,11 @@ class EquipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
+    @extend_schema(
+        summary="Atualizar papel de um membro de equipe",
+        tags=["Equipes"],
+        responses={200: Response}
+    )
     @action(detail=True, methods=['post'])
     def atualizar_papel_membro(self, request, pk=None):
         """
@@ -200,6 +258,11 @@ class EquipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
+    @extend_schema(
+        summary="Retornar usuários disponíveis à equipe",
+        tags=["Equipes"],
+        responses={200: Response}
+    )
     @action(detail=False, methods=['get'])
     def usuarios_disponiveis(self, request):
         """
@@ -232,6 +295,44 @@ class EquipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar membros de equipe",
+        tags=["Autenticação"],
+        description="Retorna uma lista paginada de membros de equipe.",
+        responses={200: MembroEquipeSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do membros de equipe",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de um membro de equipe específico.",
+        responses={200: MembroEquipeSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo membro de equipe",
+        tags=["Autenticação"],
+        description="Cria um novo membro de equipe.",
+        responses={201: MembroEquipeSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar membro de equipe",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de um membro de equipe existente.",
+        responses={200: MembroEquipeSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar membro de equipe parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente um membro de equipe existente.",
+        responses={200: MembroEquipeSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir membro de equipe",
+        tags=["Autenticação"],
+        description="Remove um membro de equipe existente.",
+        responses={204: None}
+    )
+)
 class MembroEquipeViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de membros de equipe.
@@ -246,6 +347,44 @@ class MembroEquipeViewSet(viewsets.ModelViewSet):
         serializer.save(adicionado_por=self.request.user)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar permissões de equipe",
+        tags=["Equipes"],
+        description="Retorna uma lista paginada de permissões de equipe.",
+        responses={200: PermissaoEquipeSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da permissão de equipe",
+        tags=["Equipes"],
+        description="Retorna informações detalhadas de uma permissão de equipe específica.",
+        responses={200: PermissaoEquipeSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova permissão de equipe",
+        tags=["Equipes"],
+        description="Cria uma novo permissão de equipe.",
+        responses={201: PermissaoEquipeSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar permissão de equipe",
+        tags=["Equipes"],
+        description="Atualiza todos os campos de uma permissão de equipe existente.",
+        responses={200: PermissaoEquipeSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar permissão de equipe parcialmente",
+        tags=["Equipes"],
+        description="Atualiza parcialmente uma permissão de equipe existente.",
+        responses={200: PermissaoEquipeSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir permissão de equipe",
+        tags=["Equipes"],
+        description="Remove uma permissão de equipe existente.",
+        responses={204: None}
+    )
+)
 class PermissaoEquipeViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de permissões de equipe.

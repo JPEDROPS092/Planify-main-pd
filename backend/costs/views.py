@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Sum, F, DecimalField, Value, Case, When, ExpressionWrapper
 from django.db.models.functions import Coalesce
@@ -16,7 +17,44 @@ from .serializers import (
 from projects.models import Projeto
 from tasks.models import Tarefa
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar categorias",
+        tags=["Custo"],
+        description="Retorna uma lista paginada de categorias.",
+        responses={200: CategoriaSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da categoria",
+        tags=["Custo"],
+        description="Retorna informações detalhadas de uma categoria específica.",
+        responses={200: CategoriaSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova categoria",
+        tags=["Custo"],
+        description="Cria uma novo categoria.",
+        responses={201: CategoriaSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar categoria",
+        tags=["Custo"],
+        description="Atualiza todos os campos de uma categoria existente.",
+        responses={200: CategoriaSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar categoria parcialmente",
+        tags=["Custo"],
+        description="Atualiza parcialmente uma categoria existente.",
+        responses={200: CategoriaSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir categoria",
+        tags=["Custo"],
+        description="Remove uma categoria existente.",
+        responses={204: None}
+    )
+)
 class CategoriaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de categorias de custos.
@@ -28,7 +66,44 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     search_fields = ['nome', 'descricao']
     ordering_fields = ['nome']
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar custos",
+        tags=["Custo"],
+        description="Retorna uma lista paginada de custos.",
+        responses={200: CustoListSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do custo",
+        tags=["Custo"],
+        description="Retorna informações detalhadas de um custo específico.",
+        responses={200: CustoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo custo",
+        tags=["Custo"],
+        description="Cria um novo custo.",
+        responses={201: CustoSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar custo",
+        tags=["Custo"],
+        description="Atualiza todos os campos de um custo existente.",
+        responses={200: CustoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar custo parcialmente",
+        tags=["Custo"],
+        description="Atualiza parcialmente um custo existente.",
+        responses={200: CustoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir custo",
+        tags=["Custo"],
+        description="Remove um custo existente.",
+        responses={204: None}
+    )
+)
 class CustoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de custos.
@@ -228,6 +303,11 @@ class CustoViewSet(viewsets.ModelViewSet):
                 print(f"Erro ao verificar orçamento da tarefa: {e}")
                 pass
     
+    @extend_schema(
+        summary="Dashboard financeiro",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """
@@ -292,6 +372,11 @@ class CustoViewSet(viewsets.ModelViewSet):
         
         return Response(resposta)
     
+    @extend_schema(
+        summary="Relatório de gastos por projeto",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def relatorio_por_projeto(self, request):
         """
@@ -336,6 +421,12 @@ class CustoViewSet(viewsets.ModelViewSet):
         serializer = RelatorioGastoProjetoSerializer(dados_relatorio, many=True)
         return Response(serializer.data)
     
+
+    @extend_schema(
+        summary="Relatório de gastos por categoria",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def relatorio_por_categoria(self, request):
         """
@@ -396,6 +487,11 @@ class CustoViewSet(viewsets.ModelViewSet):
         serializer = RelatorioGastoCategoriasSerializer(dados_relatorio, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Relatório de gastos mensais",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def relatorio_mensal(self, request):
         """
@@ -461,7 +557,44 @@ class CustoViewSet(viewsets.ModelViewSet):
         
         return Response(resultado)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar custos",
+        tags=["Custo"],
+        description="Retorna uma lista paginada de custos.",
+        responses={200: OrcamentoProjetoSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do custo",
+        tags=["Custo"],
+        description="Retorna informações detalhadas de um custo específico.",
+        responses={200: OrcamentoProjetoSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo custo",
+        tags=["Custo"],
+        description="Cria um novo custo.",
+        responses={201: OrcamentoProjetoSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar custo",
+        tags=["Custo"],
+        description="Atualiza todos os campos de um custo existente.",
+        responses={200: OrcamentoProjetoSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar custo parcialmente",
+        tags=["Custo"],
+        description="Atualiza parcialmente um custo existente.",
+        responses={200: OrcamentoProjetoSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir custo",
+        tags=["Custo"],
+        description="Remove um custo existente.",
+        responses={204: None}
+    )
+)
 class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de orçamentos de projetos.
@@ -493,6 +626,11 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(aprovado_por=self.request.user)
     
+    @extend_schema(
+        summary="Listar projetos sem orçamento definido",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def projetos_sem_orcamento(self, request):
         """
@@ -512,6 +650,11 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
         
         return Response(dados)
     
+    @extend_schema(
+        summary="Ajustar orçamento de um projeto",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'])
     def ajustar_orcamento(self, request, pk=None):
         """
@@ -606,7 +749,44 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
             print(f"Erro ao verificar necessidade de alerta: {e}")
             pass
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar tarefas",
+        tags=["Custo"],
+        description="Retorna uma lista paginada de tarefas.",
+        responses={200: OrcamentoTarefaSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da tarefa",
+        tags=["Custo"],
+        description="Retorna informações detalhadas de uma tarefa específica.",
+        responses={200: OrcamentoTarefaSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova tarefa",
+        tags=["Custo"],
+        description="Cria uma novo tarefa.",
+        responses={201: OrcamentoTarefaSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar tarefa",
+        tags=["Custo"],
+        description="Atualiza todos os campos de uma tarefa existente.",
+        responses={200: OrcamentoTarefaSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar tarefa parcialmente",
+        tags=["Custo"],
+        description="Atualiza parcialmente uma tarefa existente.",
+        responses={200: OrcamentoTarefaSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir tarefa",
+        tags=["Custo"],
+        description="Remove uma tarefa existente.",
+        responses={204: None}
+    )
+)
 class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de orçamentos de tarefas.
@@ -640,6 +820,11 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(aprovado_por=self.request.user)
     
+    @extend_schema(
+        summary="Listar tarefas sem orçamento",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def tarefas_sem_orcamento(self, request):
         """
@@ -663,6 +848,11 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
         
         return Response(dados)
     
+    @extend_schema(
+        summary="Ajustar orçamento de uma tarefas",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'])
     def ajustar_orcamento(self, request, pk=None):
         """
@@ -759,7 +949,44 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
             print(f"Erro ao verificar necessidade de alerta: {e}")
             pass
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar alertas",
+        tags=["Custo"],
+        description="Retorna uma lista paginada de alertas.",
+        responses={200: AlertaSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes da alerta",
+        tags=["Custo"],
+        description="Retorna informações detalhadas de uma alerta específica.",
+        responses={200: AlertaSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar nova alerta",
+        tags=["Custo"],
+        description="Cria uma novo alerta.",
+        responses={201: AlertaSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar alerta",
+        tags=["Custo"],
+        description="Atualiza todos os campos de uma alerta existente.",
+        responses={200: AlertaSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar alerta parcialmente",
+        tags=["Custo"],
+        description="Atualiza parcialmente uma alerta existente.",
+        responses={200: AlertaSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir alerta",
+        tags=["Custo"],
+        description="Remove uma alerta existente.",
+        responses={204: None}
+    )
+)
 class AlertaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de alertas de orçamento.
@@ -779,6 +1006,11 @@ class AlertaViewSet(viewsets.ModelViewSet):
             'projeto', 'tarefa', 'resolvido_por'
         ).all()
     
+    @extend_schema(
+        summary="Marcar alertas como resolvido",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'])
     def resolver(self, request, pk=None):
         """
@@ -808,6 +1040,11 @@ class AlertaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(alerta)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Marcar alertas como ignorado",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=True, methods=['post'])
     def ignorar(self, request, pk=None):
         """
@@ -837,6 +1074,11 @@ class AlertaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(alerta)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary="Listar alertas com status ATIVO",
+        tags=["Custo"],
+        responses={200: None}
+    )
     @action(detail=False, methods=['get'])
     def pendentes(self, request):
         """
