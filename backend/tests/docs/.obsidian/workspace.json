@@ -1,0 +1,180 @@
+{
+  "main": {
+    "id": "c42a67279bd7b227",
+    "type": "split",
+    "children": [
+      {
+        "id": "3ddb81bb2046c9e6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f77abafeca0e3438",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "suites/acesso-e-seguranca.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "acesso-e-seguranca"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e875ae3e7eb059f3",
+    "type": "split",
+    "children": [
+      {
+        "id": "a600e8c672d03b50",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b837453a7b1a39b9",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "23fbfb1823f2fd8f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "9a34fbf32ebfc891",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9797becd4d22603d",
+    "type": "split",
+    "children": [
+      {
+        "id": "f4190847e6bfbc64",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "52bf28ff9b4920d8",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "test_plan.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos para test_plan"
+            }
+          },
+          {
+            "id": "798219fff2732891",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "test_plan.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída para test_plan"
+            }
+          },
+          {
+            "id": "5d9f67b1e31bdc23",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "c886292e21bf9a53",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "test_plan.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário de test_plan"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "graph:Abrir visualização em gráfico": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "command-palette:Abrir paleta de comandos": false
+    }
+  },
+  "active": "f77abafeca0e3438",
+  "lastOpenFiles": [
+    "plano-de-testes.md",
+    "suites/acesso-e-seguranca.md",
+    "Sem título.canvas",
+    "Sem título.md",
+    "Sem título",
+    "suites"
+  ]
+}

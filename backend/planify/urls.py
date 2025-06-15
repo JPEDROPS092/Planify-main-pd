@@ -39,7 +39,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API Root - Endpoint específico para /api/
-    path('api/', api_root, name='api-root'),
+    #path('api/', api_root, name='api-root'),
     
     # === ROTAS DE AUTENTICAÇÃO ===
     path('api/auth/', include('users.urls')),  # Nossa implementação customizada
@@ -47,7 +47,7 @@ urlpatterns = [
     
     # === MÓDULOS DO SISTEMA ===
     # Core (saúde, dashboard, métricas)
-    path('api/', include('core.urls')),
+    #path('api/', include('core.urls')),
     
     # Projects (projetos, sprints, tarefas)
     path('api/projects/', include('projects.urls')),
