@@ -12,15 +12,15 @@ from typing import List, Dict, Any # Moved typing imports to the top
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Chave secreta do Django usada para segurança (mantenha em segredo em produção)
-SECRET_KEY = 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n'
+# Chave secreta do Django usada para segurança (MANTENHA EM SEGREDO EM PRODUÇÃO)
+SECRET_KEY = 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n' # OK para DEV, MUDE PARA PRODUÇÃO
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Define se o projeto está em modo DEBUG (exibe erros detalhados, usando em desenvolvimento)
-DEBUG = True
+DEBUG = True # MANTENHA TRUE PARA DESENVOLVIMENTO
 
 # Define quais hosts podem acessar a aplicação (em produção deve conter o domínio real)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # OK para DESENVOLVIMENTO LOCAL
 
 # Application definition
 # Lista de apps registrados no projeto, incluindo apps padrão, de terceiros e locais
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'chartjs',                    # Integração com Chart.js para gráficos
     'django_seed',                 # Para popular banco com dados de teste
     'drf_spectacular',             # Documentação automática da API
-    
+
     # Apps locais do projeto
     'users',
     'projects',
@@ -53,12 +53,13 @@ INSTALLED_APPS = [
     'risks',
     'costs',
     'documents',
+    'core', # Adicionei o app 'core' aqui, pois ele aparece na sua estrutura e tem utils/openapi
 ]
 
 # Middleware são componentes que processam requisições e respostas
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve arquivos estáticos em produção
+    # 'whitenoise.middleware.WhiteNoiseMiddleware', # Desabilitado para dev, STATICFILES_STORAGE padrão é melhor
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',       # Middleware para CORS
     'django.middleware.common.CommonMiddleware',
@@ -68,8 +69,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
-    # 'django.middleware.common.CommonMiddleware',   # Middleware duplicado, REMOVED
-    # 'django.middleware.csrf.CsrfViewMiddleware',   # Middleware duplicado, REMOVED
 ]
 
 # Arquivo raiz de URLs do projeto
@@ -96,10 +95,10 @@ TEMPLATES: List[Dict[str, Any]] = [
 WSGI_APPLICATION = 'planify.wsgi.application'
 
 # Configuração do banco de dados (SQLite para desenvolvimento)
-DATABASES = { 
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',  # Motor SQLite
-        'NAME': BASE_DIR / 'db.sqlite3',         
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -139,8 +138,10 @@ USE_TZ = True    # Usa timezone-aware datetimes
 # Configurações para arquivos estáticos (CSS, JS, imagens fixas)
 STATIC_URL = 'static/'  # URL base para arquivos estáticos
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Pasta onde os arquivos estáticos são coletados para produção
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  
-# Armazenamento otimizado para servir arquivos estáticos com compressão e cache
+# Para DESENVOLVIMENTO, o storage padrão é geralmente mais rápido e não requer WhiteNoise.
+# WhiteNoise é excelente para PRODUÇÃO.
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] # Adicione se você tiver estáticos na raiz do projeto
 
 # Configuração para arquivos de mídia (uploads, imagens do usuário, documentos)
 MEDIA_URL = '/media/'  # URL base para arquivos de mídia
@@ -153,10 +154,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT padrão
-        'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django
+        'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django (útil para Admin e Browsable API)
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',  # Allow unauthenticated access by default
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Um pouco mais restritivo que AllowAny para dev
+        # 'rest_framework.permissions.AllowAny',  # Permite acesso não autenticado por padrão (considere com cautela)
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',  # Suporte a filtros em consultas
@@ -167,13 +169,13 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,  # Itens por página
 
     # Exceções personalizadas para API
-    # TODO: Ensure 'core.utils.custom_exception_handler' exists or remove/replace this line.
+    # Se 'core.utils.custom_exception_handler' existir e estiver pronto, descomente.
     # 'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
 
     # Renderizadores padrão para respostas
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',         # Resposta JSON
-        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador
+        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador (ótimo para dev)
     ],
 
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Geração automática do esquema OpenAPI
@@ -184,75 +186,62 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',      # Formulários
         'rest_framework.parsers.MultiPartParser', # Upload de arquivos
     ],
-    # Old doc settings removed as drf-spectacular handles this
-    # 'DOC_EXPANSION': 'list',
-    # 'DOCS_TEMPLATE': 'rest_framework/docs/index.html',
 }
 
-# Customizações do Swagger UI (These are handled by SPECTACULAR_SETTINGS['SWAGGER_UI_SETTINGS'])
-# SWAGGER_UI_SETTINGS = { ... } # REMOVED standalone block
-    
+
 # Configurações específicas do Simple JWT para tokens
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7), # Longo, mas ok para dev. Considere menor para testar refresh.
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'AUTH_COOKIE': 'access_token',   # Cookie name
     'AUTH_COOKIE_DOMAIN': None,      # Use None for localhost
-    'AUTH_COOKIE_SECURE': False,     # Set to True in production with HTTPS
+    'AUTH_COOKIE_SECURE': False,     # False para HTTP em desenvolvimento
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Lax',
-    'UPDATE_LAST_LOGIN': True,                    # Atualiza o campo last_login do usuário
-    'AUTH_HEADER_TYPES': ('Bearer',),             # Prefixo do token no header Authorization
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',)  # Classe de token permitida
+    'AUTH_COOKIE_SAMESITE': 'Lax',   # 'Lax' é um bom padrão
+    'UPDATE_LAST_LOGIN': True,       # Atualiza o campo last_login do usuário
+    'AUTH_HEADER_TYPES': ('Bearer',), # Prefixo do token no header Authorization
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Classe de token permitida
 }
-    
+
 # Configurações para a biblioteca DJOSER (facilita endpoints de autenticação)
 DJOSER = {
-    'LOGIN_FIELD': 'username',
+    'LOGIN_FIELD': 'username', # ou 'email', dependendo do seu modelo User
     'USER_CREATE_PASSWORD_RETYPE': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
-    'SEND_CONFIRMATION_EMAIL': False,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False, # Geralmente False para dev
+    'SEND_CONFIRMATION_EMAIL': False,             # Geralmente False para dev
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'TOKEN_MODEL': None,  # We'll use JWT only
-    'SERIALIZERS': {
-        'user': 'users.serializers.UserSerializer',
-        'user_create': 'users.serializers.UserCreateSerializer',
-        'current_user': 'users.serializers.UserSerializer',
-    },
-    'PERMISSIONS': {
-        'user': ['rest_framework.permissions.IsAuthenticated'],
-        'user_list': ['rest_framework.permissions.IsAdminUser'],
-    },
-    'HIDE_USERS': False,
-    'AUTHENTICATION_BACKENDS': ['django.contrib.auth.backends.ModelBackend'],
-    'SEND_ACTIVATION_EMAIL': False,
+    'SEND_ACTIVATION_EMAIL': False, # Geralmente False para dev, para não depender de email
+    'TOKEN_MODEL': None,  # Usamos JWT, então Djoser não precisa gerenciar seu próprio token
     'SERIALIZERS': {  # Serializadores customizados para os endpoints
         'user': 'users.serializers.UserSerializer',
         'user_create': 'users.serializers.UserCreateSerializer',
-        'user_delete': 'users.serializers.UserSerializer', # Make sure this exists and is appropriate for delete
-        'password_reset': 'users.serializers.ResetPasswordSerializer', # Ensure 'ResetPasswordSerializer' exists
-        'password_reset_confirm': 'users.serializers.SetNewPasswordSerializer',
-        'set_password': 'users.serializers.ChangePasswordSerializer', # Ensure 'ChangePasswordSerializer' exists
+        'user_delete': 'users.serializers.UserSerializer', # Verifique se este serializer é adequado para deleção
+        'password_reset': 'users.serializers.ResetPasswordSerializer', # Certifique-se que este serializer existe
+        'password_reset_confirm': 'users.serializers.SetNewPasswordSerializer', # Certifique-se que este serializer existe
+        'set_password': 'users.serializers.ChangePasswordSerializer', # Certifique-se que este serializer existe
         'current_user': 'users.serializers.UserSerializer',
     },
-    'EMAIL': {  # Classes para envio de emails customizados
+    'PERMISSIONS': { # Ajuste conforme necessidade
+        'user_list': ['rest_framework.permissions.IsAdminUser'],
+        # 'user': ['rest_framework.permissions.IsAuthenticated'], # Djoser lida com isso por endpoint
+    },
+    'HIDE_USERS': False, # True para esconder a lista de usuários de não-admins
+    'EMAIL': {  # Classes para envio de emails customizados (usará EMAIL_BACKEND configurado)
         'activation': 'users.email.ActivationEmail',
         'confirmation': 'users.email.ConfirmationEmail',
         'password_reset': 'users.email.PasswordResetEmail',
         'password_changed_confirmation': 'users.email.PasswordChangedConfirmationEmail',
     },
-    'ACTIVATION_REQUIRED': False,  # Ativação via email desabilitada
+    'ACTIVATION_REQUIRED': False,  # Ativação via email desabilitada para facilitar dev
 }
-    
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -263,28 +252,44 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'DEBUG' if DEBUG else 'INFO', # Tie logging level to DEBUG
+        'level': 'DEBUG', # Sempre DEBUG quando DEBUG=True
     },
+    'loggers': { # Silenciar alguns loggers mais verbosos, se necessário
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO', # Ou WARNING para menos verbosidade do Django Core
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG', # Para ver queries SQL no console quando DEBUG=True
+            'propagate': False,
+        },
+    }
 }
+
 # Configurações para drf-spectacular (Swagger/OpenAPI)
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Planify API',
+    'TITLE': 'Planify API (Development)',
     'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'SERVE_PUBLIC': True,  # Torna a documentação pública
+    'VERSION': '1.0.0-dev',
+    'SERVE_INCLUDE_SCHEMA': False, # True para servir o schema.json/yaml no endpoint da UI
+    'SERVE_PUBLIC': True,  # Torna a documentação pública (OK para dev)
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX_TRIM': True,
-    'SERVE_AUTHENTICATION': None,  # Remove autenticação para acessar docs
+    'SERVE_AUTHENTICATION': None,  # Remove autenticação para acessar docs (OK para dev)
     'SECURITY': [{'Bearer': []}],  # Define o esquema de segurança
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization',
-            'description': 'Token JWT no formato: "Bearer {seu_token}"'
-        }
-    },
+    # 'SECURITY_DEFINITIONS' foi depreciado em favor de 'SECURITY_SCHEMES' em OpenAPI 3
+    # No entanto, 'SECURITY' acima deve ser suficiente para drf-spectacular lidar com JWT.
+    # Se precisar de definições explícitas, seria algo como:
+    # 'OPENAPI_SECURITY_SCHEMES': {
+    #     'BearerAuth': {
+    #         'type': 'http',
+    #         'scheme': 'bearer',
+    #         'bearerFormat': 'JWT',
+    #         'description': 'Token JWT no formato: "Bearer {seu_token}"'
+    #     }
+    # },
 
     # Customizações do Swagger UI
     'SWAGGER_UI_SETTINGS': {
@@ -294,32 +299,38 @@ SPECTACULAR_SETTINGS = {
         'defaultModelExpandDepth': 3,
         'defaultModelRendering': 'model',
         'displayRequestDuration': True,
-        'docExpansion': 'list',
-        'filter': True,
+        'docExpansion': 'list', # 'none', 'list', 'full'
+        'filter': True, # Habilita barra de filtro
         'showExtensions': True,
         'showCommonExtensions': True,
         'supportedSubmitMethods': ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
-        'tryItOutEnabled': True,
+        'tryItOutEnabled': True, # Habilita o botão "Try it out"
     },
-    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3', # Updated to a more recent version
-    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
-    'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
+    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3',
+    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png',
+    'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js',
 }
 
 
-
 # Configurações CORS (Cross-Origin Resource Sharing)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+CORS_ALLOWED_ORIGINS = [ # Seja específico se souber as portas do seu frontend
+    "http://localhost:3000",  # Ex: React
     "http://127.0.0.1:3000",
+    "http://localhost:3001",  # Ex: Outro serviço frontend
+    "http://127.0.0.1:3001",
+    "http://localhost:5173",  # Ex: Vite/Vue
+    "http://127.0.0.1:5173",
+    # Django dev server (se o frontend estiver servido pelo Django ou para testar com Postman/Insomnia da mesma origem)
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+# Para desenvolvimento, se você tiver muitos frontends em portas diferentes ou não souber,
+# CORS_ALLOW_ALL_ORIGINS = True pode ser mais conveniente, mas menos seguro.
+# Se usar CORS_ALLOW_ALL_ORIGINS = True, CORS_ALLOWED_ORIGINS é ignorado.
+CORS_ALLOW_ALL_ORIGINS = True  # DEFINITIVAMENTE MUDE PARA FALSE EM PRODUÇÃO
+CORS_ALLOW_CREDENTIALS = True # Necessário se o frontend envia cookies (ex: CSRF, session) ou Authorization headers
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
-
-# Configurações adicionais do CORS
+# Configurações adicionais do CORS (geralmente os padrões são suficientes se CORS_ALLOW_ALL_ORIGINS=True)
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -341,27 +352,28 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Configurações para envio de emails via SMTP (Gmail)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Backend SMTP padrão do Django
-EMAIL_HOST = 'smtp.gmail.com'     # Servidor SMTP do Gmail
-EMAIL_PORT = 587                  # Porta para TLS
-EMAIL_USE_TLS = True              # Usa TLS para segurança
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'seuemail@gmail.com')  # Usuário do email (use env var)
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'suasenha') # Senha do email (use env var)
+# Configurações para envio de emails
+# Para DESENVOLVIMENTO, é melhor usar o backend de console para ver os e-mails no terminal.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# As configurações SMTP abaixo seriam para produção ou se você realmente precisar enviar e-mails em dev
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') # Use variáveis de ambiente!
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') # Use variáveis de ambiente!
 
 # Variáveis personalizadas
 LOGO_PATH = 'static/img/logo.png'  # Caminho do logo do sistema
 SITE_NAME = 'Planify'              # Nome do sistema
 
-LOGIN_REDIRECT_URL = '/admin/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/admin/' # Ou para a página principal da sua API/Frontend
+LOGOUT_REDIRECT_URL = '/admin/login/' # Ou para a página de login
 
 # Admin site customization
-ADMIN_SITE_HEADER = "Planify - Administração"
-ADMIN_SITE_TITLE = "Planify - Sistema de Gerenciamento de Projetos"
-ADMIN_INDEX_TITLE = "Dashboard"
+ADMIN_SITE_HEADER = "Planify - Administração (DEV)"
+ADMIN_SITE_TITLE = "Planify - Sistema de Gerenciamento de Projetos (DEV)"
+ADMIN_INDEX_TITLE = "Dashboard (DEV)"
 
 # Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 SESSION_SAVE_EVERY_REQUEST = True
-
