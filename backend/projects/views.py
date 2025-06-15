@@ -268,7 +268,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
-    @extend_schema(
+    '''@extend_schema(
         summary="Listar membros",
         tags=["Projetos"],
         description="Lista os membros que estão participando do projeto.",
@@ -282,7 +282,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         membros = project.membros.all()
         serializer = MembroProjetoSerializer(membros, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data)'''
     
     @extend_schema(
         summary="Arquivar projeto",
@@ -303,6 +303,12 @@ class ProjetoViewSet(viewsets.ModelViewSet):
             'arquivado': project.arquivado
         })
     
+    @extend_schema(
+        summary="Listar meus projetos",
+        tags=["Projetos"],
+        description="Retorna os projetos dos quais o usuário é membro.",
+        responses={200: ProjetoSerializer(many=True)}
+    )
     @action(detail=False, methods=['get'])
     def my_projects(self, request):
         """
@@ -322,6 +328,12 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(projects, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Dashboard projetos",
+        tags=["Projetos"],
+        description="Retorna as informações para dashboard do projeto.",
+        responses={200: ProjetoSerializer(many=True)}
+    )
     @action(detail=True, methods=['get'])
     def dashboard(self, request, pk=None):
         """Dashboard do projeto"""

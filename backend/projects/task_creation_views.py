@@ -30,7 +30,7 @@ STATUS_FEITO = 'FEITO'
         403: ErrorResponseSerializer,
         404: ErrorResponseSerializer
     },
-    tags=["Projetos", "Tarefas"]
+    tags=["Projetos"]
 )
 class ProjetoTarefaCreateView(APIView):
     """
@@ -151,7 +151,7 @@ class ProjetoTarefaCreateView(APIView):
         404: ErrorResponseSerializer,
         500: ErrorResponseSerializer
     },
-    tags=["Projetos", "Tarefas"]
+    tags=["Projetos"]
 )
 class ProjetoTarefasBulkCreateView(APIView):
     """

@@ -41,7 +41,7 @@ SPRINT_CONCLUIDO = 'CONCLUIDO'
         403: ErrorResponseSerializer,
         404: ErrorResponseSerializer
     },
-    tags=["Projetos", "Dashboard"]
+    tags=["Projetos"]
 )
 class ProjetoDashboardView(APIView):
     """
@@ -192,7 +192,7 @@ class ProjetoDashboardView(APIView):
         403: ErrorResponseSerializer,
         404: ErrorResponseSerializer
     },
-    tags=["Projetos", "Kanban"]
+    tags=["Projetos"]
 )
 class ProjetoKanbanView(APIView):
     """
@@ -314,7 +314,7 @@ class ProjetoKanbanView(APIView):
         403: ErrorResponseSerializer,
         404: ErrorResponseSerializer
     },
-    tags=["Projetos", "Gantt"]
+    tags=["Projetos"]
 )
 class ProjetoGanttView(APIView):
     """

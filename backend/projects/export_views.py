@@ -43,7 +43,7 @@ from risks.models import Risco  # Ensure Risco is used in the code
         403: ErrorResponseSerializer, # For permission denied
         404: ErrorResponseSerializer  # For project not found
     },
-    tags=["Projetos", "Exportação"]
+    tags=["Projetos"]
 )
 class ProjetoExportView(APIView):
     """
