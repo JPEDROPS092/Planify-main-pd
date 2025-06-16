@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "generate:api": "openapi --input \"./PlanifyAPI.yaml\" --output ./lib/api-client --client axios"
+    "generate:api": "openapi-typescript-codegen --input ./PlanifyAPI.yaml --output ./src/api --client axios --name index.ts"
   },
   "dependencies": {
     "@nuxt/image": "^1.7.0",
