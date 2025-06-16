@@ -45,7 +45,7 @@ class PermissionMiddleware(MiddlewareMixin):
                 )
             
             # Se tiver token mas não começar com JWT
-            if not header.startswith('JWT '):
+            if not header.startswith('Bearer '):
                 logger.debug(f"Authorization header present but not JWT format: {header}")
                 return JsonResponse(
                     {"detail": "Autenticação JWT é necessária. Use o formato: JWT <token>"},
