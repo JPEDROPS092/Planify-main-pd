@@ -1,5 +1,9 @@
 # API Test execution
 
+## Resultados:
+
+**Passou:** 22/30
+
 ---
 
 ## Preparação
