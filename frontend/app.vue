@@ -20,11 +20,17 @@
         <NuxtPage />
       </div>
     </NuxtLayout>
+
+    <!-- Global Notification Container -->
+    <ClientOnly>
+      <NotificationToaster />
+    </ClientOnly>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import NotificationContainer from '~/components/shared/feedback/notification/NotificationContainer.vue';
 
 const loading = ref(true);
 

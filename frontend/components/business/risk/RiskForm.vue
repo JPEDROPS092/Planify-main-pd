@@ -227,7 +227,7 @@ import { useRiskService } from '~/services/api/services/riskService';
 import { useDocumentService } from '~/services/api/documentService';
 import { useTeamService } from '~/services/api/services/teamService';
 import { useUserService } from '~/services/api/userService';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import { useFormValidation } from '~/composables/useFormValidation';
 import { useAuth } from '~/stores/composables/useAuth';
 import type { Risco, Documento, User } from '~/services/api/types';

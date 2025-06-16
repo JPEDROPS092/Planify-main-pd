@@ -9,7 +9,7 @@
 import { defineComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProjectService } from '@/composables/useProjectService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import CostForm from '@/components/forms/CostForm.vue';
 
 export default defineComponent({

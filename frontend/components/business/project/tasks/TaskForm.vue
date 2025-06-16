@@ -26,7 +26,7 @@ import { useDocumentService } from '~/services/api/services/documentService'
 import Button from '~/components/ui/input/button/Button.vue'
 import LoadingButton from '~/components/shared/feedback/loading'
 import FileUploader from '~/components/ui/input/file-uploader/FileUploader.vue'
-import { useNotification } from '~/stores/composables/useNotification'
+import { useNotification } from '~/composables/useNotification'
 import type { Tarefa, User } from '@/services/utils/types'
 
 const props = defineProps({

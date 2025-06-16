@@ -174,7 +174,7 @@ import type { Risco, RiscoCreate, RiscoUpdate } from '~/services/api/types'; // 
 import { useUserService } from '~/services/api/userService';
 import type { User } from '~/services/api/types';
 import { useAuth } from '~/stores/composables/useAuth';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import RiskForm from '~/components/RiskForm.vue'; // Assumindo que você criará este componente

@@ -157,7 +157,7 @@ import { ref, onMounted, watch, defineProps, toRefs, computed } from 'vue';
 import { useTeamService, useUserService } from '~/services/api';
 import type { MembroEquipe, User } from '~/services/utils/types'; // Usando o arquivo centralizado de tipos
 import { useAuth } from '~/stores/composables/useAuth';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import Modal from '~/components/Modal.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';

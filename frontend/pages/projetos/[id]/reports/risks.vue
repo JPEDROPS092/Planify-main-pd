@@ -207,7 +207,7 @@ import { defineComponent, ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProjectService } from '@/composables/useProjectService';
 import { useRiskService } from '@/composables/useRiskService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import Chart from 'chart.js/auto';
 
 export default defineComponent({

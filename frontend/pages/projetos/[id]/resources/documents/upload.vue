@@ -74,7 +74,7 @@
 import { defineComponent, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProjectService } from '@/composables/useProjectService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import { useDocumentService } from '@/composables/useDocumentService';
 
 export default defineComponent({

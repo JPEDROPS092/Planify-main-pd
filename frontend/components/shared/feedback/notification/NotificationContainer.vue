@@ -7,15 +7,15 @@
       :message="notification.message"
       :title="notification.title"
       :duration="notification.duration"
-      :auto-close="notification.autoClose"
+      :auto-close="!notification.persistent"
       @close="removeNotification(notification.id)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import Notification from './Notification.vue';
 
-const { notifications, remove: removeNotification } = useNotification();
+const { notifications, removeNotification } = useNotification();
 </script>

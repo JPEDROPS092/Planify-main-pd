@@ -10,7 +10,7 @@ import { defineComponent } from 'vue';
 import { ProjectExport } from '@/components/business/project/management';
 import { useRoute } from 'vue-router';
 import { useProjectService } from '@/composables/useProjectService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 
 export default defineComponent({
   name: 'ProjectExportPage',

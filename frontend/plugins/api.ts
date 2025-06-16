@@ -1,61 +1,45 @@
 // plugins/api.ts
 import { OpenAPI } from '../api/core/OpenAPI';
 import { PlanifyApiClient } from '../api/PlanifyApiClient.ts';
+import { AxiosHttpRequest } from '../api/core/AxiosHttpRequest';
 
 export default defineNuxtPlugin(() => {
   // 1. Configurar a URL base da API a partir das variáveis de ambiente
   const config = useRuntimeConfig();
-  OpenAPI.BASE = config.public.apiBase;
-
-  // 2. Configurar a autenticação (Token)
-  // O OpenAPI gerado usa a propriedade TOKEN para autenticação
-  // Vamos definir uma função que retorna o token do cookie
+  const apiBase = config.public.apiBase || 'http://localhost:8000';
   
-  OpenAPI.TOKEN = () => {
-    try {
-      const token = useCookie('auth-token');
-      return token.value ? `Bearer ${token.value}` : undefined;
-    } catch (error) {
-      // Em caso de erro, retorna undefined (sem autenticação)
-      console.warn('Erro ao obter token de autenticação:', error);
-      return undefined;
-    }
-  };
-
-  // 3. Configurar outras opções do OpenAPI
+  // 2. Configurar o OpenAPI
+  OpenAPI.BASE = apiBase;
   OpenAPI.WITH_CREDENTIALS = true;
   OpenAPI.CREDENTIALS = 'include';
-  
-  // Configurar timeout padrão
-  OpenAPI.TIMEOUT = 10000; // 10 segundos
 
-  // 4. Interceptar erros de autenticação
-  OpenAPI.interceptors = {
-    response: {
-      use: (response: any) => response,
-      error: (error: any) => {
-        if (error.status === 401) {
-          // Token expirado ou inválido
-          const tokenCookie = useCookie('auth-token');
-          const userCookie = useCookie('auth-user');
-          
-          tokenCookie.value = null;
-          userCookie.value = null;
-          
-          // Redirecionar para login apenas se não estivermos já na página de auth
-          if (!window.location.pathname.startsWith('/auth')) {
-            navigateTo('/auth/login');
-          }
-        }
-        return Promise.reject(error);
+  // 3. Configurar a autenticação (Token) com Resolver
+  // O sistema já adiciona automaticamente "Bearer" quando o token é string
+  OpenAPI.TOKEN = async () => {
+    try {
+      // Only access cookies on client side
+      if (typeof window !== 'undefined') {
+        const token = useCookie('auth-token');
+        return token.value || ''; // Retorna apenas o token, sem "Bearer"
       }
+      return '';
+    } catch (error) {
+      // Em caso de erro, retorna string vazia
+      console.warn('Erro ao obter token de autenticação:', error);
+      return '';
     }
   };
 
-  // 5. Criar uma instância do cliente API principal
-  const apiClient = new PlanifyApiClient();
+  // 4. Criar uma instância do cliente API principal com configuração adequada
+  const apiClient = new PlanifyApiClient({
+    BASE: apiBase,
+    VERSION: '1.0.0',
+    WITH_CREDENTIALS: true,
+    CREDENTIALS: 'include',
+    TOKEN: OpenAPI.TOKEN,
+  }, AxiosHttpRequest);
 
-  // 6. Disponibilizar o cliente para todo o app
+  // 5. Disponibilizar o cliente para todo o app
   return {
     provide: {
       api: apiClient,

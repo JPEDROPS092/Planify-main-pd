@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // Add compatibility date as recommended
+  compatibilityDate: '2025-06-16',
+
   // Estilos globais (main.css para customizações, Tailwind CSS é injetado pelo módulo)
   css: [
     '~/assets/css/main.css',
@@ -37,10 +40,11 @@ export default defineNuxtConfig({
 
     // Chaves públicas que são expostas ao cliente
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api',
+      apiBase: process.env.BACKEND_URL || 'http://127.0.0.1:8000',
       appName: 'Planify',
       appVersion: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
+      appUrl: process.env.APP_URL || 'http://localhost:3000',
     },
   },
 

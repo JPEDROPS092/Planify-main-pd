@@ -89,7 +89,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProjectService } from '~/services/api/services/projectService';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import Button from '~/components/ui/Button.vue';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';
 import GanttChart from '~/components/project/GanttChart.vue';

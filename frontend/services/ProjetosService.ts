@@ -432,7 +432,6 @@ export class ProjetosService {
      */
     public apiProjectsDashboardRetrieve(
         projetoId: number,
-        projetoId: number,
     ): CancelablePromise<ProjetoDashboardResponse> {
         return this.httpRequest.request({
             method: 'GET',
@@ -492,7 +491,6 @@ export class ProjetosService {
      * @throws ApiError
      */
     public apiProjectsGanttRetrieve(
-        projetoId: number,
         projetoId: number,
     ): CancelablePromise<GanttResponse> {
         return this.httpRequest.request({
@@ -557,7 +555,6 @@ export class ProjetosService {
      */
     public apiProjectsTarefasCriarCreate(
         projetoId: number,
-        projetoId: number,
         requestBody: TarefaCreateRequest,
     ): CancelablePromise<Tarefa> {
         return this.httpRequest.request({
@@ -583,7 +580,6 @@ export class ProjetosService {
      * @throws ApiError
      */
     public apiProjectsTarefasCriarMultiplasCreate(
-        projetoId: number,
         projetoId: number,
         requestBody: TarefasBulkCreateRequest,
     ): CancelablePromise<Record<string, any>> {

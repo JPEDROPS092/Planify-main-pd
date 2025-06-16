@@ -93,7 +93,7 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProjectService } from '@/composables/useProjectService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 

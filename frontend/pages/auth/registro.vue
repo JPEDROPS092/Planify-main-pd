@@ -255,8 +255,8 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
-import { useAuth } from "@/composables/useAuth";
-import { useNotification } from "@/composables/useNotification";
+import { useAuth } from "~/composables/useAuth";
+import { useNotification } from "~/composables/useNotification";
 import { useRouter } from "vue-router";
 import { definePageMeta } from "#imports";
 

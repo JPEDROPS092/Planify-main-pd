@@ -247,7 +247,7 @@ import { useDocumentService } from '~/services/api/services/documentService';
 import type { Projeto, Documento } from '~/services/utils/types.ts';
 import { useUserService } from '~/services/api/services/userService';
 import type { User } from '~/services/utils/types.ts';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import { useFormValidation } from '~/stores/composables/useFormValidation';
 import { useAuth } from '~/stores/composables/useAuth';
 import LoadingButton from '~/components/shared/feedback/loading'

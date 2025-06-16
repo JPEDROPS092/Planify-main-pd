@@ -412,7 +412,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, defineEmits } from 'vue';
 import { useTaskService } from '~/services/api/tasks';
-import { useNotification } from '~/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 import draggable from 'vuedraggable';
 import type { Tarefa, TarefaUpdate } from '~/services/api/types';
 import type { User } from '~/services/api/types';

@@ -10,7 +10,7 @@ import { defineComponent } from 'vue';
 import { SprintManagement } from '@/components/business/project/planning';
 import { useRoute } from 'vue-router';
 import { useProjectService } from '@/stores/composables/useProjectService';
-import { useNotification } from '@/stores/composables/useNotification';
+import { useNotification } from '~/composables/useNotification';
 
 export default defineComponent({
   name: 'SprintsPage',
