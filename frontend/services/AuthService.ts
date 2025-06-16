@@ -2,25 +2,25 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AccessProfileRequest } from '../models/AccessProfileRequest';
-import type { MembroEquipe } from '../models/MembroEquipe';
-import type { MembroEquipeRequest } from '../models/MembroEquipeRequest';
-import type { PaginatedMembroEquipeList } from '../models/PaginatedMembroEquipeList';
-import type { PaginatedUserList } from '../models/PaginatedUserList';
-import type { PatchedAccessProfileRequest } from '../models/PatchedAccessProfileRequest';
-import type { PatchedMembroEquipeRequest } from '../models/PatchedMembroEquipeRequest';
-import type { PatchedPermissionRequest } from '../models/PatchedPermissionRequest';
-import type { PatchedUserProfileRequest } from '../models/PatchedUserProfileRequest';
-import type { PatchedUserRequest } from '../models/PatchedUserRequest';
-import type { PermissionRequest } from '../models/PermissionRequest';
-import type { User } from '../models/User';
-import type { UserCreate } from '../models/UserCreate';
-import type { UserCreateRequest } from '../models/UserCreateRequest';
-import type { UserProfileRequest } from '../models/UserProfileRequest';
-import type { UserRequest } from '../models/UserRequest';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import type { BaseHttpRequest } from '../core/BaseHttpRequest';
-export class AutenticaOService {
+import type { AccessProfileRequest } from '../types/AccessProfileRequest';
+import type { MembroEquipe } from '../types/MembroEquipe';
+import type { MembroEquipeRequest } from '../types/MembroEquipeRequest';
+import type { PaginatedMembroEquipeList } from '../types/PaginatedMembroEquipeList';
+import type { PaginatedUserList } from '../types/PaginatedUserList';
+import type { PatchedAccessProfileRequest } from '../types/PatchedAccessProfileRequest';
+import type { PatchedMembroEquipeRequest } from '../types/PatchedMembroEquipeRequest';
+import type { PatchedPermissionRequest } from '../types/PatchedPermissionRequest';
+import type { PatchedUserProfileRequest } from '../types/PatchedUserProfileRequest';
+import type { PatchedUserRequest } from '../types/PatchedUserRequest';
+import type { PermissionRequest } from '../types/PermissionRequest';
+import type { User } from '../types/User';
+import type { UserCreate } from '../types/UserCreate';
+import type { UserCreateRequest } from '../types/UserCreateRequest';
+import type { UserProfileRequest } from '../types/UserProfileRequest';
+import type { UserRequest } from '../types/UserRequest';
+import type { CancelablePromise } from '../api/core/CancelablePromise';
+import type { BaseHttpRequest } from '../api/core/BaseHttpRequest';
+export class AuthService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Listar perfis de acesso

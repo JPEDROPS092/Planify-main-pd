@@ -1,13 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  // Ativa devtools para facilitar o debug durante o desenvolvimento
-  devtools: { enabled: true },
-
-  // Set compatibility date to fix the warning
-  nitro: {
-    compatibilityDate: '2025-06-04'
-  },
-
   // Estilos globais (main.css para customizações, Tailwind CSS é injetado pelo módulo)
   css: [
     '~/assets/css/main.css',
@@ -19,44 +11,61 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@nuxt/image',
-    '@nuxt/icon'
-    // @phosphor-icons/vue is not a Nuxt module, it's used through our icons plugin
+    '@nuxt/icon',
+    // Adicione outros módulos conforme necessário
   ],
 
-  // Modo de cor do sistema (dark/light)
-  // Configuration for @nuxtjs/color-mode module
+  // Configurações específicas do Pinia
+  pinia: {
+    storesDirs: ['./stores/**', './composables/stores/**'],
+  },
+
+  // Configuração do modo de cor (dark/light)
   colorMode: {
     classSuffix: '',
     preference: 'system',
     fallback: 'light',
-    storageKey: 'nuxt-color-mode',
+    storageKey: 'planify-color-mode',
+    dataValue: 'theme', // Uses data-theme instead of class
   },
 
   // Configuração de runtime para o Nuxt
   runtimeConfig: {
     // Chaves privadas que são expostas apenas no servidor
-    apiSecret: process.env.NUXT_API_SECRET || 'default_secret',
+    apiSecret: process.env.NUXT_API_SECRET || 'planify_default_secret_2025',
+    jwtSecret: process.env.NUXT_JWT_SECRET || 'planify_jwt_secret_2025',
 
     // Chaves públicas que são expostas ao cliente
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api',
+      appName: 'Planify',
+      appVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
     },
   },
 
-  // Configurações da aplicação (SEO básico e favicon)
+  // Configurações da aplicação (SEO e meta tags)
   app: {
     head: {
       title: 'Planify - Gerenciamento de Projetos',
+      titleTemplate: '%s | Planify',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content: 'Sistema de Gerenciamento de Projetos de Pesquisa e Desenvolvimento',
+          content: 'Sistema completo de Gerenciamento de Projetos de Pesquisa e Desenvolvimento com funcionalidades avançadas de colaboração e monitoramento.',
         },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'author', content: 'Planify Team' },
+        { property: 'og:title', content: 'Planify - Gerenciamento de Projetos' },
+        { property: 'og:description', content: 'Sistema completo de Gerenciamento de Projetos' },
+        { property: 'og:type', content: 'website' },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
       ],
     },
   },
@@ -72,54 +81,83 @@ export default defineNuxtConfig({
     '@services': '~/services',
     '@plugins': '~/plugins',
     '@pages': '~/pages',
+    '@layouts': '~/layouts',
+    '@types': '~/types',
+    '@api': '~/api',
+    '@stores': '~/stores',
+    '@utils': '~/utils',
     '@lib': '~/lib',
   },
 
-  // Configuração de auto-imports. Nuxt 3 auto-importa de '~/composables', '~/utils' por padrão.
-  // Adicionamos 'stores/composables/**' explicitamente para cobrir composables dentro da store.
+  // Configuração de auto-imports otimizada
   imports: {
-    autoImport: true, // Habilita os auto-imports padrões do Nuxt
+    autoImport: true,
     dirs: [
-      'composables/**', // Padrão do Nuxt, mas bom ser explícito
-      'utils/**',       // Padrão do Nuxt
-      'stores/composables/**', // Para composables específicos de stores
-      'stores/**' // Para auto-importar stores Pinia (ex: useAuthStore de stores/auth.ts)
+      'composables/**',
+      'utils/**',
+      'stores/**',
+      'stores/composables/**',
+      'services/**', // Auto-import de services
+    ],
+    // Imports globais personalizados
+    imports: [
+      // Vue composables
+      { name: 'default', as: 'PhosphorIcons', from: '@phosphor-icons/vue' },
+      // Utilitários comuns
+      { name: 'clsx', from: 'clsx' },
+      { name: 'twMerge', from: 'tailwind-merge' },
     ],
   },
 
-  // Configuração para auto-importação de componentes.
-  // Nuxt 3 escaneia o diretório '~/components' recursivamente.
-  // Com 'pathPrefix: true' (ou omitindo pathPrefix, pois é o padrão para entradas de objeto),
-  // os componentes são prefixados com o nome do diretório.
-  // Ex: components/ui/Button.vue -> <UiButton />
-  // Ex: components/shared/Card.vue -> <SharedCard />
-  // Se você quiser que componentes na raiz de '~/components' não tenham prefixo,
-  // e os de subdiretórios tenham, você pode configurar múltiplas entradas.
-  // Para uma estrutura como a atual (business, shared, ui), o prefixo é geralmente desejável.
+  // Configuração otimizada para auto-importação de componentes
   components: [
     {
       path: '~/components',
-      // Excluir arquivos index.ts para evitar conflitos de componentes
       extensions: ['.vue'],
-      // pathPrefix: true, // true é o padrão para objetos, então pode ser omitido.
-      // global: true, // Se quiser que todos sejam globais sem necessidade de import explícito em scripts (raro)
-    }
-    // Alternativamente, para controle mais granular:
-    // { path: '~/components/global', global: true }, // Componentes globais sem prefixo
-    // { path: '~/components/business', prefix: 'Business' },
-    // { path: '~/components/shared', prefix: 'Shared' },
-    // { path: '~/components/ui', prefix: 'Ui' },
+      pathPrefix: false, // Remove prefixo para componentes na raiz
+    },
+    {
+      path: '~/components/ui',
+      prefix: 'Ui',
+      extensions: ['.vue'],
+    },
+    {
+      path: '~/components/shared',
+      prefix: 'Shared',
+      extensions: ['.vue'],
+    },
+    {
+      path: '~/components/business',
+      prefix: 'Business',
+      extensions: ['.vue'],
+    },
   ],
 
-  // Transpile arquivos se necessário (por exemplo, bibliotecas externas em ESM)
-  // transpile: [],
-
-  // Plugins personalizados (registro automático)
+  // Plugins personalizados carregados em ordem específica
   plugins: [
-    '~/plugins/api.ts',
-    '~/plugins/auth.ts',
-    '~/plugins/icons.ts', // Add our new icons plugin
+    { src: '~/plugins/api.ts', mode: 'all' },
+    { src: '~/plugins/auth.ts', mode: 'client' },
+    { src: '~/plugins/icons.ts', mode: 'client' },
   ],
+
+  // Configurações de build e otimização
+  nitro: {
+    compatibilityDate: '2025-06-04',
+    experimental: {
+      wasm: true,
+    },
+  },
+
+  // Configurações de desenvolvimento
+  devtools: { 
+    enabled: true,
+    timeline: {
+      enabled: true,
+    },
+  },
+
+  // Configurações de SSR
+  ssr: true,
 
   // Diretório base para assets públicos
   dir: {

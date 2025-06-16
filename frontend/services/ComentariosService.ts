@@ -2,13 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Comentario } from '../models/Comentario';
-import type { ComentarioRequest } from '../models/ComentarioRequest';
-import type { PaginatedComentarioList } from '../models/PaginatedComentarioList';
-import type { PatchedComentarioRequest } from '../models/PatchedComentarioRequest';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import type { BaseHttpRequest } from '../core/BaseHttpRequest';
-export class ComentRiosService {
+import type { Comentario } from '../types/Comentario';
+import type { ComentarioRequest } from '../types/ComentarioRequest';
+import type { PaginatedComentarioList } from '../types/PaginatedComentarioList';
+import type { PatchedComentarioRequest } from '../types/PatchedComentarioRequest';
+import type { CancelablePromise } from '../api/core/CancelablePromise';
+import type { BaseHttpRequest } from '../api/core/BaseHttpRequest';
+export class ComentariosService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Adicionar comentário ao documento

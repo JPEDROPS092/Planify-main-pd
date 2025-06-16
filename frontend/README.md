@@ -4,45 +4,34 @@
 
 Planify é uma aplicação web completa para gerenciamento de projetos, desenvolvida com Nuxt 3 (frontend) e Django REST Framework (backend). O sistema permite o gerenciamento completo de projetos, tarefas, equipes, riscos, custos, documentos e comunicações, com controle de acesso baseado em papéis (RBAC).
 
-## Índice
-
-- [Visão Geral](#visão-geral)
-- [Tecnologias](#tecnologias)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Configuração e Instalação](#configuração-e-instalação)
-- [Desenvolvimento](#desenvolvimento)
-- [Produção](#produção)
-- [Autenticação e Autorização](#autenticação-e-autorização)
-- [API e Serviços](#api-e-serviços)
-- [Componentes UI](#componentes-ui)
-- [Exemplos de Implementação](#exemplos-de-implementação)
-- [Testes](#testes)
-- [Documentação Adicional](#documentação-adicional)
-
-## Visão Geral
-
-O Planify é um sistema completo de gerenciamento de projetos que oferece:
-
-- Gerenciamento de projetos com métricas e dashboards
-- Controle de tarefas com atribuições e prazos
-- Gestão de equipes e membros
-- Análise e monitoramento de riscos
-- Controle de custos e orçamentos
-- Gerenciamento de documentos com upload de arquivos
-- Sistema de comunicação interna
-- Controle de acesso baseado em papéis (admin, manager, editor, viewer)
-- Interface responsiva e moderna com suporte a temas claro/escuro
-
-## Tecnologias
+## 🚀 Tecnologias
 
 - **Frontend**: Nuxt 3, Vue 3, TypeScript, Tailwind CSS
-- **Gerenciamento de Estado**: Pinia, useState (Nuxt)
-- **Requisições HTTP**: Axios
-- **Componentes UI**: Componentes personalizados com variantes
-- **Formulários**: Validação com Vuelidate
-- **Notificações**: Sistema de notificações personalizado
+- **Gerenciamento de Estado**: Pinia
+- **Requisições HTTP**: Cliente API auto-gerado via OpenAPI
+- **Componentes UI**: Biblioteca personalizada + Lucide Icons
+- **Formulários**: Validação integrada
+- **Autenticação**: JWT com refresh tokens
+- **Temas**: Suporte completo a modo claro/escuro
 
-## Estrutura do Projeto
+## 📁 Estrutura do Projeto
+
+### Configurações Otimizadas
+
+O projeto foi configurado com as seguintes otimizações:
+
+#### Nuxt Config (`nuxt.config.ts`)
+- ✅ Auto-imports configurados para `services`, `stores`, `composables`
+- ✅ Aliases otimizados para melhor DX
+- ✅ Componentes com prefixos organizados (`Ui`, `Shared`, `Business`)
+- ✅ Plugins carregados em ordem específica
+- ✅ Runtime config expandido com variáveis de ambiente
+- ✅ SEO otimizado com meta tags
+
+#### Plugins Melhorados
+- **API Plugin**: Configuração robusta com interceptors e timeout
+- **Auth Plugin**: Middleware de autenticação e helpers
+- **Icons Plugin**: Mapeamento inteligente de ícones Phosphor/Lucide
 
 ### Diretórios Principais
 

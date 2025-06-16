@@ -2,32 +2,32 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Activation } from '../models/Activation';
-import type { ActivationRequest } from '../models/ActivationRequest';
-import type { AtribuicaoTarefa } from '../models/AtribuicaoTarefa';
-import type { AtribuicaoTarefaRequest } from '../models/AtribuicaoTarefaRequest';
-import type { CustomTokenObtainPairRequest } from '../models/CustomTokenObtainPairRequest';
-import type { PaginatedTarefaListList } from '../models/PaginatedTarefaListList';
-import type { PatchedAtribuicaoTarefaRequest } from '../models/PatchedAtribuicaoTarefaRequest';
-import type { PatchedUserRequest } from '../models/PatchedUserRequest';
-import type { ResetPassword } from '../models/ResetPassword';
-import type { ResetPasswordRequest } from '../models/ResetPasswordRequest';
-import type { SendEmailReset } from '../models/SendEmailReset';
-import type { SendEmailResetRequest } from '../models/SendEmailResetRequest';
-import type { SetNewPassword } from '../models/SetNewPassword';
-import type { SetNewPasswordRequest } from '../models/SetNewPasswordRequest';
-import type { SetPasswordRetype } from '../models/SetPasswordRetype';
-import type { SetPasswordRetypeRequest } from '../models/SetPasswordRetypeRequest';
-import type { SetUsername } from '../models/SetUsername';
-import type { SetUsernameRequest } from '../models/SetUsernameRequest';
-import type { TokenRefresh } from '../models/TokenRefresh';
-import type { TokenRefreshRequest } from '../models/TokenRefreshRequest';
-import type { User } from '../models/User';
-import type { UsernameResetConfirm } from '../models/UsernameResetConfirm';
-import type { UsernameResetConfirmRequest } from '../models/UsernameResetConfirmRequest';
-import type { UserRequest } from '../models/UserRequest';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import type { BaseHttpRequest } from '../core/BaseHttpRequest';
+import type { Activation } from '../types/Activation';
+import type { ActivationRequest } from '../types/ActivationRequest';
+import type { AtribuicaoTarefa } from '../types/AtribuicaoTarefa';
+import type { AtribuicaoTarefaRequest } from '../types/AtribuicaoTarefaRequest';
+import type { CustomTokenObtainPairRequest } from '../types/CustomTokenObtainPairRequest';
+import type { PaginatedTarefaListList } from '../types/PaginatedTarefaListList';
+import type { PatchedAtribuicaoTarefaRequest } from '../types/PatchedAtribuicaoTarefaRequest';
+import type { PatchedUserRequest } from '../types/PatchedUserRequest';
+import type { ResetPassword } from '../types/ResetPassword';
+import type { ResetPasswordRequest } from '../types/ResetPasswordRequest';
+import type { SendEmailReset } from '../types/SendEmailReset';
+import type { SendEmailResetRequest } from '../types/SendEmailResetRequest';
+import type { SetNewPassword } from '../types/SetNewPassword';
+import type { SetNewPasswordRequest } from '../types/SetNewPasswordRequest';
+import type { SetPasswordRetype } from '../types/SetPasswordRetype';
+import type { SetPasswordRetypeRequest } from '../types/SetPasswordRetypeRequest';
+import type { SetUsername } from '../types/SetUsername';
+import type { SetUsernameRequest } from '../types/SetUsernameRequest';
+import type { TokenRefresh } from '../types/TokenRefresh';
+import type { TokenRefreshRequest } from '../types/TokenRefreshRequest';
+import type { User } from '../types/User';
+import type { UsernameResetConfirm } from '../types/UsernameResetConfirm';
+import type { UsernameResetConfirmRequest } from '../types/UsernameResetConfirmRequest';
+import type { UserRequest } from '../types/UserRequest';
+import type { CancelablePromise } from '../api/core/CancelablePromise';
+import type { BaseHttpRequest } from '../api/core/BaseHttpRequest';
 export class ApiService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**

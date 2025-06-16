@@ -2,11 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { HistoricoDocumento } from '../models/HistoricoDocumento';
-import type { PaginatedHistoricoDocumentoList } from '../models/PaginatedHistoricoDocumentoList';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import type { BaseHttpRequest } from '../core/BaseHttpRequest';
-export class HistRicoService {
+import type { HistoricoDocumento } from '../types/HistoricoDocumento';
+import type { PaginatedHistoricoDocumentoList } from '../types/PaginatedHistoricoDocumentoList';
+import type { CancelablePromise } from '../api/core/CancelablePromise';
+import type { BaseHttpRequest } from '../api/core/BaseHttpRequest';
+export class HistoricoService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Listar histórico de alterações de documentos

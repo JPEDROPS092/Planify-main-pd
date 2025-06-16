@@ -2,21 +2,21 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ChatMensagem } from '../models/ChatMensagem';
-import type { ChatMensagemRequest } from '../models/ChatMensagemRequest';
-import type { ConfiguracaoNotificacao } from '../models/ConfiguracaoNotificacao';
-import type { ConfiguracaoNotificacaoRequest } from '../models/ConfiguracaoNotificacaoRequest';
-import type { Notificacao } from '../models/Notificacao';
-import type { NotificacaoRequest } from '../models/NotificacaoRequest';
-import type { PaginatedChatMensagemList } from '../models/PaginatedChatMensagemList';
-import type { PaginatedConfiguracaoNotificacaoList } from '../models/PaginatedConfiguracaoNotificacaoList';
-import type { PaginatedNotificacaoList } from '../models/PaginatedNotificacaoList';
-import type { PatchedChatMensagemRequest } from '../models/PatchedChatMensagemRequest';
-import type { PatchedConfiguracaoNotificacaoRequest } from '../models/PatchedConfiguracaoNotificacaoRequest';
-import type { PatchedNotificacaoRequest } from '../models/PatchedNotificacaoRequest';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import type { BaseHttpRequest } from '../core/BaseHttpRequest';
-export class ComunicaOService {
+import type { ChatMensagem } from '../types/ChatMensagem';
+import type { ChatMensagemRequest } from '../types/ChatMensagemRequest';
+import type { ConfiguracaoNotificacao } from '../types/ConfiguracaoNotificacao';
+import type { ConfiguracaoNotificacaoRequest } from '../types/ConfiguracaoNotificacaoRequest';
+import type { Notificacao } from '../types/Notificacao';
+import type { NotificacaoRequest } from '../types/NotificacaoRequest';
+import type { PaginatedChatMensagemList } from '../types/PaginatedChatMensagemList';
+import type { PaginatedConfiguracaoNotificacaoList } from '../types/PaginatedConfiguracaoNotificacaoList';
+import type { PaginatedNotificacaoList } from '../types/PaginatedNotificacaoList';
+import type { PatchedChatMensagemRequest } from '../types/PatchedChatMensagemRequest';
+import type { PatchedConfiguracaoNotificacaoRequest } from '../types/PatchedConfiguracaoNotificacaoRequest';
+import type { PatchedNotificacaoRequest } from '../types/PatchedNotificacaoRequest';
+import type { CancelablePromise } from '../api/core/CancelablePromise';
+import type { BaseHttpRequest } from '../api/core/BaseHttpRequest';
+export class ComunicacaoService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
     /**
      * Listar configurações
