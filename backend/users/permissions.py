@@ -38,6 +38,7 @@ URL_PERMISSION_MAPPING = [
 # Caminhos públicos que não requerem autenticação
 PUBLIC_PATHS = [
     # Autenticação
+    r'^/api/auth/login/?$',
     r'^/api/auth/token/?$',
     r'^/api/auth/token/refresh/?$',
     r'^/api/auth/register/?$',
@@ -61,6 +62,9 @@ PUBLIC_PATHS = [
     
     # Favicon e outros recursos comuns
     r'^/favicon\.ico$',
+    
+    # Debug Toolbar
+    r'^/__debug__/.*$',
 ]
 
 

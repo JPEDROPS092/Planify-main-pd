@@ -20,23 +20,35 @@ class PermissionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Obter o caminho da requisição
         path = request.path_info
+        logger.debug(f"Processing request for path: {path}")
         
-        # Verificar se é um caminho administrativo do Django
-        if path.startswith('/admin/'):
-            # Deixa o sistema de autenticação do admin do Django lidar com isso
-            return None
-        
-        # Verificar se é um caminho público
+        # Primeiro verificar se é um caminho público
         for pattern in PUBLIC_PATHS:
             if re.match(pattern, path):
+                logger.debug(f"Path {path} matches public pattern {pattern}")
                 return None
+                
+        # Em seguida verificar se é um caminho administrativo do Django
+        if path.startswith('/admin/'):
+            logger.debug(f"Path {path} is an admin path")
+            return None
         
-        # Verificar o token JWT
+        # Se não for público nem admin, verificar o token JWT
         try:
             header = request.headers.get('Authorization', '')
-            if not header.startswith('Bearer '):
+            # Se não tiver token em um caminho protegido
+            if not header:
+                logger.debug(f"No Authorization header present for protected path {path}")
                 return JsonResponse(
                     {"detail": "Autenticação JWT é necessária para acessar este recurso."},
+                    status=401
+                )
+            
+            # Se tiver token mas não começar com JWT
+            if not header.startswith('JWT '):
+                logger.debug(f"Authorization header present but not JWT format: {header}")
+                return JsonResponse(
+                    {"detail": "Autenticação JWT é necessária. Use o formato: JWT <token>"},
                     status=401
                 )
                 

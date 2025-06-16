@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     UserViewSet, UserProfileViewSet, PermissionViewSet
 )
+from .auth_views import CustomTokenRefreshView, LoginView, LogoutView
 
 
 # Configuração do router para ViewSets
@@ -17,8 +17,10 @@ urlpatterns = [
     # Inclusão das rotas automáticas do router
     path('', include(router.urls)),
     
-    # Token refresh
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # Authentication endpoints
+    path('login/', LoginView.as_view(), name='login'),
+    path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     
     # User specific endpoints
     path('users/me/', UserViewSet.as_view({'get': 'me'}), name='user-me'),

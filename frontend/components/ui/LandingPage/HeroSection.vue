@@ -54,12 +54,12 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-// import { useAuth } from '~/composables/useAuth';
+
 import { getCurrentInstance } from 'vue';
 import 'animate.css';
 
 const router = useRouter();
-// const { isAuthenticated } = useAuth();
+
 
 // Busca o método definido no componente pai (index.vue)
 const parent = getCurrentInstance()?.parent;
@@ -70,10 +70,7 @@ const checkAuthAndNavigate = () => {
     // Usa o método do componente pai se estiver disponível
     parent.exposed.redirectToDashboardOrLogin();
   } else {
-    // Fallback - verifica autenticação localmente
-    // if (isAuthenticated.value) {
-    //   router.push('/dashboard');
-    // } else {
+
       router.push('/auth/login');
     // }
   }

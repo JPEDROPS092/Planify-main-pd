@@ -116,6 +116,7 @@ class TarefaFilter(FilterSet):
             OpenApiParameter(name="sem_sprint", description="Filtrar tarefas sem sprint", type=bool),
             OpenApiParameter(name="ordering", description="Ordenar resultados (ex: -data_termino)", type=str),
         ],
+        tags=["Tarefas"],
         responses={200: TarefaListSerializer(many=True)}
     ),
     create=extend_schema(
@@ -222,7 +223,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['usuario_id']
             }
         },
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={
             201: AtribuicaoTarefaSerializer,
             400: OpenApiTypes.OBJECT,
@@ -231,12 +232,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def atribuir_responsavel(self, request, pk=None):
-        """
-        Atribui um usuário como responsável pela tarefa.
-        
-        Requer o ID do usuário a ser atribuído. Se o usuário já estiver atribuído,
-        retorna um erro 400.
-        """
+        """Atribui um usuário como responsável pela tarefa."""
         tarefa = self.get_object()
         usuario_id = request.data.get('usuario_id')
         
@@ -278,7 +274,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 'required': ['usuario_id']
             }
         },
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={
             204: None,
             400: OpenApiTypes.OBJECT,
@@ -287,12 +283,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def remover_responsavel(self, request, pk=None):
-        """
-        Remove um usuário como responsável pela tarefa.
-        
-        Requer o ID do usuário a ser removido. Se o usuário não estiver atribuído,
-        retorna um erro 404.
-        """
+        """Remove um usuário como responsável pela tarefa."""
         tarefa = self.get_object()
         usuario_id = request.data.get('usuario_id')
         
@@ -337,12 +328,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def adicionar_comentario(self, request, pk=None):
-        """
-        Adiciona um comentário à tarefa.
-        
-        O usuário autenticado é automaticamente definido como autor do comentário.
-        Requer o texto do comentário.
-        """
+        """Adiciona um comentário à tarefa."""
         tarefa = self.get_object()
         texto = request.data.get('texto')
         
@@ -385,12 +371,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def associar_sprint(self, request, pk=None):
-        """
-        Associa a tarefa a uma sprint ou remove a associação existente.
-        
-        Requer o ID da sprint a ser associada. Se o ID for 0 ou null, remove a
-        associação atual da tarefa com qualquer sprint.
-        """
+        """Associa a tarefa a uma sprint ou remove a associação existente."""
         tarefa = self.get_object()
         sprint_id = request.data.get('sprint_id')
         
@@ -453,12 +434,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'])
     def atualizar_status(self, request, pk=None):
-        """
-        Atualiza o status de uma tarefa e registra a alteração no histórico.
-        
-        Requer o novo status da tarefa. Aceita um comentário opcional sobre a mudança.
-        O histórico de alterações é mantido para auditoria e rastreabilidade.
-        """
+        """Atualiza o status de uma tarefa e registra a alteração no histórico."""
         tarefa = self.get_object()
         novo_status = request.data.get('status')
         comentario = request.data.get('comentario', '')
@@ -509,12 +485,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['get'])
     def historico_status(self, request, pk=None):
-        """
-        Retorna o histórico de alterações de status da tarefa.
-        
-        Lista todas as mudanças de status em ordem cronológica inversa (mais recentes primeiro),
-        incluindo quem fez a alteração, quando e comentários associados.
-        """
+        """Retorna o histórico de alterações de status da tarefa."""
         tarefa = self.get_object()
         historico = HistoricoStatusTarefa.objects.filter(tarefa=tarefa)\
             .select_related('alterado_por')\
@@ -532,25 +503,25 @@ class TarefaViewSet(viewsets.ModelViewSet):
             OpenApiParameter(name="tarefa", description="Filtrar por ID da tarefa", type=int),
             OpenApiParameter(name="usuario", description="Filtrar por ID do usuário", type=int),
         ],
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={200: AtribuicaoTarefaSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Criar atribuição de tarefa",
         description="Atribui uma tarefa a um usuário.",
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={201: AtribuicaoTarefaSerializer}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes de atribuição",
         description="Retorna informações detalhadas de uma atribuição específica.",
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={200: AtribuicaoTarefaSerializer}
     ),
     destroy=extend_schema(
         summary="Remover atribuição",
         description="Remove a atribuição de uma tarefa a um usuário.",
-        tags=["Tarefas"],
+        tags=["Atribuições"],
         responses={204: None}
     )
 )
@@ -590,37 +561,37 @@ class AtribuicaoTarefaViewSet(viewsets.ModelViewSet):
             OpenApiParameter(name="autor", description="Filtrar por ID do autor", type=int),
             OpenApiParameter(name="ordering", description="Ordenar resultados (ex: -criado_em)", type=str),
         ],
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={200: ComentarioTarefaSerializer(many=True)}
     ),
     create=extend_schema(
         summary="Criar comentário",
         description="Adiciona um novo comentário a uma tarefa.",
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={201: ComentarioTarefaSerializer}
     ),
     retrieve=extend_schema(
         summary="Obter detalhes de comentário",
         description="Retorna informações detalhadas de um comentário específico.",
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     update=extend_schema(
         summary="Atualizar comentário",
         description="Atualiza o texto de um comentário existente.",
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     partial_update=extend_schema(
         summary="Atualizar comentário parcialmente",
         description="Atualiza parcialmente o texto de um comentário existente.",
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={200: ComentarioTarefaSerializer}
     ),
     destroy=extend_schema(
         summary="Excluir comentário",
         description="Remove permanentemente um comentário.",
-        tags=["Tarefas"],
+        tags=["Comentários de Tarefas"],
         responses={204: None}
     )
 )

@@ -151,66 +151,46 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT padrão
-        'rest_framework.authentication.SessionAuthentication',  # Sessões tradicionais Django
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',  # Allow unauthenticated access by default
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',  # Suporte a filtros em consultas
-        'rest_framework.filters.SearchFilter',                # Pesquisa por texto
-        'rest_framework.filters.OrderingFilter',              # Ordenação de resultados
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',  # Paginação por número de página
-    'PAGE_SIZE': 10,  # Itens por página
-
-    # Exceções personalizadas para API
-    # TODO: Ensure 'core.utils.custom_exception_handler' exists or remove/replace this line.
-    # 'EXCEPTION_HANDLER': 'core.utils.custom_exception_handler',
-
-    # Renderizadores padrão para respostas
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'users.authentication.CustomJWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',         # Resposta JSON
-        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
-
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Geração automática do esquema OpenAPI
-
-    # Parsers para requisições
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',      # JSON
-        'rest_framework.parsers.FormParser',      # Formulários
-        'rest_framework.parsers.MultiPartParser', # Upload de arquivos
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
     ],
-    # Old doc settings removed as drf-spectacular handles this
-    # 'DOC_EXPANSION': 'list',
-    # 'DOCS_TEMPLATE': 'rest_framework/docs/index.html',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
 }
 
-# Customizações do Swagger UI (These are handled by SPECTACULAR_SETTINGS['SWAGGER_UI_SETTINGS'])
-# SWAGGER_UI_SETTINGS = { ... } # REMOVED standalone block
-    
-# Configurações específicas do Simple JWT para tokens
+# Configurações JWT
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    
+    'AUTH_HEADER_TYPES': ('JWT',),  # Mudando de Bearer para JWT
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-    'AUTH_COOKIE': 'access_token',   # Cookie name
-    'AUTH_COOKIE_DOMAIN': None,      # Use None for localhost
-    'AUTH_COOKIE_SECURE': False,     # Set to True in production with HTTPS
-    'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Lax',
-    'UPDATE_LAST_LOGIN': True,                    # Atualiza o campo last_login do usuário
-    'AUTH_HEADER_TYPES': ('Bearer',),             # Prefixo do token no header Authorization
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',)  # Classe de token permitida
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
+    
     
 # Configurações para a biblioteca DJOSER (facilita endpoints de autenticação)
 DJOSER = {
@@ -269,86 +249,56 @@ LOGGING = {
 # Configurações para drf-spectacular (Swagger/OpenAPI)
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Planify API',
-    'DESCRIPTION': 'API para o sistema Planify - Gerenciamento de Projetos',
+    'DESCRIPTION': '''
+API do sistema Planify para gerenciamento de projetos.
+
+## Autenticação
+
+1. Faça login em `/api/auth/login/` para obter os tokens
+2. Use o token de acesso no header das requisições:
+   `Authorization: JWT <access_token>`
+3. Quando o token expirar (após 1 hora), use `/api/auth/token/refresh/` para obter um novo
+
+## Formatos de Data e Hora
+- Datas: `YYYY-MM-DD`
+- Data e Hora: `YYYY-MM-DD HH:MM:SS`
+- Timezone: America/Sao_Paulo
+    ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '', # Ensure your API URLs are prefixed with /api/ or adjust this
+    'SCHEMA_PATH_PREFIX': '/api/',
     'COMPONENT_SPLIT_REQUEST': True,
-    'SCHEMA_PATH_PREFIX_TRIM': True,
-    'SERVE_AUTHENTICATION': None,  # Remove autenticação para acessar docs
-    'SECURITY': [{'Bearer': []}],  # Define o esquema de segurança
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization',
-            'description': 'Token JWT no formato: "Bearer {seu_token}"'
-        }
-    },
-
-    # Customizações do Swagger UI
-    'SWAGGER_UI_SETTINGS': {
-        'deepLinking': True,
-        'displayOperationId': False,
-        'defaultModelsExpandDepth': 3,
-        'defaultModelExpandDepth': 3,
-        'defaultModelRendering': 'model',
-        'displayRequestDuration': True,
-        'docExpansion': 'list',
-        'filter': True,
-        'showExtensions': True,
-        'showCommonExtensions': True,
-        'supportedSubmitMethods': ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
-        'tryItOutEnabled': True,
-    },
-    'SWAGGER_UI_DIST': '//unpkg.com/swagger-ui-dist@5.10.3', # Updated to a more recent version
-    'SWAGGER_UI_FAVICON_HREF': '//unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png', # Updated
-    'REDOC_DIST': '//unpkg.com/redoc@next/bundles/redoc.standalone.js', # Updated to 'next' for latest
-    'TAGS': [
-        '''
-        {'name': 'Autenticação', 'description': 'Endpoints para autenticação e gerenciamento de usuários'},
-        {'name': 'Projetos', 'description': 'Endpoints para gerenciamento de projetos e sprints'},
-        {'name': 'Tarefas', 'description': 'Endpoints para gerenciamento de tarefas'},
-        {'name': 'Equipes', 'description': 'Endpoints para gerenciamento de equipes e membros'},
-        {'name': 'Riscos', 'description': 'Endpoints para gerenciamento de riscos'},
-        {'name': 'Custos', 'description': 'Endpoints para controle de orçamentos e gastos'},
-        {'name': 'Documentos', 'description': 'Endpoints para gerenciamento de documentos'},
-        {'name': 'Comunicações', 'description': 'Endpoints para mensagens e notificações'},
-        {'name': 'Dashboard', 'description': 'Endpoints para painéis e métricas'},
-        {'name': 'Saúde do Sistema', 'description': 'Endpoints para verificação de status da API'},
-        '''
-    ],
-
-    # Fix enum naming collisions
-    'ENUM_NAME_OVERRIDES': {
-        'NovoStatusEnum': 'TaskStatusEnum',
-        'StatusEnum': 'GeneralStatusEnum',
-        'PapelEnum': 'UserRoleEnum',
-        'TipoEnum': 'DocumentTypeEnum',
-        'ProbabilidadeEnum': 'RiskProbabilityEnum',
-        'ImpactoEnum': 'RiskImpactEnum',
-        'StatusAnteriorEnum': 'PreviousStatusEnum',
-        'TarefaComentarioEnum': 'TaskCommentTypeEnum',
-        'ProjetoStatusEnum': 'ProjectStatusEnum',
-        'DocumentoNovoEnum': 'NewDocumentEnum',
-        'MensagemChatEnum': 'ChatMessageTypeEnum',
-    },
-    
-    # Configure operationId to avoid collisions
-    'OPERATION_ID_MAPPING': {
-        'api_auth_users_reset_password_create': 'reset_user_password',
-        'api_auth_users_change_password_create': 'change_user_password',
-    },
-    
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,
     },
-    
-    # Removed problematic hooks
+    'SECURITY': [
+        {
+            'JWT': []
+        }
+    ],
+    'TAGS': [
+        {'name': 'Autenticação', 'description': 'Endpoints de autenticação'},
+        {'name': 'Usuários', 'description': 'Gerenciamento de usuários'},
+        {'name': 'Projetos', 'description': 'Gerenciamento de projetos'},
+        {'name': 'Tarefas', 'description': 'Gerenciamento de tarefas'},
+        {'name': 'Equipes', 'description': 'Gerenciamento de equipes'},
+        {'name': 'Comunicações', 'description': 'Gerenciamento de comunicações'},
+        {'name': 'Riscos', 'description': 'Gerenciamento de riscos'},
+        {'name': 'Custos', 'description': 'Gerenciamento de custos'},
+        {'name': 'Documentos', 'description': 'Gerenciamento de documentos'},
+    ],
+    'SERVERS': [
+        {'url': 'http://localhost:8000', 'description': 'Local Development'},
+    ],
+    'AUTHENTICATION_WHITELIST': [
+        'login',
+        'token/refresh',
+    ],
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums',
+        'drf_spectacular.hooks.postprocess_schema_references',
+    ],
 }
-
-
-
 # Configurações CORS (Cross-Origin Resource Sharing)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
