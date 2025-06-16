@@ -99,7 +99,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Listar membros da equipe",
         tags=["Equipes"],
-        responses={200: Response}
+        responses={200: MembroEquipeSerializer(many=True)}
     )
     @action(detail=True, methods=['get'])
     def membros(self, request, pk=None):
@@ -114,7 +114,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Adicionar membro à equipe",
         tags=["Equipes"],
-        responses={200: Response}
+        responses={201: MembroEquipeSerializer}
     )
     @action(detail=True, methods=['post'])
     def adicionar_membro(self, request, pk=None):
@@ -166,7 +166,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Remover membro de equipe",
         tags=["Equipes"],
-        responses={200: Response}
+        responses={204: None}
     )
     @action(detail=True, methods=['post'])
     def remover_membro(self, request, pk=None):
@@ -211,7 +211,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Atualizar papel de um membro de equipe",
         tags=["Equipes"],
-        responses={200: Response}
+        responses={200: MembroEquipeSerializer}
     )
     @action(detail=True, methods=['post'])
     def atualizar_papel_membro(self, request, pk=None):
@@ -261,7 +261,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Retornar usuários disponíveis à equipe",
         tags=["Equipes"],
-        responses={200: Response}
+        responses={200: UserMinimalSerializer(many=True)}
     )
     @action(detail=False, methods=['get'])
     def usuarios_disponiveis(self, request):

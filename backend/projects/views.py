@@ -426,7 +426,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         description="Exporta os dados do projeto."
     )
     @action(detail=True, methods=['get'])
-    def exportar(self, request, pk=None):
+    def export_project(self, request, pk=None):
         """Exporta os dados do projeto."""
         projeto = self.get_object()
         # Implementação da exportação

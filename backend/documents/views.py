@@ -182,7 +182,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         }
     )
     @action(detail=True, methods=['get'])
-    def historico(self, request, pk=None):
+    def document_history(self, request, pk=None):
         """
         Retorna o histórico de versões do documento.
         """

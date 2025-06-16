@@ -222,30 +222,6 @@ class RiscoViewSet(viewsets.ModelViewSet):
         tags=["Riscos"],
         description="Retorna o histórico detalhado de um risco específico.",
         responses={200: HistoricoRiscoSerializer}
-    ),
-    create=extend_schema(
-        summary="Criar novo histórico do risco",
-        tags=["Riscos"],
-        description="Cria um novo histórico para o risco.",
-        responses={201: HistoricoRiscoSerializer}
-    ),
-    update=extend_schema(
-        summary="Atualizar histórico do risco",
-        tags=["Riscos"],
-        description="Atualiza todos o histórico de um risco existente.",
-        responses={200: HistoricoRiscoSerializer}
-    ),
-    partial_update=extend_schema(
-        summary="Atualizar histórico do risco parcialmente",
-        tags=["Riscos"],
-        description="Atualiza parcialmente o histórico de um risco existente.",
-        responses={200: HistoricoRiscoSerializer}
-    ),
-    destroy=extend_schema(
-        summary="Excluir histórico do risco",
-        tags=["Riscos"],
-        description="Remove um histórico de um risco existente.",
-        responses={204: None}
     )
 )
 class HistoricoRiscoViewSet(viewsets.ReadOnlyModelViewSet):

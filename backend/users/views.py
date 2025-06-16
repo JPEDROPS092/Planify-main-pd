@@ -79,7 +79,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Define permissões com base na ação."""
         if self.action == 'create':
             return [HasModulePermission('USERS', 'CREATE')]
-        elif self.action == 'reset_password':
+        elif self.action == 'reset_user_password':
             return [HasModulePermission('USERS', 'EDIT')]
         elif self.action in ['update', 'partial_update']:
             return [HasModulePermission('USERS', 'EDIT')]
@@ -151,13 +151,13 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @extend_schema(
-        summary="Redefinir para senha temporária",
+        summary="Redefinir senha de usuário específico",
         tags=["Autenticação"],
         description="Redefine a senha do usuário para uma senha temporária e envia por e-mail.",
         responses={200: None}
     )
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
-    def reset_password(self, request, pk=None):
+    def reset_user_password(self, request, pk=None):
         """Redefine a senha do usuário para uma senha temporária e envia por e-mail."""
         user = self.get_object()
         # Generate a temporary password
@@ -266,11 +266,52 @@ class UserViewSet(viewsets.ModelViewSet):
         responses={204: None}
     )
 )
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar perfis de usuário",
+        tags=["Autenticação"],
+        description="Retorna uma lista de perfis de usuário.",
+        responses={200: UserProfileSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do perfil de usuário",
+        tags=["Autenticação"],
+        description="Retorna informações detalhadas de um perfil de usuário específico.",
+        responses={200: UserProfileSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo perfil de usuário",
+        tags=["Autenticação"],
+        description="Cria um novo perfil de usuário.",
+        responses={201: UserProfileSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar perfil de usuário",
+        tags=["Autenticação"],
+        description="Atualiza todos os campos de um perfil de usuário existente.",
+        responses={200: UserProfileSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar perfil de usuário parcialmente",
+        tags=["Autenticação"],
+        description="Atualiza parcialmente um perfil de usuário existente.",
+        responses={200: UserProfileSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir perfil de usuário",
+        tags=["Autenticação"],
+        description="Remove um perfil de usuário existente.",
+        responses={204: None}
+    )
+)
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
+    queryset = UserProfile.objects.all()
     
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return UserProfile.objects.none()
         return UserProfile.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
