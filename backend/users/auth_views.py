@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from .authentication import get_tokens_for_user
+from .serializers import LogoutResponseSerializer
 
 @extend_schema(
     tags=['Autenticação'],
@@ -141,19 +142,13 @@ class CustomTokenRefreshView(TokenRefreshView):
     É recomendado também descartar o token de refresh no cliente.
     ''',
     responses={
-        200: {
-            'type': 'object',
-            'properties': {
-                'message': {
-                    'type': 'string',
-                    'example': 'Logout realizado com sucesso'
-                }
-            }
-        }
+        200: LogoutResponseSerializer,
+        400: LogoutResponseSerializer,
     }
 )
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = LogoutResponseSerializer
 
     def post(self, request):
         try:

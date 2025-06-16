@@ -38,6 +38,14 @@ urlpatterns = [
     # Admin do Django
     path('admin/', admin.site.urls),
     
+    # OpenAPI documentation endpoints
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # API root
+    path('api/', api_root, name='api-root'),
+    
     # === ROTAS DE AUTENTICAÇÃO E AUTORIZAÇÃO ===
     path('api/auth/', include('users.urls')),  
     
@@ -52,20 +60,6 @@ urlpatterns = [
     path('api/costs/', include('costs.urls')),
     path('api/documents/', include('documents.urls')),
     path('api/communications/', include('communications.urls')),
-    
-    # === DOCUMENTAÇÃO DA API ===
-    # URLs para documentação da API com drf-spectacular
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    
-    # URLs principais para documentação (mais curtas e amigáveis)
-    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
-    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    
-    # URLs alternativas com prefixo api/ (mantidas por compatibilidade)
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='api-docs'),
-    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
-    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),
 ]
 
 # Durante o desenvolvimento (DEBUG=True), serve arquivos estáticos e de mídia diretamente

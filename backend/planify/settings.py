@@ -290,13 +290,10 @@ API do sistema Planify para gerenciamento de projetos.
     'SERVERS': [
         {'url': 'http://localhost:8000', 'description': 'Local Development'},
     ],
-    'AUTHENTICATION_WHITELIST': [
-        'login',
-        'token/refresh',
-    ],
+    'AUTHENTICATION_WHITELIST': [],
+    'SERVE_PUBLIC': True,
     'POSTPROCESSING_HOOKS': [
-        'drf_spectacular.hooks.postprocess_schema_enums',
-        'drf_spectacular.hooks.postprocess_schema_references',
+        'drf_spectacular.hooks.postprocess_schema_enums'
     ],
 }
 # Configurações CORS (Cross-Origin Resource Sharing)

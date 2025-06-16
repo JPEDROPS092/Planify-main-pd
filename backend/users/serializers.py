@@ -149,3 +149,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
     def validate_password(self, value):
         # Additional password validation logic could be added here
         return value
+
+
+class LogoutResponseSerializer(serializers.Serializer):
+    message = serializers.CharField(read_only=True)
