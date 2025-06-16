@@ -38,40 +38,20 @@ urlpatterns = [
     # Admin do Django
     path('admin/', admin.site.urls),
     
-    # API Root - Endpoint específico para /api/
-    #path('api/', api_root, name='api-root'),
-    
-    # === ROTAS DE AUTENTICAÇÃO ===
-    path('api/auth/', include('users.urls')),  # Nossa implementação customizada
-    path('api/auth/', include('djoser.urls')),  # Endpoints adicionais do Djoser
+    # === ROTAS DE AUTENTICAÇÃO E AUTORIZAÇÃO ===
+    path('api/auth/', include('users.urls')),  
     
     # === MÓDULOS DO SISTEMA ===
-    # Core (saúde, dashboard, métricas)
-    #path('api/', include('core.urls')),
-    
-    # Projects (projetos, sprints, tarefas)
-    path('api/projects/', include('projects.urls')),
-
-    # Tasks (tarefas, checklists, comentários)
-    path('api/tasks/', include('tasks.urls')),
-    
-    # Teams (equipes, membros, funções)
+    # Teams (gerenciamento de equipes)
     path('api/teams/', include('teams.urls')),
     
-    # Risks (riscos, avaliações, planos de mitigação)
+    # Outros módulos...
+    path('api/projects/', include('projects.urls')),
+    path('api/tasks/', include('tasks.urls')),
     path('api/risks/', include('risks.urls')),
-    
-    # Costs (custos, orçamentos, despesas)
     path('api/costs/', include('costs.urls')),
-    
-    # Documents (documentos, arquivos, links)
     path('api/documents/', include('documents.urls')),
-    
-    # Communications (comunicações, anúncios, mensagens)
     path('api/communications/', include('communications.urls')),
-    
-    # Users (usuários, perfis, permissões)
-    path('api/users/', include('users.urls')),
     
     # === DOCUMENTAÇÃO DA API ===
     # URLs para documentação da API com drf-spectacular

@@ -318,6 +318,33 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Saúde do Sistema', 'description': 'Endpoints para verificação de status da API'},
         '''
     ],
+
+    # Fix enum naming collisions
+    'ENUM_NAME_OVERRIDES': {
+        'NovoStatusEnum': 'TaskStatusEnum',
+        'StatusEnum': 'GeneralStatusEnum',
+        'PapelEnum': 'UserRoleEnum',
+        'TipoEnum': 'DocumentTypeEnum',
+        'ProbabilidadeEnum': 'RiskProbabilityEnum',
+        'ImpactoEnum': 'RiskImpactEnum',
+        'StatusAnteriorEnum': 'PreviousStatusEnum',
+        'TarefaComentarioEnum': 'TaskCommentTypeEnum',
+        'ProjetoStatusEnum': 'ProjectStatusEnum',
+        'DocumentoNovoEnum': 'NewDocumentEnum',
+        'MensagemChatEnum': 'ChatMessageTypeEnum',
+    },
+    
+    # Configure operationId to avoid collisions
+    'OPERATION_ID_MAPPING': {
+        'api_auth_users_reset_password_create': 'reset_user_password',
+        'api_auth_users_change_password_create': 'change_user_password',
+    },
+    
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,
+    },
+    
+    # Removed problematic hooks
 }
 
 

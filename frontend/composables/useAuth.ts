@@ -1,6 +1,7 @@
 // composables/useAuth.ts
 import { ref, computed, readonly } from 'vue';
 import type { User } from '../types/User';
+import { useNotification } from './useNotification';
 
 export const useAuth = () => {
   const { $api } = useNuxtApp();
@@ -34,11 +35,13 @@ export const useAuth = () => {
   const login = async (credentials: { username: string; password: string; remember?: boolean }) => {
     isLoading.value = true;
     error.value = null;
+    
+    const { showSuccess, showError } = useNotification();
 
     try {
       const { $api } = useNuxtApp();
       
-      // Fazer a chamada para a API de login
+      // Fazer a chamada para a API de login usando o serviço correto
       const response = await $api.api.apiAuthTokenCreate({
         username: credentials.username,
         password: credentials.password,
@@ -77,6 +80,9 @@ export const useAuth = () => {
           userCookie.value = JSON.stringify(response.user);
           user.value = response.user;
         }
+
+        // Exibir notificação de sucesso
+        showSuccess('Login realizado com sucesso!');
 
         return { success: true, user: response.user, token: accessToken };
       } else {
@@ -124,6 +130,9 @@ export const useAuth = () => {
         }
       }
       
+      // Exibir notificação de erro
+      showError(errorMessage);
+      
       error.value = errorMessage;
       return { success: false, error: errorMessage };
     } finally {
@@ -133,6 +142,8 @@ export const useAuth = () => {
 
   // Função para fazer logout
   const logout = async () => {
+    const { showSuccess } = useNotification();
+    
     const tokenCookie = useCookie('auth-token');
     const refreshTokenCookie = useCookie('refresh-token');
     const userCookie = useCookie('auth-user');
@@ -142,6 +153,9 @@ export const useAuth = () => {
     refreshTokenCookie.value = null;
     userCookie.value = null;
     user.value = null;
+    
+    // Exibir notificação de sucesso
+    showSuccess('Logout realizado com sucesso!');
     
     // Redirecionar para a página de login
     await navigateTo('/auth/login');
@@ -204,7 +218,7 @@ export const useAuth = () => {
       // Se não temos dados do usuário no cookie, buscar da API
       try {
         const { $api } = useNuxtApp();
-        const userData = await $api.api.apiAuthUsersMeRetrieve();
+        const userData = await $api.autenticaO.apiAuthUsersMeRetrieve();
         
         if (userData) {
           const userCookie = useCookie('auth-user');
@@ -231,6 +245,8 @@ export const useAuth = () => {
   }) => {
     isLoading.value = true;
     error.value = null;
+    
+    const { showSuccess, showError } = useNotification();
 
     try {
       const { $api } = useNuxtApp();
@@ -244,10 +260,13 @@ export const useAuth = () => {
       });
 
       if (response) {
+        // Exibir notificação de sucesso
+        showSuccess('Usuário registrado com sucesso!');
+        
         return { 
           success: true, 
           user: response,
-          message: 'Usuário registrado com sucesso. Verifique seu email para ativar sua conta.'
+          message: 'Usuário registrado com sucesso!'
         };
       } else {
         throw new Error('Resposta inválida da API');
@@ -261,45 +280,18 @@ export const useAuth = () => {
       if (e.response?.data) {
         const data = e.response.data;
         
-        // Erros específicos do Django REST Framework/Djoser
         if (typeof data === 'object') {
           const errorMessages: string[] = [];
           
-          // Mapear erros comuns
-          const fieldMapping: Record<string, string> = {
-            'username': 'Nome de usuário',
-            'email': 'E-mail',
-            'password': 'Senha',
-            'full_name': 'Nome completo',
-            'non_field_errors': 'Erro geral'
-          };
-          
           Object.entries(data).forEach(([key, value]) => {
-            const fieldName = fieldMapping[key] || key;
             const messages = Array.isArray(value) ? value : [value];
-            
             messages.forEach((msg: string) => {
-              // Traduzir mensagens comuns
-              if (msg.includes('already exists') || msg.includes('já existe')) {
-                if (key === 'username') {
-                  errorMessages.push('Este nome de usuário já está em uso.');
-                } else if (key === 'email') {
-                  errorMessages.push('Este e-mail já está cadastrado.');
-                } else {
-                  errorMessages.push(`${fieldName}: ${msg}`);
-                }
-              } else if (msg.includes('password') && msg.includes('common')) {
-                errorMessages.push('A senha é muito comum. Escolha uma senha mais segura.');
-              } else if (msg.includes('password') && msg.includes('short')) {
-                errorMessages.push('A senha é muito curta. Use pelo menos 8 caracteres.');
-              } else if (msg.includes('password') && msg.includes('numeric')) {
-                errorMessages.push('A senha não pode ser totalmente numérica.');
-              } else if (msg.includes('Enter a valid email')) {
-                errorMessages.push('Digite um e-mail válido.');
-              } else if (msg.includes('required')) {
-                errorMessages.push(`${fieldName} é obrigatório.`);
+              if (key === 'username' && msg.includes('already exists')) {
+                errorMessages.push('Este nome de usuário já está em uso.');
+              } else if (key === 'email' && msg.includes('already exists')) {
+                errorMessages.push('Este e-mail já está cadastrado.');
               } else {
-                errorMessages.push(`${fieldName}: ${msg}`);
+                errorMessages.push(msg);
               }
             });
           });
@@ -311,12 +303,11 @@ export const useAuth = () => {
           errorMessage = data;
         }
       } else if (e.message) {
-        if (e.message.includes('Network Error') || e.message.includes('ERR_NETWORK')) {
-          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-        } else {
-          errorMessage = e.message;
-        }
+        errorMessage = e.message;
       }
+      
+      // Exibir notificação de erro
+      showError(errorMessage);
       
       error.value = errorMessage;
       return { success: false, error: errorMessage };
@@ -333,6 +324,8 @@ export const useAuth = () => {
   }) => {
     isLoading.value = true;
     error.value = null;
+    
+    const { showSuccess, showError } = useNotification();
 
     try {
       const { $api } = useNuxtApp();
@@ -347,6 +340,9 @@ export const useAuth = () => {
         const userCookie = useCookie('auth-user');
         userCookie.value = JSON.stringify(response);
         user.value = response;
+
+        // Exibir notificação de sucesso
+        showSuccess('Perfil atualizado com sucesso!');
 
         return { success: true, user: response };
       } else {
@@ -363,15 +359,7 @@ export const useAuth = () => {
         if (typeof data === 'object') {
           const errorMessages: string[] = [];
           
-          const fieldMapping: Record<string, string> = {
-            'username': 'Nome de usuário',
-            'email': 'E-mail',
-            'full_name': 'Nome completo',
-            'non_field_errors': 'Erro geral'
-          };
-          
           Object.entries(data).forEach(([key, value]) => {
-            const fieldName = fieldMapping[key] || key;
             const messages = Array.isArray(value) ? value : [value];
             
             messages.forEach((msg: string) => {
@@ -381,10 +369,10 @@ export const useAuth = () => {
                 } else if (key === 'email') {
                   errorMessages.push('Este e-mail já está cadastrado.');
                 } else {
-                  errorMessages.push(`${fieldName}: ${msg}`);
+                  errorMessages.push(msg);
                 }
               } else {
-                errorMessages.push(`${fieldName}: ${msg}`);
+                errorMessages.push(msg);
               }
             });
           });
@@ -399,71 +387,8 @@ export const useAuth = () => {
         errorMessage = e.message;
       }
       
-      error.value = errorMessage;
-      return { success: false, error: errorMessage };
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
-  // Função para ativar conta de usuário
-  const activateAccount = async (activationData: { uid: string; token: string }) => {
-    isLoading.value = true;
-    error.value = null;
-
-    try {
-      const { $api } = useNuxtApp();
-      
-      const response = await $api.api.apiAuthUsersActivationCreate({
-        uid: activationData.uid,
-        token: activationData.token,
-      });
-
-      return { success: true, message: 'Conta ativada com sucesso!' };
-    } catch (e: any) {
-      console.error('Erro na ativação:', e);
-      
-      let errorMessage = 'Erro ao ativar conta';
-      
-      if (e.response?.data?.detail) {
-        errorMessage = e.response.data.detail;
-      } else if (e.response?.data && typeof e.response.data === 'object') {
-        const errors = Object.values(e.response.data).flat();
-        errorMessage = errors.join(', ');
-      } else if (e.message) {
-        errorMessage = e.message;
-      }
-      
-      error.value = errorMessage;
-      return { success: false, error: errorMessage };
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
-  // Função para reenviar email de ativação
-  const resendActivation = async (email: string) => {
-    isLoading.value = true;
-    error.value = null;
-
-    try {
-      const { $api } = useNuxtApp();
-      
-      await $api.api.apiAuthUsersResendActivationCreate({
-        email: email,
-      });
-
-      return { success: true, message: 'Email de ativação reenviado com sucesso!' };
-    } catch (e: any) {
-      console.error('Erro ao reenviar ativação:', e);
-      
-      let errorMessage = 'Erro ao reenviar email de ativação';
-      
-      if (e.response?.data?.detail) {
-        errorMessage = e.response.data.detail;
-      } else if (e.message) {
-        errorMessage = e.message;
-      }
+      // Exibir notificação de erro
+      showError(errorMessage);
       
       error.value = errorMessage;
       return { success: false, error: errorMessage };
@@ -492,7 +417,5 @@ export const useAuth = () => {
     getCurrentUser,
     updateProfile,
     refreshToken,
-    activateAccount,
-    resendActivation,
   };
 };
