@@ -2,6 +2,18 @@
   "todo-tasks": [],
   "in-progress": [
     {
+      "creation_time": "2025-06-10T13:46:29.009Z",
+      "description": {
+        "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "references": [],
+      "title": "Criar plano de teste da API"
+    }
+  ],
+  "testing": [
+    {
       "assignedTo": {
         "name": "LUIZ-FELIPE3393"
       },
@@ -14,19 +26,8 @@
       "prio": 1,
       "references": [],
       "title": "Modularizar API Swagger"
-    },
-    {
-      "creation_time": "2025-06-10T13:46:29.009Z",
-      "description": {
-        "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
-        "mime": "text/markdown"
-      },
-      "id": "1",
-      "references": [],
-      "title": "Criar plano de teste da API"
     }
   ],
-  "testing": [],
   "done": [],
   "todo": [
     {
