@@ -12,7 +12,7 @@ class CustomJWTAuthentication(JWTAuthentication):
             if header is None:
                 return None
 
-            raw_token = self.get_raw_token(header)
+            raw_token = self.get_raw_token(header.encode())
             if raw_token is None:
                 return None
 
