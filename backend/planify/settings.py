@@ -249,33 +249,26 @@ LOGGING = {
 # Configurações para drf-spectacular (Swagger/OpenAPI)
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Planify API',
-    'DESCRIPTION': '''
-API do sistema Planify para gerenciamento de projetos.
-
-## Autenticação
-
-1. Faça login em `/api/auth/login/` para obter os tokens
-2. Use o token de acesso no header das requisições:
-   `Authorization: JWT <access_token>`
-3. Quando o token expirar (após 1 hora), use `/api/auth/token/refresh/` para obter um novo
-
-## Formatos de Data e Hora
-- Datas: `YYYY-MM-DD`
-- Data e Hora: `YYYY-MM-DD HH:MM:SS`
-- Timezone: America/Sao_Paulo
-    ''',
+    'DESCRIPTION': 'Sistema de Gerenciamento de Projetos',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': '/api/',
     'COMPONENT_SPLIT_REQUEST': True,
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,
+        'displayOperationId': True,
     },
     'SECURITY': [
-        {
-            'JWT': []
-        }
+        {'Bearer': []}
     ],
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Digite: JWT <token>'
+        }
+    },
     'TAGS': [
         {'name': 'Autenticação', 'description': 'Endpoints de autenticação'},
         {'name': 'Usuários', 'description': 'Gerenciamento de usuários'},
@@ -290,8 +283,18 @@ API do sistema Planify para gerenciamento de projetos.
     'SERVERS': [
         {'url': 'http://localhost:8000', 'description': 'Local Development'},
     ],
-    'AUTHENTICATION_WHITELIST': [],
     'SERVE_PUBLIC': True,
+    'ENUM_NAME_OVERRIDES': {
+        'StatusAnteriorA52Enum': 'StatusAnteriorEnum',
+        'StatusAnterior607Enum': 'StatusAnteriorEnum',
+        'NovoStatusA52Enum': 'NovoStatusEnum',
+        'NovoStatus607Enum': 'NovoStatusEnum',
+        'PapelF38Enum': 'PapelEnum',
+        'MensagemChatEnum': 'MensagemChatEnum',
+        'NovaProbabilidadeEnum': 'ProbabilidadeEnum',
+        'NovoImpactoEnum': 'ImpactoEnum',
+        'ProbabilidadeEnum': 'ProbabilidadeEnum'
+    },
     'POSTPROCESSING_HOOKS': [
         'drf_spectacular.hooks.postprocess_schema_enums'
     ],

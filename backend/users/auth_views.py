@@ -1,10 +1,11 @@
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, inline_serializer
+from rest_framework import serializers
+from django.contrib.auth import authenticate
 from .authentication import get_tokens_for_user
 from .serializers import LogoutResponseSerializer
 
@@ -19,46 +20,30 @@ from .serializers import LogoutResponseSerializer
     
     Quando o token de acesso expirar (após 1 hora), use o token de refresh para obter um novo.
     ''',
-    request={
-        'application/json': {
-            'type': 'object',
-            'properties': {
-                'username': {
-                    'type': 'string',
-                    'description': 'Nome de usuário'
-                },
-                'password': {
-                    'type': 'string',
-                    'description': 'Senha do usuário',
-                    'format': 'password'
-                }
-            },
-            'required': ['username', 'password']
+    request=inline_serializer(
+        name='LoginRequest',
+        fields={
+            'username': serializers.CharField(),
+            'password': serializers.CharField(write_only=True)
         }
-    },
+    ),
     responses={
-        200: {
-            'type': 'object',
-            'properties': {
-                'access': {
-                    'type': 'string',
-                    'description': 'Token de acesso JWT (expira em 1 hora)'
-                },
-                'refresh': {
-                    'type': 'string',
-                    'description': 'Token de refresh JWT (expira em 7 dias)'
-                }
+        200: inline_serializer(
+            name='LoginResponse',
+            fields={
+                'access': serializers.CharField(),
+                'refresh': serializers.CharField(),
             }
-        },
-        401: {
-            'type': 'object',
-            'properties': {
-                'detail': {
-                    'type': 'string',
-                    'example': 'Credenciais inválidas.'
+        ),
+        401: OpenApiResponse(
+            description="Credenciais inválidas",
+            response=inline_serializer(
+                name='LoginError',
+                fields={
+                    'detail': serializers.CharField(),
                 }
-            }
-        }
+            )
+        )
     }
 )
 class LoginView(APIView):
@@ -86,64 +71,39 @@ class LoginView(APIView):
         tokens = get_tokens_for_user(user)
         return Response(tokens, status=status.HTTP_200_OK)
 
+
 @extend_schema(
     tags=['Autenticação'],
     summary="Atualizar token de acesso",
     description='''
     Atualiza um token de acesso expirado usando o token de refresh.
-    
-    Envie o token de refresh para obter um novo token de acesso.
-    Se o token de refresh também estiver expirado (após 7 dias), será necessário fazer login novamente.
     ''',
-    request={
-        'application/json': {
-            'type': 'object',
-            'properties': {
-                'refresh': {
-                    'type': 'string',
-                    'description': 'Token de refresh JWT'
-                }
-            },
-            'required': ['refresh']
+    request=inline_serializer(
+        name='RefreshRequest',
+        fields={
+            'refresh': serializers.CharField(),
         }
-    },
+    ),
     responses={
-        200: {
-            'type': 'object',
-            'properties': {
-                'access': {
-                    'type': 'string',
-                    'description': 'Novo token de acesso JWT'
-                }
+        200: inline_serializer(
+            name='RefreshResponse',
+            fields={
+                'access': serializers.CharField(),
             }
-        },
-        401: {
-            'type': 'object',
-            'properties': {
-                'detail': {
-                    'type': 'string',
-                    'example': 'Token inválido ou expirado.'
-                }
-            }
-        }
+        ),
     }
 )
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
-    authentication_classes = []  # Remove todas as autenticações para o refresh
+    authentication_classes = []
+
 
 @extend_schema(
     tags=['Autenticação'],
     summary="Logout de usuário",
-    description='''
-    Realiza o logout do usuário invalidando o token atual.
-    
-    Após o logout, o token de acesso não poderá mais ser usado.
-    É recomendado também descartar o token de refresh no cliente.
-    ''',
+    description='Realiza o logout do usuário invalidando o token atual.',
     responses={
         200: LogoutResponseSerializer,
-        400: LogoutResponseSerializer,
     }
 )
 class LogoutView(APIView):
