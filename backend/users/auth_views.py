@@ -8,6 +8,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .authentication import get_tokens_for_user
 from .serializers import LogoutResponseSerializer
+from .models import BlacklistedTokens
 
 @extend_schema(
     tags=['Autenticação'],
@@ -68,7 +69,18 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        tokens = get_tokens_for_user(user)
+        # Checar se o token gerado está na lista negra
+        blacklisted_token = True
+        while blacklisted_token:
+            tokens = get_tokens_for_user(user)
+            blacklisted_tokens_results = BlacklistedTokens.objects.all()
+
+            blacklisted_token = False
+            for btoken in blacklisted_tokens_results.iterator():
+                if tokens["access"] == btoken.token or tokens["refresh"] == btoken.token:
+                    blacklisted_token = True
+        
+
         return Response(tokens, status=status.HTTP_200_OK)
 
 
@@ -112,13 +124,17 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            request.auth.delete()
+            if hasattr(request.auth.token, "decode"):
+                BlacklistedTokens.objects.create(token=str(request.auth.token.decode()))
+            else:
+                BlacklistedTokens.objects.create(token=str(request.auth.token))
+
             return Response(
                 {"message": "Logout realizado com sucesso"}, 
                 status=status.HTTP_200_OK
             )
-        except Exception:
+        except Exception as e:
             return Response(
-                {"message": "Erro ao realizar logout"}, 
+                {"message": "Erro ao realizar logout", "detail": str(e)}, 
                 status=status.HTTP_400_BAD_REQUEST
             )

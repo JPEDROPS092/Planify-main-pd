@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 
+class BlacklistedTokens(models.Model):
+    token = models.TextField(unique=True)
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username, full_name, password=None, **extra_fields):

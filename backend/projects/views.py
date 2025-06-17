@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
+from users.permissions import HasModulePermission
+
 from .models import Projeto, MembroProjeto, Sprint, HistoricoStatusProjeto
 from .serializers import ProjetoSerializer, ProjetoListSerializer, MembroProjetoSerializer, SprintSerializer, HistoricoStatusProjetoSerializer
 from tasks.models import Tarefa
@@ -122,6 +124,20 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     search_fields = ['titulo', 'descricao']
     ordering_fields = ['criado_em', 'titulo', 'status', 'prioridade', 'data_inicio', 'data_fim']
     ordering = ['-criado_em']
+
+    def get_permissions(self):
+        """Define permissões com base na ação."""
+        if self.action == 'create':
+            return [HasModulePermission('PROJECTS', 'CREATE')]
+        elif self.action == 'reset_password':
+            return [HasModulePermission('PROJECTS', 'EDIT')]
+        elif self.action in ['update', 'partial_update']:
+            return [HasModulePermission('PROJECTS', 'EDIT')]
+        elif self.action == 'destroy':
+            return [HasModulePermission('PROJECTS', 'DELETE')]
+        elif self.action == 'list':
+            return [HasModulePermission('PROJECTS', 'VIEW')]
+        return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
         """
@@ -173,7 +189,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         request=MembroProjetoSerializer,
         responses={201: MembroProjetoSerializer}
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('PROJECT', 'EDIT')])
     def adicionar_membro(self, request, pk=None):
         """
         Adiciona um membro ao projeto.
@@ -217,8 +233,19 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         """
         Lista todos os membros do projeto.
         """
+        user = request.user
+
         projeto = self.get_object()
         membros = MembroProjeto.objects.filter(projeto=projeto).select_related('usuario')
+
+        if user.role != "ADMIN":
+            if user.id not in [membro.usuario_id for membro in membros]:
+                # User não é um membro do projeto
+                return Response(
+                    {'detail': _('Você precisa ser um membro do projeto para isso.')}, 
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
         serializer = MembroProjetoSerializer(membros, many=True)
         return Response(serializer.data)
     
@@ -293,7 +320,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         description="Arquiva ou desarquiva um projeto.",
         responses={200: OpenApiTypes.OBJECT}
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('PROJECTS', 'EDIT')])
     def archive(self, request, pk=None):
         """
         Arquiva ou desarquiva um projeto.

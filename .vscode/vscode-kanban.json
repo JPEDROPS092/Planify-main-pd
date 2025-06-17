@@ -2,6 +2,16 @@
   "todo-tasks": [],
   "in-progress": [
     {
+      "assignedTo": {
+        "name": "LUIZ-FELIPE3393"
+      },
+      "creation_time": "2025-06-17T16:18:38.358Z",
+      "id": "4",
+      "prio": 1,
+      "references": [],
+      "title": "Testar e consertar autenticação (login, cadastro, logout, refresh)"
+    },
+    {
       "creation_time": "2025-06-10T13:46:29.009Z",
       "description": {
         "content": "Testar as rotas da API no Swagger. Registrar procedimentos e resultados",
@@ -12,7 +22,8 @@
       "title": "Criar plano de teste da API"
     }
   ],
-  "testing": [
+  "testing": [],
+  "done": [
     {
       "assignedTo": {
         "name": "LUIZ-FELIPE3393"
@@ -28,7 +39,6 @@
       "title": "Modularizar API Swagger"
     }
   ],
-  "done": [],
   "todo": [
     {
       "assignedTo": {

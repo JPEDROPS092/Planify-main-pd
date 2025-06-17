@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .permissions import get_required_permission, check_user_permission, log_unauthorized_access, PUBLIC_PATHS
-from users.models import AccessAttempt
+from users.models import AccessAttempt, BlacklistedTokens
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,13 @@ class PermissionMiddleware(MiddlewareMixin):
                 
             token = header.split(' ')[1]
             validated_token = self.jwt_auth.get_validated_token(token)
+
+            blacklisted_tokens_results = BlacklistedTokens.objects.all()
+
+            for btoken in blacklisted_tokens_results.iterator():
+                if validated_token.token == btoken.token:
+                    raise InvalidToken("Esse Token já foi invalidado")
+
             request.user = self.jwt_auth.get_user(validated_token)
             
         except (InvalidToken, TokenError):
