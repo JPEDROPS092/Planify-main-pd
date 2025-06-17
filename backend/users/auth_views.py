@@ -128,6 +128,7 @@ class LogoutView(APIView):
                 BlacklistedTokens.objects.create(token=str(request.auth.token.decode()))
             else:
                 BlacklistedTokens.objects.create(token=str(request.auth.token))
+                print("Token chegou como string")
 
             return Response(
                 {"message": "Logout realizado com sucesso"}, 
