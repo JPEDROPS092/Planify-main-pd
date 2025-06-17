@@ -1,0 +1,3 @@
+Procedimento,Resultado Esperado,Passou?,Falhas
+PUT na rota /api/projects/{id}/ id=ID do projeto criado,Retornar projeto com dados alterados,Sim,
+"PATCH na rota /api/projects/{id}/, modificando o status dele",Retornar projeto com status alterado,Sim,

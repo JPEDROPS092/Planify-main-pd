@@ -23,9 +23,9 @@ class MembroProjetoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MembroProjeto
-        fields = ['id', 'usuario', 'usuario_id', 'username', 'full_name', 'papel', 'papel_display']
+        fields = ['id', 'usuario', 'usuario_id', 'username', 'full_name', 'papel', 'papel_display', 'projeto']
         extra_kwargs = {
-            'usuario': {'write_only': True}
+            'usuario': {'write_only': True }
         }
         validators = [
             UniqueTogetherValidator(

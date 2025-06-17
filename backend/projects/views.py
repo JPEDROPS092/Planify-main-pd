@@ -181,6 +181,9 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         Requer o ID do usuário e o papel a ser atribuído.
         """
         projeto = self.get_object()
+
+        request.data['projeto'] = projeto.id
+
         serializer = MembroProjetoSerializer(data=request.data)
         
         if serializer.is_valid():

@@ -1,0 +1,4 @@
+Procedimento,Resultado Esperado,Passou?,Falhas
+GET na rota /api/projects/,Aparecer a lista dos projetos criados com a seed,Sim,-
+POST na rota /api/projects/,Criar projeto e retornar,Sim,-
+GET na rota /api/projects/{id}/,Retornar o projeto criado,Sim,-
