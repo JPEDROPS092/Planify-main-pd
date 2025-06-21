@@ -70,11 +70,6 @@ PUBLIC_PATHS = [
     r'^/api/logout/?$',
     r'^/api/register/?$',
     
-    # Rotas de usuário pessoal (não requerem permissão especial)
-    r'^/api/users/me/?$',
-    r'^/api/users/permissions/?$',
-    r'^/api/users/change-password/?$',
-    
     # Documentação da API
     r'^/api/?$',
     r'^/api/docs/?$',

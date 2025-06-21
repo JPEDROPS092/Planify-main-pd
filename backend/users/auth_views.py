@@ -9,6 +9,9 @@ from django.contrib.auth import authenticate
 from .authentication import get_tokens_for_user
 from .serializers import LogoutResponseSerializer
 from .models import BlacklistedTokens
+import logging
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(
     tags=['Autenticação'],
@@ -17,7 +20,7 @@ from .models import BlacklistedTokens
     Realiza o login do usuário e retorna os tokens de acesso e refresh.
     
     O token de acesso deve ser usado no header de todas as requisições:
-    `Authorization: JWT <access_token>`
+    `Authorization: Bearer <access_token>` ou `Authorization: JWT <access_token>`
     
     Quando o token de acesso expirar (após 1 hora), use o token de refresh para obter um novo.
     ''',
@@ -69,19 +72,59 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # Checar se o token gerado está na lista negra
-        blacklisted_token = True
-        while blacklisted_token:
+        if not user.is_active:
+            return Response(
+                {'detail': 'Conta desativada.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Verificar se a conta está bloqueada
+        if hasattr(user, 'is_locked') and user.is_locked:
+            return Response(
+                {'detail': 'Conta bloqueada. Entre em contato com o administrador.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Gerar tokens
+        try:
             tokens = get_tokens_for_user(user)
-            blacklisted_tokens_results = BlacklistedTokens.objects.all()
+            
+            # Verificar se os tokens gerados estão na blacklist (improvável, mas possível)
+            max_attempts = 5
+            attempt = 0
+            
+            while attempt < max_attempts:
+                blacklisted_access = BlacklistedTokens.objects.filter(token=tokens["access"]).exists()
+                blacklisted_refresh = BlacklistedTokens.objects.filter(token=tokens["refresh"]).exists()
+                
+                if not blacklisted_access and not blacklisted_refresh:
+                    break
+                
+                # Se tokens estão na blacklist, gerar novos
+                logger.warning(f"Tokens gerados estão na blacklist para usuário {user.username}, gerando novos...")
+                tokens = get_tokens_for_user(user)
+                attempt += 1
+            
+            if attempt >= max_attempts:
+                logger.error(f"Não foi possível gerar tokens válidos para usuário {user.username}")
+                return Response(
+                    {'detail': 'Erro interno. Tente novamente em alguns minutos.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-            blacklisted_token = False
-            for btoken in blacklisted_tokens_results.iterator():
-                if tokens["access"] == btoken.token or tokens["refresh"] == btoken.token:
-                    blacklisted_token = True
-        
+            # Resetar tentativas de login falhadas
+            if hasattr(user, 'reset_failed_login'):
+                user.reset_failed_login()
 
-        return Response(tokens, status=status.HTTP_200_OK)
+            logger.info(f"Login bem-sucedido para usuário {user.username}")
+            return Response(tokens, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar tokens para usuário {user.username}: {str(e)}")
+            return Response(
+                {'detail': 'Erro interno no servidor.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema(
@@ -124,17 +167,30 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            if hasattr(request.auth.token, "decode"):
-                BlacklistedTokens.objects.create(token=str(request.auth.token.decode()))
-            else:
-                BlacklistedTokens.objects.create(token=str(request.auth.token))
-                print("Token chegou como string")
-
+            # Obter o token do header de autorização
+            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+            if auth_header:
+                # Extrair o token (formato: "Bearer <token>" ou "JWT <token>")
+                token_parts = auth_header.split()
+                if len(token_parts) == 2:
+                    token = token_parts[1]
+                    
+                    # Adicionar token à blacklist
+                    BlacklistedTokens.objects.get_or_create(token=token)
+                    
+                    logger.info(f"Logout realizado com sucesso para usuário {request.user.username}")
+                    return Response(
+                        {"message": "Logout realizado com sucesso"}, 
+                        status=status.HTTP_200_OK
+                    )
+            
             return Response(
-                {"message": "Logout realizado com sucesso"}, 
-                status=status.HTTP_200_OK
+                {"message": "Token não encontrado"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
+            
         except Exception as e:
+            logger.error(f"Erro ao realizar logout: {str(e)}")
             return Response(
                 {"message": "Erro ao realizar logout", "detail": str(e)}, 
                 status=status.HTTP_400_BAD_REQUEST

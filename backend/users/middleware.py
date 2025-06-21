@@ -40,37 +40,43 @@ class PermissionMiddleware(MiddlewareMixin):
             if not header:
                 logger.debug(f"No Authorization header present for protected path {path}")
                 return JsonResponse(
-                    {"detail": "Autenticação JWT é necessária para acessar este recurso."},
+                    {"detail": "Autenticação é necessária para acessar este recurso."},
                     status=401
                 )
             
-            # Se tiver token mas não começar com JWT
-            if not header.startswith('Bearer '):
-                logger.debug(f"Authorization header present but not JWT format: {header}")
+            # Verificar formato do header (aceitar tanto Bearer quanto JWT)
+            header_parts = header.split()
+            if len(header_parts) != 2 or header_parts[0] not in ('Bearer', 'JWT'):
+                logger.debug(f"Authorization header em formato inválido: {header}")
                 return JsonResponse(
-                    {"detail": "Autenticação JWT é necessária. Use o formato: JWT <token>"},
+                    {"detail": "Formato de autenticação inválido. Use: Bearer <token> ou JWT <token>"},
                     status=401
                 )
                 
-            token = header.split(' ')[1]
-            validated_token = self.jwt_auth.get_validated_token(token)
-
-            blacklisted_tokens_results = BlacklistedTokens.objects.all()
-
-            for btoken in blacklisted_tokens_results.iterator():
-                if validated_token.token == btoken.token:
-                    raise InvalidToken("Esse Token já foi invalidado")
-
+            token = header_parts[1]
+            
+            # Verificar se o token está na blacklist antes de validar
+            if BlacklistedTokens.objects.filter(token=token).exists():
+                logger.warning(f"Token blacklisted utilizado: {token[:10]}...")
+                return JsonResponse(
+                    {"detail": "Token foi invalidado."},
+                    status=401
+                )
+            
+            # Validar o token
+            validated_token = self.jwt_auth.get_validated_token(token.encode('utf-8'))
             request.user = self.jwt_auth.get_user(validated_token)
             
-        except (InvalidToken, TokenError):
+        except (InvalidToken, TokenError) as e:
+            logger.warning(f"Token inválido ou expirado: {str(e)}")
             return JsonResponse(
                 {"detail": "Token inválido ou expirado."},
                 status=401
             )
         except Exception as e:
+            logger.error(f"Erro inesperado na autenticação: {str(e)}")
             return JsonResponse(
-                {"detail": str(e)},
+                {"detail": "Erro na autenticação."},
                 status=401
             )
 
@@ -80,7 +86,7 @@ class PermissionMiddleware(MiddlewareMixin):
             return JsonResponse({"detail": "Autenticação necessária"}, status=401)
         
         # Administradores têm acesso total
-        if user.is_superuser or user.role == 'ADMIN':
+        if user.is_superuser or (hasattr(user, 'role') and user.role == 'ADMIN'):
             return None
         
         # Verificar se a conta está bloqueada
@@ -118,7 +124,7 @@ class PermissionMiddleware(MiddlewareMixin):
             logger.warning(f"Usuário {request.user.username} não tem permissão {module}.{action} para acessar {request.path} (IP: {client_ip})")
             return JsonResponse({
                 'error': 'Forbidden',
-                'message': 'You do not have permission to access this resource'
+                'message': 'Você não tem permissão para acessar este recurso'
             }, status=403)
         
         return None

@@ -183,7 +183,7 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     
-    'AUTH_HEADER_TYPES': ('Bearer',),  # Mudando de Bearer para JWT
+    'AUTH_HEADER_TYPES': ('Bearer', 'JWT'),  # Aceitar ambos os formatos
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     

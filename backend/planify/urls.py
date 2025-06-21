@@ -43,11 +43,9 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # API root
-    path('api/', api_root, name='api-root'),
-    
+
     # === ROTAS DE AUTENTICAÇÃO E AUTORIZAÇÃO ===
-    path('api/auth/', include('users.urls')),  
+    path('api/', include('users.urls')),  
     
     # === MÓDULOS DO SISTEMA ===
     # Teams (gerenciamento de equipes)

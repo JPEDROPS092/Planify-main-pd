@@ -26,8 +26,176 @@ from communications.models import Comunicacao, Notificacao, ConfiguracaoNotifica
 
 User = get_user_model()
 
+def create_access_profiles():
+    """Criar perfis de acesso com permissões específicas"""
+    print("Criando perfis de acesso...")
+    
+    # Perfil de Administrador
+    admin_profile, created = AccessProfile.objects.get_or_create(
+        name='Administrador',
+        defaults={'description': 'Acesso total ao sistema'}
+    )
+    if created:
+        # Criar todas as permissões para o administrador
+        modules = ['PROJECTS', 'TASKS', 'TEAMS', 'RESOURCES', 'COMMUNICATIONS', 
+                  'RISKS', 'COSTS', 'DOCUMENTS', 'REPORTS', 'USERS', 'SETTINGS', 
+                  'DASHBOARD', 'NOTIFICATIONS', 'APPROVALS']
+        actions = ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'APPROVE', 'ASSIGN', 'EXPORT', 'IMPORT', 'COMMENT']
+        
+        for module in modules:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=admin_profile,
+                    module=module,
+                    action=action
+                )
+    
+    # Perfil de Gerente de Projetos
+    pm_profile, created = AccessProfile.objects.get_or_create(
+        name='Gerente de Projetos',
+        defaults={'description': 'Gerenciamento completo de projetos'}
+    )
+    if created:
+        pm_permissions = [
+            ('PROJECTS', ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'APPROVE', 'EXPORT']),
+            ('TASKS', ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'ASSIGN', 'EXPORT']),
+            ('TEAMS', ['VIEW', 'CREATE', 'EDIT', 'ASSIGN']),
+            ('RISKS', ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'APPROVE']),
+            ('COSTS', ['VIEW', 'CREATE', 'EDIT', 'APPROVE', 'EXPORT']),
+            ('DOCUMENTS', ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'EXPORT']),
+            ('REPORTS', ['VIEW', 'EXPORT']),
+            ('DASHBOARD', ['VIEW']),
+            ('COMMUNICATIONS', ['VIEW', 'CREATE', 'EDIT', 'DELETE']),
+            ('NOTIFICATIONS', ['VIEW', 'CREATE']),
+        ]
+        
+        for module, actions in pm_permissions:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=pm_profile,
+                    module=module,
+                    action=action
+                )
+    
+    # Perfil de Líder de Equipe
+    tl_profile, created = AccessProfile.objects.get_or_create(
+        name='Líder de Equipe',
+        defaults={'description': 'Liderança de equipe e tarefas'}
+    )
+    if created:
+        tl_permissions = [
+            ('PROJECTS', ['VIEW', 'EDIT']),
+            ('TASKS', ['VIEW', 'CREATE', 'EDIT', 'ASSIGN', 'COMMENT']),
+            ('TEAMS', ['VIEW', 'EDIT']),
+            ('RISKS', ['VIEW', 'CREATE', 'EDIT']),
+            ('COSTS', ['VIEW', 'CREATE', 'EDIT']),
+            ('DOCUMENTS', ['VIEW', 'CREATE', 'EDIT', 'COMMENT']),
+            ('REPORTS', ['VIEW']),
+            ('DASHBOARD', ['VIEW']),
+            ('COMMUNICATIONS', ['VIEW', 'CREATE', 'EDIT']),
+            ('NOTIFICATIONS', ['VIEW']),
+        ]
+        
+        for module, actions in tl_permissions:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=tl_profile,
+                    module=module,
+                    action=action
+                )
+    
+    # Perfil de Membro da Equipe
+    tm_profile, created = AccessProfile.objects.get_or_create(
+        name='Membro da Equipe',
+        defaults={'description': 'Execução de tarefas e colaboração'}
+    )
+    if created:
+        tm_permissions = [
+            ('PROJECTS', ['VIEW']),
+            ('TASKS', ['VIEW', 'EDIT', 'COMMENT']),
+            ('TEAMS', ['VIEW']),
+            ('RISKS', ['VIEW', 'CREATE']),
+            ('COSTS', ['VIEW']),
+            ('DOCUMENTS', ['VIEW', 'CREATE', 'COMMENT']),
+            ('REPORTS', ['VIEW']),
+            ('DASHBOARD', ['VIEW']),
+            ('COMMUNICATIONS', ['VIEW', 'CREATE']),
+            ('NOTIFICATIONS', ['VIEW']),
+        ]
+        
+        for module, actions in tm_permissions:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=tm_profile,
+                    module=module,
+                    action=action
+                )
+    
+    # Perfil de Stakeholder
+    sh_profile, created = AccessProfile.objects.get_or_create(
+        name='Stakeholder',
+        defaults={'description': 'Visualização e acompanhamento de projetos'}
+    )
+    if created:
+        sh_permissions = [
+            ('PROJECTS', ['VIEW']),
+            ('TASKS', ['VIEW']),
+            ('REPORTS', ['VIEW']),
+            ('DASHBOARD', ['VIEW']),
+            ('COMMUNICATIONS', ['VIEW', 'CREATE']),
+            ('DOCUMENTS', ['VIEW']),
+            ('NOTIFICATIONS', ['VIEW']),
+        ]
+        
+        for module, actions in sh_permissions:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=sh_profile,
+                    module=module,
+                    action=action
+                )
+    
+    # Perfil de Auditor
+    auditor_profile, created = AccessProfile.objects.get_or_create(
+        name='Auditor',
+        defaults={'description': 'Auditoria e relatórios do sistema'}
+    )
+    if created:
+        auditor_permissions = [
+            ('PROJECTS', ['VIEW', 'EXPORT']),
+            ('TASKS', ['VIEW', 'EXPORT']),
+            ('TEAMS', ['VIEW']),
+            ('RISKS', ['VIEW', 'EXPORT']),
+            ('COSTS', ['VIEW', 'EXPORT']),
+            ('DOCUMENTS', ['VIEW', 'EXPORT']),
+            ('REPORTS', ['VIEW', 'EXPORT']),
+            ('DASHBOARD', ['VIEW']),
+            ('COMMUNICATIONS', ['VIEW']),
+            ('NOTIFICATIONS', ['VIEW']),
+        ]
+        
+        for module, actions in auditor_permissions:
+            for action in actions:
+                Permission.objects.get_or_create(
+                    access_profile=auditor_profile,
+                    module=module,
+                    action=action
+                )
+    
+    return {
+        'admin': admin_profile,
+        'project_manager': pm_profile,
+        'team_leader': tl_profile,
+        'team_member': tm_profile,
+        'stakeholder': sh_profile,
+        'auditor': auditor_profile
+    }
+
 def create_users():
     """Criar usuários de exemplo com diferentes papéis"""
+    # Primeiro criar os perfis de acesso
+    access_profiles = create_access_profiles()
+    
     users_data = [
         {
             'username': 'admin',
@@ -36,49 +204,64 @@ def create_users():
             'full_name': 'Administrador Sistema',
             'is_staff': True,
             'is_superuser': True,
-            'role': 'ADMIN'
+            'role': 'ADMIN',
+            'access_profile': 'admin'
         },
         {
             'username': 'gerente',
             'email': 'gerente@planify.com',
             'password': 'gerente123',
             'full_name': 'Gerente de Projetos',
-            'role': 'PROJECT_MANAGER'
+            'role': 'PROJECT_MANAGER',
+            'access_profile': 'project_manager'
         },
         {
             'username': 'lider',
             'email': 'lider@planify.com',
             'password': 'lider123',
             'full_name': 'Líder de Equipe',
-            'role': 'TEAM_LEADER'
+            'role': 'TEAM_LEADER',
+            'access_profile': 'team_leader'
         },
         {
             'username': 'dev1',
             'email': 'dev1@planify.com',
             'password': 'dev123',
             'full_name': 'Desenvolvedor 1',
-            'role': 'TEAM_MEMBER'
+            'role': 'TEAM_MEMBER',
+            'access_profile': 'team_member'
         },
         {
             'username': 'dev2',
             'email': 'dev2@planify.com',
             'password': 'dev123',
             'full_name': 'Desenvolvedor 2',
-            'role': 'TEAM_MEMBER'
+            'role': 'TEAM_MEMBER',
+            'access_profile': 'team_member'
         },
         {
             'username': 'analista',
             'email': 'analista@planify.com',
             'password': 'analista123',
             'full_name': 'Analista de Sistemas',
-            'role': 'TEAM_MEMBER'
+            'role': 'TEAM_MEMBER',
+            'access_profile': 'team_member'
         },
         {
             'username': 'stakeholder',
             'email': 'stakeholder@planify.com',
             'password': 'stake123',
             'full_name': 'Stakeholder Cliente',
-            'role': 'STAKEHOLDER'
+            'role': 'STAKEHOLDER',
+            'access_profile': 'stakeholder'
+        },
+        {
+            'username': 'auditor',
+            'email': 'auditor@planify.com',
+            'password': 'audit123',
+            'full_name': 'Auditor do Sistema',
+            'role': 'AUDITOR',
+            'access_profile': 'auditor'
         }
     ]
     
@@ -97,15 +280,26 @@ def create_users():
             user.is_staff = data.get('is_staff', False)
             user.is_superuser = data.get('is_superuser', False)
             user.role = data['role']
+            user.password_change_required = False  # Evitar obrigar mudança de senha no seed
             user.save()
             
             # Criar perfil do usuário
-            UserProfile.objects.create(
+            user_profile, created = UserProfile.objects.get_or_create(
                 user=user,
-                theme_preference='SYSTEM',
-                email_notifications=True,
-                system_notifications=True
+                defaults={
+                    'theme_preference': 'SYSTEM',
+                    'email_notifications': True,
+                    'system_notifications': True
+                }
             )
+            
+            # Atribuir perfil de acesso
+            if data['access_profile'] in access_profiles:
+                UserAccessProfile.objects.get_or_create(
+                    user=user,
+                    access_profile=access_profiles[data['access_profile']]
+                )
+            
             print(f"Usuário {data['username']} criado com sucesso.")
             
         created_users.append(user)
@@ -647,9 +841,9 @@ def run_seeds():
     print("Iniciando seed do banco de dados...")
     
     try:
-        print("Criando usuários...")
+        print("Criando usuários e perfis de acesso...")
         create_users()
-        print("Usuários criados com sucesso!")
+        print("Usuários e perfis de acesso criados com sucesso!")
     except Exception as e:
         print(f"\n[ERRO] Erro ao criar usuários: {str(e)}")
         print("Traceback completo:")

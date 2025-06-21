@@ -4,6 +4,22 @@ from django.utils import timezone
 
 class BlacklistedTokens(models.Model):
     token = models.TextField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        'User', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='blacklisted_tokens'
+    )
+    
+    class Meta:
+        verbose_name = 'Token Blacklisted'
+        verbose_name_plural = 'Tokens Blacklisted'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Token {self.token[:20]}... blacklisted at {self.created_at}"
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username, full_name, password=None, **extra_fields):
