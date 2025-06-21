@@ -271,7 +271,7 @@ class LogoutView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            refresh_token = request.data.get('refresh')
+            refresh_token = request.data.get('refresh') if isinstance(request.data, dict) else None
             if not refresh_token:
                 return Response(
                     {'detail': 'Token de refresh é obrigatório.'},
@@ -347,7 +347,7 @@ class LogoutView(APIView):
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
-            refresh_token = request.data.get('refresh')
+            refresh_token = request.data.get('refresh') if isinstance(request.data, dict) else None
             if not refresh_token:
                 return Response(
                     {'detail': 'Token de refresh é obrigatório.'},

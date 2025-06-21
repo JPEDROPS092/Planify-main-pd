@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet, PermissionViewSet
 )
+from .authentication import LoginView, LogoutView, CustomTokenRefreshView
 
 
 

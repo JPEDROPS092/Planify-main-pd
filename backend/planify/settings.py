@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'risks',
     'costs',
     'documents',
+    'django_extensions',
 ]
 
 # Middleware são componentes que processam requisições e respostas
