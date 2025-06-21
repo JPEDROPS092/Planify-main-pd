@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
 
-# Configurar ambiente Django
+# Configurar ambiente DjangoeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNTA1MDk1LCJpYXQiOjE3NTA1MDE0OTUsImp0aSI6IjU2NjU5ZjQxZmJhYjQzYmE4ODYxOTUyNmUzODcwMjcyIiwidXNlcl9pZCI6NX0.WAZ4xYWKAqvzVuD2WCifasUU5h0ArvoFvYUjQtAloFc
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'planify.settings')
 django.setup()

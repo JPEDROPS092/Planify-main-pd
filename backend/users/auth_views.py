@@ -3,14 +3,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample, inline_serializer
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from rest_framework import serializers
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from .authentication import get_tokens_for_user
 from .serializers import LogoutResponseSerializer
 from .models import BlacklistedTokens
 import logging
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
 
 @extend_schema(
@@ -67,10 +68,18 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
 
         if user is None:
-            return Response(
-                {'detail': 'Credenciais inválidas.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            # Verificar se o usuário existe
+            user_exists = User.objects.filter(username=username).exists()
+            if not user_exists:
+                return Response(
+                    {'detail': 'Usuário inválido.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            else:
+                return Response(
+                    {'detail': 'Senha inválida.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
 
         if not user.is_active:
             return Response(
@@ -79,7 +88,7 @@ class LoginView(APIView):
             )
 
         # Verificar se a conta está bloqueada
-        if hasattr(user, 'is_locked') and user.is_locked:
+        if getattr(user, 'is_locked', False):
             return Response(
                 {'detail': 'Conta bloqueada. Entre em contato com o administrador.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -101,26 +110,42 @@ class LoginView(APIView):
                     break
                 
                 # Se tokens estão na blacklist, gerar novos
-                logger.warning(f"Tokens gerados estão na blacklist para usuário {user.username}, gerando novos...")
+                logger.warning(f"Tokens gerados estão na blacklist para usuário {getattr(user, 'username', 'desconhecido')}, gerando novos...")
                 tokens = get_tokens_for_user(user)
                 attempt += 1
             
             if attempt >= max_attempts:
-                logger.error(f"Não foi possível gerar tokens válidos para usuário {user.username}")
+                logger.error(f"Não foi possível gerar tokens válidos para usuário {getattr(user, 'username', 'desconhecido')}")
                 return Response(
                     {'detail': 'Erro interno. Tente novamente em alguns minutos.'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-            # Resetar tentativas de login falhadas
-            if hasattr(user, 'reset_failed_login'):
-                user.reset_failed_login()
+            # Resetar tentativas de login falhadas se o método existir
+            if hasattr(user, 'reset_failed_login') and callable(getattr(user, 'reset_failed_login')):
+                try:
+                    reset_method = getattr(user, 'reset_failed_login')
+                    reset_method()
+                    logger.info(f"Tentativas de login falhadas resetadas para usuário {getattr(user, 'username', 'desconhecido')}")
+                except Exception as e:
+                    logger.warning(f"Erro ao resetar tentativas de login para usuário {getattr(user, 'username', 'desconhecido')}: {str(e)}")
+            else:
+                # Resetar manualmente se o método não existir
+                try:
+                    if hasattr(user, 'failed_login_attempts'):
+                        setattr(user, 'failed_login_attempts', 0)
+                    if hasattr(user, 'is_locked'):
+                        setattr(user, 'is_locked', False)
+                    user.save()
+                    logger.info(f"Tentativas de login falhadas resetadas manualmente para usuário {getattr(user, 'username', 'desconhecido')}")
+                except Exception as e:
+                    logger.warning(f"Erro ao resetar tentativas de login manualmente para usuário {getattr(user, 'username', 'desconhecido')}: {str(e)}")
 
-            logger.info(f"Login bem-sucedido para usuário {user.username}")
+            logger.info(f"Login bem-sucedido para usuário {getattr(user, 'username', 'desconhecido')}")
             return Response(tokens, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f"Erro ao gerar tokens para usuário {user.username}: {str(e)}")
+            logger.error(f"Erro ao gerar tokens para usuário {getattr(user, 'username', 'desconhecido')}: {str(e)}")
             return Response(
                 {'detail': 'Erro interno no servidor.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -129,14 +154,89 @@ class LoginView(APIView):
 
 @extend_schema(
     tags=['Autenticação'],
-    summary="Atualizar token de acesso",
+    summary="Logout de usuário",
     description='''
-    Atualiza um token de acesso expirado usando o token de refresh.
+    Realiza o logout do usuário invalidando os tokens de acesso e refresh.
+    
+    O token fornecido será adicionado à blacklist para garantir que não possa ser usado novamente.
+    ''',
+    request=inline_serializer(
+        name='LogoutRequest',
+        fields={
+            'refresh': serializers.CharField(help_text="Token de refresh para invalidar")
+        }
+    ),
+    responses={
+        200: LogoutResponseSerializer,
+        400: OpenApiResponse(
+            description="Token inválido ou ausente",
+            response=inline_serializer(
+                name='LogoutError',
+                fields={
+                    'detail': serializers.CharField(),
+                }
+            )
+        )
+    }
+)
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response(
+                    {'detail': 'Token de refresh é obrigatório.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Adicionar o token de refresh na blacklist
+            BlacklistedTokens.objects.get_or_create(
+                token=refresh_token,
+                defaults={'user': request.user}
+            )
+
+            # Também adicionar o token de acesso na blacklist se disponível
+            auth_header = request.META.get('HTTP_AUTHORIZATION')
+            if auth_header:
+                try:
+                    token_parts = auth_header.split()
+                    if len(token_parts) == 2 and token_parts[0] in ('Bearer', 'JWT'):
+                        access_token = token_parts[1]
+                        BlacklistedTokens.objects.get_or_create(
+                            token=access_token,
+                            defaults={'user': request.user}
+                        )
+                except Exception as e:
+                    logger.warning(f"Erro ao blacklistar token de acesso: {str(e)}")
+
+            logger.info(f"Logout realizado para usuário {getattr(request.user, 'username', 'desconhecido')}")
+            return Response(
+                {'message': 'Logout realizado com sucesso.'},
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro durante logout: {str(e)}")
+            return Response(
+                {'detail': 'Erro interno no servidor durante logout.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@extend_schema(
+    tags=['Autenticação'],
+    summary="Refresh de token de acesso",
+    description='''
+    Gera um novo token de acesso usando o token de refresh.
+    
+    Use este endpoint quando o token de acesso expirar.
     ''',
     request=inline_serializer(
         name='RefreshRequest',
         fields={
-            'refresh': serializers.CharField(),
+            'refresh': serializers.CharField()
         }
     ),
     responses={
@@ -146,52 +246,46 @@ class LoginView(APIView):
                 'access': serializers.CharField(),
             }
         ),
+        401: OpenApiResponse(
+            description="Token de refresh inválido ou expirado",
+            response=inline_serializer(
+                name='RefreshError',
+                fields={
+                    'detail': serializers.CharField(),
+                }
+            )
+        )
     }
 )
 class CustomTokenRefreshView(TokenRefreshView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-
-@extend_schema(
-    tags=['Autenticação'],
-    summary="Logout de usuário",
-    description='Realiza o logout do usuário invalidando o token atual.',
-    responses={
-        200: LogoutResponseSerializer,
-    }
-)
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = LogoutResponseSerializer
-
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         try:
-            # Obter o token do header de autorização
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if auth_header:
-                # Extrair o token (formato: "Bearer <token>" ou "JWT <token>")
-                token_parts = auth_header.split()
-                if len(token_parts) == 2:
-                    token = token_parts[1]
-                    
-                    # Adicionar token à blacklist
-                    BlacklistedTokens.objects.get_or_create(token=token)
-                    
-                    logger.info(f"Logout realizado com sucesso para usuário {request.user.username}")
-                    return Response(
-                        {"message": "Logout realizado com sucesso"}, 
-                        status=status.HTTP_200_OK
-                    )
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response(
+                    {'detail': 'Token de refresh é obrigatório.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Verificar se o token está na blacklist
+            if BlacklistedTokens.objects.filter(token=refresh_token).exists():
+                logger.warning("Tentativa de usar token de refresh blacklisted")
+                return Response(
+                    {'detail': 'Token de refresh foi invalidado.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            # Chamar o método original
+            response = super().post(request, *args, **kwargs)
             
-            return Response(
-                {"message": "Token não encontrado"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            if response.status_code == 200:
+                logger.info("Token de acesso renovado com sucesso")
+            
+            return response
             
         except Exception as e:
-            logger.error(f"Erro ao realizar logout: {str(e)}")
+            logger.error(f"Erro durante refresh de token: {str(e)}")
             return Response(
-                {"message": "Erro ao realizar logout", "detail": str(e)}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {'detail': 'Erro interno no servidor durante refresh de token.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
