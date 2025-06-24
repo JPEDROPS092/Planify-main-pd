@@ -45,7 +45,7 @@ urlpatterns = [
     
 
     # === ROTAS DE AUTENTICAÇÃO E AUTORIZAÇÃO ===
-    path('api/', include('users.urls')),  
+    path('api/', include(('users.urls', 'users'), namespace='users')),  
     
     # === MÓDULOS DO SISTEMA ===
     # Teams (gerenciamento de equipes)

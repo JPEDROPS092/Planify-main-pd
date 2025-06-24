@@ -1,177 +1,473 @@
-# Users Module Documentation
+# Módulo de Usuários - Planify
 
-## Overview
+## Visão Geral
 
-The Users module is a core component of the Planify system, responsible for user authentication, authorization, and access control. It implements a robust security model with role-based access control (RBAC), permission management, and account security features.
+O módulo de usuários é um componente central do sistema Planify, responsável pela autenticação, autorização e controle de acesso. Implementa um modelo robusto de segurança com controle de acesso baseado em papéis (RBAC), gerenciamento de permissões e recursos avançados de segurança de conta.
 
-## Key Components
+## Estrutura do Módulo
 
-### Models (`models.py`)
+```
+users/
+├── __init__.py
+├── models.py                    # Modelos de dados
+├── views.py                     # Views da API
+├── serializers.py               # Serializers DRF
+├── authentication.py            # Sistema de autenticação JWT
+├── permissions.py               # Sistema de permissões
+├── validators.py                # Validadores customizados
+├── utils.py                     # Funções utilitárias
+├── security_notifications.py   # Notificações de segurança
+├── audit.py                     # Sistema de auditoria
+├── middleware.py                # Middleware de segurança
+├── admin.py                     # Interface administrativa
+├── urls.py                      # Configuração de URLs
+├── apps.py                      # Configuração da aplicação
+├── tests/                       # Testes automatizados
+│   ├── __init__.py
+│   ├── test_models.py
+│   ├── test_views.py
+│   └── test_security.py
+└── README.md                    # Esta documentação
+```
 
-- **User**: Custom user model extending Django's `AbstractBaseUser` and `PermissionsMixin`
-  - Supports roles (ADMIN, PROJECT_MANAGER, TEAM_MEMBER)
-  - Tracks login attempts and account lockout
-  - Implements password history and change requirements
+## Modelos de Dados
 
-- **UserProfile**: Extended user information including contact details and preferences
+### User (Usuário)
+Modelo principal que estende `AbstractBaseUser` e `PermissionsMixin`.
 
-- **AccessProfile**: Defines sets of permissions that can be assigned to users
+**Campos principais:**
+- `uuid`: UUID único para identificação segura
+- `username`: Nome de usuário único
+- `email`: Email único
+- `full_name`: Nome completo
+- `role`: Papel do usuário (ADMIN, PROJECT_MANAGER, TEAM_LEADER, TEAM_MEMBER, STAKEHOLDER, AUDITOR)
+- `is_active`: Status de ativação
+- `failed_login_attempts`: Contador de tentativas falhadas de login
+- `is_locked`: Status de bloqueio da conta
+- `locked_until`: Data/hora até quando a conta está bloqueada
+- `password_change_required`: Indica se alteração de senha é obrigatória
+- `last_password_change`: Data da última alteração de senha
 
-- **Permission**: Individual permissions for specific modules and actions
+**Métodos importantes:**
+- `increment_failed_login()`: Incrementa tentativas falhadas e bloqueia se necessário
+- `reset_failed_login()`: Reset contador de tentativas falhadas
+- `has_permission(module, action)`: Verifica permissões específicas
 
-- **UserAccessProfile**: Many-to-many relationship between users and access profiles
+### UserProfile (Perfil do Usuário)
+Informações estendidas do usuário.
 
-- **PasswordHistory**: Tracks password changes to prevent reuse
+**Campos:**
+- `user`: Relação OneToOne com User
+- `phone`: Telefone (opcional)
+- `profile_picture`: Foto de perfil (opcional)
+- `theme_preference`: Preferência de tema (LIGHT, DARK, SYSTEM)
+- `email_notifications`: Ativar notificações por email
+- `system_notifications`: Ativar notificações do sistema
 
-- **AccessAttempt**: Logs authentication and authorization attempts
+### AccessProfile (Perfil de Acesso)
+Define conjuntos de permissões que podem ser atribuídos aos usuários.
 
-### Authentication (`authentication.py`)
+**Campos:**
+- `name`: Nome do perfil
+- `description`: Descrição do perfil
+- `created_at`: Data de criação
+- `updated_at`: Data de atualização
 
-- **CustomJWTAuthentication**: Extended JWT authentication that:
-  - Supports both header and cookie-based token authentication
-  - Implements proper CSRF protection for cookie-based authentication
-  - Includes detailed logging of authentication attempts
+### Permission (Permissão)
+Permissões individuais para módulos e ações específicas.
 
-### Middleware (`middleware.py`)
+**Campos:**
+- `access_profile`: Relação com AccessProfile
+- `module`: Módulo do sistema (PROJECTS, TASKS, TEAMS, etc.)
+- `action`: Ação permitida (VIEW, CREATE, EDIT, DELETE, etc.)
 
-- **PermissionMiddleware**: Enforces access control by:
-  - Mapping URLs to required permissions
-  - Checking user permissions against required permissions
-  - Logging access attempts
-  - Handling account lockout
+### UserAccessProfile (Associação Usuário-Perfil)
+Relaciona usuários com perfis de acesso.
 
-### Authentication Views (`auth_views.py`)
+### BlacklistedTokens (Tokens Invalidados)
+Armazena tokens JWT invalidados.
 
-- **CustomTokenObtainPairView**: JWT token generation with:
-  - Account lockout handling
-  - Failed login attempt tracking
-  - Enhanced token payload with user information
+**Campos:**
+- `token`: Token JWT invalidado
+- `user`: Usuário associado (opcional)
+- `created_at`: Data de criação
 
-### Registration (`register_views.py`)
+### PasswordHistory (Histórico de Senhas)
+Mantém histórico das últimas senhas para evitar reutilização.
 
-- **RegisterView**: Public user registration with default role assignment
+**Campos:**
+- `user`: Usuário
+- `password_hash`: Hash da senha anterior
+- `created_at`: Data de criação
 
-### Serializers (`serializers.py`)
+### AuditLog (Log de Auditoria)
+Registra ações de segurança e administrativas.
 
-- User data serialization and validation
-- Password change and reset functionality
-- Profile management
+**Campos:**
+- `user`: Usuário que executou a ação
+- `action`: Tipo de ação (LOGIN, LOGOUT, PASSWORD_CHANGE, etc.)
+- `timestamp`: Data/hora da ação
+- `ip_address`: Endereço IP de origem
+- `user_agent`: User agent do navegador
+- `details`: Detalhes adicionais em JSON
 
-## Security Analysis
+## Sistema de Autenticação
 
-### Strengths
+### JWT Customizado
+Implementa autenticação JWT com recursos avançados:
 
-1. **Role-Based Access Control**: Comprehensive permission system with granular control over module access
-2. **Account Lockout**: Protection against brute force attacks by locking accounts after multiple failed attempts
-3. **Password History**: Prevents password reuse, enhancing security
-4. **JWT with Cookie Support**: Flexible authentication options with proper CSRF protection
-5. **Detailed Logging**: Comprehensive logging of authentication and authorization attempts
-6. **Transaction Management**: Proper use of database transactions for data integrity
+- **CustomJWTAuthentication**: Classe customizada que verifica tokens blacklisted
+- **Suporte a múltiplos formatos**: Aceita tanto "Bearer" quanto "JWT" como prefixo
+- **Blacklist automática**: Tokens invalidados durante logout
 
-### Areas for Improvement
+### Views de Autenticação
 
-1. **Password Policies**:
-   - No explicit password complexity requirements beyond Django's defaults
-   - Consider implementing minimum length, character variety, and common password checks
+#### LoginView
+```
+POST /api/auth/login/
+{
+    "username": "usuario",
+    "password": "senha"
+}
+```
 
-2. **Multi-Factor Authentication (MFA)**:
-   - Currently lacks MFA support
-   - Adding TOTP or SMS-based verification would enhance security
+**Recursos:**
+- Verificação de conta bloqueada
+- Controle de tentativas falhadas
+- Reset automático de contador após login bem-sucedido
+- Logs de auditoria
 
-3. **Session Management**:
-   - No explicit session timeout configuration
-   - Consider implementing idle session timeout
+#### LogoutView
+```
+POST /api/auth/logout/
+{
+    "refresh": "token_refresh"
+}
+```
 
-4. **Rate Limiting**:
-   - No explicit rate limiting for authentication attempts
-   - Consider implementing IP-based rate limiting for login endpoints
+**Recursos:**
+- Adiciona tokens à blacklist
+- Invalida tanto refresh quanto access token
+- Logs de auditoria
 
-5. **Audit Trail**:
-   - While access attempts are logged, a more comprehensive audit trail for sensitive operations would be beneficial
-   - Consider tracking all security-relevant actions (password changes, permission changes, etc.)
+#### CustomTokenRefreshView
+```
+POST /api/auth/token/refresh/
+{
+    "refresh": "token_refresh"
+}
+```
 
-6. **Error Messages**:
-   - Some error messages could potentially leak information about valid usernames
-   - Standardize on generic authentication failure messages
+**Recursos:**
+- Verifica blacklist antes de renovar
+- Logs de auditoria
 
-7. **Token Revocation**:
-   - No explicit mechanism for revoking active tokens when a user changes password or is deactivated
-   - Consider implementing a token blacklist
+## Sistema de Permissões
 
-## Documentation Suggestions
+### Estrutura Hierárquica
+1. **Papéis (Roles)**: Definem o nível básico de acesso
+2. **Perfis de Acesso**: Conjuntos de permissões específicas
+3. **Permissões**: Controle granular por módulo e ação
 
-1. **Code Documentation**:
-   - Add comprehensive docstrings to all views, serializers, and models
-   - Document security-relevant methods and attributes
+### Módulos Disponíveis
+- PROJECTS (Projetos)
+- TASKS (Tarefas)
+- TEAMS (Equipes)
+- RESOURCES (Recursos)
+- COMMUNICATIONS (Comunicações)
+- RISKS (Riscos)
+- COSTS (Custos)
+- DOCUMENTS (Documentos)
+- REPORTS (Relatórios)
+- USERS (Usuários)
+- SETTINGS (Configurações)
+- DASHBOARD (Dashboard)
+- NOTIFICATIONS (Notificações)
+- APPROVALS (Aprovações)
 
-2. **API Documentation**:
-   - Enhance drf_spectacular schema with detailed descriptions
-   - Document error responses and status codes
+### Ações Disponíveis
+- VIEW (Visualizar)
+- CREATE (Criar)
+- EDIT (Editar)
+- DELETE (Excluir)
+- APPROVE (Aprovar)
+- ASSIGN (Atribuir)
+- EXPORT (Exportar)
+- IMPORT (Importar)
+- COMMENT (Comentar)
 
-3. **Security Guidelines**:
-   - Create documentation for administrators on user management best practices
-   - Document password policies and account lockout procedures
+### HasModulePermission
+Classe de permissão customizada para verificar acesso a módulos específicos:
 
-## Redundancy Analysis
+```python
+@permission_classes([HasModulePermission('PROJECTS', 'CREATE')])
+def create_project(request):
+    # Lógica para criar projeto
+    pass
+```
 
-1. **Serializers**:
-   - `UserCreateSerializer` and `UserSerializer` have significant overlap
-   - Consider refactoring to reduce duplication
+## Sistema de Validação
 
-2. **Password Change Logic**:
-   - `ChangePasswordSerializer` contains duplicate code for password changes
-   - Consider extracting to a utility function
+### PasswordPolicyValidator
+Validador robusto de políticas de senha:
 
-3. **Permission Checking**:
-   - Permission checks are implemented in both middleware and views
-   - Consider centralizing permission logic
+**Verificações:**
+- Comprimento mínimo e máximo
+- Presença de letras maiúsculas e minúsculas
+- Presença de números
+- Presença de caracteres especiais
+- Verificação contra senhas comuns
+- Verificação contra informações pessoais do usuário
 
-## Implementation Recommendations
+### Outros Validadores
+- `validate_username()`: Valida formato e unicidade de usernames
+- `validate_full_name()`: Valida formato de nomes completos
+- `validate_password_history()`: Verifica reutilização de senhas
 
-1. **Add Multi-Factor Authentication**:
-   ```python
-   # Example implementation using django-otp
-   from django_otp.plugins.otp_totp.models import TOTPDevice
-   
-   def verify_otp(user, token):
-       device = TOTPDevice.objects.get(user=user, confirmed=True)
-       return device.verify_token(token)
-   ```
+## Sistema de Segurança
 
-2. **Enhance Password Policies**:
-   ```python
-   # Example custom password validator
-   from django.core.exceptions import ValidationError
-   
-   class ComplexityValidator:
-       def validate(self, password, user=None):
-           if not any(char.isdigit() for char in password):
-               raise ValidationError('Password must contain at least one digit.')
-           if not any(char.isupper() for char in password):
-               raise ValidationError('Password must contain at least one uppercase letter.')
-   ```
+### Controle de Tentativas de Login
+- Contador automático de tentativas falhadas
+- Bloqueio automático após 5 tentativas
+- Desbloqueio automático após período configurável
+- Logs de todas as tentativas
 
-3. **Implement Token Revocation**:
-   ```python
-   # Example token blacklist implementation
-   from rest_framework_simplejwt.tokens import TokenError
-   from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
-   
-   def blacklist_user_tokens(user):
-       tokens = OutstandingToken.objects.filter(user_id=user.id)
-       for token in tokens:
-           BlacklistedToken.objects.get_or_create(token=token)
-   ```
+### Notificações de Segurança
+O `SecurityNotificationService` envia emails automáticos para:
+- Alterações de senha
+- Logins suspeitos
+- Bloqueios de conta
+- Desbloqueios de conta
 
-4. **Add Rate Limiting**:
-   ```python
-   # Example using Django Rest Framework's throttling
-   from rest_framework.throttling import AnonRateThrottle
-   
-   class LoginRateThrottle(AnonRateThrottle):
-       rate = '5/min'
-   ```
+### Sistema de Auditoria
+Registra automaticamente:
+- Logins e logouts
+- Alterações de senha
+- Alterações de perfil
+- Bloqueios/desbloqueios de conta
+- Criação/modificação de usuários
 
-## Conclusion
+## API Endpoints
 
-The Users module provides a solid foundation for authentication and authorization in the Planify system. By implementing the suggested improvements, the security posture can be further enhanced to meet industry best practices for user management and access control.
+### Autenticação
+```
+POST /api/auth/login/          # Login
+POST /api/auth/logout/         # Logout
+POST /api/auth/token/refresh/  # Renovar token
+```
+
+### Usuários
+```
+GET    /api/users/             # Listar usuários
+POST   /api/users/             # Criar usuário
+GET    /api/users/{id}/        # Obter usuário
+PUT    /api/users/{id}/        # Atualizar usuário
+PATCH  /api/users/{id}/        # Atualizar parcialmente
+DELETE /api/users/{id}/        # Excluir usuário
+
+GET    /api/users/me/          # Meus dados
+GET    /api/users/permissions/ # Minhas permissões
+POST   /api/users/change-password/    # Alterar senha
+POST   /api/users/{id}/reset-password/ # Reset senha (admin)
+POST   /api/users/{id}/activate/      # Ativar usuário
+POST   /api/users/{id}/deactivate/    # Desativar usuário
+POST   /api/users/{id}/unlock/        # Desbloquear usuário
+```
+
+### Permissões
+```
+GET    /api/permissions/       # Listar permissões
+POST   /api/permissions/       # Criar permissão
+GET    /api/permissions/{id}/  # Obter permissão
+PUT    /api/permissions/{id}/  # Atualizar permissão
+DELETE /api/permissions/{id}/  # Excluir permissão
+```
+
+## Testes
+
+O módulo inclui testes abrangentes organizados em:
+
+### test_models.py
+- Testes de criação e validação de modelos
+- Testes de métodos personalizados
+- Testes de relacionamentos
+- Testes de constraints
+
+### test_views.py
+- Testes de endpoints da API
+- Testes de autenticação e autorização
+- Testes de permissões
+- Testes de fluxos completos
+
+### test_security.py
+- Testes de validadores de senha
+- Testes de sistema de bloqueio
+- Testes de notificações de segurança
+- Testes de auditoria
+- Testes de utilitários de segurança
+
+### Executar Testes
+```bash
+# Todos os testes do módulo
+python manage.py test users
+
+# Testes específicos
+python manage.py test users.tests.test_models
+python manage.py test users.tests.test_views
+python manage.py test users.tests.test_security
+
+# Com cobertura
+coverage run --source='.' manage.py test users
+coverage report
+```
+
+## Configuração
+
+### Settings Recomendadas
+```python
+# settings.py
+
+# Autenticação JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+# Validadores de senha
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'users.validators.PasswordPolicyValidator',
+        'OPTIONS': {
+            'min_length': 8,
+            'max_length': 128,
+            'require_uppercase': True,
+            'require_lowercase': True,
+            'require_numbers': True,
+            'require_special': True,
+        }
+    },
+]
+
+# Configurações de sessão e segurança
+SESSION_COOKIE_SECURE = True  # Em produção
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SECURE = True  # Em produção
+
+# Email para notificações
+DEFAULT_FROM_EMAIL = 'noreply@planify.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'security_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/security.log',
+        },
+    },
+    'loggers': {
+        'users': {
+            'handlers': ['security_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+```
+
+## Comandos de Gerenciamento
+
+### Criar Comando de Limpeza de Tokens
+```python
+# users/management/commands/cleanup_expired_tokens.py
+from django.core.management.base import BaseCommand
+from users.utils import clean_expired_tokens
+
+class Command(BaseCommand):
+    help = 'Remove tokens expirados da blacklist'
+    
+    def handle(self, *args, **options):
+        clean_expired_tokens()
+        self.stdout.write('Limpeza concluída')
+```
+
+### Uso
+```bash
+python manage.py cleanup_expired_tokens
+```
+
+## Boas Práticas de Segurança
+
+### Para Desenvolvedores
+1. **Sempre usar HTTPS em produção**
+2. **Validar todas as entradas do usuário**
+3. **Implementar rate limiting**
+4. **Manter logs de segurança**
+5. **Usar senhas seguras por padrão**
+6. **Implementar 2FA quando possível**
+
+### Para Administradores
+1. **Revisar logs de auditoria regularmente**
+2. **Monitorar tentativas de login falhadas**
+3. **Configurar alertas para atividades suspeitas**
+4. **Manter sistema atualizado**
+5. **Fazer backup regular dos dados**
+
+## Troubleshooting
+
+### Problemas Comuns
+
+#### Conta Bloqueada
+**Sintoma:** Usuário não consegue fazer login
+**Solução:** 
+```python
+from users.utils import unlock_user_account
+user = User.objects.get(username='usuario')
+unlock_user_account(user)
+```
+
+#### Token Inválido
+**Sintoma:** Erro 401 mesmo com token aparentemente válido
+**Verificar:** 
+1. Token está na blacklist?
+2. Token expirou?
+3. Formato do header está correto?
+
+#### Permissões Negadas
+**Sintoma:** Erro 403 para usuário aparentemente autorizado
+**Verificar:**
+1. Usuário tem o papel correto?
+2. Perfil de acesso está configurado?
+3. Permissão específica existe?
+
+## Roadmap Futuro
+
+### Melhorias Planejadas
+- [ ] Autenticação de dois fatores (2FA)
+- [ ] Single Sign-On (SSO)
+- [ ] Rate limiting por IP
+- [ ] Análise de comportamento suspeito
+- [ ] Políticas de senha mais avançadas
+- [ ] Integração com sistemas externos de autenticação
+
+### Contribuindo
+Para contribuir com melhorias:
+1. Fork o repositório
+2. Crie uma branch para sua feature
+3. Implemente os testes
+4. Implemente a funcionalidade
+5. Atualize a documentação
+6. Abra um Pull Request
+
+## Licença
+Este módulo é parte do sistema Planify e segue a mesma licença do projeto principal.
+
+---
+**Última atualização:** Junho 2025
+**Versão:** 2.0

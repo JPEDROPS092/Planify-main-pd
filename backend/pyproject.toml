@@ -1,0 +1,34 @@
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "import-error",
+]
+
+[tool.pylint.django]
+django-settings-module = "planify.settings"
+
+[tool.pyright]
+include = ["users", "projects", "tasks", "teams", "risks", "costs", "documents", "communications", "planify"]
+exclude = ["**/migrations/**", "venv", "**/__pycache__/**"]
+defineConstant = { DEBUG = true }
+stubPath = "typings"
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.13"
+pythonPlatform = "Linux"
+
+[tool.pyright.executionEnvironments]
+root = "."
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "planify.settings"
+
+[tool.mypy_django_plugin]
+ignore_missing_model_attributes = true

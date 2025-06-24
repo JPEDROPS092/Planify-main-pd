@@ -155,16 +155,22 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
 
         if user is None:
-            # Verificar se o usuário existe
-            user_exists = User.objects.filter(username=username).exists()
-            if not user_exists:
+            # Verificar se o usuário existe e está inativo
+            try:
+                user_obj = User.objects.get(username=username)
+                if not user_obj.is_active:
+                    return Response(
+                        {'detail': 'Conta desativada.'},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+                else:
+                    return Response(
+                        {'detail': 'Senha inválida.'},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+            except User.DoesNotExist:
                 return Response(
                     {'detail': 'Usuário inválido.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            else:
-                return Response(
-                    {'detail': 'Senha inválida.'},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
@@ -175,7 +181,7 @@ class LoginView(APIView):
             )
 
         # Verificar se a conta está bloqueada
-        if getattr(user, 'is_locked', False):
+        if getattr(user, 'locked', False) or getattr(user, 'is_locked', False):
             return Response(
                 {'detail': 'Conta bloqueada. Entre em contato com o administrador.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -367,12 +373,18 @@ class CustomTokenRefreshView(TokenRefreshView):
             
             if response.status_code == 200:
                 logger.info("Token de acesso renovado com sucesso")
+            else:
+                # Se o token é inválido, retornar erro 401
+                return Response(
+                    {'detail': 'Token de refresh inválido ou expirado.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
             
             return response
             
         except Exception as e:
             logger.error(f"Erro durante refresh de token: {str(e)}")
             return Response(
-                {'detail': 'Erro interno no servidor durante refresh de token.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'detail': 'Token de refresh inválido ou expirado.'},
+                status=status.HTTP_401_UNAUTHORIZED
             )

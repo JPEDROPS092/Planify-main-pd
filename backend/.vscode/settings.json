@@ -1,0 +1,19 @@
+{
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintArgs": [
+        "--load-plugins=pylint_django",
+        "--django-settings-module=planify.settings"
+    ],
+    "python.analysis.extraPaths": [
+        "./typings"
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "python.defaultInterpreterPath": "./venv/bin/python"
+}

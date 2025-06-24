@@ -22,7 +22,7 @@ class PermissionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Permission
-        fields = ['id', 'module', 'module_display', 'action', 'action_display']
+        fields = ['id', 'access_profile', 'module', 'module_display', 'action', 'action_display']
 
 
 class AccessProfileSerializer(serializers.ModelSerializer):

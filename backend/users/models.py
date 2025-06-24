@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils import timezone
+import uuid
 
 class BlacklistedTokens(models.Model):
     token = models.TextField(unique=True)
@@ -64,7 +67,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('STAKEHOLDER', 'Stakeholder/Client'),
         ('AUDITOR', 'Auditor'),
     )
-    
+
+    # Campos básicos
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=30, unique=True)
     full_name = models.CharField(max_length=100)
@@ -72,10 +77,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    
+    # Campos de segurança e controle de senha
     password_change_required = models.BooleanField(default=True)
     last_password_change = models.DateTimeField(null=True, blank=True)
+    force_password_change = models.BooleanField(default=False)
+    
+    # Campos de controle de login
     failed_login_attempts = models.PositiveIntegerField(default=0)
     is_locked = models.BooleanField(default=False)
+    locked_until = models.DateTimeField(null=True, blank=True)
     last_login_attempt = models.DateTimeField(null=True, blank=True)
     
     objects = UserManager()
@@ -120,6 +131,16 @@ class User(AbstractBaseUser, PermissionsMixin):
                 return True
                 
         return False
+    
+    @property
+    def locked(self):
+        """Propriedade de compatibilidade para o campo is_locked"""
+        return self.is_locked
+    
+    @locked.setter
+    def locked(self, value):
+        """Setter para propriedade locked"""
+        self.is_locked = value
 
 
 class UserProfile(models.Model):
@@ -135,6 +156,7 @@ class UserProfile(models.Model):
     theme_preference = models.CharField(max_length=10, choices=THEME_CHOICES, default='SYSTEM')
     email_notifications = models.BooleanField(default=True)
     system_notifications = models.BooleanField(default=True)
+    password_change_required = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -234,3 +256,46 @@ class AccessAttempt(models.Model):
     def __str__(self):
         status = 'Success' if self.success else 'Failed'
         return f"{self.user.username} - {self.endpoint} - {status} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = [
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+        ('PASSWORD_CHANGE', 'Alteração de Senha'),
+        ('PASSWORD_RESET_REQUEST', 'Solicitação de Reset de Senha'),
+        ('PROFILE_UPDATE', 'Atualização de Perfil'),
+        ('PERMISSION_CHANGE', 'Alteração de Permissão'),
+        ('ACCOUNT_LOCKED', 'Conta Bloqueada'),
+        ('ACCOUNT_UNLOCKED', 'Conta Desbloqueada'),
+        ('FAILED_LOGIN', 'Tentativa de Login Falhada'),
+        ('USER_CREATED', 'Usuário Criado'),
+        ('USER_ACTIVATED', 'Usuário Ativado'),
+        ('USER_DEACTIVATED', 'Usuário Desativado'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='audit_logs')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    
+    # Para auditoria de outros objetos
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Log de Auditoria'
+        verbose_name_plural = 'Logs de Auditoria'
+        indexes = [
+            models.Index(fields=['user', 'action']),
+            models.Index(fields=['timestamp']),
+            models.Index(fields=['ip_address']),
+        ]
+    
+    def __str__(self):
+        action_display = dict(self.ACTION_CHOICES).get(self.action, self.action)
+        return f"{self.user.username} - {action_display} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"

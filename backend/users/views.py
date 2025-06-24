@@ -78,15 +78,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Define permissões com base na ação."""
         if self.action == 'create':
-            return [HasModulePermission('USERS', 'CREATE')]
+            # Apenas admins podem criar usuários
+            return [HasModulePermission('USERS', 'CREATE')()]
         elif self.action == 'reset_password':
-            return [HasModulePermission('USERS', 'EDIT')]
+            return [HasModulePermission('USERS', 'EDIT')()]
         elif self.action in ['update', 'partial_update']:
-            return [HasModulePermission('USERS', 'EDIT')]
+            return [HasModulePermission('USERS', 'EDIT')()]
         elif self.action == 'destroy':
-            return [HasModulePermission('USERS', 'DELETE')]
+            return [HasModulePermission('USERS', 'DELETE')()]
         elif self.action == 'list':
-            return [HasModulePermission('USERS', 'VIEW')]
+            # Apenas admins podem listar usuários
+            return [HasModulePermission('USERS', 'VIEW')()]
+        elif self.action == 'retrieve':
+            return [HasModulePermission('USERS', 'VIEW')()]
+        elif self.action in ['activate', 'deactivate', 'unlock']:
+            return [HasModulePermission('USERS', 'EDIT')()]
+        # Ações pessoais do usuário (me, permissions, change_password) só precisam de autenticação
         return [IsAuthenticated()]
     
     @extend_schema(
@@ -146,11 +153,21 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
     def reset_password(self, request, pk=None):
         """Redefine a senha do usuário para uma senha temporária."""
+        import secrets
+        import string
+        
         user = self.get_object()
-        temp_password = User.objects.make_random_password()
+        
+        # Generate a random password
+        alphabet = string.ascii_letters + string.digits
+        temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
+        
         user = update_user_password(user, temp_password)
-        user.password_change_required = True
-        user.save()
+        
+        # Ensure user has a profile
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.password_change_required = True
+        profile.save()
         
         send_mail(
             'Redefinição de Senha',
@@ -292,3 +309,8 @@ class PermissionViewSet(viewsets.ModelViewSet):
     serializer_class = PermissionSerializer
     permission_classes = [HasModulePermission('USERS', 'EDIT')]
     filterset_fields = ['access_profile', 'module', 'action']
+    
+    def get_permissions(self):
+        """Define permissões com base na ação."""
+        # Apenas admins podem gerenciar permissões
+        return [HasModulePermission('USERS', 'EDIT')()]

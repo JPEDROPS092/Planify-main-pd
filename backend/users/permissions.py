@@ -138,15 +138,15 @@ def check_user_permission(user, module, action):
         bool: True se o usuário tem permissão, False caso contrário
     """
     # Administradores têm acesso total
-    if user.is_superuser or (hasattr(user, 'role') and user.role == 'ADMIN'):
+    if user.is_superuser or (hasattr(user, 'role') and user.role == 'ADMIN') or (hasattr(user, 'is_staff') and user.is_staff):
         return True
     
     # Verificar permissão específica através do método do usuário
     if hasattr(user, 'has_permission'):
         return user.has_permission(module, action)
     
-    # Fallback: permitir acesso se não há sistema de permissões configurado
-    return True
+    # Fallback: negar acesso se não há sistema de permissões configurado
+    return False
 
 
 def log_unauthorized_access(user, path, module, action):
