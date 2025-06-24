@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 import uuid
 
 class BlacklistedTokens(models.Model):
@@ -113,6 +114,14 @@ class User(AbstractBaseUser, PermissionsMixin):
             
         self.save(update_fields=['failed_login_attempts', 'is_locked'])
     
+    def clean(self):
+        super().clean()
+        if self.email:
+            self.email = self.email.lower()
+        
+        # Validar que admin não pode ser desativado
+        if not self.is_active and self.role == 'ADMIN':
+            raise ValidationError("Administradores não podem ser desativados")
     def reset_failed_login(self):
         """Reseta o contador de tentativas falhas de login após um login bem-sucedido"""
         self.failed_login_attempts = 0

@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['phone', 'profile_picture', 'theme_preference', 'email_notifications', 'system_notifications']
-
+        fields = ['user', 'phone', 'profile_picture', 'theme_preference', 
+                 'email_notifications', 'system_notifications']
+   
 
 class PermissionSerializer(serializers.ModelSerializer):
     module_display = serializers.CharField(source='get_module_display', read_only=True)
@@ -145,6 +146,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(required=True, validators=[validate_password])
     token = serializers.CharField(required=True)
+    uid = serializers.CharField(required=True)
     
     def validate_password(self, value):
         # Additional password validation logic could be added here

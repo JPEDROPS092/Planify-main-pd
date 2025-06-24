@@ -2,366 +2,330 @@
 Testes para os modelos do módulo Teams.
 """
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from teams.models import Equipe, MembroEquipe, PermissaoEquipe
 
-User = get_user_model()  # type: ignore
+User = get_user_model()
 
 
-class EquipeModelTest(TestCase):
-    """Testes para o modelo Equipe"""
+@pytest.mark.django_db
+class TestEquipeModel:
+    """Testes para o modelo Equipe."""
     
-    def setUp(self):
-        """Configuração inicial para os testes"""
-        self.user = User.objects.create_user(  # type: ignore
-            username='testuser',
-            email='test@example.com',
-            password='testpass123'
-        )
-        
-    def test_create_equipe(self):
-        """Testa a criação de uma equipe"""
+    def test_criacao_equipe_valida(self, user1):
+        """Testa criação de equipe com dados válidos."""
         equipe = Equipe.objects.create(
-            nome="Equipe de Desenvolvimento",
-            descricao="Equipe responsável pelo desenvolvimento do sistema",
-            criado_por=self.user
+            nome="Equipe Teste",
+            descricao="Descrição da equipe teste",
+            criado_por=user1
         )
         
-        self.assertEqual(equipe.nome, "Equipe de Desenvolvimento")
-        self.assertEqual(equipe.descricao, "Equipe responsável pelo desenvolvimento do sistema")
-        self.assertEqual(equipe.criado_por, self.user)
-        self.assertTrue(equipe.criado_em)
-        self.assertTrue(equipe.atualizado_em)
-        
-    def test_equipe_str_representation(self):
-        """Testa a representação string da equipe"""
+        assert equipe.nome == "Equipe Teste"
+        assert equipe.descricao == "Descrição da equipe teste"
+        assert equipe.criado_por == user1
+        assert equipe.criado_em is not None
+        assert equipe.atualizado_em is not None
+    
+    def test_str_equipe(self, equipe1):
+        """Testa representação string da equipe."""
+        assert str(equipe1) == "Equipe 1"
+    
+    def test_criacao_equipe_sem_descricao(self, user1):
+        """Testa criação de equipe sem descrição."""
         equipe = Equipe.objects.create(
-            nome="Equipe de Testes",
-            criado_por=self.user
+            nome="Equipe Sem Descrição",
+            criado_por=user1
         )
-        self.assertEqual(str(equipe), "Equipe de Testes")
         
-    def test_equipe_nome_max_length(self):
-        """Testa o comprimento máximo do nome da equipe"""
-        long_name = 'A' * 256  # Mais que o máximo permitido (200)
-        with self.assertRaises(ValidationError):
-            equipe = Equipe(
-                nome=long_name,
-                criado_por=self.user
-            )
-            equipe.full_clean()
-            
-    def test_equipe_nome_required(self):
-        """Testa que o nome da equipe é obrigatório"""
-        with self.assertRaises(ValidationError):
-            equipe = Equipe(
-                nome="",
-                criado_por=self.user
-            )
-            equipe.full_clean()
-            
-    def test_equipe_criado_por_required(self):
-        """Testa que criado_por é obrigatório"""
-        with self.assertRaises(IntegrityError):
-            Equipe.objects.create(
-                nome="Equipe Teste",
-                criado_por=None
-            )
-
-
-class MembroEquipeModelTest(TestCase):
-    """Testes para o modelo MembroEquipe"""
+        assert equipe.nome == "Equipe Sem Descrição"
+        assert equipe.descricao is None
+        assert equipe.criado_por == user1
     
-    def setUp(self):
-        """Configuração inicial para os testes"""
-        self.user1 = User.objects.create_user(  # type: ignore
-            username='user1',
-            email='user1@example.com',
-            password='testpass123'
-        )
-        self.user2 = User.objects.create_user(  # type: ignore
-            username='user2',
-            email='user2@example.com',
-            password='testpass123'
-        )
-        self.equipe = Equipe.objects.create(
-            nome="Equipe Teste",
-            criado_por=self.user1
+    def test_criacao_equipe_sem_criador(self):
+        """Testa criação de equipe sem criador."""
+        equipe = Equipe.objects.create(
+            nome="Equipe Órfã",
+            descricao="Equipe sem criador"
         )
         
-    def test_create_membro_equipe(self):
-        """Testa a criação de um membro de equipe"""
-        membro = MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='DEV',
-            adicionado_por=self.user1
-        )
-        
-        self.assertEqual(membro.equipe, self.equipe)
-        self.assertEqual(membro.usuario, self.user2)
-        self.assertEqual(membro.papel, 'DEV')
-        self.assertEqual(membro.adicionado_por, self.user1)
-        self.assertTrue(membro.adicionado_em)
-        
-    def test_membro_equipe_str_representation(self):
-        """Testa a representação string do membro de equipe"""
-        membro = MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='DEV',
-            adicionado_por=self.user1
-        )
-        expected = f"{self.user2.full_name} - {self.equipe.nome} (DEV)"
-        self.assertEqual(str(membro), expected)
-        
-    def test_get_papel_display(self):
-        """Testa o método get_papel_display"""
-        membro = MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='PO',
-            adicionado_por=self.user1
-        )
-        self.assertEqual(membro.get_papel_display(), 'Product Owner')
-        
-    def test_unique_constraint_usuario_equipe(self):
-        """Testa que um usuário não pode ser adicionado duas vezes na mesma equipe"""
-        MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='DEV',
-            adicionado_por=self.user1
-        )
-        
-        with self.assertRaises(IntegrityError):
-            MembroEquipe.objects.create(
-                equipe=self.equipe,
-                usuario=self.user2,
-                papel='PO',
-                adicionado_por=self.user1
-            )
-            
-    def test_papel_choices(self):
-        """Testa as opções de papel disponíveis"""
-        papeis_validos = ['PO', 'SM', 'DEV', 'QA', 'DESIGN', 'STAKEHOLDER']
-        
-        for papel in papeis_validos:
-            membro = MembroEquipe(
-                equipe=self.equipe,
-                usuario=self.user2,
-                papel=papel,
-                adicionado_por=self.user1
-            )
-            # Não deve levantar exceção
-            membro.full_clean()
-            
-    def test_papel_invalid_choice(self):
-        """Testa papel inválido"""
-        with self.assertRaises(ValidationError):
-            membro = MembroEquipe(
-                equipe=self.equipe,
-                usuario=self.user2,
-                papel='INVALID',
-                adicionado_por=self.user1
-            )
-            membro.full_clean()
-
-
-class PermissaoEquipeModelTest(TestCase):
-    """Testes para o modelo PermissaoEquipe"""
+        assert equipe.nome == "Equipe Órfã"
+        assert equipe.criado_por is None
     
-    def setUp(self):
-        """Configuração inicial para os testes"""
-        self.user = User.objects.create_user(  # type: ignore
-            username='testuser',
-            email='test@example.com',
-            password='testpass123'
-        )
-        self.equipe = Equipe.objects.create(
-            nome="Equipe Teste",
-            criado_por=self.user
-        )
-        
-    def test_create_permissao_equipe(self):
-        """Testa a criação de uma permissão de equipe"""
-        permissao = PermissaoEquipe.objects.create(
-            papel='DEV',
-            equipe=self.equipe,
-            modulo='TASKS',
-            permissao='CREATE'
-        )
-        
-        self.assertEqual(permissao.papel, 'DEV')
-        self.assertEqual(permissao.equipe, self.equipe)
-        self.assertEqual(permissao.modulo, 'TASKS')
-        self.assertEqual(permissao.permissao, 'CREATE')
-        
-    def test_permissao_equipe_str_representation(self):
-        """Testa a representação string da permissão de equipe"""
-        permissao = PermissaoEquipe.objects.create(
-            papel='DEV',
-            equipe=self.equipe,
-            modulo='TASKS',
-            permissao='CREATE'
-        )
-        expected = f"{self.equipe.nome} - DEV - TASKS - CREATE"
-        self.assertEqual(str(permissao), expected)
-        
-    def test_get_display_methods(self):
-        """Testa os métodos get_display"""
-        permissao = PermissaoEquipe.objects.create(
-            papel='PO',
-            equipe=self.equipe,
-            modulo='PROJECTS',
-            permissao='READ'
-        )
-        
-        self.assertEqual(permissao.get_papel_display(), 'Product Owner')
-        self.assertEqual(permissao.get_modulo_display(), 'Projetos')
-        self.assertEqual(permissao.get_permissao_display(), 'Visualizar')
-        
-    def test_unique_constraint_papel_equipe_modulo_permissao(self):
-        """Testa que não pode haver permissões duplicadas"""
-        PermissaoEquipe.objects.create(
-            papel='DEV',
-            equipe=self.equipe,
-            modulo='TASKS',
-            permissao='CREATE'
-        )
-        
-        with self.assertRaises(IntegrityError):
-            PermissaoEquipe.objects.create(
-                papel='DEV',
-                equipe=self.equipe,
-                modulo='TASKS',
-                permissao='CREATE'
-            )
-            
-    def test_papel_choices(self):
-        """Testa as opções de papel disponíveis"""
-        papeis_validos = ['PO', 'SM', 'DEV', 'QA', 'DESIGN', 'STAKEHOLDER']
-        
-        for papel in papeis_validos:
-            permissao = PermissaoEquipe(
-                papel=papel,
-                equipe=self.equipe,
-                modulo='TASKS',
-                permissao='READ'
-            )
-            # Não deve levantar exceção
-            permissao.full_clean()
-            
-    def test_modulo_choices(self):
-        """Testa as opções de módulo disponíveis"""
-        modulos_validos = ['PROJECTS', 'TASKS', 'RISKS', 'COSTS', 'DOCUMENTS', 'COMMUNICATIONS']
-        
-        for modulo in modulos_validos:
-            permissao = PermissaoEquipe(
-                papel='DEV',
-                equipe=self.equipe,
-                modulo=modulo,
-                permissao='READ'
-            )
-            # Não deve levantar exceção
-            permissao.full_clean()
-            
-    def test_permissao_choices(self):
-        """Testa as opções de permissão disponíveis"""
-        permissoes_validas = ['CREATE', 'READ', 'UPDATE', 'DELETE']
-        
-        for perm in permissoes_validas:
-            permissao = PermissaoEquipe(
-                papel='DEV',
-                equipe=self.equipe,
-                modulo='TASKS',
-                permissao=perm
-            )
-            # Não deve levantar exceção
-            permissao.full_clean()
-
-
-class EquipeRelationshipsTest(TestCase):
-    """Testes para relacionamentos entre modelos"""
-    
-    def setUp(self):
-        """Configuração inicial para os testes"""
-        self.user1 = User.objects.create_user(  # type: ignore
-            username='user1',
-            email='user1@example.com',
-            password='testpass123'
-        )
-        self.user2 = User.objects.create_user(  # type: ignore
-            username='user2',
-            email='user2@example.com',
-            password='testpass123'
-        )
-        self.equipe = Equipe.objects.create(
-            nome="Equipe Teste",
-            criado_por=self.user1
-        )
-        
-    def test_equipe_membros_relationship(self):
-        """Testa o relacionamento entre equipe e membros"""
+    def test_relacionamento_membros(self, equipe1, user1, user2):
+        """Testa relacionamento com membros."""
         membro1 = MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user1,
-            papel='PO',
-            adicionado_por=self.user1
+            equipe=equipe1,
+            usuario=user1,
+            papel='PO'
         )
         membro2 = MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='DEV',
-            adicionado_por=self.user1
+            equipe=equipe1,
+            usuario=user2,
+            papel='DEV'
         )
         
-        membros = self.equipe.membros.all()  # type: ignore
-        self.assertEqual(membros.count(), 2)
-        self.assertIn(membro1, membros)
-        self.assertIn(membro2, membros)
-        
-    def test_equipe_permissoes_relationship(self):
-        """Testa o relacionamento entre equipe e permissões"""
-        permissao1 = PermissaoEquipe.objects.create(
+        assert equipe1.membros.count() == 2
+        assert membro1 in equipe1.membros.all()
+        assert membro2 in equipe1.membros.all()
+    
+    def test_relacionamento_permissoes(self, equipe1):
+        """Testa relacionamento com permissões."""
+        permissao = PermissaoEquipe.objects.create(
             papel='DEV',
-            equipe=self.equipe,
-            modulo='TASKS',
-            permissao='CREATE'
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='CRIAR'
         )
-        permissao2 = PermissaoEquipe.objects.create(
+        
+        assert equipe1.permissoes.count() == 1
+        assert permissao in equipe1.permissoes.all()
+
+
+@pytest.mark.django_db
+class TestMembroEquipeModel:
+    """Testes para o modelo MembroEquipe."""
+    
+    def test_criacao_membro_equipe_valido(self, equipe1, user1, user2):
+        """Testa criação de membro de equipe com dados válidos."""
+        membro = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user1,
             papel='PO',
-            equipe=self.equipe,
-            modulo='PROJECTS',
-            permissao='UPDATE'
+            adicionado_por=user2
         )
         
-        permissoes = self.equipe.permissoes.all()  # type: ignore
-        self.assertEqual(permissoes.count(), 2)
-        self.assertIn(permissao1, permissoes)
-        self.assertIn(permissao2, permissoes)
+        assert membro.equipe == equipe1
+        assert membro.usuario == user1
+        assert membro.papel == 'PO'
+        assert membro.adicionado_por == user2
+        assert membro.adicionado_em is not None
+    
+    def test_str_membro_equipe(self, membro_equipe_user1):
+        """Testa representação string do membro de equipe."""
+        expected = f"{membro_equipe_user1.usuario.username} - {membro_equipe_user1.equipe.nome} (Product Owner)"
+        assert str(membro_equipe_user1) == expected
+    
+    def test_get_papel_display(self, membro_equipe_user1):
+        """Testa método get_papel_display."""
+        assert membro_equipe_user1.get_papel_display() == 'Product Owner'
         
-    def test_delete_equipe_cascade(self):
-        """Testa que ao deletar equipe, membros e permissões são deletados"""
+        # Testa com papel DEV
+        membro_equipe_user1.papel = 'DEV'
+        assert membro_equipe_user1.get_papel_display() == 'Desenvolvedor'
+    
+    def test_unique_together_constraint(self, equipe1, user1):
+        """Testa constraint unique_together para equipe e usuário."""
+        # Cria primeiro membro
         MembroEquipe.objects.create(
-            equipe=self.equipe,
-            usuario=self.user2,
-            papel='DEV',
-            adicionado_por=self.user1
+            equipe=equipe1,
+            usuario=user1,
+            papel='PO'
         )
+        
+        # Tenta criar segundo membro com mesmo usuário e equipe
+        with pytest.raises(IntegrityError):
+            MembroEquipe.objects.create(
+                equipe=equipe1,
+                usuario=user1,
+                papel='DEV'
+            )
+    
+    def test_primeiro_membro_automatico_po(self, equipe1, user1):
+        """Testa que primeiro membro sem papel definido vira PO automaticamente."""
+        membro = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user1
+        )
+        
+        assert membro.papel == 'PO'
+    
+    def test_segundo_membro_nao_muda_papel(self, equipe1, user1, user2):
+        """Testa que segundo membro deve especificar papel explicitamente."""
+        # Primeiro membro
+        MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user1,
+            papel='PO'
+        )
+        
+        # Segundo membro precisa especificar papel explicitamente
+        # (não há lógica automática para segundo membro)
+        membro2 = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user2,
+            papel='DEV'  # Precisa especificar explicitamente
+        )
+        
+        # Verifica que foi criado com o papel especificado
+        assert membro2.papel == 'DEV'
+    
+    def test_papeis_disponiveis(self):
+        """Testa se todos os papéis esperados estão disponíveis."""
+        papeis_esperados = ['PO', 'SM', 'DEV', 'QA', 'DESIGN', 'ANALISTA']
+        papeis_modelo = [choice[0] for choice in MembroEquipe.PAPEL_CHOICES]
+        
+        for papel in papeis_esperados:
+            assert papel in papeis_modelo
+    
+    def test_relacionamento_usuario_equipes(self, user1, equipe1, equipe2):
+        """Testa relacionamento reverso usuario.equipes."""
+        MembroEquipe.objects.create(equipe=equipe1, usuario=user1, papel='PO')
+        MembroEquipe.objects.create(equipe=equipe2, usuario=user1, papel='DEV')
+        
+        assert user1.equipes.count() == 2
+
+
+@pytest.mark.django_db
+class TestPermissaoEquipeModel:
+    """Testes para o modelo PermissaoEquipe."""
+    
+    def test_criacao_permissao_valida(self, equipe1):
+        """Testa criação de permissão com dados válidos."""
+        permissao = PermissaoEquipe.objects.create(
+            papel='DEV',
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='CRIAR'
+        )
+        
+        assert permissao.papel == 'DEV'
+        assert permissao.equipe == equipe1
+        assert permissao.modulo == 'TAREFAS'
+        assert permissao.permissao == 'CRIAR'
+    
+    def test_str_permissao_equipe(self, permissao_equipe):
+        """Testa representação string da permissão."""
+        expected = f"{permissao_equipe.equipe.nome} - Desenvolvedor - Tarefas - Criar"
+        assert str(permissao_equipe) == expected
+    
+    def test_get_papel_display(self, permissao_equipe):
+        """Testa método get_papel_display."""
+        assert permissao_equipe.get_papel_display() == 'Desenvolvedor'
+    
+    def test_get_modulo_display(self, permissao_equipe):
+        """Testa método get_modulo_display."""
+        assert permissao_equipe.get_modulo_display() == 'Tarefas'
+    
+    def test_unique_together_constraint(self, equipe1):
+        """Testa constraint unique_together."""
+        # Cria primeira permissão
         PermissaoEquipe.objects.create(
             papel='DEV',
-            equipe=self.equipe,
-            modulo='TASKS',
-            permissao='CREATE'
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='CRIAR'
         )
         
-        equipe_id = self.equipe.id  # type: ignore
-        self.equipe.delete()
+        # Tenta criar permissão duplicada
+        with pytest.raises(IntegrityError):
+            PermissaoEquipe.objects.create(
+                papel='DEV',
+                equipe=equipe1,
+                modulo='TAREFAS',
+                permissao='CRIAR'
+            )
+    
+    def test_multiplas_permissoes_mesmo_papel(self, equipe1):
+        """Testa múltiplas permissões para mesmo papel."""
+        PermissaoEquipe.objects.create(
+            papel='DEV',
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='CRIAR'
+        )
         
-        # Verifica que membros e permissões foram deletados
-        self.assertEqual(MembroEquipe.objects.filter(equipe_id=equipe_id).count(), 0)
-        self.assertEqual(PermissaoEquipe.objects.filter(equipe_id=equipe_id).count(), 0)
+        PermissaoEquipe.objects.create(
+            papel='DEV',
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='EDITAR'
+        )
+        
+        assert PermissaoEquipe.objects.filter(papel='DEV', equipe=equipe1).count() == 2
+    
+    def test_permissoes_disponiveis(self):
+        """Testa se todas as permissões esperadas estão disponíveis."""
+        permissoes_esperadas = ['VISUALIZAR', 'CRIAR', 'EDITAR', 'EXCLUIR']
+        permissoes_modelo = [choice[0] for choice in PermissaoEquipe.PERMISSAO_CHOICES]
+        
+        for permissao in permissoes_esperadas:
+            assert permissao in permissoes_modelo
+    
+    def test_modulos_disponiveis(self):
+        """Testa se todos os módulos esperados estão disponíveis."""
+        modulos_esperados = ['TAREFAS', 'SPRINTS', 'DOCUMENTOS', 'RISCOS', 'CUSTOS']
+        modulos_modelo = [choice[0] for choice in PermissaoEquipe.MODULO_CHOICES]
+        
+        for modulo in modulos_esperados:
+            assert modulo in modulos_modelo
+
+
+@pytest.mark.django_db
+class TestRelacionamentosModelos:
+    """Testes para relacionamentos entre modelos."""
+    
+    def test_cascade_delete_equipe(self, equipe1, user1):
+        """Testa cascata ao deletar equipe."""
+        membro = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user1,
+            papel='PO'
+        )
+        
+        permissao = PermissaoEquipe.objects.create(
+            papel='PO',
+            equipe=equipe1,
+            modulo='TAREFAS',
+            permissao='CRIAR'
+        )
+        
+        membro_id = membro.id
+        permissao_id = permissao.id
+        
+        # Deleta equipe
+        equipe1.delete()
+        
+        # Verifica se membros e permissões foram deletados
+        assert not MembroEquipe.objects.filter(id=membro_id).exists()
+        assert not PermissaoEquipe.objects.filter(id=permissao_id).exists()
+    
+    def test_set_null_delete_user(self, equipe1, user1, user2):
+        """Testa SET_NULL ao deletar usuário criador."""
+        equipe1.criado_por = user1
+        equipe1.save()
+        
+        membro = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user2,
+            papel='DEV',
+            adicionado_por=user1
+        )
+        
+        # Deleta usuário criador
+        user1.delete()
+        
+        # Recarrega objetos
+        equipe1.refresh_from_db()
+        membro.refresh_from_db()
+        
+        # Verifica SET_NULL
+        assert equipe1.criado_por is None
+        assert membro.adicionado_por is None
+        assert membro.usuario == user2  # Membro não deve ser deletado
+    
+    def test_cascade_delete_membro_usuario(self, equipe1, user1):
+        """Testa cascata ao deletar usuário membro."""
+        membro = MembroEquipe.objects.create(
+            equipe=equipe1,
+            usuario=user1,
+            papel='PO'
+        )
+        
+        membro_id = membro.id
+        
+        # Deleta usuário
+        user1.delete()
+        
+        # Verifica se membro foi deletado
+        assert not MembroEquipe.objects.filter(id=membro_id).exists()

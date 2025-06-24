@@ -11,9 +11,11 @@ from typing import List, Dict, Any # Moved typing imports to the top
 # Define o diretório base do projeto (duas pastas acima deste arquivo)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000') # Exemplo
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # Chave secreta do Django usada para segurança (mantenha em segredo em produção)
-SECRET_KEY = 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Define se o projeto está em modo DEBUG (exibe erros detalhados, usando em desenvolvimento)
@@ -36,7 +38,6 @@ INSTALLED_APPS = [
     # Apps de terceiros usados para funcionalidades extras
     'rest_framework',              # Framework para APIs REST
     'rest_framework_simplejwt',    # JWT para autenticação via tokens
-    'djoser',                      # REST framework views for user management
     'corsheaders',                 # Configuração CORS para permitir acesso cross-origin
     'django_filters',              # Filtros para DRF
     'colorfield',                  # Campo de cores personalizado
@@ -69,8 +70,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
-    # 'django.middleware.common.CommonMiddleware',   # Middleware duplicado, REMOVED
-    # 'django.middleware.csrf.CsrfViewMiddleware',   # Middleware duplicado, REMOVED
 ]
 
 # Arquivo raiz de URLs do projeto
@@ -193,47 +192,7 @@ SIMPLE_JWT = {
 }
     
     
-# Configurações para a biblioteca DJOSER (facilita endpoints de autenticação)
-DJOSER = {
-    'LOGIN_FIELD': 'username',
-    'USER_CREATE_PASSWORD_RETYPE': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
-    'SEND_CONFIRMATION_EMAIL': False,
-    'SET_PASSWORD_RETYPE': True,
-    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'TOKEN_MODEL': None,  # We'll use JWT only
-    'SERIALIZERS': {
-        'user': 'users.serializers.UserSerializer',
-        'user_create': 'users.serializers.UserCreateSerializer',
-        'current_user': 'users.serializers.UserSerializer',
-    },
-    'PERMISSIONS': {
-        'user': ['rest_framework.permissions.IsAuthenticated'],
-        'user_list': ['rest_framework.permissions.IsAdminUser'],
-    },
-    'HIDE_USERS': False,
-    'AUTHENTICATION_BACKENDS': ['django.contrib.auth.backends.ModelBackend'],
-    'SEND_ACTIVATION_EMAIL': False,
-    'SERIALIZERS': {  # Serializadores customizados para os endpoints
-        'user': 'users.serializers.UserSerializer',
-        'user_create': 'users.serializers.UserCreateSerializer',
-        'user_delete': 'users.serializers.UserSerializer', # Make sure this exists and is appropriate for delete
-        'password_reset': 'users.serializers.ResetPasswordSerializer', # Ensure 'ResetPasswordSerializer' exists
-        'password_reset_confirm': 'users.serializers.SetNewPasswordSerializer',
-        'set_password': 'users.serializers.ChangePasswordSerializer', # Ensure 'ChangePasswordSerializer' exists
-        'current_user': 'users.serializers.UserSerializer',
-    },
-    'EMAIL': {  # Classes para envio de emails customizados
-        'activation': 'users.email.ActivationEmail',
-        'confirmation': 'users.email.ConfirmationEmail',
-        'password_reset': 'users.email.PasswordResetEmail',
-        'password_changed_confirmation': 'users.email.PasswordChangedConfirmationEmail',
-    },
-    'ACTIVATION_REQUIRED': False,  # Ativação via email desabilitada
-}
-    
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

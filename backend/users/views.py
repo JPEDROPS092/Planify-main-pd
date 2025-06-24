@@ -80,9 +80,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             # Apenas admins podem criar usuários
             return [HasModulePermission('USERS', 'CREATE')()]
-        elif self.action == 'reset_password':
-            return [HasModulePermission('USERS', 'EDIT')()]
+        elif self.action == 'request_password_reset' or self.action == 'confirm_password_reset':
+            # Qualquer pessoa pode solicitar ou confirmar um reset de senha
+            return [AllowAny()]
         elif self.action in ['update', 'partial_update']:
+            return [HasModulePermission('USERS', 'EDIT')()]
             return [HasModulePermission('USERS', 'EDIT')()]
         elif self.action == 'destroy':
             return [HasModulePermission('USERS', 'DELETE')()]
@@ -145,41 +147,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
-        summary="Redefinir senha",
-        tags=["Usuários"],
-        description="Redefine a senha do usuário para uma senha temporária.",
-        responses={200: None}
-    )
-    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
-    def reset_password(self, request, pk=None):
-        """Redefine a senha do usuário para uma senha temporária."""
-        import secrets
-        import string
-        
-        user = self.get_object()
-        
-        # Generate a random password
-        alphabet = string.ascii_letters + string.digits
-        temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
-        
-        user = update_user_password(user, temp_password)
-        
-        # Ensure user has a profile
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        profile.password_change_required = True
-        profile.save()
-        
-        send_mail(
-            'Redefinição de Senha',
-            f'Sua senha temporária é: {temp_password}\nPor favor, altere-a após fazer login.',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-        
-        return Response({'detail': 'Senha temporária enviada para o e-mail do usuário'})
-
-    @extend_schema(
         summary="Ativar usuário",
         tags=["Usuários"],
         description="Ativa um usuário inativo.",
@@ -222,6 +189,145 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({'detail': 'Usuário desbloqueado com sucesso'})
 
+    @extend_schema(
+        summary="Solicitar redefinição de senha",
+        tags=["Usuários"],
+        description="Envia um email com um link para redefinição de senha.",
+        request=ResetPasswordSerializer,
+        responses={200: None}
+    )
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def request_password_reset(self, request):
+        """
+        Envia um email com um link para redefinição de senha.
+        """
+        serializer = ResetPasswordSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                email = serializer.validated_data['email']
+                try:
+                    user = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    # Não informamos que o usuário não existe para evitar enumeração de contas
+                    return Response({'detail': 'Se o email estiver registrado, você receberá um link para redefinição de senha.'})
+                
+                # Gerar token e link para reset
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                
+                # Construir link
+                frontend_url = settings.FRONTEND_URL.rstrip('/')
+                reset_link = f"{frontend_url}/reset-password/{uid}/{token}/"
+                
+                # Enviar email
+                from .utils import send_password_reset_email
+                sent = send_password_reset_email(user, reset_link)
+                
+                if sent:
+                    logger.info(f"Email de redefinição de senha enviado para {email}")
+                    return Response({'detail': 'Se o email estiver registrado, você receberá um link para redefinição de senha.'})
+                else:
+                    logger.error(f"Falha ao enviar email de redefinição de senha para {email}")
+                    return Response({'detail': 'Erro ao enviar email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    
+            except Exception as e:
+                logger.error(f"Erro ao processar redefinição de senha: {str(e)}")
+                return Response({'detail': 'Erro ao processar solicitação'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="Confirmar redefinição de senha",
+        tags=["Usuários"],
+        description="Redefine a senha do usuário usando o token e UID recebidos por email.",
+        request=SetNewPasswordSerializer,
+        responses={200: None}
+    )
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def confirm_password_reset(self, request):
+        """
+        Redefine a senha do usuário usando o token e UID recebidos por email.
+        """
+        serializer = SetNewPasswordSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                password = serializer.validated_data['password']
+                token = serializer.validated_data['token']
+                uid = serializer.validated_data['uid']
+                
+                try:
+                    user_id = force_str(urlsafe_base64_decode(uid))
+                    user = User.objects.get(pk=user_id)
+                except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                    return Response({'detail': 'Link inválido'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Validar token
+                if not default_token_generator.check_token(user, token):
+                    return Response({'detail': 'Token inválido ou expirado'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Atualizar senha
+                update_user_password(user, password)
+                
+                logger.info(f"Senha redefinida com sucesso para usuário {user.get_username()} (ID: {user.pk})")
+                return Response({'detail': 'Senha redefinida com sucesso'})
+                
+            except Exception as e:
+                logger.error(f"Erro ao redefinir senha: {str(e)}")
+                return Response({'detail': 'Erro ao redefinir senha'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="Resetar senha (Admin)",
+        tags=["Usuários"],
+        description="Permite um administrador resetar a senha de um usuário.",
+        responses={200: None}
+    )
+    @action(detail=True, methods=['post'], permission_classes=[HasModulePermission('USERS', 'EDIT')])
+    def reset_password(self, request, pk=None):
+        """
+        Reseta a senha de um usuário e envia a nova senha por email.
+        Esta é uma funcionalidade administrativa.
+        
+        Nota: Esta abordagem envia a senha por email, o que não é recomendado.
+        Use os endpoints request_password_reset e confirm_password_reset para
+        o fluxo seguro de redefinição de senha.
+        """
+        from .utils import generate_secure_password
+        
+        user = self.get_object()
+        
+        # Gerar nova senha
+        new_password = generate_secure_password()
+        
+        # Atualizar senha do usuário
+        user.set_password(new_password)
+        user.save()
+        
+        # Marcar que a mudança de senha é obrigatória
+        if hasattr(user, 'profile'):
+            user.profile.password_change_required = True
+            user.profile.save()
+        
+        # Enviar email com a nova senha
+        subject = 'Nova senha - Planify'
+        message = f'Sua senha foi redefinida por um administrador. Sua nova senha é: {new_password}'
+        email_from = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+        
+        try:
+            send_mail(subject, message, email_from, recipient_list)
+            logger.info(f"Email com nova senha enviado para usuário {user.get_username()}")
+            return Response({'detail': 'Senha redefinida com sucesso. Um email foi enviado ao usuário.'})
+        except Exception as e:
+            logger.error(f"Erro ao enviar email com nova senha: {str(e)}")
+            return Response(
+                {'detail': 'Senha redefinida, mas houve um erro ao enviar o email. Entre em contato com o usuário.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 @extend_schema_view(
     list=extend_schema(
         summary="Listar perfis",
@@ -263,8 +369,15 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
-    queryset = UserProfile.objects.all()
-
+    
+    def perform_create(self, serializer):
+        # Definir automaticamente o usuário atual
+        serializer.save(user=self.request.user)
+    
+    def get_queryset(self):
+        # Usuários só podem ver seus próprios perfis
+        return UserProfile.objects.filter(user=self.request.user)
+    
 @extend_schema_view(
     list=extend_schema(
         summary="Listar permissões",
@@ -314,3 +427,133 @@ class PermissionViewSet(viewsets.ModelViewSet):
         """Define permissões com base na ação."""
         # Apenas admins podem gerenciar permissões
         return [HasModulePermission('USERS', 'EDIT')()]
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar perfis de acesso",
+        tags=["Perfis de Acesso"],
+        description="Retorna uma lista paginada de perfis de acesso.",
+        responses={200: AccessProfileSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Obter detalhes do perfil de acesso",
+        tags=["Perfis de Acesso"],
+        description="Retorna informações detalhadas de um perfil de acesso específico.",
+        responses={200: AccessProfileSerializer}
+    ),
+    create=extend_schema(
+        summary="Criar novo perfil de acesso",
+        tags=["Perfis de Acesso"],
+        description="Cria um novo perfil de acesso.",
+        responses={201: AccessProfileSerializer}
+    ),
+    update=extend_schema(
+        summary="Atualizar perfil de acesso",
+        tags=["Perfis de Acesso"],
+        description="Atualiza todos os campos de um perfil de acesso existente.",
+        responses={200: AccessProfileSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Atualizar perfil de acesso parcialmente",
+        tags=["Perfis de Acesso"],
+        description="Atualiza parcialmente um perfil de acesso existente.",
+        responses={200: AccessProfileSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Excluir perfil de acesso",
+        tags=["Perfis de Acesso"],
+        description="Remove um perfil de acesso existente.",
+        responses={204: None}
+    )
+)
+class AccessProfileViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de perfis de acesso."""
+    queryset = AccessProfile.objects.all()
+    serializer_class = AccessProfileSerializer
+    permission_classes = [HasModulePermission('USERS', 'EDIT')]
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
+    
+    def get_permissions(self):
+        """Define permissões com base na ação."""
+        if self.action in ['list', 'retrieve']:
+            return [HasModulePermission('USERS', 'VIEW')()]
+        return [HasModulePermission('USERS', 'EDIT')()]
+
+
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
+@extend_schema(
+    tags=['Usuários'],
+    summary="Registrar novo usuário",
+    description='''
+    Permite o registro público de novos usuários no sistema.
+    
+    - Qualquer pessoa pode criar uma conta sem necessidade de autenticação prévia
+    - O papel padrão atribuído é TEAM_MEMBER se não especificado
+    - Um perfil de usuário é criado automaticamente
+    - Retorna os dados básicos do usuário criado
+    ''',
+    request=UserCreateSerializer,
+    responses={
+        201: inline_serializer(
+            name='RegisterSuccessResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'user_id': serializers.IntegerField(),
+                'username': serializers.CharField(),
+                'email': serializers.EmailField(),
+                'role': serializers.CharField(),
+            }
+        ),
+        400: OpenApiResponse(
+            description="Dados inválidos ou erro de validação",
+            response=inline_serializer(
+                name='RegisterErrorResponse',
+                fields={
+                    'field_name': serializers.ListField(child=serializers.CharField()),
+                }
+            )
+        )
+    }
+)
+class RegisterView(generics.CreateAPIView):
+    """
+    View para registro público de usuários.
+    Permite que qualquer pessoa crie uma conta sem necessidade de autenticação prévia.
+    """
+    serializer_class = UserCreateSerializer
+    permission_classes = [AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Cria um novo usuário e seu perfil associado.
+        """
+        serializer = self.get_serializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                # Criar o usuário (o serializer já gerencia a criação do perfil)
+                user = serializer.save()
+                logger.info(f"Novo usuário registrado: {user.username} (ID: {user.id})")
+                
+                # Retornar resposta de sucesso
+                return Response({
+                    'detail': 'Usuário registrado com sucesso',
+                    'user_id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role
+                }, status=status.HTTP_201_CREATED)
+                
+            except Exception as e:
+                logger.error(f"Erro ao registrar usuário: {str(e)}")
+                return Response({
+                    'detail': 'Erro interno do servidor durante o registro',
+                    'error': str(e)
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

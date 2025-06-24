@@ -34,12 +34,14 @@ class UserAdmin(BaseUserAdmin):
     def make_active(self, request, queryset):
         updated = queryset.update(is_active=True)
         self.message_user(request, f'{updated} usuários foram ativados com sucesso.')
-    make_active.short_description = "Ativar usuários selecionados"
     
     def make_inactive(self, request, queryset):
         updated = queryset.update(is_active=False)
         self.message_user(request, f'{updated} usuários foram desativados com sucesso.')
-    make_inactive.short_description = "Desativar usuários selecionados"
+    
+    # Configurar nomes e descrições dos métodos
+    make_active.short_description = "Ativar usuários selecionados"  # type: ignore
+    make_inactive.short_description = "Desativar usuários selecionados"  # type: ignore
 
 
 @admin.register(UserProfile)
@@ -57,14 +59,16 @@ class UserProfileAdmin(admin.ModelAdmin):
     
     def get_username(self, obj):
         return obj.user.username
-    get_username.short_description = 'Usuário'
-    get_username.admin_order_field = 'user__username'
     
     def get_profile_picture(self, obj):
         if obj.profile_picture:
             return format_html('<img src="{}" width="50" height="50" style="border-radius: 50%;"/>', obj.profile_picture.url)
         return "Sem imagem"
-    get_profile_picture.short_description = 'Foto'
+    
+    # Configurar nomes e descrições dos métodos
+    get_username.short_description = 'Usuário'  # type: ignore
+    get_username.admin_order_field = 'user__username'  # type: ignore
+    get_profile_picture.short_description = 'Foto'  # type: ignore
 
 
 @admin.register(AccessProfile)
@@ -78,7 +82,9 @@ class AccessProfileAdmin(admin.ModelAdmin):
     
     def get_permissions_count(self, obj):
         return obj.permissions.count()
-    get_permissions_count.short_description = 'Permissões'
+    
+    # Configurar nome do método
+    get_permissions_count.short_description = 'Permissões'  # type: ignore
 
 
 @admin.register(Permission)

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class CustomJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
         try:
-            header = self.get_header(request)
+            header = self.get_custom_header(request)
             if header is None:
                 return None
 
@@ -39,7 +39,7 @@ class CustomJWTAuthentication(JWTAuthentication):
             logger.error(f"Erro inesperado na autenticação: {str(e)}")
             return None
 
-    def get_header(self, request):
+    def get_custom_header(self, request):
         """
         Extracts the header containing the JWT from the given request.
         Aceita tanto 'Bearer' quanto 'JWT' como prefixos.
@@ -56,7 +56,7 @@ class CustomJWTAuthentication(JWTAuthentication):
         if parts[0] not in ('JWT', 'Bearer'):
             return None
 
-        return header
+        return header.encode('utf-8')
 
     def get_raw_token(self, header):
         """

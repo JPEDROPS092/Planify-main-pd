@@ -130,9 +130,13 @@ class EquipeViewSet(viewsets.ModelViewSet):
         Adiciona um membro à equipe.
         """
         equipe = self.get_object()
-        serializer = MembroEquipeSerializer(data=request.data)
+        data = request.data.copy()
+        data['equipe'] = equipe.pk  # Adiciona equipe aos dados
+        data['adicionado_por'] = request.user.pk  # Adiciona quem está adicionando
+        
+        serializer = MembroEquipeSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(equipe=equipe)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -184,7 +188,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
         Retorna a lista de usuários disponíveis para adicionar a uma equipe.
         """
         equipe_id = request.query_params.get('equipe')
-        usuarios = User.objects.exclude(membros_equipe__equipe_id=equipe_id)
+        usuarios = User.objects.exclude(equipes__equipe_id=equipe_id)
         serializer = UserMinimalSerializer(usuarios, many=True)
         return Response(serializer.data)
 

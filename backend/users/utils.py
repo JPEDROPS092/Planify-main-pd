@@ -131,30 +131,6 @@ def update_user_password(user, new_password):
         raise
 
 
-def check_user_permission(user, module, action):
-    """
-    Verifica se um usuário tem permissão para uma ação específica em um módulo.
-    
-    Args:
-        user: Instância do modelo User
-        module: Módulo a ser verificado (ex: 'PROJECTS', 'TASKS')
-        action: Ação a ser verificada (ex: 'VIEW', 'CREATE', 'EDIT', 'DELETE')
-        
-    Returns:
-        bool: True se o usuário tem permissão, False caso contrário
-    """
-    try:
-        # Administradores têm acesso total
-        if user.is_superuser or user.role == 'ADMIN':
-            return True
-        
-        # Verificar permissão específica
-        return user.has_permission(module, action)
-        
-    except Exception as e:
-        logger.warning(f"Erro ao verificar permissão para usuário {user.username}: {str(e)}")
-        return False
-
 
 def create_user_with_profile(validated_data):
     """
