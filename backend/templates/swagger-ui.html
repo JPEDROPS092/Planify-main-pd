@@ -141,6 +141,23 @@
             defaultModelExpandDepth: 1,
             filter: true,
             persistAuthorization: true,
+            // Configurações adicionais para resolver problemas de CORS/requests
+            requestInterceptor: (request) => {
+                // Remove CSRF token header se presente (para APIs REST)
+                if (request.headers['X-CSRFToken']) {
+                    delete request.headers['X-CSRFToken'];
+                }
+                // Adiciona Content-Type se não estiver presente
+                if (!request.headers['Content-Type'] && request.body) {
+                    request.headers['Content-Type'] = 'application/json';
+                }
+                return request;
+            },
+            responseInterceptor: (response) => {
+                // Log de respostas para debug (remover em produção)
+                console.log('Response:', response);
+                return response;
+            }
         });
         window.ui = ui;
     };

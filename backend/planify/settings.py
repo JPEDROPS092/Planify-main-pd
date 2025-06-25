@@ -34,10 +34,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',               # Ferramenta de depuração para desenvolvimento
     # Apps de terceiros usados para funcionalidades extras
     'rest_framework',              # Framework para APIs REST
     'rest_framework_simplejwt',    # JWT para autenticação via tokens
+    'rest_framework_simplejwt.token_blacklist',  # Sistema de blacklist automático
+    'djoser',                      # Sistema de autenticação simplificado
     'corsheaders',                 # Configuração CORS para permitir acesso cross-origin
     'django_filters',              # Filtros para DRF
     'colorfield',                  # Campo de cores personalizado
@@ -70,7 +71,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
-    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
 ]
 
 # Arquivo raiz de URLs do projeto
@@ -104,16 +104,10 @@ DATABASES = {
     }
 }
 
-# Validação de senhas para o usuário
-AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
+
+AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,  # Senha mínima de 8 caracteres
-        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -121,15 +115,21 @@ AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'users.validators.PasswordPolicyValidator',
+        'OPTIONS': {
+            'min_length': 10, # Exemplo de sobrescrita
+            'require_uppercase': True,
+            'require_lowercase': True,
+            'require_numbers': True,
+            'require_special': True,
+            'password_history_count': 5 # Configura a verificação do histórico
+        }
+    },
 ]
 
 # Define modelo de usuário customizado do app 'users'
 AUTH_USER_MODEL = 'users.User'
-
-# Configuração para permitir debug toolbar só no localhost
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
 
 # Configurações de internacionalização e fuso horário
 LANGUAGE_CODE = 'pt-br'  # Idioma padrão português do Brasil
@@ -153,7 +153,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'users.authentication.CustomJWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Um pouco mais restritivo que AllowAny para dev
@@ -207,54 +207,86 @@ LOGGING = {
         'level': 'DEBUG' if DEBUG else 'INFO', # Tie logging level to DEBUG
     },
 }
-# Configurações para drf-spectacular (Swagger/OpenAPI)
+# planify/settings.py
+
+# ...
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Planify API',
     'DESCRIPTION': 'Sistema de Gerenciamento de Projetos',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '/api/',
+    'SCHEMA_PATH_PREFIX': '/api/', # Garante que os caminhos no schema comecem com /api/
     'COMPONENT_SPLIT_REQUEST': True,
     'SWAGGER_UI_SETTINGS': {
         'persistAuthorization': True,
         'displayOperationId': True,
+        'filter': True,
+        'deepLinking': True,
+        'docExpansion': 'none',
+        'defaultModelsExpandDepth': 1,
+        'defaultModelExpandDepth': 1,
+        # Configurações para melhor funcionamento
+        'supportedSubmitMethods': ['get', 'post', 'put', 'delete', 'patch'],
+        'requestInterceptor': None,  # Será definido no template
     },
-    'SECURITY': [
-        {'Bearer': []}
+
+    # --- SEÇÃO DE SEGURANÇA ---
+
+    # classe de autenticação simplificada 
+    'AUTHENTICATION_SCHEMES': [
+        'users.openapi.JWTAuthenticationScheme',
     ],
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization',
-            'description': 'Digite: JWT <token>'
-        }
-    },
+
+    # 2.  segurança globalmente.
+    'SECURITY': [
+        {'JWT Authentication': []}
+    ],
+
+
+    # --- FIM DA SEÇÃO DE SEGURANÇA ---
+
     'TAGS': [
         {'name': 'Autenticação', 'description': 'Endpoints de autenticação'},
         {'name': 'Usuários', 'description': 'Gerenciamento de usuários'},
-        {'name': 'Projetos', 'description': 'Gerenciamento de projetos'},
-        {'name': 'Tarefas', 'description': 'Gerenciamento de tarefas'},
-        {'name': 'Equipes', 'description': 'Gerenciamento de equipes'},
-        {'name': 'Comunicações', 'description': 'Gerenciamento de comunicações'},
-        {'name': 'Riscos', 'description': 'Gerenciamento de riscos'},
-        {'name': 'Custos', 'description': 'Gerenciamento de custos'},
-        {'name': 'Documentos', 'description': 'Gerenciamento de documentos'},
     ],
     'SERVERS': [
-        {'url': 'http://localhost:8000', 'description': 'Local Development'},
+        {'url': 'http://localhost:8000', 'description': 'Servidor de Desenvolvimento Local'},
     ],
     'SERVE_PUBLIC': True,
     'ENUM_NAME_OVERRIDES': {
-        'StatusAnteriorA52Enum': 'StatusAnteriorEnum',
-        'StatusAnterior607Enum': 'StatusAnteriorEnum',
-        'NovoStatusA52Enum': 'NovoStatusEnum',
-        'NovoStatus607Enum': 'NovoStatusEnum',
-        'PapelF38Enum': 'PapelEnum',
-        'MensagemChatEnum': 'MensagemChatEnum',
-        'NovaProbabilidadeEnum': 'ProbabilidadeEnum',
-        'NovoImpactoEnum': 'ImpactoEnum',
-        'ProbabilidadeEnum': 'ProbabilidadeEnum'
+        # Formato correto: app_label.ModelName.field_name
+        'projects.Projeto.status': 'ProjectStatusEnum',
+        'projects.Sprint.status': 'SprintStatusEnum', 
+        'tasks.Tarefa.status': 'TaskStatusEnum',
+        'risks.Risco.status': 'RiskStatusEnum',
+        
+        # Campos 'prioridade' com nomes únicos
+        'projects.Projeto.prioridade': 'ProjectPriorityEnum',
+        'tasks.Tarefa.prioridade': 'TaskPriorityEnum',
+        'communications.Notificacao.prioridade': 'NotificationPriorityEnum',
+        
+        # Campos 'tipo' com nomes únicos
+        'communications.Comunicacao.tipo': 'CommunicationTypeEnum',
+        'communications.Notificacao.tipo': 'NotificationTypeEnum',
+        
+        # Campos 'papel' com nomes únicos
+        'projects.MembroProjeto.papel': 'ProjectRoleEnum',
+        'teams.MembroEquipe.papel': 'TeamRoleEnum',
+        
+        # Outros campos específicos
+        'risks.Risco.probabilidade': 'RiskProbabilityEnum',
+        'risks.Risco.impacto': 'RiskImpactEnum',
+        'communications.ConfiguracaoNotificacao.tarefa_atribuida': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.tarefa_comentario': 'NotificationChannelEnum', 
+        'communications.ConfiguracaoNotificacao.tarefa_prazo': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.projeto_status': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.equipe_alteracao': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.documento_novo': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.risco_novo': 'NotificationChannelEnum',
+        'communications.ConfiguracaoNotificacao.mensagem_chat': 'NotificationChannelEnum',
+        'users.Permission.module': 'PermissionModuleEnum',
+        'users.Permission.action': 'PermissionActionEnum',
     },
     'POSTPROCESSING_HOOKS': [
         'drf_spectacular.hooks.postprocess_schema_enums'
@@ -299,7 +331,7 @@ EMAIL_HOST = 'smtp.gmail.com'     # Servidor SMTP do Gmail
 EMAIL_PORT = 587                  # Porta para TLS
 EMAIL_USE_TLS = True              # Usa TLS para segurança
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'seuemail@gmail.com')  # Usuário do email (use env var)
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'suasenha') # Senha do email (use env var)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'CONFIGURE_EMAIL_PASSWORD_IN_ENV') # Senha do email (use env var)
 
 # Variáveis personalizadas
 LOGO_PATH = 'static/img/logo.png'  # Caminho do logo do sistema
@@ -316,4 +348,67 @@ ADMIN_INDEX_TITLE = "Dashboard"
 # Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 SESSION_SAVE_EVERY_REQUEST = True
+
+# CSRF settings
+# Exime os endpoints de API da verificação CSRF
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Para APIs REST, geralmente não precisamos de CSRF
+# Mas mantemos para o admin e outras views tradicionais
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_HTTPONLY = False
+
+# === CONFIGURAÇÕES DO DJOSER ===
+# Sistema de autenticação simplificado com JWT
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,  # Mude para True se quiser ativação por email
+    'SEND_CONFIRMATION_EMAIL': False,  # Email de confirmação após registro
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,  # Email quando senha é alterada
+    'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,  # Email quando username é alterado
+    
+    # Serializers customizados - reutilizamos os que você já criou
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',  # Mantém suas validações
+        'user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+        'user_create_password_retype': 'users.serializers.UserCreateSerializer',
+        'user_delete': 'djoser.serializers.UserDeleteSerializer',
+        'set_password': 'djoser.serializers.SetPasswordSerializer',
+        'password_reset': 'djoser.serializers.SendEmailResetSerializer',
+        'password_reset_confirm': 'djoser.serializers.PasswordResetConfirmSerializer',
+    },
+    
+    # Permissões para cada endpoint
+    'PERMISSIONS': {
+        'user_create': ['rest_framework.permissions.AllowAny'],
+        'user_list': ['rest_framework.permissions.IsAdminUser'],
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_delete': ['rest_framework.permissions.IsAuthenticated'],
+        'set_password': ['rest_framework.permissions.IsAuthenticated'],
+        'username_reset': ['rest_framework.permissions.AllowAny'],
+        'username_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        'set_username': ['rest_framework.permissions.IsAuthenticated'],
+        'password_reset': ['rest_framework.permissions.AllowAny'],
+        'password_reset_confirm': ['rest_framework.permissions.AllowAny'],
+        'activation': ['rest_framework.permissions.AllowAny'],
+        'resend_activation': ['rest_framework.permissions.AllowAny'],
+        'token_create': ['rest_framework.permissions.AllowAny'],
+        'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
+    },
+    
+    # Configurações de tokens e headers
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'HIDE_USERS': False,  # Se True, apenas admins podem listar usuários
+    
+    # URLs customizadas para frontend (opcional)
+    'LOGIN_FIELD': 'email',  # Usar email para login ao invés de username
+}
 
