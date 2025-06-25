@@ -284,7 +284,7 @@ export const useTaskService = () => {
         params.status,
         params.titulo
       );
-      return paginatedTarefas;
+      return new Promise(paginatedTarefas);
     },
     
     getTasksByProject: async (projectId: number, params: Omit<TaskFilters, 'projeto'> = {}): Promise<PaginatedTarefaListList> => {

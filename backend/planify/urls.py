@@ -57,7 +57,7 @@ urlpatterns = [
         path('auth/', include('djoser.urls.jwt')),     # /auth/jwt/create/, /auth/jwt/refresh/, etc.
 
         # === OUTROS MÓDULOS DO SISTEMA ===
-       path('users/', include('users.urls', namespace='users')),
+        path('users/', include('users.urls', namespace='users')),
 
         path('teams/', include('teams.urls', namespace='teams')), 
         
