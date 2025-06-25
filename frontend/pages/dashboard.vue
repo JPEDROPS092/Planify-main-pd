@@ -4,10 +4,10 @@ definePageMeta({
 })
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { useProjectService } from '~/services/projectService';
-import { useTaskService } from '~/services/taskService';
-import { useNotificationService } from '~/services/notificationService';
-import { useAlertService } from '~/services/alertService';
+import { useProjectService } from '~/servicesMock/projectService';
+import { useTaskService } from '~/servicesMock/taskService';
+import { useNotificationService } from '~/servicesMock/notificationService';
+import { useAlertService } from '~/servicesMock/alertService';
 import { Icon } from '@iconify/vue';
 import { computed } from 'vue';
 

@@ -1,4 +1,4 @@
-import { useAuthService } from '~/services/authService';
+import { useAuthService } from '~/servicesMock/authService';
 import type { User } from '~/api-types/api';
 
 export const useAuth = () => {

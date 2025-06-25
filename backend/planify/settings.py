@@ -15,14 +15,14 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000') # Exemplo
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Chave secreta do Django usada para segurança (mantenha em segredo em produção)
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n') # OK para DEV, MUDE PARA PRODUÇÃO
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Define se o projeto está em modo DEBUG (exibe erros detalhados, usando em desenvolvimento)
-DEBUG = True
+DEBUG = True # OK para DEV, MUDE PARA PRODUÇÃO
 
 # Define quais hosts podem acessar a aplicação (em produção deve conter o domínio real)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # OK para DESENVOLVIMENTO LOCAL
 
 # Application definition
 # Lista de apps registrados no projeto, incluindo apps padrão, de terceiros e locais
@@ -55,12 +55,13 @@ INSTALLED_APPS = [
     'costs',
     'documents',
     'django_extensions',
+    'core'
 ]
 
 # Middleware são componentes que processam requisições e respostas
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve arquivos estáticos em produção
+    #'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve arquivos estáticos em produção
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',       # Middleware para CORS
     'django.middleware.common.CommonMiddleware',
@@ -139,7 +140,7 @@ USE_TZ = True    # Usa timezone-aware datetimes
 # Configurações para arquivos estáticos (CSS, JS, imagens fixas)
 STATIC_URL = 'static/'  # URL base para arquivos estáticos
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Pasta onde os arquivos estáticos são coletados para produção
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] # Adicione se você tiver estáticos na raiz do projeto
 # Armazenamento otimizado para servir arquivos estáticos com compressão e cache
 
 # Configuração para arquivos de mídia (uploads, imagens do usuário, documentos)
@@ -155,12 +156,12 @@ REST_FRAMEWORK = {
         'users.authentication.CustomJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Um pouco mais restritivo que AllowAny para dev
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer', # Interface web para APIs no navegador (ótimo para dev)
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
