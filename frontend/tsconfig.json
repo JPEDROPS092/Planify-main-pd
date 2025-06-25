@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "types": ["node", "@nuxt/types"]
+  },
+  "include": [
+    "./types/**/*.ts",
+    "./composables/**/*.ts",
+    "./services/**/*.ts",
+    "./plugins/**/*.ts",
+    "./*.vue",
+    "./**/*.vue"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
