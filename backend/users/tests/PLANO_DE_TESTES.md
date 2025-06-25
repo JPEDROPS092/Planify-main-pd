@@ -1,369 +1,281 @@
-# Plano de Testes - Módulo Users
-
-## Visão Geral
-Este documento descreve o plano completo de testes para o módulo **users** do projeto Planify. O módulo users é responsável pelo gerenciamento de usuários, autenticação, autorização, perfis de acesso e funcionalidades de segurança.
-
-## Estrutura do Módulo Users
-
-### Modelos
-1. **User** - Modelo principal de usuário (extends AbstractBaseUser)
-2. **UserProfile** - Perfil adicional do usuário
-3. **AccessProfile** - Perfis de acesso/permissões
-4. **Permission** - Permissões específicas por módulo/ação
-5. **UserAccessProfile** - Relacionamento usuário-perfil de acesso
-6. **PasswordHistory** - Histórico de senhas
-7. **AccessAttempt** - Tentativas de acesso
-8. **AuditLog** - Log de auditoria
-9. **BlacklistedTokens** - Tokens revogados
-
-### Serializers
-1. **UserSerializer** - Serializer principal para usuários
-2. **UserCreateSerializer** - Serializer para criação de usuários
-3. **BaseUserSerializer** - Serializer base
-4. **UserProfileSerializer** - Serializer para perfis
-5. **AccessProfileSerializer** - Serializer para perfis de acesso
-6. **PermissionSerializer** - Serializer para permissões
-7. **UserAccessProfileSerializer** - Serializer para relacionamentos
-8. **ChangePasswordSerializer** - Serializer para mudança de senha
-9. **ResetPasswordSerializer** - Serializer para reset de senha
-10. **SetNewPasswordSerializer** - Serializer para definir nova senha
-11. **LogoutResponseSerializer** - Serializer para resposta de logout
-
-### Views
-1. **UserViewSet** - ViewSet principal para usuários
-2. **UserProfileViewSet** - ViewSet para perfis
-3. **PermissionViewSet** - ViewSet para permissões
-
-### URLs
-- `/users/` - Endpoints para usuários
-- `/profiles/` - Endpoints para perfis
-- `/permissions/` - Endpoints para permissões
-- `/auth/` - Endpoints de autenticação
-
-## Estratégia de Testes
-
-### 1. Testes de Modelos (`test_models.py`)
-
-#### 1.1 User Model
-- ✅ Criação de usuário básico
-- ✅ Criação de superusuário
-- ✅ Validação de campos obrigatórios
-- ✅ Unicidade de email e username
-- ✅ Criptografia de senha
-- ✅ Métodos personalizados (increment_failed_login, reset_failed_login, has_permission)
-- ✅ Propriedades (locked)
-- ✅ Representação string (__str__)
-
-#### 1.2 UserProfile Model
-- ✅ Criação de perfil associado ao usuário
-- ✅ Relacionamento OneToOne com User
-- ✅ Valores padrão dos campos
-- ✅ Validação de escolhas (theme_preference)
-
-#### 1.3 AccessProfile Model
-- ✅ Criação de perfil de acesso
-- ✅ Validação de campos
-- ✅ Timestamps automáticos
-
-#### 1.4 Permission Model
-- ✅ Criação de permissão
-- ✅ Relacionamento com AccessProfile
-- ✅ Validação de escolhas (module, action)
-- ✅ Unique constraint (access_profile, module, action)
-- ✅ Método get_action_display
-
-#### 1.5 UserAccessProfile Model
-- ✅ Relacionamento Many-to-Many entre User e AccessProfile
-- ✅ Unique constraint (user, access_profile)
-
-#### 1.6 PasswordHistory Model
-- ✅ Criação de histórico de senha
-- ✅ Relacionamento com User
-- ✅ Ordenação por data de criação
-
-#### 1.7 AccessAttempt Model
-- ✅ Registro de tentativas de acesso
-- ✅ Campos obrigatórios
-- ✅ Ordenação por timestamp
-
-#### 1.8 AuditLog Model
-- ✅ Criação de log de auditoria
-- ✅ Relacionamento com User
-- ✅ GenericForeignKey para outros objetos
-- ✅ Validação de choices (action)
-
-#### 1.9 BlacklistedTokens Model
-- ✅ Criação de token blacklisted
-- ✅ Relacionamento com User
-- ✅ Unicidade de token
-
-### 2. Testes de Serializers (`test_serializers.py`)
-
-#### 2.1 UserProfileSerializer
-- ✅ Serialização de dados válidos
-- ✅ Campos incluídos/excluídos
-- ✅ Validação de dados
-
-#### 2.2 PermissionSerializer
-- ✅ Serialização com campos display
-- ✅ Validação de dados
-- ✅ Relacionamento com AccessProfile
-
-#### 2.3 AccessProfileSerializer
-- ✅ Serialização com permissões aninhadas
-- ✅ Validação de dados
-- ✅ Campos read-only
-
-#### 2.4 UserAccessProfileSerializer
-- ✅ Serialização de relacionamento
-- ✅ Campos write-only vs read-only
-- ✅ Validação de foreign key
-
-#### 2.5 BaseUserSerializer
-- ✅ Serialização básica de usuário
-- ✅ Validação de role
-- ✅ Campos obrigatórios
-
-#### 2.6 UserSerializer
-- ✅ Criação de usuário com perfil
-- ✅ Atualização de usuário e perfil
-- ✅ Atualização de senha
-- ✅ Campos read-only
-
-#### 2.7 UserCreateSerializer
-- ✅ Criação de usuário com validação de senha
-- ✅ Role padrão
-- ✅ Campos obrigatórios
-
-#### 2.8 ChangePasswordSerializer
-- ✅ Validação de senha atual
-- ✅ Validação de nova senha
-- ✅ Context do request
-- ✅ Método save()
-
-#### 2.9 ResetPasswordSerializer
-- ✅ Validação de email
-- ✅ Campos obrigatórios
-
-#### 2.10 SetNewPasswordSerializer
-- ✅ Validação de nova senha
-- ✅ Validação de token
-- ✅ Campos obrigatórios
-
-### 3. Testes de Views (`test_views.py`)
-
-#### 3.1 UserViewSet
-- **Listagem de usuários**
-  - ✅ Listar todos os usuários (admin)
-  - ✅ Permissão negada para não-admin
-  - ✅ Paginação
-  - ✅ Filtros
-
-- **Detalhes do usuário**
-  - ✅ Obter detalhes de usuário específico
-  - ✅ Permissões de acesso
-  - ✅ Usuário não encontrado
-
-- **Criação de usuário**
-  - ✅ Criar usuário válido
-  - ✅ Validação de dados
-  - ✅ Permissões para criação
-  - ✅ Dados inválidos
-
-- **Atualização de usuário**
-  - ✅ Atualizar usuário completo
-  - ✅ Atualização parcial
-  - ✅ Permissões de edição
-  - ✅ Validação de dados
-
-- **Exclusão de usuário**
-  - ✅ Excluir usuário
-  - ✅ Permissões de exclusão
-  - ✅ Usuário não encontrado
-
-- **Ações personalizadas**
-  - ✅ `/me/` - Informações do usuário autenticado
-  - ✅ `/permissions/` - Permissões do usuário
-  - ✅ `/change_password/` - Alterar senha
-  - ✅ `/reset_password/` - Reset de senha
-  - ✅ `/activate/` - Ativar usuário
-  - ✅ `/deactivate/` - Desativar usuário
-  - ✅ `/unlock/` - Desbloquear usuário
-
-#### 3.2 UserProfileViewSet
-- ✅ CRUD completo para perfis
-- ✅ Permissões de acesso
-- ✅ Validação de dados
-
-#### 3.3 PermissionViewSet
-- ✅ CRUD completo para permissões
-- ✅ Permissões de admin
-- ✅ Filtros por access_profile, module, action
-
-### 4. Testes de Integração (`test_integration.py`)
-
-#### 4.1 Fluxo Completo de Usuário
-- ✅ Criação → Ativação → Login → Operações → Logout
-- ✅ Criação de usuário com perfil
-- ✅ Atribuição de permissões
-- ✅ Verificação de acesso a recursos
-
-#### 4.2 Fluxo de Autenticação
-- ✅ Login com credenciais válidas
-- ✅ Login com credenciais inválidas
-- ✅ Logout e invalidação de token
-- ✅ Refresh de token
-
-#### 4.3 Fluxo de Permissões
-- ✅ Criação de perfil de acesso
-- ✅ Atribuição de permissões
-- ✅ Associação usuário-perfil
-- ✅ Verificação de permissões
-
-#### 4.4 Fluxo de Segurança
-- ✅ Tentativas de login falhas
-- ✅ Bloqueio de conta
-- ✅ Desbloqueio de conta
-- ✅ Histórico de senhas
-
-#### 4.5 Fluxo de Reset de Senha
-- ✅ Solicitação de reset
-- ✅ Definição de nova senha
-- ✅ Validações de segurança
-
-### 5. Testes de Fixtures (`test_fixtures.py`)
-
-#### 5.1 User Fixtures
-- ✅ `user_data` - Dados básicos de usuário
-- ✅ `user` - Usuário simples
-- ✅ `admin_user` - Usuário administrador
-- ✅ `team_leader_user` - Usuário líder de equipe
-- ✅ `team_member_user` - Usuário membro de equipe
-
-#### 5.2 Profile Fixtures
-- ✅ `user_profile_data` - Dados de perfil
-- ✅ `user_profile` - Perfil de usuário
-
-#### 5.3 Access Profile Fixtures
-- ✅ `access_profile_data` - Dados de perfil de acesso
-- ✅ `admin_access_profile` - Perfil administrador
-- ✅ `manager_access_profile` - Perfil gerente
-
-#### 5.4 Permission Fixtures
-- ✅ `permission_data` - Dados de permissão
-- ✅ `view_permission` - Permissão de visualização
-- ✅ `create_permission` - Permissão de criação
-- ✅ `edit_permission` - Permissão de edição
-- ✅ `delete_permission` - Permissão de exclusão
-
-### 6. Testes de Utils (`test_utils.py`)
-
-#### 6.1 Funções de Senha
-- ✅ `generate_secure_password`
-- ✅ `update_user_password`
-- ✅ Validação de histórico de senhas
-
-#### 6.2 Funções de Permissão
-- ✅ `check_user_permission`
-- ✅ Verificação para diferentes roles
-
-#### 6.3 Funções de Request
-- ✅ `get_client_ip`
-- ✅ `get_user_agent`
-
-## Cobertura de Testes
-
-### Métricas Esperadas
-- **Cobertura de código**: ≥ 95%
-- **Cobertura de branches**: ≥ 90%
-- **Cobertura de linhas**: ≥ 95%
-
-### Áreas Críticas
-1. **Autenticação e autorização** - 100%
-2. **Gerenciamento de senhas** - 100%
-3. **Validações de segurança** - 100%
-4. **CRUD de usuários** - 95%
-5. **Permissões e perfis** - 95%
-
-## Configuração de Testes
-
-### Fixtures Globais
-- Usuários de diferentes roles
-- Perfis de acesso padrão
-- Permissões básicas
-- Tokens de autenticação
-
-### Configuração de Banco
-- SQLite em memória para testes
-- Dados isolados por teste
-- Cleanup automático
-
-### Mocks e Patches
-- Email sending
-- External API calls
-- File uploads
-- Time-sensitive operations
-
-## Execução dos Testes
-
-### Comandos
-```bash
-# Todos os testes do módulo users
-pytest users/tests/ -v
-
-# Testes específicos
-pytest users/tests/test_models.py -v
-pytest users/tests/test_serializers.py -v
-pytest users/tests/test_views.py -v
-pytest users/tests/test_integration.py -v
-pytest users/tests/test_fixtures.py -v
-pytest users/tests/test_utils.py -v
-
-# Com cobertura
-pytest users/tests/ --cov=users --cov-report=html -v
-```
-
-### Relatórios
-- **HTML Coverage Report**: `htmlcov/index.html`
-- **Terminal Coverage**: `--cov-report=term`
-- **XML Coverage**: `--cov-report=xml`
-
-## Validações Especiais
-
-### Segurança
-- Validação de força de senha
-- Prevenção de ataques de força bruta
-- Auditoria de ações sensíveis
-- Proteção contra CSRF/XSS
-
-### Performance
-- Queries eficientes (select_related, prefetch_related)
-- Paginação adequada
-- Cache quando apropriado
-- Índices de banco de dados
-
-### Usabilidade
-- Mensagens de erro claras
-- Validações client-side compatíveis
-- Responses consistentes
-- Documentação API (OpenAPI)
-
-## Manutenção
-
-### Revisão Regular
-- Atualização de fixtures conforme mudanças
-- Revisão de cenários de teste
-- Atualização de documentação
-- Análise de cobertura
-
-### Integração Contínua
-- Execução automática em PRs
-- Bloqueio de merge com testes falhando
-- Relatórios de cobertura
-- Notificações de regressão
+Okay, aqui está um plano de testes completo e a documentação de testes em Markdown para o módulo `users`.
 
 ---
 
-**Status**: ✅ Implementado
-**Última Atualização**: 2025-06-24
-**Responsável**: Sistema de Testes Automatizado
+# Plano de Testes: Módulo de Usuários (Planify)
+
+## 1. Introdução
+
+Este documento descreve o plano de testes para o módulo de `users` do sistema Planify. O objetivo é garantir a qualidade, funcionalidade, segurança e robustez de todos os componentes relacionados a usuários, autenticação, autorização e gerenciamento de perfis.
+
+## 2. Escopo
+
+### 2.1. Em Escopo
+
+*   **Modelos:** `User`, `UserProfile`, `AccessProfile`, `Permission`, `UserAccessProfile`, `PasswordHistory`, `BlacklistedTokens`, `AuditLog`, `AccessAttempt`.
+*   **Serializers:** Todos os serializers definidos em `serializers.py`.
+*   **Views (API Endpoints):**
+    *   Endpoints de autenticação (Djoser/JWT: login, logout, refresh, verify).
+    *   Endpoints de gerenciamento de conta do usuário logado (Djoser: me, set\_password, reset\_password, reset\_password\_confirm).
+    *   Endpoints de administração de usuários (`UserViewSet`: CRUD, activate, deactivate, unlock, permissions).
+    *   Endpoints de administração de perfis de usuário (`UserProfileViewSet`: CRUD).
+    *   Endpoints de administração de perfis de acesso (`AccessProfileViewSet`: CRUD).
+    *   Endpoints de administração de permissões (`PermissionViewSet`: CRUD).
+*   **Autenticação e Autorização:**
+    *   Autenticação JWT customizada (verificação de blacklist).
+    *   Permissões (`HasModulePermission`).
+*   **Validadores:** `PasswordPolicyValidator`, `validate_username`, `validate_full_name`.
+*   **Funções Utilitárias:** `update_user_password`, `create_user_with_profile`.
+*   **Sistema de Auditoria:** Criação de logs para ações relevantes.
+*   **Segurança:**
+    *   Políticas de senha.
+    *   Histórico de senhas.
+    *   Bloqueio de conta por tentativas de login falhas.
+    *   Invalidação de tokens (blacklist).
+*   **Interface Administrativa Django (`admin.py`):** Configurações básicas, list displays, filtros, search, actions (teste manual ou com ferramentas de UI).
+
+### 2.2. Fora de Escopo
+
+*   Testes de carga e performance (a menos que especificado separadamente).
+*   Testes de usabilidade da interface de usuário (front-end).
+*   Testes de integração com sistemas externos não mockados.
+*   Testes de infraestrutura (deployment, configuração de servidor).
+
+## 3. Estratégia de Teste
+
+Serão empregados os seguintes tipos de teste:
+
+*   **Testes Unitários:** Foco em componentes isolados (modelos, validadores, funções utilitárias, serializers).
+*   **Testes de Integração:** Foco na interação entre componentes (e.g., serializers com modelos, views com serializers e modelos).
+*   **Testes de API (End-to-End parciais):** Foco nos endpoints da API, verificando requisições, respostas, status codes, e efeitos colaterais (e.g., criação de registros no banco, logs de auditoria).
+*   **Testes de Segurança:** Foco em vulnerabilidades comuns, políticas de senha, controle de acesso e invalidação de tokens.
+*   **Testes Manuais (Django Admin):** Verificação da interface administrativa Django para funcionalidades como listagem, filtros, pesquisa e ações customizadas.
+
+## 4. Ambiente de Teste e Ferramentas
+
+*   **Linguagem:** Python
+*   **Framework:** Django, Django REST Framework
+*   **Biblioteca de Testes:** Pytest (com `pytest-django`)
+*   **Cliente de Teste DRF:** `APIClient` ou `APITestCase`
+*   **Geração de Dados:** `Faker`, fixtures ou factories (e.g., `factory_boy`)
+*   **Banco de Dados de Teste:** SQLite (padrão do Django para testes, para velocidade) ou cópia do DB de desenvolvimento.
+*   **CI/CD:** (Se aplicável) Integração com GitHub Actions, GitLab CI, Jenkins, etc.
+
+## 5. Critérios de Entrada e Saída
+
+### 5.1. Critérios de Entrada
+
+*   Código-fonte do módulo `users` completo e disponível.
+*   Ambiente de teste configurado e funcional.
+*   Dependências instaladas.
+*   Casos de teste definidos e revisados.
+
+### 5.2. Critérios de Saída
+
+*   Todos os casos de teste planejados executados.
+*   Taxa de cobertura de código acima de um limite pré-definido (e.g., 90%).
+*   Nenhum defeito crítico (blocker/critical) em aberto.
+*   Todos os defeitos de alta prioridade resolvidos e verificados.
+*   Relatório de execução de testes gerado e aprovado.
+
+## 6. Recursos e Responsabilidades
+
+*   **Desenvolvedores:** Escrever testes unitários e de integração, corrigir bugs.
+*   **QA/Testadores:** Projetar e executar testes de API, segurança, e manuais (Django Admin), relatar defeitos.
+
+## 7. Entregáveis
+
+*   Este Plano de Testes.
+*   Documentação de Casos de Teste (abaixo).
+*   Scripts de teste automatizados.
+*   Relatórios de execução de testes.
+*   Relatórios de defeitos.
+*   Relatório de cobertura de código.
+
+---
+
+# Documentação de Casos de Teste: Módulo de Usuários
+
+## A. Testes de Modelos
+
+### A.1. Modelo `User`
+
+| ID Teste        | Componente | Objetivo do Teste                                                                 | Pré-condições                                  | Passos                                                                                                                                                                                                                                                                 | Dados de Teste                                                                                                                                                                | Resultado Esperado                                                                                                                            | Prioridade |
+| :-------------- | :--------- | :-------------------------------------------------------------------------------- | :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_MDL\_USR\_001 | User       | Criar usuário com dados válidos usando `UserManager.create_user`                    | N/A                                            | 1. Chamar `User.objects.create_user()` com dados válidos.                                                                                                                                                                                                                | `email="test@example.com", username="testuser", full_name="Test User", password="ValidPassword1!"`                                                                         | Usuário criado com sucesso. Senha hasheada. `is_active=True` (padrão do manager).                                                                                             | ALTA       |
+| TC\_MDL\_USR\_002 | User       | Tentar criar usuário com email inválido/faltando                                    | N/A                                            | 1. Chamar `User.objects.create_user()` sem email.                                                                                                                                                                                                                    | `username="testuser2", full_name="Test User 2", password="ValidPassword1!"`                                                                                                   | `ValueError` levantado: "Voce Precisa de um endereço de e-mail".                                                                                                            | ALTA       |
+| TC\_MDL\_USR\_003 | User       | Tentar criar usuário com username duplicado                                       | Usuário "testuser" existe.                     | 1. Tentar criar novo usuário com `username="testuser"`.                                                                                                                                                                                                                | `email="new@example.com", username="testuser", full_name="New User", password="ValidPassword1!"`                                                                          | `IntegrityError` (ou similar, dependendo do DB) devido à constraint `unique=True`.                                                                                            | ALTA       |
+| TC\_MDL\_USR\_004 | User       | Criar superusuário com dados válidos usando `UserManager.create_superuser`          | N/A                                            | 1. Chamar `User.objects.create_superuser()`.                                                                                                                                                                                                                         | `email="super@example.com", username="superuser", full_name="Super User", password="ValidPassword1!"`                                                                       | Superusuário criado com `is_staff=True`, `is_superuser=True`, `is_active=True`, `role='ADMIN'`.                                                                              | ALTA       |
+| TC\_MDL\_USR\_005 | User       | Testar método `increment_failed_login()`                                            | Usuário "loginfail" existe.                    | 1. Obter usuário. 2. Chamar `user.increment_failed_login()` 4 vezes. 3. Verificar `failed_login_attempts` e `is_locked`. 4. Chamar `user.increment_failed_login()` (5ª vez). 5. Verificar `failed_login_attempts` e `is_locked`.                             | Usuário "loginfail"                                                                                                                                                           | Após 4 chamadas: `failed_login_attempts=4`, `is_locked=False`. Após 5ª chamada: `failed_login_attempts=5`, `is_locked=True`.                                                   | ALTA       |
+| TC\_MDL\_USR\_006 | User       | Testar método `reset_failed_login()`                                                | Usuário "loginreset" existe e está bloqueado.  | 1. Obter usuário (com `failed_login_attempts > 0`, `is_locked=True`). 2. Chamar `user.reset_failed_login()`. 3. Verificar `failed_login_attempts` e `is_locked`.                                                                                               | Usuário "loginreset"                                                                                                                                                          | `failed_login_attempts=0`, `is_locked=False`.                                                                                                                             | ALTA       |
+| TC\_MDL\_USR\_007 | User       | Testar método `has_permission()` para admin/superuser                               | Usuário "adminuser" com `role='ADMIN'`.        | 1. Chamar `adminuser.has_permission('ANY_MODULE', 'ANY_ACTION')`.                                                                                                                                                                                                  | `module='PROJECTS', action='CREATE'`                                                                                                                                          | Retorna `True`.                                                                                                                                                             | ALTA       |
+| TC\_MDL\_USR\_008 | User       | Testar método `has_permission()` para usuário com permissão específica via perfil   | Usuário "permuser", `AccessProfile`, `Permission`. | 1. Criar `AccessProfile` "AP1". 2. Criar `Permission` "PROJECTS.VIEW" para "AP1". 3. Associar "permuser" com "AP1" via `UserAccessProfile`. 4. Chamar `permuser.has_permission('PROJECTS', 'VIEW')`. 5. Chamar `permuser.has_permission('PROJECTS', 'CREATE')`. | `module='PROJECTS', action='VIEW'` (permitido), `module='PROJECTS', action='CREATE'` (não permitido)                                                                         | Para "PROJECTS.VIEW", retorna `True`. Para "PROJECTS.CREATE", retorna `False`.                                                                                              | ALTA       |
+| TC\_MDL\_USR\_009 | User       | Testar `clean()`: não permitir desativar Admin                                    | Usuário "admin_no_deact" com `role='ADMIN'`.   | 1. Obter usuário. 2. Setar `user.is_active = False`. 3. Chamar `user.clean()`.                                                                                                                                                                                     | Usuário "admin\_no\_deact"                                                                                                                                                     | `ValidationError` levantado: "Administradores não podem ser desativados".                                                                                                   | MÉDIA      |
+| TC\_MDL\_USR\_010 | User       | Testar `__str__()`                                                                  | Usuário "struser" existe.                      | 1. Chamar `str(user)`.                                                                                                                                                                                                                                               | Usuário "struser"                                                                                                                                                             | Retorna o `username` do usuário.                                                                                                                                              | BAIXA      |
+
+### A.2. Modelo `UserProfile`
+
+| ID Teste        | Componente  | Objetivo do Teste                              | Pré-condições                       | Passos                                                                       | Dados de Teste                                                                | Resultado Esperado                                               | Prioridade |
+| :-------------- | :---------- | :--------------------------------------------- | :---------------------------------- | :--------------------------------------------------------------------------- | :---------------------------------------------------------------------------- | :--------------------------------------------------------------- | :--------- |
+| TC\_MDL\_UPR\_001 | UserProfile | Criar `UserProfile` associado a um `User`      | Usuário "profile_user" existe.      | 1. Criar `UserProfile` referenciando "profile\_user".                      | `user=profile_user, phone="123456789", theme_preference="DARK"`             | `UserProfile` criado com sucesso e associado ao usuário.         | ALTA       |
+| TC\_MDL\_UPR\_002 | UserProfile | Testar `__str__()`                             | `UserProfile` "profile1" existe.    | 1. Chamar `str(user_profile)`.                                               | `UserProfile` do usuário "profile\_user"                                      | Retorna `"<username>'s Profile"`.                                 | BAIXA      |
+| TC\_MDL\_UPR\_003 | UserProfile | Testar relação `OneToOneField` com `User`      | Usuário "unique_profile_user" existe. | 1. Criar `UserProfile` para "unique\_profile\_user". 2. Tentar criar outro `UserProfile` para o mesmo usuário. | `user=unique_profile_user`                                                  | Segunda tentativa de criação falha com `IntegrityError`.           | MÉDIA      |
+
+### A.3. Modelo `AccessProfile`
+
+| ID Teste        | Componente    | Objetivo do Teste                        | Pré-condições | Passos                                      | Dados de Teste                                                       | Resultado Esperado                                     | Prioridade |
+| :-------------- | :------------ | :--------------------------------------- | :------------ | :------------------------------------------ | :------------------------------------------------------------------- | :----------------------------------------------------- | :--------- |
+| TC\_MDL\_APF\_001 | AccessProfile | Criar `AccessProfile` com dados válidos  | N/A           | 1. Criar `AccessProfile`.                   | `name="AP Test", description="Test Profile"`                       | `AccessProfile` criado com sucesso.                    | ALTA       |
+| TC\_MDL\_APF\_002 | AccessProfile | Testar `__str__()`                       | `AccessProfile` "AP Str" existe.      | 1. Chamar `str(access_profile)`.            | `AccessProfile` com `name="AP Str"`                                  | Retorna o `name` do perfil de acesso.                  | BAIXA      |
+
+### A.4. Modelo `Permission`
+
+| ID Teste        | Componente | Objetivo do Teste                                                  | Pré-condições                               | Passos                                                                     | Dados de Teste                                                                                             | Resultado Esperado                                                                               | Prioridade |
+| :-------------- | :--------- | :----------------------------------------------------------------- | :------------------------------------------ | :------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :--------- |
+| TC\_MDL\_PER\_001 | Permission | Criar `Permission` associada a um `AccessProfile`                  | `AccessProfile` "AP\_Perm" existe.          | 1. Criar `Permission` referenciando "AP\_Perm".                          | `access_profile=AP_Perm, module="PROJECTS", action="VIEW"`                                               | `Permission` criada com sucesso.                                                                   | ALTA       |
+| TC\_MDL\_PER\_002 | Permission | Testar `unique_together` ('access\_profile', 'module', 'action') | `Permission` "P1" (AP\_Perm, PROJECTS, VIEW) existe. | 1. Tentar criar outra `Permission` com os mesmos campos.                 | `access_profile=AP_Perm, module="PROJECTS", action="VIEW"`                                               | `IntegrityError` devido à constraint `unique_together`.                                          | ALTA       |
+| TC\_MDL\_PER\_003 | Permission | Testar `get_action_display()`                                      | `Permission` "P_Display" existe.          | 1. Chamar `permission.get_action_display()`.                               | `Permission` com `action="CREATE"` (cujo display é "Create")                                             | Retorna "Create".                                                                                  | MÉDIA      |
+| TC\_MDL\_PER\_004 | Permission | Testar `__str__()`                                                 | `Permission` "P\_Str" existe.             | 1. Chamar `str(permission)`.                                               | `AccessProfile` "AP Test", `module="PROJECTS"`, `action="VIEW"`                                          | Retorna `"AP Test - Projects - View"`.                                                             | BAIXA      |
+
+### A.5. Modelo `UserAccessProfile`
+
+| ID Teste        | Componente        | Objetivo do Teste                                                     | Pré-condições                                   | Passos                                                                             | Dados de Teste                                                                                     | Resultado Esperado                                                                | Prioridade |
+| :-------------- | :---------------- | :-------------------------------------------------------------------- | :---------------------------------------------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :--------- |
+| TC\_MDL\_UAP\_001 | UserAccessProfile | Criar associação entre `User` e `AccessProfile`                     | Usuário "uap\_user", `AccessProfile` "uap\_ap". | 1. Criar `UserAccessProfile` referenciando "uap\_user" e "uap\_ap".              | `user=uap_user, access_profile=uap_ap`                                                           | Associação criada com sucesso.                                                      | ALTA       |
+| TC\_MDL\_UAP\_002 | UserAccessProfile | Testar `unique_together` ('user', 'access\_profile')                | Associação "UAP1" (uap\_user, uap\_ap) existe.  | 1. Tentar criar outra `UserAccessProfile` com os mesmos `user` e `access_profile`. | `user=uap_user, access_profile=uap_ap`                                                           | `IntegrityError` devido à constraint `unique_together`.                             | ALTA       |
+| TC\_MDL\_UAP\_003 | UserAccessProfile | Testar `__str__()`                                                    | Associação "UAP\_Str" existe.                 | 1. Chamar `str(user_access_profile)`.                                              | `User` "uap\_user", `AccessProfile` "uap\_ap"                                                    | Retorna `"uap_user - uap_ap"`.                                                      | BAIXA      |
+
+### A.6. Modelo `PasswordHistory`
+
+| ID Teste        | Componente      | Objetivo do Teste                             | Pré-condições                 | Passos                                      | Dados de Teste                                                              | Resultado Esperado                                       | Prioridade |
+| :-------------- | :-------------- | :-------------------------------------------- | :---------------------------- | :------------------------------------------ | :-------------------------------------------------------------------------- | :------------------------------------------------------- | :--------- |
+| TC\_MDL\_PHS\_001 | PasswordHistory | Criar entrada de histórico de senha           | Usuário "ph\_user" existe.    | 1. Criar `PasswordHistory`.                 | `user=ph_user, password_hash="hashed_old_password"`                       | Entrada criada com sucesso. `created_at` preenchido.       | MÉDIA      |
+| TC\_MDL\_PHS\_002 | PasswordHistory | Testar ordenação (mais recente primeiro)        | Múltiplas entradas para "ph\_user". | 1. Consultar `PasswordHistory` para "ph\_user". |                                                                             | Entradas retornadas ordenadas por `created_at` decrescente. | MÉDIA      |
+
+### A.7. Modelo `BlacklistedTokens`
+
+| ID Teste        | Componente        | Objetivo do Teste                                | Pré-condições | Passos                                 | Dados de Teste                                                            | Resultado Esperado                                                      | Prioridade |
+| :-------------- | :---------------- | :----------------------------------------------- | :------------ | :------------------------------------- | :------------------------------------------------------------------------ | :---------------------------------------------------------------------- | :--------- |
+| TC\_MDL\_BLT\_001 | BlacklistedTokens | Criar token na blacklist                         | N/A           | 1. Criar `BlacklistedTokens`.          | `token="blacklisted_jwt_token"`                                         | Token adicionado à blacklist. `created_at` preenchido.                  | MÉDIA      |
+| TC\_MDL\_BLT\_002 | BlacklistedTokens | Tentar criar token duplicado na blacklist        | Token "T1" existe. | 1. Tentar criar outro com mesmo `token`. | `token="blacklisted_jwt_token"`                                         | `IntegrityError` devido à constraint `unique=True`.                     | MÉDIA      |
+
+### A.8. Modelo `AuditLog`
+
+| ID Teste        | Componente | Objetivo do Teste                             | Pré-condições                 | Passos                                   | Dados de Teste                                                                                                  | Resultado Esperado                                       | Prioridade |
+| :-------------- | :--------- | :-------------------------------------------- | :---------------------------- | :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- | :--------- |
+| TC\_MDL\_ADL\_001 | AuditLog   | Criar log de auditoria com dados mínimos    | Usuário "audit\_user" existe. | 1. Criar `AuditLog`.                     | `user=audit_user, action="LOGIN"`                                                                             | Log criado com sucesso. `timestamp` preenchido.          | ALTA       |
+| TC\_MDL\_ADL\_002 | AuditLog   | Criar log de auditoria com todos os campos    | Usuário "audit\_user" existe. | 1. Criar `AuditLog` com todos os campos. | `user=audit_user, action="PROFILE_UPDATE", ip_address="1.2.3.4", user_agent="TestAgent", details={"field": "name"}` | Log criado com sucesso. Todos os campos preenchidos.       | MÉDIA      |
+
+*(Modelo `AccessAttempt` pode ser testado similarmente ao `AuditLog`)*
+
+## B. Testes de Serializers
+
+### B.1. `UserSerializer` / `UserCreateSerializer`
+
+| ID Teste        | Componente      | Objetivo do Teste                                                                   | Pré-condições | Passos                                                                                                           | Dados de Teste (Entrada)                                                                                                                   | Resultado Esperado                                                                                                                                                             | Prioridade |
+| :-------------- | :-------------- | :---------------------------------------------------------------------------------- | :------------ | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_SER\_USR\_001 | UserSerializer  | Serializar instância de `User` para JSON                                            | Usuário "ser\_user" existe com perfil. | 1. Obter instância `User`. 2. Serializar com `UserSerializer`.                                                                 | Instância de `User`                                                                                                                        | JSON com campos corretos (`id`, `username`, `email`, `full_name`, `role`, `profile`, `access_profiles`, etc.). `password` não incluído.                                        | ALTA       |
+| TC\_SER\_USR\_002 | UserSerializer  | Desserializar JSON válido para criar novo `User` (via `create()`)                   | N/A           | 1. Criar `UserSerializer` com dados JSON válidos e chamar `save()`.                                                | `{"username": "newser", "email": "new@ser.com", "full_name": "New Serializer", "password": "PassWord123!", "role": "TEAM_MEMBER"}`         | Novo `User` criado no DB. `UserProfile` criado (se `create_user_with_profile` for usado). Retorna instância serializada.                                                    | ALTA       |
+| TC\_SER\_USR\_003 | UserSerializer  | Desserializar JSON válido para atualizar `User` existente (via `update()`)          | Usuário "updser" existe. | 1. Obter instância `User`. 2. Criar `UserSerializer` com instância e dados parciais, chamar `save()`.                  | `{"full_name": "Updated Name"}`                                                                                                            | `User` atualizado no DB. Retorna instância serializada atualizada.                                                                                                             | ALTA       |
+| TC\_SER\_USR\_004 | UserSerializer  | Tentar desserializar JSON com `username` duplicado                                    | Usuário "existuser" existe. | 1. Tentar criar `User` com `username="existuser"`.                                                               | `{"username": "existuser", "email": "dup@ser.com", ...}`                                                                                   | `ValidationError` levantado pelo serializer ou `IntegrityError` no `save()`.                                                                                                 | ALTA       |
+| TC\_SER\_USR\_005 | UserSerializer  | Validar campo `role` com valor inválido                                             | N/A           | 1. Tentar desserializar JSON com `role="INVALID_ROLE"`.                                                            | `{"username": "roleval", ..., "role": "INVALID_ROLE"}`                                                                                     | `ValidationError` para o campo `role`.                                                                                                                                           | MÉDIA      |
+| TC\_SER\_USR\_006 | UserSerializer  | Desserializar para atualizar senha do usuário                                       | Usuário "passupd" existe. | 1. Chamar `serializer.save()` com `password` no `validated_data`.                                                | `{"password": "NewStrongPassword1!"}`                                                                                                      | Senha do usuário atualizada e hasheada.                                                                                                                                        | ALTA       |
+| TC\_SER\_UCR\_001 | UserCreateSerializer | Desserializar JSON válido para criar usuário, incluindo validação de senha (Djoser) | N/A           | 1. Fornecer dados válidos para `UserCreateSerializer`.                                                             | `{"username": "createok", "email":"create@ok.com", "full_name": "Create Ok", "password": "CreatePass123!", "role": "TEAM_MEMBER"}`         | Usuário criado.                                                                                                                                                              | ALTA       |
+| TC\_SER\_UCR\_002 | UserCreateSerializer | Tentar criar usuário com senha inválida (não atende política)                     | N/A           | 1. Fornecer dados com senha fraca.                                                                               | `{"username": "createbadpass", ..., "password": "123"}`                                                                                    | `ValidationError` devido à política de senha.                                                                                                                                  | ALTA       |
+
+*(Outros serializers como `UserProfileSerializer`, `AccessProfileSerializer`, `PermissionSerializer` devem ser testados de forma similar: serialização, desserialização válida, desserialização inválida, criação, atualização)*
+
+## C. Testes de Views (API Endpoints)
+
+### C.1. Endpoints de Autenticação (Djoser/JWT)
+
+| ID Teste        | Endpoint                         | Método | Objetivo do Teste                                                                | Pré-condições                                                 | Dados de Teste (Request)                                                | Resultado Esperado (Status Code, Response Body)                                                                                             | Prioridade |
+| :-------------- | :------------------------------- | :----- | :------------------------------------------------------------------------------- | :------------------------------------------------------------ | :---------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :--------- |
+| TC\_API\_AUTH\_001 | `/api/auth/jwt/create/`          | POST   | Login com credenciais válidas                                                   | Usuário "authuser" existe e está ativo.                       | `{"username": "authuser", "password": "ValidPassword1!"}`             | 200 OK. `{"access": "...", "refresh": "..."}`. `AuditLog` de LOGIN criado.                                                                    | ALTA       |
+| TC\_API\_AUTH\_002 | `/api/auth/jwt/create/`          | POST   | Login com senha incorreta                                                        | Usuário "authuser" existe.                                    | `{"username": "authuser", "password": "WrongPassword"}`               | 401 Unauthorized. `failed_login_attempts` incrementado. `AuditLog` de FAILED\_LOGIN criado.                                                  | ALTA       |
+| TC\_API\_AUTH\_003 | `/api/auth/jwt/create/`          | POST   | Login com usuário inexistente                                                    | N/A                                                           | `{"username": "noexist", "password": "anypassword"}`                  | 401 Unauthorized.                                                                                                                           | ALTA       |
+| TC\_API\_AUTH\_004 | `/api/auth/jwt/create/`          | POST   | Login com usuário bloqueado                                                      | Usuário "lockeduser" existe e está bloqueado (`is_locked=True`). | `{"username": "lockeduser", "password": "ValidPassword1!"}`           | 401 Unauthorized (ou específico de bloqueio, e.g., 403). Mensagem indicando conta bloqueada.                                                 | ALTA       |
+| TC\_API\_AUTH\_005 | `/api/auth/logout/`              | POST   | Logout com refresh token válido                                                  | Usuário logado. Token de refresh válido.                      | `{"refresh": "valid_refresh_token"}` (enviado no header de Auth)      | 200 OK / 204 No Content. Refresh token adicionado à `BlacklistedTokens`. `AuditLog` de LOGOUT criado.                                          | ALTA       |
+| TC\_API\_AUTH\_006 | `/api/auth/jwt/refresh/`         | POST   | Atualizar access token com refresh token válido                                  | Token de refresh válido.                                      | `{"refresh": "valid_refresh_token"}`                                  | 200 OK. `{"access": "new_access_token"}`.                                                                                                   | ALTA       |
+| TC\_API\_AUTH\_007 | `/api/auth/jwt/refresh/`         | POST   | Tentar atualizar access token com refresh token inválido/blacklisted             | Token de refresh inválido ou na blacklist.                    | `{"refresh": "invalid_or_blacklisted_refresh_token"}`                 | 401 Unauthorized.                                                                                                                           | ALTA       |
+| TC\_API\_AUTH\_008 | `/api/auth/users/`               | POST   | Registrar novo usuário com dados válidos (`UserCreateSerializer`)                | N/A                                                           | `{ "username": "reguser", "email": "reg@user.com", "full_name": "Reg User", "password": "RegisterMe1!", "role": "TEAM_MEMBER" }` | 201 Created. Resposta contém dados do usuário criado. `AuditLog` de USER\_CREATED.                                                            | ALTA       |
+| TC\_API\_AUTH\_009 | `/api/auth/users/me/`            | GET    | Obter dados do usuário logado                                                    | Usuário logado.                                               | N/A (token no header Auth)                                              | 200 OK. Resposta contém dados do usuário (`UserSerializer`).                                                                                | ALTA       |
+| TC\_API\_AUTH\_010 | `/api/auth/users/set_password/`  | POST   | Alterar senha do usuário logado com senha atual correta                          | Usuário logado.                                               | `{"new_password": "NewSecret123!", "current_password": "OldSecret123!"}` | 204 No Content. `PasswordHistory` atualizado. `AuditLog` de PASSWORD\_CHANGE.                                                               | ALTA       |
+| TC\_API\_AUTH\_011 | `/api/auth/users/set_password/`  | POST   | Tentar alterar senha com senha atual incorreta                                   | Usuário logado.                                               | `{"new_password": "NewSecret123!", "current_password": "WrongOldSecret"}` | 400 Bad Request. Mensagem de erro.                                                                                                          | ALTA       |
+
+### C.2. `UserViewSet` (`/api/users/admin/users/`)
+
+| ID Teste        | Endpoint                               | Método | Objetivo do Teste                                                                | Permissões (Usuário Teste)                 | Dados de Teste (Request)                                                                                                                                                                                                                                                                | Resultado Esperado (Status Code, Response Body)                                                                                                                                                                                                                                         | Prioridade |
+| :-------------- | :------------------------------------- | :----- | :------------------------------------------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_API\_UVS\_001 | `/api/users/admin/users/`              | GET    | Listar usuários (com permissão)                                                  | Admin (`USERS.VIEW`)                       | N/A                                                                                                                                                                                                                                                                               | 200 OK. Lista de usuários.                                                                                                                                                                                                                                                            | ALTA       |
+| TC\_API\_UVS\_002 | `/api/users/admin/users/`              | GET    | Tentar listar usuários (sem permissão)                                           | Usuário comum (sem `USERS.VIEW`)           | N/A                                                                                                                                                                                                                                                                               | 403 Forbidden.                                                                                                                                                                                                                                                                        | ALTA       |
+| TC\_API\_UVS\_003 | `/api/users/admin/users/`              | POST   | Criar usuário (com permissão)                                                    | Admin (`USERS.CREATE`)                     | `{ "username": "api_created", "email": "api@created.com", "full_name": "API Created", "password": "ApiCreate1!", "role": "TEAM_MEMBER" }`                                                                                                                                    | 201 Created. Dados do usuário criado. `AuditLog` de USER\_CREATED.                                                                                                                                                                                                                  | ALTA       |
+| TC\_API\_UVS\_004 | `/api/users/admin/users/{id}/`         | GET    | Obter detalhes de usuário específico (com permissão)                             | Admin (`USERS.VIEW`), ID de usuário válido | N/A                                                                                                                                                                                                                                                                               | 200 OK. Dados do usuário.                                                                                                                                                                                                                                                             | ALTA       |
+| TC\_API\_UVS\_005 | `/api/users/admin/users/{id}/`         | PUT    | Atualizar usuário (com permissão)                                                | Admin (`USERS.EDIT`), ID de usuário válido | `{ "full_name": "API Updated Name", "role": "PROJECT_MANAGER" }`                                                                                                                                                                                                                | 200 OK. Dados do usuário atualizados. `AuditLog` de PROFILE\_UPDATE (ou similar).                                                                                                                                                                                                    | ALTA       |
+| TC\_API\_UVS\_006 | `/api/users/admin/users/{id}/`         | DELETE | Excluir usuário (com permissão)                                                  | Admin (`USERS.DELETE`), ID de usuário válido| N/A                                                                                                                                                                                                                                                                               | 204 No Content. `AuditLog` de USER\_DEACTIVATED/DELETED.                                                                                                                                                                                                                                | ALTA       |
+| TC\_API\_UVS\_007 | `/api/users/admin/users/permissions/`  | GET    | Obter permissões do usuário logado                                               | Usuário logado (qualquer)                  | N/A                                                                                                                                                                                                                                                                               | 200 OK. `{"role": "...", "permissions": ["MODULE.ACTION", ...]}`.                                                                                                                                                                                                                     | MÉDIA      |
+| TC\_API\_UVS\_008 | `/api/users/admin/users/{id}/activate/`| POST   | Ativar usuário (com permissão)                                                   | Admin (`USERS.EDIT`), ID de usuário inativo | N/A                                                                                                                                                                                                                                                                               | 200 OK. `{"detail": "Usuário ativado com sucesso"}`. `is_active=True`. `AuditLog` de USER\_ACTIVATED.                                                                                                                                                                             | MÉDIA      |
+| TC\_API\_UVS\_009 | `/api/users/admin/users/{id}/deactivate/`| POST   | Desativar usuário (com permissão)                                                | Admin (`USERS.EDIT`), ID de usuário ativo   | N/A                                                                                                                                                                                                                                                                               | 200 OK. `{"detail": "Usuário desativado com sucesso"}`. `is_active=False`. `AuditLog` de USER\_DEACTIVATED.                                                                                                                                                                        | MÉDIA      |
+| TC\_API\_UVS\_010 | `/api/users/admin/users/{id}/unlock/`  | POST   | Desbloquear usuário (com permissão)                                              | Admin (`USERS.EDIT`), ID de usuário bloqueado| N/A                                                                                                                                                                                                                                                                               | 200 OK. `{"detail": "Usuário desbloqueado com sucesso"}`. `is_locked=False`, `failed_login_attempts=0`. `AuditLog` de ACCOUNT\_UNLOCKED.                                                                                                                                             | MÉDIA      |
+
+### C.3. `UserProfileViewSet` (`/api/users/admin/profiles/`)
+
+| ID Teste        | Endpoint                           | Método | Objetivo do Teste                                                                | Permissões (Usuário Teste)               | Dados de Teste (Request)                                                                                                                    | Resultado Esperado (Status Code, Response Body)                                                                                                | Prioridade |
+| :-------------- | :--------------------------------- | :----- | :------------------------------------------------------------------------------- | :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_API\_UPVS\_001 | `/api/users/admin/profiles/`       | GET    | Listar perfis de usuário (usuário autenticado)                                   | Usuário autenticado                      | N/A                                                                                                                                         | 200 OK. `{"results": [...]}`. Lista de perfis.                                                                                                 | MÉDIA      |
+| TC\_API\_UPVS\_002 | `/api/users/admin/profiles/`       | POST   | Criar perfil para o usuário logado (usuário autenticado)                         | Usuário autenticado (sem perfil ainda)   | `{"phone": "123", "theme_preference": "DARK"}`                                                                                            | 201 Created. Dados do perfil criado, associado ao usuário logado.                                                                              | MÉDIA      |
+| TC\_API\_UPVS\_003 | `/api/users/admin/profiles/{id}/`  | PUT    | Atualizar perfil de usuário (com permissão `USERS.EDIT`)                         | Admin (`USERS.EDIT`), ID de perfil válido| `{ "user": <user_id>, "phone": "456" }`                                                                                                     | 200 OK. Dados do perfil atualizados.                                                                                                           | MÉDIA      |
+| TC\_API\_UPVS\_004 | `/api/users/admin/profiles/{id}/`  | DELETE | Excluir perfil de usuário (com permissão `USERS.EDIT`)                           | Admin (`USERS.EDIT`), ID de perfil válido| N/A                                                                                                                                         | 204 No Content.                                                                                                                                | MÉDIA      |
+
+*(Testes para `AccessProfileViewSet` e `PermissionViewSet` seguirão um padrão similar, testando CRUD e permissões `USERS.VIEW` e `USERS.EDIT`)*
+
+## D. Testes de Validadores
+
+### D.1. `PasswordPolicyValidator`
+
+| ID Teste        | Componente              | Objetivo do Teste                                                                     | Pré-condições | Passos                                                                                                                          | Dados de Teste (Senha, Usuário opcional)                                                                                                           | Resultado Esperado                                                                                                                                                 | Prioridade |
+| :-------------- | :---------------------- | :------------------------------------------------------------------------------------ | :------------ | :------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_VAL\_PPV\_001 | PasswordPolicyValidator | Validar senha que atende todos os critérios                                            | N/A           | 1. Instanciar validador. 2. Chamar `validate()` com senha forte.                                                                | `password="StrongPass123!"`                                                                                                                        | Nenhuma `ValidationError` levantada.                                                                                                                               | ALTA       |
+| TC\_VAL\_PPV\_002 | PasswordPolicyValidator | Validar senha curta demais                                                              | N/A           | 1. Chamar `validate()` com senha curta.                                                                                         | `password="S1!"` (min\_length=8)                                                                                                                   | `ValidationError` com mensagem "A senha deve ter pelo menos 8 caracteres."                                                                                           | ALTA       |
+| TC\_VAL\_PPV\_003 | PasswordPolicyValidator | Validar senha sem letra maiúscula                                                       | N/A           | 1. Chamar `validate()` com senha sem maiúscula.                                                                                 | `password="strongpass123!"`                                                                                                                        | `ValidationError` com mensagem "A senha deve conter pelo menos uma letra maiúscula."                                                                               | ALTA       |
+| TC\_VAL\_PPV\_004 | PasswordPolicyValidator | Validar senha sem número                                                                | N/A           | 1. Chamar `validate()` com senha sem número.                                                                                  | `password="StrongPass!"`                                                                                                                           | `ValidationError` com mensagem "A senha deve conter pelo menos um número."                                                                                         | ALTA       |
+| TC\_VAL\_PPV\_005 | PasswordPolicyValidator | Validar senha sem caractere especial                                                    | N/A           | 1. Chamar `validate()` com senha sem especial.                                                                                | `password="StrongPass123"`                                                                                                                         | `ValidationError` com mensagem "A senha deve conter pelo menos um caractere especial."                                                                             | ALTA       |
+| TC\_VAL\_PPV\_006 | PasswordPolicyValidator | Validar senha comum                                                                     | N/A           | 1. Chamar `validate()` com senha comum.                                                                                       | `password="password123"`                                                                                                                           | `ValidationError` com mensagem "Esta senha é muito comum."                                                                                                           | MÉDIA      |
+| TC\_VAL\_PPV\_007 | PasswordPolicyValidator | Validar senha contendo informações do usuário (username)                                | N/A           | 1. Criar mock de usuário. 2. Chamar `validate()` com senha contendo username.                                                   | `user={"username": "testuser", ...}`, `password="testuserPass1!"`                                                                                   | `ValidationError` com mensagem "A senha não pode conter informações pessoais..."                                                                                 | MÉDIA      |
+| TC\_VAL\_PPV\_008 | PasswordPolicyValidator | Validar reutilização de senha recente (se `PasswordHistory` estiver configurado)        | Usuário existe com histórico de senhas. | 1. Tentar validar senha que está no histórico recente do usuário.                                                               | `user=user_with_history`, `password="RecentOldPass1!"`                                                                                             | `ValidationError` com mensagem "Você não pode reutilizar uma senha recente."                                                                                       | ALTA       |
+| TC\_VAL\_PPV\_009 | PasswordPolicyValidator | Validar senha que não está no histórico recente                                         | Usuário existe com histórico de senhas. | 1. Tentar validar senha nova que não está no histórico.                                                                       | `user=user_with_history`, `password="BrandNewSecurePass123!"`                                                                                      | Nenhuma `ValidationError` relacionada ao histórico.                                                                                                                  | ALTA       |
+
+### D.2. `validate_username` / `validate_full_name`
+
+*(Testes similares aos de `PasswordPolicyValidator`: entradas válidas, entradas inválidas para cada critério, e verificar `ValidationError` com mensagens específicas)*
+
+## E. Testes de Funções Utilitárias (`utils.py`)
+
+| ID Teste        | Componente             | Objetivo do Teste                                                                             | Pré-condições                                                 | Passos                                                                                                                                                  | Dados de Teste (Entrada)                                                                                                | Resultado Esperado                                                                                                                                                                     | Prioridade |
+| :-------------- | :--------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_UTL\_UPD\_001 | `update_user_password` | Atualizar senha do usuário com sucesso                                                        | Usuário "utiluser" existe.                                    | 1. Chamar `update_user_password()` com usuário e nova senha válida.                                                                                     | `user=utiluser`, `new_password="NewUtilPass1!"`                                                                       | Retorna `True`. Senha do usuário alterada no DB e hasheada. `PasswordHistory` atualizado (se a lógica estiver integrada).                                                                | ALTA       |
+| TC\_UTL\_UPD\_002 | `update_user_password` | Tentar atualizar senha com nova senha inválida (não atende política)                            | Usuário "utiluser" existe.                                    | 1. Chamar `update_user_password()` com nova senha fraca.                                                                                                | `user=utiluser`, `new_password="123"`                                                                                 | `ValidationError` levantado por `validate_password`. Senha não alterada.                                                                                                               | ALTA       |
+| TC\_UTL\_CUP\_001 | `create_user_with_profile` | Criar usuário e perfil com dados válidos                                                      | N/A                                                           | 1. Chamar `create_user_with_profile()` com `validated_data` completo.                                                                                 | `validated_data = {"username": "cup_user", "email": "cup@user.com", "full_name": "CUP User", "password": "CupPassword1!", "profile": {"phone": "789"}}` | `User` e `UserProfile` criados no DB. Retorna instância do `User`.                                                                                                                       | ALTA       |
+| TC\_UTL\_CUP\_002 | `create_user_with_profile` | Tentar criar usuário com `username` duplicado (deve ser pego pela DB ou validação prévia) | Usuário "cup\_user" já existe.                               | 1. Chamar `create_user_with_profile()` com `username` duplicado.                                                                                      | `validated_data = {"username": "cup_user", ...}`                                                                      | Exceção (`IntegrityError` ou `ValidationError` dependendo de onde a validação de unicidade ocorre primeiro). Transação deve fazer rollback.                                          | ALTA       |
+
+## F. Testes de Sistema de Auditoria (`audit.py`)
+
+| ID Teste        | Componente     | Objetivo do Teste                                                                                 | Pré-condições                                  | Passos                                                                                                                                | Ação Gatilho                                                                                                                              | Resultado Esperado                                                                                                                                                              | Prioridade |
+| :-------------- | :------------- | :------------------------------------------------------------------------------------------------ | :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------- |
+| TC\_ADT\_LGN\_001 | Audit System   | Verificar criação de `AuditLog` na ação de Login bem-sucedido                                     | Usuário "auditlogin" existe.                   | 1. Realizar login bem-sucedido via API (`/api/auth/jwt/create/`).                                                                   | Login bem-sucedido com "auditlogin".                                                                                                      | `AuditLog` criado com `user=auditlogin`, `action='LOGIN'`, `ip_address`, `user_agent` preenchidos.                                                                               | ALTA       |
+| TC\_ADT\_PCH\_001 | Audit System   | Verificar criação de `AuditLog` na ação de Mudança de Senha                                       | Usuário "auditpass" logado.                    | 1. Mudar senha via API (`/api/auth/users/set_password/`).                                                                           | Mudança de senha para "auditpass".                                                                                                        | `AuditLog` criado com `user=auditpass`, `action='PASSWORD_CHANGE'`.                                                                                                           | ALTA       |
+| TC\_ADT\_UCR\_001 | Audit System   | Verificar criação de `AuditLog` na ação de Criação de Usuário (via API admin)                     | Admin logado com permissão `USERS.CREATE`.       | 1. Criar novo usuário via API (`/api/users/admin/users/`).                                                                          | Admin cria usuário "newaudituser".                                                                                                        | `AuditLog` criado com `user=admin` (quem realizou a ação), `action='USER_CREATED'`, `details` contendo info do novo usuário, `content_object` referenciando "newaudituser". | ALTA       |
+| TC\_ADT\_UAC\_001 | Audit System   | Verificar criação de `AuditLog` na ação de Ativação de Usuário (via API admin)                    | Admin logado, usuário "inactiveaudit" inativo. | 1. Ativar "inactiveaudit" via API (`/api/users/admin/users/{id}/activate/`).                                                        | Admin ativa "inactiveaudit".                                                                                                              | `AuditLog` criado com `user=admin`, `action='USER_ACTIVATED'`, `content_object` referenciando "inactiveaudit".                                                                 | MÉDIA      |
+
+*(Outras ações como LOGOUT, FAILED\_LOGIN, USER\_DEACTIVATED, ACCOUNT\_LOCKED, etc., devem ter casos de teste similares para o `AuditLog`)*
+
+## G. Testes de Segurança
+
+| ID Teste        | Cenário de Segurança                 | Objetivo do Teste                                                                                                | Pré-condições                                                                                                | Passos                                                                                                                                                                                                                            | Resultado Esperado                                                                                                                                                                                                                                                               | Prioridade |
+| :-------------- | :----------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| TC\_SEC\_BLK\_001 | Bloqueio de Conta por Tentativas     | Verificar que a conta é bloqueada após X tentativas de login falhas.                                              | Usuário "sec_lock" existe. Limite de tentativas = 5.                                                          | 1. Tentar login com "sec\_lock" e senha errada 5 vezes. 2. Verificar `user.is_locked` e `user.failed_login_attempts`. 3. Tentar login 6ª vez com senha correta.                                                                          | Após 5 tentativas: `is_locked=True`, `failed_login_attempts=5`. 6ª tentativa (mesmo com senha correta) falha (401/403) devido ao bloqueio. `AuditLog` para `FAILED_LOGIN` e `ACCOUNT_LOCKED`.                                                                                     | ALTA       |
+| TC\_SEC\_PHS\_001 | Histórico de Senhas (Reutilização)   | Verificar que o usuário não pode reutilizar senhas recentes ao mudar a senha.                                    | Usuário "sec_passhist" existe. Sua senha atual "OldPass1!" está no histórico recente.                          | 1. Tentar mudar a senha de "sec\_passhist" para "OldPass1!" (que está no histórico).                                                                                                                                              | Validação de senha falha (via `PasswordPolicyValidator` ou `validate_password`) com erro de reutilização. Senha não é alterada.                                                                                                                                               | ALTA       |
+| TC\_SEC\_JWT\_001 | Invalidação de Token (Logout)        | Verificar que um access token não pode ser usado após logout (se refresh token associado foi invalidado).          | Usuário "sec_jwt" logado. Logout é realizado invalidando o refresh token.                                    | 1. Fazer login e obter access/refresh tokens. 2. Fazer logout (invalidando o refresh token). 3. Tentar usar o access token original para acessar um endpoint protegido. 4. Tentar usar o refresh token para obter novo access token. | 3. O access token ainda pode ser válido até expirar (comportamento padrão JWT). 4. O refresh token blacklisted não pode gerar novo access token (401). (Se `BLACKLIST_AFTER_ROTATION=True` e `ROTATE_REFRESH_TOKENS=True`, o logout invalida o refresh token usado). | ALTA       |
+| TC\_SEC\_PERM\_001| Acesso não autorizado a endpoint admin| Tentar acessar endpoint de admin (`/api/users/admin/users/`) sem ser admin/sem permissão `USERS.VIEW`.           | Usuário comum "sec_noperm" logado.                                                                           | 1. Usuário "sec_noperm" tenta fazer GET em `/api/users/admin/users/`.                                                                                                                                                           | 403 Forbidden.                                                                                                                                                                                                                                                                   | ALTA       |
+
+---

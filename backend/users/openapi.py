@@ -1,11 +1,9 @@
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from users.authentication import CustomJWTAuthentication
 
-
-class CustomJWTAuthenticationScheme(OpenApiAuthenticationExtension):
-    """Extensão para integrar o CustomJWTAuthentication com o OpenAPI/Swagger."""
+class JWTAuthenticationScheme(OpenApiAuthenticationExtension):
+    """Extensão para integrar o JWTAuthentication padrão com o OpenAPI/Swagger."""
     
-    target_class = CustomJWTAuthentication
+    target_class = 'rest_framework_simplejwt.authentication.JWTAuthentication' 
     name = 'JWT Authentication'
     
     def get_security_definition(self, auto_schema):
@@ -13,5 +11,5 @@ class CustomJWTAuthenticationScheme(OpenApiAuthenticationExtension):
             'type': 'http',
             'scheme': 'bearer',
             'bearerFormat': 'JWT',
-            'description': 'Token JWT para autenticação. Formato: Bearer [token]'
+            'description': 'Token JWT para autenticação. Formato: Bearer [token]. Obtenha o token em /api/auth/jwt/create/'
         }

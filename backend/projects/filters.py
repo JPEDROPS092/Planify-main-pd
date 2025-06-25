@@ -4,35 +4,39 @@ Provides advanced filtering capabilities for API endpoints.
 """
 import django_filters
 from django.db.models import Q
-from .models import Projeto, Sprint, MembroProjeto
+from django.utils import timezone
+from django_filters.rest_framework import FilterSet, DateFromToRangeFilter, CharFilter, BooleanFilter
+from .models import Projeto, Sprint, MembroProjeto, HistoricoStatusProjeto
 
 
-class ProjetoFilter(django_filters.FilterSet):
-    """
-    Filter set for Project model with advanced filtering options.
-    """
+class ProjetoFilter(FilterSet):
+    """Filtro personalizado para projetos.
     
-    # Text search across multiple fields
+    Permite filtrar projetos por diversos critérios como data, status, prioridade, etc.
+    """
+    titulo = CharFilter(lookup_expr='icontains', help_text="Filtra por título (case insensitive)")
+    descricao = CharFilter(lookup_expr='icontains', help_text="Filtra por descrição (case insensitive)")
+    data_inicio_apos = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='gte', 
+                                         help_text="Filtra projetos com data de início após a data especificada")
+    data_inicio_antes = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='lte', 
+                                          help_text="Filtra projetos com data de início antes da data especificada")
+    data_fim_apos = DateFromToRangeFilter(field_name='data_fim', lookup_expr='gte', 
+                                      help_text="Filtra projetos com data de fim após a data especificada")
+    data_fim_antes = DateFromToRangeFilter(field_name='data_fim', lookup_expr='lte', 
+                                       help_text="Filtra projetos com data de fim antes da data especificada")
+    status = CharFilter(method='filter_status', help_text="Filtra por status (pode ser múltiplos, separados por vírgula)")
+    prioridade = CharFilter(method='filter_prioridade', help_text="Filtra por prioridade (pode ser múltiplas, separadas por vírgula)")
+    membro = CharFilter(method='filter_membro', help_text="Filtra projetos que contenham o membro especificado (ID do usuário)")
+    atrasado = BooleanFilter(method='filter_atrasado', help_text="Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)")
+    
+    # Advanced text search across multiple fields
     search = django_filters.CharFilter(method='filter_search', label='Search')
     
-    # Date range filters
+    # Advanced date range filters
     created_after = django_filters.DateFilter(field_name='criado_em', lookup_expr='gte')
     created_before = django_filters.DateFilter(field_name='criado_em', lookup_expr='lte')
-    start_after = django_filters.DateFilter(field_name='data_inicio', lookup_expr='gte')
-    start_before = django_filters.DateFilter(field_name='data_inicio', lookup_expr='lte')
-    
-    # Multi-choice filters
-    status = django_filters.MultipleChoiceFilter(
-        choices=Projeto.STATUS_CHOICES,
-        lookup_expr='in'
-    )
-    prioridade = django_filters.MultipleChoiceFilter(
-        choices=Projeto.PRIORIDADE_CHOICES,
-        lookup_expr='in'
-    )
     
     # Boolean filters
-    arquivado = django_filters.BooleanFilter()
     has_sprints = django_filters.BooleanFilter(method='filter_has_sprints')
     
     # Related field filters
@@ -41,15 +45,15 @@ class ProjetoFilter(django_filters.FilterSet):
         field_name='criado_por'
     )
     
-    # Member filter
+    # Member filter by username
     member = django_filters.CharFilter(method='filter_member', label='Member Username')
     
     class Meta:
         model = Projeto
+        # Include only actual model fields, not custom filters
         fields = [
-            'status', 'prioridade', 'arquivado', 'criado_por',
-            'search', 'created_after', 'created_before',
-            'start_after', 'start_before', 'has_sprints', 'member'
+            'titulo', 'descricao', 'status', 'prioridade', 'arquivado',
+            'data_inicio', 'data_fim', 'criado_por'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -58,6 +62,33 @@ class ProjetoFilter(django_filters.FilterSet):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         self.filters['criado_por'].queryset = User.objects.all()
+    
+    def filter_status(self, queryset, name, value):
+        """Filtra por múltiplos status separados por vírgula."""
+        if not value:
+            return queryset
+        status_list = [s.strip().upper() for s in value.split(',')]
+        return queryset.filter(status__in=status_list)
+    
+    def filter_prioridade(self, queryset, name, value):
+        """Filtra por múltiplas prioridades separadas por vírgula."""
+        if not value:
+            return queryset
+        prioridade_list = [p.strip().upper() for p in value.split(',')]
+        return queryset.filter(prioridade__in=prioridade_list)
+    
+    def filter_membro(self, queryset, name, value):
+        """Filtra projetos que contenham o membro especificado."""
+        if not value:
+            return queryset
+        return queryset.filter(membros__usuario_id=value)
+    
+    def filter_atrasado(self, queryset, name, value):
+        """Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)."""
+        hoje = timezone.now().date()
+        if value:
+            return queryset.filter(data_fim__lt=hoje).exclude(status='CONCLUIDO')
+        return queryset
     
     def filter_search(self, queryset, name, value):
         """
@@ -91,41 +122,36 @@ class ProjetoFilter(django_filters.FilterSet):
         return queryset
 
 
-class SprintFilter(django_filters.FilterSet):
+class SprintFilter(FilterSet):
     """
     Filter set for Sprint model.
     """
+    titulo = CharFilter(lookup_expr='icontains', help_text="Filtra por título (case insensitive)")
+    descricao = CharFilter(lookup_expr='icontains', help_text="Filtra por descrição (case insensitive)")
+    data_inicio_apos = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='gte', 
+                                          help_text="Filtra sprints com data de início após a data especificada")
+    data_inicio_antes = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='lte', 
+                                           help_text="Filtra sprints com data de início antes da data especificada")
+    data_fim_apos = DateFromToRangeFilter(field_name='data_fim', lookup_expr='gte', 
+                                       help_text="Filtra sprints com data de fim após a data especificada")
+    data_fim_antes = DateFromToRangeFilter(field_name='data_fim', lookup_expr='lte', 
+                                        help_text="Filtra sprints com data de fim antes da data especificada")
+    ativa = BooleanFilter(method='filter_ativa', help_text="Filtra sprints ativas (data_inicio <= hoje <= data_fim)")
     
     # Text search
     search = django_filters.CharFilter(method='filter_search', label='Search')
     
-    # Date filters
-    start_after = django_filters.DateFilter(field_name='data_inicio', lookup_expr='gte')
-    start_before = django_filters.DateFilter(field_name='data_inicio', lookup_expr='lte')
-    end_after = django_filters.DateFilter(field_name='data_fim', lookup_expr='gte')
-    end_before = django_filters.DateFilter(field_name='data_fim', lookup_expr='lte')
-    
-    # Status filter
-    status = django_filters.MultipleChoiceFilter(
-        choices=Sprint.STATUS_CHOICES,
-        lookup_expr='in'
-    )
-    
-    # Project filter
-    projeto = django_filters.ModelChoiceFilter(
-        queryset=Projeto.objects.all(),
-        field_name='projeto'
-    )
-    
-    # Active sprints
-    is_active = django_filters.BooleanFilter(method='filter_active')
-    
     class Meta:
         model = Sprint
-        fields = [
-            'status', 'projeto', 'search', 'start_after', 'start_before',
-            'end_after', 'end_before', 'is_active'
-        ]
+        # Include only actual model fields, not custom filters
+        fields = ['nome', 'status', 'projeto', 'data_inicio', 'data_fim']
+    
+    def filter_ativa(self, queryset, name, value):
+        """Filtra sprints que estão ativas no momento."""
+        hoje = timezone.now().date()
+        if value:
+            return queryset.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
+        return queryset
     
     def filter_search(self, queryset, name, value):
         """
@@ -137,27 +163,36 @@ class SprintFilter(django_filters.FilterSet):
                 Q(descricao__icontains=value)
             )
         return queryset
+
+
+class HistoricoStatusProjetoFilter(FilterSet):
+    """
+    Filter set for project status history.
+    """
+    projeto = CharFilter(field_name='projeto__id', help_text="Filtra por ID do projeto")
+    projeto_titulo = CharFilter(field_name='projeto__titulo', lookup_expr='icontains', 
+                           help_text="Filtra por título do projeto (case insensitive)")
+    alterado_por = CharFilter(field_name='alterado_por__id', help_text="Filtra por ID do usuário que alterou")
+    alterado_por_username = CharFilter(field_name='alterado_por__username', lookup_expr='icontains', 
+                                  help_text="Filtra por username do usuário que alterou (case insensitive)")
+    alterado_em_apos = DateFromToRangeFilter(field_name='alterado_em', lookup_expr='gte', 
+                                         help_text="Filtra registros alterados após a data especificada")
+    alterado_em_antes = DateFromToRangeFilter(field_name='alterado_em', lookup_expr='lte', 
+                                          help_text="Filtra registros alterados antes da data especificada")
+    status_anterior = CharFilter(method='filter_status_anterior', 
+                             help_text="Filtra por status anterior (pode ser múltiplos, separados por vírgula)")
     
-    def filter_active(self, queryset, name, value):
-        """
-        Filter active sprints (in progress and within date range).
-        """
-        from django.utils import timezone
-        today = timezone.now().date()
-        
-        if value is True:
-            return queryset.filter(
-                status='em_andamento',
-                data_inicio__lte=today,
-                data_fim__gte=today
-            )
-        elif value is False:
-            return queryset.exclude(
-                status='em_andamento',
-                data_inicio__lte=today,
-                data_fim__gte=today
-            )
-        return queryset
+    class Meta:
+        model = HistoricoStatusProjeto
+        # Include only actual model fields, not custom filters
+        fields = ['projeto', 'status_anterior', 'alterado_por', 'alterado_em']
+    
+    def filter_status_anterior(self, queryset, name, value):
+        """Filtra por múltiplos status anteriores separados por vírgula."""
+        if not value:
+            return queryset
+        status_list = [s.strip().upper() for s in value.split(',')]
+        return queryset.filter(status_anterior__in=status_list)
 
 
 class MembroProjetoFilter(django_filters.FilterSet):
@@ -182,7 +217,7 @@ class MembroProjetoFilter(django_filters.FilterSet):
     
     class Meta:
         model = MembroProjeto
-        fields = ['papel', 'projeto', 'user_search']
+        fields = ['papel', 'projeto']
     
     def filter_user_search(self, queryset, name, value):
         """

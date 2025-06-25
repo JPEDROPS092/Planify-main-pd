@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from projects.models import Projeto
 from tasks.models import Tarefa
 
@@ -98,6 +100,7 @@ class Notificacao(models.Model):
         ('RISCO', 'Risco'),
         ('DOCUMENTO', 'Documento'),
         ('SISTEMA', 'Sistema'),
+        ('CHAT', 'Chat'),
     )
     
     PRIORIDADE_CHOICES = (
@@ -142,20 +145,36 @@ class Notificacao(models.Model):
         help_text='Data e hora em que a notificação foi lida (se aplicável)'
     )
     
-    # Referências opcionais para objetos relacionados
+    # Referência genérica para qualquer objeto relacionado
+    content_type = models.ForeignKey(
+        ContentType, 
+        on_delete=models.CASCADE,
+        null=True, 
+        blank=True,
+        help_text='O tipo do objeto relacionado (ex: Projeto, Tarefa, Risco).'
+    )
+    object_id = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text='O ID do objeto relacionado.'
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    # Campos mantidos para compatibilidade durante a migração
+    # TODO: Remover após migração de dados
     projeto = models.ForeignKey(
         Projeto, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text='Projeto relacionado à notificação (se aplicável)'
+        help_text='Projeto relacionado à notificação (se aplicável) - DEPRECATED'
     )
     tarefa = models.ForeignKey(
         Tarefa, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text='Tarefa relacionada à notificação (se aplicável)'
+        help_text='Tarefa relacionada à notificação (se aplicável) - DEPRECATED'
     )
     url = models.CharField(
         max_length=255, 
@@ -174,6 +193,36 @@ class Notificacao(models.Model):
                 validator(self.url)
             except ValidationError:
                 raise ValidationError({'url': 'URL inválida. Forneça uma URL completa e válida.'})
+
+    def get_related_object_info(self):
+        """
+        Retorna informações sobre o objeto relacionado via GenericForeignKey.
+        
+        Returns:
+            dict: Dicionário com tipo e objeto relacionado, ou None se não houver
+        """
+        if self.content_object and self.content_type:
+            return {
+                'type': self.content_type.model,
+                'object': self.content_object,
+                'app_label': self.content_type.app_label
+            }
+        return None
+    
+    def set_related_object(self, obj):
+        """
+        Define o objeto relacionado via GenericForeignKey.
+        
+        Args:
+            obj: Instância do modelo a ser relacionado (Projeto, Tarefa, etc.)
+        """
+        if obj:
+            self.content_type = ContentType.objects.get_for_model(obj)
+            self.object_id = obj.pk
+            self.content_object = obj
+        else:
+            self.content_type = None
+            self.object_id = None
     
     def __str__(self):
         return f"{self.get_tipo_display()}: {self.titulo} para {self.usuario.username}"  # type: ignore

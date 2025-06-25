@@ -100,43 +100,33 @@ class UserSerializer(BaseUserSerializer):
         return instance
 
 
-class UserCreateSerializer(BaseUserSerializer):
-    """Serializer para criação de usuários com validação de senha."""
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    
-    class Meta(BaseUserSerializer.Meta):
-        fields = BaseUserSerializer.Meta.fields + ['password']
-    
-    def validate(self, attrs):
-        # Define o papel padrão se não for especificado
-        if 'role' not in attrs:
-            attrs['role'] = 'TEAM_MEMBER'
-        return attrs
-    
+class UserCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer específico para o registro de novos usuários.
+    Pede apenas os campos essenciais e valida a senha.
+    """
+    password = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        validators=[validate_password],
+        style={'input_type': 'password'}  # Melhora a UI do Swagger
+    )
+
+    class Meta:
+        model = User
+        # Defina explicitamente os campos necessários para o registro
+        fields = ('username', 'email', 'full_name', 'password', 'role')
+        extra_kwargs = {
+            # Torna o 'role' opcional no registro, com um valor padrão
+            'role': {'required': False, 'default': 'TEAM_MEMBER'},
+        }
+
     def create(self, validated_data):
-        """Cria um novo usuário com perfil."""
+        """
+        Usa a função utilitária para criar o usuário e seu perfil automaticamente.
+        """
+        # A função 'create_user_with_profile' que você já tem é perfeita para isso!
         return create_user_with_profile(validated_data)
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer para alteração de senha com validação da senha atual."""
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, validators=[validate_password])
-    
-    def validate_old_password(self, value):
-        """Valida se a senha atual está correta."""
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Senha atual incorreta")
-        return value
-    
-    def save(self):
-        """Salva a nova senha e atualiza campos relacionados."""
-        user = self.context['request'].user
-        new_password = self.validated_data.get('new_password') if isinstance(self.validated_data, dict) else None
-        if new_password is None:
-            raise serializers.ValidationError("New password is missing.")
-        return update_user_password(user, new_password)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
