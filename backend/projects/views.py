@@ -574,8 +574,6 @@ class SprintViewSet(viewsets.ModelViewSet):
         """
         sprint = self.get_object()
         tarefas = Tarefa.objects.filter(sprint=sprint)
-
-        tarefas_ids = [tarefa.id for tarefa in tarefas]
         
         # Aplica filtros opcionais
         status = request.query_params.get('status')
