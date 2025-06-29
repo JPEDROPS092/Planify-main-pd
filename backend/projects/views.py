@@ -14,7 +14,7 @@ from users.permissions import HasModulePermission
 
 from .models import Projeto, MembroProjeto, Sprint, HistoricoStatusProjeto
 from .serializers import ProjetoSerializer, ProjetoListSerializer, MembroProjetoSerializer, SprintSerializer, HistoricoStatusProjetoSerializer
-from tasks.models import Tarefa
+from tasks.models import Tarefa, AtribuicaoTarefa
 from .filters import ProjetoFilter, SprintFilter, HistoricoStatusProjetoFilter
 from .services import ProjectService
 
@@ -574,6 +574,8 @@ class SprintViewSet(viewsets.ModelViewSet):
         """
         sprint = self.get_object()
         tarefas = Tarefa.objects.filter(sprint=sprint)
+
+        tarefas_ids = [tarefa.id for tarefa in tarefas]
         
         # Aplica filtros opcionais
         status = request.query_params.get('status')
@@ -585,16 +587,13 @@ class SprintViewSet(viewsets.ModelViewSet):
         if prioridade:
             prioridade_list = [p.strip().upper() for p in prioridade.split(',')]
             tarefas = tarefas.filter(prioridade__in=prioridade_list)
-            
-        responsavel = request.query_params.get('responsavel')
-        if responsavel:
-            tarefas = tarefas.filter(responsavel_id=responsavel)
         
         # Ordenação e otimização
-        tarefas = tarefas.select_related('responsavel', 'criado_por', 'projeto').order_by('-criado_em')
+        tarefas = tarefas.select_related('criado_por', 'projeto').order_by('-criado_em')
         
         # Importação local para evitar dependência circular
         from tasks.serializers import TarefaSerializer
+        # As atribuições já retornam por conta do Serializer
         serializer = TarefaSerializer(tarefas, many=True)
         
         return Response(serializer.data)
