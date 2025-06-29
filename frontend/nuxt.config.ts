@@ -1,51 +1,55 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+// nuxt.config.ts
+
 export default defineNuxtConfig({
-  plugins: ['~/plugins/vue-query'],
-  modules: ['@nuxtjs/tailwindcss'], // Temporarily removed 'shadcn-nuxt'
-  nitro: {
-    compatibilityDate: '2025-06-16'
-  },
+  compatibilityDate: "2024-07-26", // Use uma data recente
+
+  // --- MÓDULOS ESSENCIAIS ---
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "nuxt-icon", // Para ícones SVG otimizados
+    "@vueuse/nuxt", // Coleção de composables úteis
+    // "@pinia/nuxt", // Descomente se for usar Pinia para estado global
+  ],
+
+  // --- PLUGINS ---
+  // A ordem pode ser importante. O Axios deve ser configurado antes do TanStack Query ser usado.
+  plugins: ["~/plugins/axios.ts", "~/plugins/tanstack-query.client.ts"],
+
+  // --- VARIÁVEIS DE AMBIENTE ---
   runtimeConfig: {
+    // Chaves privadas (apenas no servidor) - Ex: NUXT_API_KEY no seu .env
+    // apiKey: process.env.NUXT_API_KEY,
+
+    // Chaves públicas (acessíveis no cliente)
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:8000/api/',
+      // Use o prefixo NUXT_PUBLIC_ no seu arquivo .env
+      // Ex: NUXT_PUBLIC_API_BASE=http://localhost:8000
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8000",
     },
   },
-  // Disable shadcn-nuxt for now to avoid the index.ts error
-  // shadcn: {
-  //   prefix: '', // prefixo para componentes shadcn
-  //   componentDir: './components/ui' // diretório onde os componentes serão gerados
-  // },
+
+  // --- TAILWIND CSS ---
   tailwindcss: {
-    exposeConfig: true,
-    config: {
-      darkMode: 'class',
-      content: [
-        './components/**/*.{js,vue,ts}',
-        './layouts/**/*.vue',
-        './pages/**/*.vue',
-        './plugins/**/*.{js,ts}',
-        './app.vue',
-        './components/ui/**/*.{js,vue,ts}'
-      ],
-      theme: {
-        extend: {
-          colors: {
-            'primary': {
-              DEFAULT: '#3D7DF8',
-              '50': '#EBF1FE',
-              '100': '#D6E4FD',
-              '200': '#ADC9FB',
-              '300': '#85AFF9',
-              '400': '#5C94F7',
-              '500': '#3D7DF8',
-              '600': '#0F5AE8',
-              '700': '#0C46B6',
-              '800': '#093384',
-              '900': '#051F52'
-            },
-          }
-        }
-      }
-    }
-  }
-})
+    exposeConfig: true, // Para intellisense do VSCode
+    viewer: true, // Habilita visualizador em http://localhost:3000/_tailwind/
+  },
+
+  // --- ALIASES DE IMPORTAÇÃO ---
+  // Simplifica os imports no seu código
+  alias: {
+    "@api": "~/api",
+    "@composables": "~/composables",
+    "@components": "~/components",
+    "@assets": "~/assets",
+    "@layouts": "~/layouts",
+    "@pages": "~/pages",
+    "@plugins": "~/plugins",
+  },
+
+  // --- DEVTOOLS ---
+  // Essencial para o desenvolvimento com Nuxt
+  devtools: { enabled: true },
+
+  // --- CSS GLOBAL ---
+  css: ["~/assets/css/main.css"],
+});

@@ -3,10 +3,10 @@
  * Deve ser usado em páginas de login e registro
  */
 export default defineNuxtRouteMiddleware(() => {
-  const { isAuthenticated, isLoadingUser } = useAuth()
+  const { isAuthenticated } = useAuth()
   
-  // Se ainda está carregando, aguarda
-  if (isLoadingUser.value) {
+  // Verificar no lado cliente apenas
+  if (typeof window === 'undefined') {
     return
   }
   

@@ -3,10 +3,10 @@
  * Verifica se o usuário está autenticado e se o token é válido
  */
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { isAuthenticated, isLoadingUser, verifyToken, refreshToken, logout } = useAuth()
+  const { isAuthenticated, checkAuthStatus } = useAuth()
   
-  // Se ainda está carregando, aguarda
-  if (isLoadingUser.value) {
+  // Verificar no lado cliente apenas
+  if (typeof window === 'undefined') {
     return
   }
   
@@ -15,29 +15,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/login')
   }
   
-  // Validar se token não está expirado
+  // Verificar status de autenticação (inclui verificação e refresh automático)
   try {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      return navigateTo('/login')
-    }
-    
-    // Verificar se token é válido
-    const isValid = await verifyToken()
+    const isValid = await checkAuthStatus()
     
     if (!isValid) {
-      // Tentar refresh do token
-      try {
-        await refreshToken()
-      } catch (error) {
-        // Se refresh falhar, fazer logout e redirecionar
-        await logout()
-        return navigateTo('/login')
-      }
+      return navigateTo('/login')
     }
   } catch (error) {
-    // Em caso de erro, fazer logout e redirecionar
-    await logout()
+    console.error('Auth check failed:', error)
     return navigateTo('/login')
   }
 })

@@ -8,6 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "orval": "orval",
+    "generate-api": "orval --config orval.config.ts",
     "generate-api-types": "openapi-typescript Planify-API.yaml -o types/api.ts"
   },
   "dependencies": {
@@ -18,6 +20,7 @@
     "clsx": "^2.0.0",
     "date-fns": "^4.1.0",
     "lucide-vue-next": "^0.294.0",
+    "nuxt-icon": "^1.0.0-beta.7",
     "radix-vue": "^1.2.5",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
@@ -28,6 +31,7 @@
     "nuxt": "^3.8.2",
     "openapi-typescript": "^6.7.1",
     "orval": "^7.10.0",
+    "prettier": "^3.6.2",
     "shadcn-nuxt": "^0.1.0",
     "typescript": "^5.3.2"
   }

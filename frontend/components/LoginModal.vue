@@ -126,12 +126,19 @@ const showPassword = ref(false)
 
 // Methods
 const handleLogin = async () => {
+  if (!form.value.username || !form.value.password) return
+  
   try {
     await login({
       username: form.value.username,
       password: form.value.password
     })
+    
     emit('success')
+    
+    // Redirecionar para dashboard após login bem-sucedido
+    await nextTick()
+    await navigateTo('/dashboard')
   } catch (error) {
     // Erro já tratado no composable useAuth
     console.error('Login failed:', error)

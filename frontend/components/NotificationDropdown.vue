@@ -47,7 +47,7 @@
                 {{ notification.mensagem }}
               </p>
               <p class="text-xs text-gray-400 mt-1">
-                {{ formatDate(notification.data_criacao) }}
+                {{ formatDate(notification.criada_em) }}
               </p>
             </div>
             <div v-if="!notification.lida" class="flex-shrink-0 self-center">

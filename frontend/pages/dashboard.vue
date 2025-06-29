@@ -1,8 +1,7 @@
 <script setup>
-// Remove middleware - agora o layout cuida da autenticação
-// definePageMeta({
-//   middleware: 'auth'
-// })
+definePageMeta({
+  middleware: 'auth'
+})
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Icon } from '@iconify/vue';
