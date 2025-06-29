@@ -1,30 +1,47 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <!-- Logo e título -->
-      <div class="text-center">
-        <img class="mx-auto h-16 w-auto" src="/img/logop.png" alt="Planify Logo" />
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">Planify</h2>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Gerenciamento de Projetos de Pesquisa e Desenvolvimento
-        </p>
-      </div>
-      
-      <!-- Conteúdo da página -->
-      <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 sm:p-8">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <!-- Header simples -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <NuxtLink to="/" class="flex justify-center">
+        <Icon icon="lucide:layout-dashboard" class="w-12 h-12 text-blue-600" />
+      </NuxtLink>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        {{ pageTitle }}
+      </h2>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
         <slot />
       </div>
       
-      <!-- Rodapé -->
-      <div class="text-center mt-4">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          &copy; {{ new Date().getFullYear() }} Planify. Todos os direitos reservados.
-        </p>
+      <!-- Links auxiliares -->
+      <div class="mt-6 text-center">
+        <slot name="footer" />
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-// Componente de layout para páginas de autenticação
+<script setup>
+import { Icon } from '@iconify/vue'
+
+const route = useRoute()
+const { isAuthenticated } = useAuth()
+
+const pageTitle = computed(() => {
+  const titles = {
+    '/login': 'Faça login em sua conta',
+    '/register': 'Crie sua conta'
+  }
+  return titles[route.path] || 'Autenticação'
+})
+
+// Verificar se usuário já está logado e redirecionar
+onMounted(() => {
+  if (isAuthenticated.value) {
+    navigateTo('/dashboard')
+  }
+})
 </script>
