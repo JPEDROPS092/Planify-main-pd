@@ -124,7 +124,7 @@ const login = async () => {
   try {
     loading.value = true
     
-    await authLogin(form.value.username, form.value.password)
+    await authLogin({username: form.value.username, password: form.value.password})
     
     $toast.success('Login realizado com sucesso!')
     emit('success')

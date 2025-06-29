@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { useProjectService } from '~/servicesMock/projectService';
+import { useProjectService } from '~/services/projectService';
 import { useTaskService } from '~/servicesMock/taskService';
 import { useNotificationService } from '~/servicesMock/notificationService';
 import { useAlertService } from '~/servicesMock/alertService';

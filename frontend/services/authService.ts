@@ -25,9 +25,9 @@ export const useAuthService = () => {
    */
   const login = async (credentials: { username: string; password: string }) => {
     // Enviar dados diretamente conforme documentação da API
-    const response = await axiosInstance.post('/api/auth/login/', {
-      username: credentials.username,
-      password: credentials.password
+    const response = await axiosInstance.post('/api/auth/jwt/create/', {
+      "username": credentials.username,
+      "password": credentials.password
     });
     
     return response.data;
@@ -69,7 +69,7 @@ export const useAuthService = () => {
    * @param refreshToken Token de refresh
    */
   const refreshToken = async (refreshToken: string) => {
-    const response = await axiosInstance.post('/api/auth/token/refresh/', {
+    const response = await axiosInstance.post('/api/auth/jwt/refresh/', {
       refresh: refreshToken
     });
     
