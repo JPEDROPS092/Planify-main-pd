@@ -7,6 +7,6 @@
  */
 
 export interface UsernameResetConfirm {
-  /** @maxLength 30 */
-  new_username: string;
+  /** @maxLength 254 */
+  new_email: string;
 }

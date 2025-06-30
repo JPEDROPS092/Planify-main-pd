@@ -16,7 +16,7 @@
     "@iconify/vue": "^4.1.1",
     "@nuxt/icon": "^1.15.0",
     "@pinia/nuxt": "^0.11.1",
-    "@tanstack/vue-query": "^5.81.2",
+    "@tanstack/vue-query": "^5.81.5",
     "@vueuse/nuxt": "^13.4.0",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.0",

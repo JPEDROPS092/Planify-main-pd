@@ -1,6 +1,6 @@
 import { defineNuxtPlugin, useRuntimeConfig } from "#app";
 import { useAuthStore } from "~/stores/auth";
-import axiosInstance from "~/api/axios-instance.ts"; // Importa a instância que criamos
+import axiosInstance from "~/api/axios-instance"; // Importa a instância que criamos
 
 export default defineNuxtPlugin(() => {
   // Pega a URL base do runtimeConfig. AQUI temos acesso garantido.

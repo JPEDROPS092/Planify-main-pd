@@ -659,7 +659,7 @@ export const getAuthUsersResetUsernameCreateResponseMock = (
 export const getAuthUsersResetUsernameConfirmCreateResponseMock = (
   overrideResponse: Partial<UsernameResetConfirm> = {},
 ): UsernameResetConfirm => ({
-  new_username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+  new_email: faker.internet.email(),
   ...overrideResponse,
 });
 
@@ -675,7 +675,7 @@ export const getAuthUsersSetUsernameCreateResponseMock = (
   overrideResponse: Partial<SetUsername> = {},
 ): SetUsername => ({
   current_password: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  new_username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+  new_email: faker.internet.email(),
   ...overrideResponse,
 });
 

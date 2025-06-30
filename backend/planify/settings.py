@@ -291,6 +291,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
+
 # Configurações adicionais do CORS
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -398,4 +401,6 @@ DJOSER = {
     # Configurações de tokens e headers
     "AUTH_HEADER_TYPES": ("Bearer",),
     "HIDE_USERS": False,  # Se True, apenas admins podem listar usuários
+    # URLs customizadas para frontend (opcional)
+    "LOGIN_FIELD": "email",  # Usar email para login ao invés de username
 }

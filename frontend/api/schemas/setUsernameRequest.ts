@@ -11,7 +11,7 @@ export interface SetUsernameRequest {
   current_password: string;
   /**
    * @minLength 1
-   * @maxLength 30
+   * @maxLength 254
    */
-  new_username: string;
+  new_email: string;
 }

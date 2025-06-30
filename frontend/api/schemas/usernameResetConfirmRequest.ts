@@ -9,7 +9,7 @@
 export interface UsernameResetConfirmRequest {
   /**
    * @minLength 1
-   * @maxLength 30
+   * @maxLength 254
    */
-  new_username: string;
+  new_email: string;
 }

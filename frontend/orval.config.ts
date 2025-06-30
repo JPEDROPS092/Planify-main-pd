@@ -23,9 +23,6 @@ export default {
 
       // Garante que o código gerado seja "tree-shakable" e limpo
       clean: true,
-
-      // Gera mocks que podem ser úteis para testes ou desenvolvimento offline
-      mock: true,
     },
 
     hooks: {
