@@ -83,14 +83,14 @@ export const useAuthService = () => {
     // Configurar token para esta requisição
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (token) {
-      axiosInstance.defaults.headers.common['Authorization'] = `JWT ${token}`;
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     
     // Usar endpoint de lista de usuários e pegar o primeiro
-    const response = await axiosInstance.get('/api/auth/users/');
+    const response = await axiosInstance.get('/api/auth/users/me/');
     
-    if (response.data.results && response.data.results.length > 0) {
-      return response.data.results[0];
+    if (response.data && typeof(response.data.email) === 'string') {
+      return response.data;
     }
     
     throw new Error('Usuário não encontrado');

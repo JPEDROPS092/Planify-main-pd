@@ -201,6 +201,7 @@ const criticalAlerts = computed(() => {
           </div>
           
           <ul v-else class="divide-y divide-gray-200">
+            
             <li v-for="project in projects.results" :key="project.id" class="px-4 py-4 sm:px-6 hover:bg-gray-50">
               <div class="flex items-center justify-between">
                 <div class="flex items-center">

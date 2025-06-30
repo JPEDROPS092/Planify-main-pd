@@ -5,7 +5,7 @@ from .views import ProjetoViewSet, SprintViewSet, HistoricoStatusProjetoViewSet
 app_name = 'projects'
 
 router = DefaultRouter()
-router.register(r'projects', ProjetoViewSet, basename='project')
+router.register(r'', ProjetoViewSet, basename='project')
 router.register(r'sprints', SprintViewSet, basename='sprint')
 router.register(r'history', HistoricoStatusProjetoViewSet, basename='history')
 
