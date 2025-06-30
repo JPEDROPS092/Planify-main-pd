@@ -1,24 +1,59 @@
 {
-    "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.diagnosticMode": "workspace",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pylintArgs": [
-        "--load-plugins=pylint_django",
-        "--django-settings-module=planify.settings"
-    ],
-    "python.analysis.extraPaths": [
-        "./typings"
-    ],
-    "files.exclude": {
-        "**/__pycache__": true,
-        "**/*.pyc": true
-    },
-    "python.defaultInterpreterPath": "./venv/bin/python",
-    "python.testing.pytestArgs": [
-        "teams"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  // === PYTHON ESPECÍFICO DESTE PROJETO ===
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  // === FORMATAÇÃO - USA AS EXTENSÕES ===
+  "python.formatting.provider": "none",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+
+  // === CONFIGURAÇÕES BLACK (VIA EXTENSÃO) ===
+  "black-formatter.args": ["--line-length=88", "--target-version=py311"],
+
+  // === CONFIGURAÇÕES ISORT (VIA EXTENSÃO) ===
+  "isort.args": [
+    "--profile=black",
+    "--multi-line=3",
+    "--trailing-comma",
+    "--force-grid-wrap=0",
+    "--line-width=88"
+  ],
+
+  // === PYLINT (VIA EXTENSÃO) ===
+  "pylint.args": [
+    "--load-plugins=pylint_django",
+    "--django-settings-module=planify.settings",
+    "--disable=C0111,C0103,R0903,R0801"
+  ],
+
+  // === DJANGO ESPECÍFICO ===
+  "emmet.includeLanguages": {
+    "django-html": "html"
+  },
+
+  // === TERMINAL COM DJANGO ===
+  "terminal.integrated.env.linux": {
+    "DJANGO_SETTINGS_MODULE": "planify.settings"
+  },
+  "terminal.integrated.env.osx": {
+    "DJANGO_SETTINGS_MODULE": "planify.settings"
+  },
+  "terminal.integrated.env.windows": {
+    "DJANGO_SETTINGS_MODULE": "planify.settings"
+  },
+
+  // === ARQUIVOS ESPECÍFICOS DESTE PROJETO ===
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/staticfiles": true,
+    "**/media": true,
+    "**/.pytest_cache": true
+  }
 }

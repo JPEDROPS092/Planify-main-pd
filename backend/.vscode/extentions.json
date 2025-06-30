@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "ms-python.python",
+
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+
+    "ms-python.pylint",
+
+    "batisteo.vscode-django",
+    "bibhasdn.django-html",
+
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "ms-python.debugpy"
+  ],
+  "unwantedRecommendations": ["ms-python.flake8", "ms-python.autopep8"]
+}

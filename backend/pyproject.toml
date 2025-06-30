@@ -1,34 +1,50 @@
-[tool.pylint.main]
-load-plugins = ["pylint_django"]
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.pylint."messages control"]
-disable = [
-    "missing-docstring",
-    "too-few-public-methods",
-    "import-error",
+[project]
+name = "planify"
+version = "1.0.0"
+description = "Django project"
+dependencies = [
+    "django>=4.2",
+    "djangorestframework",
 ]
 
-[tool.pylint.django]
+# === CONFIGURAÇÃO DAS FERRAMENTAS ===
+[tool.black]
+line-length = 88
+target-version = ['py311']
+extend-exclude = '''
+/(
+    migrations/
+    | venv/
+    | .venv/
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
+line_length = 88
+skip_glob = ["*/migrations/*"]
+
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
 django-settings-module = "planify.settings"
 
-[tool.pyright]
-include = ["users", "projects", "tasks", "teams", "risks", "costs", "documents", "communications", "planify"]
-exclude = ["**/migrations/**", "venv", "**/__pycache__/**"]
-defineConstant = { DEBUG = true }
-stubPath = "typings"
-reportMissingImports = true
-reportMissingTypeStubs = false
-pythonVersion = "3.13"
-pythonPlatform = "Linux"
+[tool.pylint.messages_control]
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "R0903",  # too-few-public-methods
+    "R0801"   # duplicate-code
+]
 
-[tool.pyright.executionEnvironments]
-root = "."
-
-[tool.mypy]
-plugins = ["mypy_django_plugin.main"]
-
-[tool.django-stubs]
-django_settings_module = "planify.settings"
-
-[tool.mypy_django_plugin]
-ignore_missing_model_attributes = true
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "planify.settings"
+addopts = "-v --tb=short"
+testpaths = ["tests"]
