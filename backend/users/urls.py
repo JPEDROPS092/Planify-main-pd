@@ -1,31 +1,35 @@
 # users/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ( # Supondo que você tem esses ViewSets
+from .views import (
     UserViewSet, UserProfileViewSet, AccessProfileViewSet, PermissionViewSet
 )
-from .authentication import LoginView, LogoutView, CustomTokenRefreshView
-
 
 app_name = 'users'
 
-router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user') # URL final: /api/users/users/
-router.register(r'profiles', UserProfileViewSet, basename='userprofile') # URL final: /api/users/profiles/
-router.register(r'access-profiles', AccessProfileViewSet, basename='accessprofile') # URL final: /api/users/access-profiles/
-router.register(r'permissions', PermissionViewSet, basename='permission') # URL final: /api/users/permissions/
+# Router para administração de usuários (funcionalidades específicas não cobertas pelo djoser)
+admin_router = DefaultRouter()
+admin_router.register(r'profiles', UserProfileViewSet, basename='profile') 
+admin_router.register(r'access-profiles', AccessProfileViewSet, basename='accessprofile') 
+admin_router.register(r'permissions', PermissionViewSet, basename='permission') 
 
-auth_patterns = [
-    path('login/', LoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
-    path('register/', RegisterView.as_view(), name='register'),
-]
+# Router para operações administrativas avançadas de usuários
+user_admin_router = DefaultRouter()
+user_admin_router.register(r'', UserViewSet, basename='user-admin')
 
 urlpatterns = [
-    # URLs do router (users, profiles, etc.) estarão diretamente sob /api/users/
-    path('', include(router.urls)),
-
-    # URLs de autenticação estarão sob /api/users/auth/
-    path('auth/', include(auth_patterns)),
+    # URLs de administração avançada de usuários estarão sob /api/users/admin/
+    # Estas são funcionalidades específicas que o djoser não cobre
+    path('admin/', include([
+        path('users/', include(user_admin_router.urls)),  # /api/users/admin/users/
+        path('', include(admin_router.urls)),  # /api/users/admin/profiles/, etc.
+    ])),
+    
+    # NOTA: URLs de autenticação básica agora estão em /api/auth/ via djoser
+    # - POST /api/auth/users/ (registro)
+    # - GET/PUT/PATCH /api/auth/users/me/ (perfil do usuário logado)
+    # - POST /api/auth/users/set_password/ (trocar senha)
+    # - POST /api/auth/jwt/create/ (login)
+    # - POST /api/auth/jwt/refresh/ (refresh token)
+    # - POST /api/auth/jwt/verify/ (verificar token)
 ]

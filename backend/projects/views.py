@@ -2,7 +2,7 @@ from django.db.models import FloatField
 from rest_framework import viewsets, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, DateFromToRangeFilter, CharFilter, BooleanFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Prefetch, F, ExpressionWrapper, BooleanField, FloatField, Case, When
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -14,63 +14,11 @@ from users.permissions import HasModulePermission
 
 from .models import Projeto, MembroProjeto, Sprint, HistoricoStatusProjeto
 from .serializers import ProjetoSerializer, ProjetoListSerializer, MembroProjetoSerializer, SprintSerializer, HistoricoStatusProjetoSerializer
-from tasks.models import Tarefa
+from tasks.models import Tarefa, AtribuicaoTarefa
+from .filters import ProjetoFilter, SprintFilter, HistoricoStatusProjetoFilter
+from .services import ProjectService
 
 User = get_user_model()
-
-
-class ProjetoFilter(FilterSet):
-    """Filtro personalizado para projetos.
-    
-    Permite filtrar projetos por diversos critérios como data, status, prioridade, etc.
-    """
-    titulo = CharFilter(lookup_expr='icontains', help_text="Filtra por título (case insensitive)")
-    descricao = CharFilter(lookup_expr='icontains', help_text="Filtra por descrição (case insensitive)")
-    data_inicio_apos = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='gte', 
-                                         help_text="Filtra projetos com data de início após a data especificada")
-    data_inicio_antes = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='lte', 
-                                          help_text="Filtra projetos com data de início antes da data especificada")
-    data_fim_apos = DateFromToRangeFilter(field_name='data_fim', lookup_expr='gte', 
-                                      help_text="Filtra projetos com data de fim após a data especificada")
-    data_fim_antes = DateFromToRangeFilter(field_name='data_fim', lookup_expr='lte', 
-                                       help_text="Filtra projetos com data de fim antes da data especificada")
-    status = CharFilter(method='filter_status', help_text="Filtra por status (pode ser múltiplos, separados por vírgula)")
-    prioridade = CharFilter(method='filter_prioridade', help_text="Filtra por prioridade (pode ser múltiplas, separadas por vírgula)")
-    membro = CharFilter(method='filter_membro', help_text="Filtra projetos que contenham o membro especificado (ID do usuário)")
-    atrasado = BooleanFilter(method='filter_atrasado', help_text="Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)")
-    
-    class Meta:
-        model = Projeto
-        fields = ['titulo', 'descricao', 'status', 'prioridade', 'arquivado', 
-                 'data_inicio_apos', 'data_inicio_antes', 'data_fim_apos', 'data_fim_antes',
-                 'membro', 'atrasado']
-    
-    def filter_status(self, queryset, name, value):
-        """Filtra por múltiplos status separados por vírgula."""
-        if not value:
-            return queryset
-        status_list = [s.strip().upper() for s in value.split(',')]
-        return queryset.filter(status__in=status_list)
-    
-    def filter_prioridade(self, queryset, name, value):
-        """Filtra por múltiplas prioridades separadas por vírgula."""
-        if not value:
-            return queryset
-        prioridade_list = [p.strip().upper() for p in value.split(',')]
-        return queryset.filter(prioridade__in=prioridade_list)
-    
-    def filter_membro(self, queryset, name, value):
-        """Filtra projetos que contenham o membro especificado."""
-        if not value:
-            return queryset
-        return queryset.filter(membros__usuario_id=value)
-    
-    def filter_atrasado(self, queryset, name, value):
-        """Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)."""
-        hoje = timezone.now().date()
-        if value:
-            return queryset.filter(data_fim__lt=hoje).exclude(status='CONCLUIDO')
-        return queryset
 
 @extend_schema_view(
     list=extend_schema(
@@ -509,38 +457,6 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         return Response(metricas)
 
 
-class SprintFilter(FilterSet):
-    """
-    Filtro personalizado para sprints.
-    
-    Permite filtrar sprints por diversos critérios como data, status, projeto, etc.
-    """
-    titulo = CharFilter(lookup_expr='icontains', help_text="Filtra por título (case insensitive)")
-    descricao = CharFilter(lookup_expr='icontains', help_text="Filtra por descrição (case insensitive)")
-    data_inicio_apos = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='gte',
-                                        help_text="Filtra sprints com data de início após a data especificada")
-    data_inicio_antes = DateFromToRangeFilter(field_name='data_inicio', lookup_expr='lte',
-                                         help_text="Filtra sprints com data de início antes da data especificada")
-    data_fim_apos = DateFromToRangeFilter(field_name='data_fim', lookup_expr='gte',
-                                     help_text="Filtra sprints com data de fim após a data especificada")
-    data_fim_antes = DateFromToRangeFilter(field_name='data_fim', lookup_expr='lte',
-                                      help_text="Filtra sprints com data de fim antes da data especificada")
-    ativa = BooleanFilter(method='filter_ativa', help_text="Filtra sprints ativas (data_inicio <= hoje <= data_fim)")
-    
-    class Meta:
-        model = Sprint
-        fields = ['titulo', 'descricao', 'projeto', 'status',
-                'data_inicio_apos', 'data_inicio_antes', 'data_fim_apos', 'data_fim_antes',
-                'ativa']
-    
-    def filter_ativa(self, queryset, name, value):
-        """Filtra sprints ativas (data_inicio <= hoje <= data_fim)."""
-        hoje = timezone.now().date()
-        if value:
-            return queryset.filter(data_inicio__lte=hoje, data_fim__gte=hoje)
-        return queryset
-
-
 @extend_schema_view(
     list=extend_schema(
         summary="Listar sprints",
@@ -669,16 +585,13 @@ class SprintViewSet(viewsets.ModelViewSet):
         if prioridade:
             prioridade_list = [p.strip().upper() for p in prioridade.split(',')]
             tarefas = tarefas.filter(prioridade__in=prioridade_list)
-            
-        responsavel = request.query_params.get('responsavel')
-        if responsavel:
-            tarefas = tarefas.filter(responsavel_id=responsavel)
         
         # Ordenação e otimização
-        tarefas = tarefas.select_related('responsavel', 'criado_por', 'projeto').order_by('-criado_em')
+        tarefas = tarefas.select_related('criado_por', 'projeto').order_by('-criado_em')
         
         # Importação local para evitar dependência circular
         from tasks.serializers import TarefaSerializer
+        # As atribuições já retornam por conta do Serializer
         serializer = TarefaSerializer(tarefas, many=True)
         
         return Response(serializer.data)
@@ -732,47 +645,6 @@ class SprintViewSet(viewsets.ModelViewSet):
             'data_fim': sprint.data_fim,
             'status': sprint.status
         })
-
-
-class HistoricoStatusProjetoFilter(FilterSet):
-    """
-    Filtro personalizado para histórico de status de projetos.
-    
-    Permite filtrar históricos por projeto, usuário, data e status.
-    """
-    projeto = CharFilter(field_name='projeto__id', help_text="Filtra por ID do projeto")
-    projeto_titulo = CharFilter(field_name='projeto__titulo', lookup_expr='icontains', 
-                             help_text="Filtra por título do projeto (case insensitive)")
-    alterado_por = CharFilter(field_name='alterado_por__id', help_text="Filtra por ID do usuário que alterou")
-    alterado_por_username = CharFilter(field_name='alterado_por__username', lookup_expr='icontains', 
-                                    help_text="Filtra por nome de usuário (case insensitive)")
-    alterado_em_apos = DateFromToRangeFilter(field_name='alterado_em', lookup_expr='gte', 
-                                         help_text="Filtra alterações após a data especificada")
-    alterado_em_antes = DateFromToRangeFilter(field_name='alterado_em', lookup_expr='lte', 
-                                          help_text="Filtra alterações antes da data especificada")
-    status_anterior = CharFilter(method='filter_status_anterior', 
-                              help_text="Filtra por status anterior (pode ser múltiplos, separados por vírgula)")
-    novo_status = CharFilter(method='filter_novo_status', 
-                          help_text="Filtra por novo status (pode ser múltiplos, separados por vírgula)")
-    
-    class Meta:
-        model = HistoricoStatusProjeto
-        fields = ['projeto', 'projeto_titulo', 'alterado_por', 'alterado_por_username', 
-                 'alterado_em_apos', 'alterado_em_antes', 'status_anterior', 'novo_status']
-    
-    def filter_status_anterior(self, queryset, name, value):
-        """Filtra por múltiplos status anteriores separados por vírgula."""
-        if not value:
-            return queryset
-        status_list = [s.strip().upper() for s in value.split(',')]
-        return queryset.filter(status_anterior__in=status_list)
-    
-    def filter_novo_status(self, queryset, name, value):
-        """Filtra por múltiplos novos status separados por vírgula."""
-        if not value:
-            return queryset
-        status_list = [s.strip().upper() for s in value.split(',')]
-        return queryset.filter(novo_status__in=status_list)
 
 
 @extend_schema_view(

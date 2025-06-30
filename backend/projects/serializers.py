@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from .models import Projeto, MembroProjeto, Sprint, HistoricoStatusProjeto
 from tasks.models import Tarefa
+from .services import ProjectService, SprintService
 
 User = get_user_model()
 
@@ -98,56 +99,32 @@ class SprintSerializer(serializers.ModelSerializer):
     @extend_schema_field(OpenApiTypes.INT)
     def get_progresso(self, obj):
         """Calcula o progresso da sprint como a porcentagem de tarefas concluídas."""
-        tasks = Tarefa.objects.filter(sprint=obj)
-        total_tasks = tasks.count()
-        
-        if total_tasks == 0:
-            return 0
-        
-        completed_tasks = tasks.filter(status='FEITO').count()
-        return int((completed_tasks / total_tasks) * 100)
+        return SprintService.calculate_sprint_progress(obj)
 
 
-# Documentação do serializer está no docstring da classe
-class ProjetoSerializer(serializers.ModelSerializer):
-    """Serializer completo para projetos.
-    
-    Inclui informações detalhadas do projeto, membros, estatísticas de sprints e tarefas.
-    """
-    membros = MembroProjetoSerializer(many=True, read_only=True, help_text="Lista de membros associados ao projeto")
-    # Contagem de sprints no projeto
-    sprints_count = serializers.SerializerMethodField(help_text="Número total de sprints neste projeto")
-    # Contagem de tarefas no projeto
-    tasks_count = serializers.SerializerMethodField(help_text="Número total de tarefas neste projeto")
-    # Progresso do projeto em percentual
+# Base serializer for projects to avoid duplication
+class BaseProjetoSerializer(serializers.ModelSerializer):
+    """Serializer base com campos computados compartilhados."""
     progresso = serializers.SerializerMethodField(help_text="Progresso do projeto em percentual (0-100)")
-    # Representações textuais
+    atrasado = serializers.SerializerMethodField(help_text="Indica se o projeto está atrasado")
+    tasks_count = serializers.SerializerMethodField(help_text="Número total de tarefas neste projeto")
     status_display = serializers.CharField(source='get_status_display', read_only=True, help_text="Nome do status para exibição")
     prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True, help_text="Nome da prioridade para exibição")
-    # Informações do criador
-    criador_username = serializers.CharField(source='criado_por.username', read_only=True, help_text="Nome de usuário do criador")
-    criador_nome = serializers.CharField(source='criado_por.full_name', read_only=True, help_text="Nome completo do criador")
-    # Estatísticas adicionais
-    dias_restantes = serializers.SerializerMethodField(help_text="Dias restantes até a data de fim")
-    atrasado = serializers.SerializerMethodField(help_text="Indica se o projeto está atrasado")
     
     class Meta:
         model = Projeto
         fields = ['id', 'titulo', 'descricao', 'data_inicio', 'data_fim', 'status', 
-                 'status_display', 'prioridade', 'prioridade_display', 'criado_por', 
-                 'criador_username', 'criador_nome', 'criado_em', 'atualizado_em', 
-                 'arquivado', 'membros', 'sprints_count', 'tasks_count', 'progresso',
-                 'dias_restantes', 'atrasado']
-        read_only_fields = ['criado_por', 'criado_em', 'atualizado_em']
+                 'status_display', 'prioridade', 'prioridade_display', 'criado_em', 
+                 'atualizado_em', 'arquivado', 'tasks_count', 'progresso', 'atrasado']
     
-    def validate(self, data):
+    def validate(self, attrs):
         """Validação personalizada para garantir que a data de início seja anterior à data de fim."""
-        if 'data_inicio' in data and 'data_fim' in data:
-            if data['data_inicio'] > data['data_fim']:
+        if 'data_inicio' in attrs and 'data_fim' in attrs:
+            if attrs['data_inicio'] > attrs['data_fim']:
                 raise serializers.ValidationError({
                     'data_fim': _('A data de fim deve ser posterior à data de início.')
                 })
-        return data
+        return attrs
     
     def validate_titulo(self, value):
         """Valida se o título é único."""
@@ -163,11 +140,6 @@ class ProjetoSerializer(serializers.ModelSerializer):
         return value
     
     @extend_schema_field(OpenApiTypes.INT)
-    def get_sprints_count(self, obj):
-        """Retorna o número de sprints associadas diretamente ao projeto."""
-        return obj.sprints.count()
-    
-    @extend_schema_field(OpenApiTypes.INT)
     def get_tasks_count(self, obj):
         """Retorna o número total de tarefas vinculadas ao projeto."""
         return Tarefa.objects.filter(projeto=obj).count()
@@ -175,91 +147,67 @@ class ProjetoSerializer(serializers.ModelSerializer):
     @extend_schema_field(OpenApiTypes.INT)
     def get_progresso(self, obj):
         """Calcula o progresso do projeto como a porcentagem de tarefas concluídas."""
-        tasks = Tarefa.objects.filter(projeto=obj)
-        total_tasks = tasks.count()
-        
-        if total_tasks == 0:
-            return 0
-        
-        completed_tasks = tasks.filter(status='FEITO').count()
-        return int((completed_tasks / total_tasks) * 100)
-    
-    @extend_schema_field(OpenApiTypes.INT)
-    def get_dias_restantes(self, obj):
-        """Calcula os dias restantes até a data de fim do projeto."""
-        from django.utils import timezone
-        import datetime
-        
-        hoje = timezone.now().date()
-        if obj.data_fim < hoje:
-            return 0
-        return (obj.data_fim - hoje).days
+        return ProjectService.calculate_project_progress(obj)
     
     @extend_schema_field(OpenApiTypes.BOOL)
     def get_atrasado(self, obj):
         """Verifica se o projeto está atrasado (data de fim já passou e não está concluído)."""
-        from django.utils import timezone
-        
-        hoje = timezone.now().date()
-        return obj.data_fim < hoje and obj.status != 'CONCLUIDO'
+        return ProjectService.is_project_delayed(obj)
 
 
 # Documentação do serializer está no docstring da classe
-class ProjetoListSerializer(serializers.ModelSerializer):
+class ProjetoSerializer(BaseProjetoSerializer):
+    """Serializer completo para projetos.
+    
+    Inclui informações detalhadas do projeto, membros, estatísticas de sprints e tarefas.
+    """
+    membros = MembroProjetoSerializer(many=True, read_only=True, help_text="Lista de membros associados ao projeto")
+    # Contagem de sprints no projeto
+    sprints_count = serializers.SerializerMethodField(help_text="Número total de sprints neste projeto")
+    # Informações do criador
+    criador_username = serializers.CharField(source='criado_por.username', read_only=True, help_text="Nome de usuário do criador")
+    criador_nome = serializers.CharField(source='criado_por.full_name', read_only=True, help_text="Nome completo do criador")
+    # Estatísticas adicionais
+    dias_restantes = serializers.SerializerMethodField(help_text="Dias restantes até a data de fim")
+    
+    class Meta(BaseProjetoSerializer.Meta):
+        fields = BaseProjetoSerializer.Meta.fields + [
+            'criado_por', 'criador_username', 'criador_nome', 
+            'membros', 'sprints_count', 'dias_restantes'
+        ]
+        read_only_fields = ['criado_por', 'criado_em', 'atualizado_em']
+    
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_sprints_count(self, obj):
+        """Retorna o número de sprints associadas diretamente ao projeto."""
+        return obj.sprints.count()
+    
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_dias_restantes(self, obj):
+        """Calcula os dias restantes até a data de fim do projeto."""
+        return ProjectService.get_remaining_days(obj)
+
+
+# Documentação do serializer está no docstring da classe
+class ProjetoListSerializer(BaseProjetoSerializer):
     """Serializer otimizado para listagem de projetos.
     
     Inclui informações resumidas e estatísticas básicas para listagem eficiente.
     """
     # Contagem de membros no projeto
     membros_count = serializers.SerializerMethodField(help_text="Número total de membros neste projeto")
-    # Contagem de tarefas no projeto
-    tasks_count = serializers.SerializerMethodField(help_text="Número total de tarefas neste projeto")
-    # Progresso do projeto em percentual
-    progresso = serializers.SerializerMethodField(help_text="Progresso do projeto em percentual (0-100)")
-    # Representações textuais
-    status_display = serializers.CharField(source='get_status_display', read_only=True, help_text="Nome do status para exibição")
-    prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True, help_text="Nome da prioridade para exibição")
     # Informações do criador
     criador_username = serializers.CharField(source='criado_por.username', read_only=True, help_text="Nome de usuário do criador")
-    # Estatísticas adicionais
-    atrasado = serializers.SerializerMethodField(help_text="Indica se o projeto está atrasado")
     
-    class Meta:
-        model = Projeto
-        fields = ['id', 'titulo', 'descricao', 'data_inicio', 'data_fim', 'status', 
-                 'status_display', 'prioridade', 'prioridade_display', 'criado_em', 
-                 'atualizado_em', 'arquivado', 'membros_count', 'tasks_count', 'progresso',
-                 'criador_username', 'atrasado']
+    class Meta(BaseProjetoSerializer.Meta):
+        fields = BaseProjetoSerializer.Meta.fields + [
+            'membros_count', 'criador_username'
+        ]
     
     @extend_schema_field(OpenApiTypes.INT)
     def get_membros_count(self, obj):
         """Retorna o número de membros associados ao projeto."""
         return obj.membros.count()
-    
-    @extend_schema_field(OpenApiTypes.INT)
-    def get_tasks_count(self, obj):
-        """Retorna o número total de tarefas vinculadas ao projeto."""
-        return Tarefa.objects.filter(projeto=obj).count()
-    
-    @extend_schema_field(OpenApiTypes.INT)
-    def get_progresso(self, obj):
-        """Calcula o progresso do projeto como a porcentagem de tarefas concluídas."""
-        tasks = Tarefa.objects.filter(projeto=obj)
-        total_tasks = tasks.count()
-        
-        if total_tasks == 0:
-            return 0
-        
-        completed_tasks = tasks.filter(status='FEITO').count()
-        return int((completed_tasks / total_tasks) * 100)
-    
-    @extend_schema_field(OpenApiTypes.BOOL)
-    def get_atrasado(self, obj):
-        """Verifica se o projeto está atrasado (data de fim já passou e não está concluído)."""
-        from django.utils import timezone
-        
-        hoje = timezone.now().date()
-        return obj.data_fim < hoje and obj.status != 'CONCLUIDO'
 
 
 # Documentação do serializer está no docstring da classe
@@ -278,8 +226,8 @@ class HistoricoStatusProjetoSerializer(serializers.ModelSerializer):
                  'alterado_por', 'alterado_por_username', 'alterado_em']
         read_only_fields = ['alterado_em']
     
-    def validate(self, data):
+    def validate(self, attrs):
         """Validação personalizada para o histórico de status."""
-        return data
+        return attrs
 
 

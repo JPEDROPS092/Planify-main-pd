@@ -14,6 +14,8 @@ from .serializers import (
     NotificacaoSerializer, ConfiguracaoNotificacaoSerializer,
     ComunicacaoSerializer
 )
+from .filters import ChatMensagemFilter, NotificacaoFilter, ComunicacaoFilter
+from .services import ChatService, NotificationService
 
 @extend_schema_view(
     list=extend_schema(
@@ -69,71 +71,34 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
     - POST /chat-mensagens/{id}/marcar_como_lida/ - Marca uma mensagem como lida
     - GET /chat-mensagens/mensagens_nao_lidas/ - Lista mensagens não lidas
     """
-    queryset = ChatMensagem.objects.select_related('projeto', 'autor').all()
+    queryset = ChatMensagem.objects.select_related('projeto', 'autor').prefetch_related('leituras')
     serializer_class = ChatMensagemSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['projeto', 'autor']
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_class = ChatMensagemFilter
+    search_fields = ['texto']
     ordering_fields = ['enviado_em']
+    ordering = ['-enviado_em']
     
     def perform_create(self, serializer):
         """
-        Sobrescreve o método para definir o autor como o usuário atual.
+        Sobrescreve o método para definir o autor como o usuário atual
+        e usar o serviço de chat para criação com notificações.
         
         Args:
             serializer: O serializer com os dados validados
         """
-        serializer.save(autor=self.request.user)
-    
-    def get_queryset(self):
-        """
-        Filtra mensagens com base nos parâmetros da URL.
-        
-        Suporta os seguintes filtros:
-        - projeto: ID do projeto
-        - data_inicio: Data mínima de envio (formato YYYY-MM-DD)
-        - data_fim: Data máxima de envio (formato YYYY-MM-DD)
-        - texto: Texto contido na mensagem
-        
-        Returns:
-            QuerySet: Mensagens filtradas com select_related para otimização
-        """
-        # Verifica se é uma chamada do Swagger para documentação
-        if getattr(self, 'swagger_fake_view', False):
-            return ChatMensagem.objects.none()
-            
-        # Inicia com select_related para otimizar consultas
-        queryset = ChatMensagem.objects.select_related(
-            'projeto', 'autor'
-        ).prefetch_related(
-            'leituras'
+        # Usar o serviço de chat para criar a mensagem com notificações
+        mensagem = ChatService.send_message(
+            projeto=serializer.validated_data['projeto'],
+            autor=self.request.user,
+            texto=serializer.validated_data['texto'],
+            anexo=serializer.validated_data.get('anexo'),
+            notify_members=True
         )
         
-        # Filtra por projeto
-        projeto_id = self.request.GET.get('projeto')
-        if projeto_id:
-            try:
-                projeto_id = int(projeto_id)
-                queryset = queryset.filter(projeto_id=projeto_id)
-            except (ValueError, TypeError):
-                # Ignora filtro se o ID não for válido
-                pass
-        
-        # Filtra por data
-        data_inicio = self.request.GET.get('data_inicio')
-        if data_inicio:
-            queryset = queryset.filter(enviado_em__gte=data_inicio)
-        
-        data_fim = self.request.GET.get('data_fim')
-        if data_fim:
-            queryset = queryset.filter(enviado_em__lte=data_fim)
-        
-        # Filtra por texto
-        texto = self.request.GET.get('texto')
-        if texto:
-            queryset = queryset.filter(texto__icontains=texto)
-        
-        return queryset
+        # Retornar a mensagem criada através do serializer
+        serializer.instance = mensagem
     
     @extend_schema(
         summary="Marcar mensagem como lida",
@@ -288,9 +253,11 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
     """
     serializer_class = NotificacaoSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['tipo', 'lida', 'prioridade', 'projeto', 'tarefa']
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_class = NotificacaoFilter
+    search_fields = ['titulo', 'mensagem']
     ordering_fields = ['criada_em', 'prioridade']
+    ordering = ['-criada_em']
     
     def get_queryset(self):
         """
@@ -307,7 +274,7 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
             
         # Usa select_related para otimizar consultas relacionadas
         return Notificacao.objects.select_related(
-            'usuario', 'projeto', 'tarefa'
+            'usuario', 'projeto', 'tarefa', 'content_type'
         ).filter(usuario=self.request.user)
     
     @extend_schema(
@@ -572,8 +539,9 @@ class ComunicacaoViewSet(viewsets.ModelViewSet):
     serializer_class = ComunicacaoSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_fields = ['projeto', 'remetente', 'tipo']
+    filterset_class = ComunicacaoFilter
     ordering_fields = ['criada_em', 'titulo']
+    ordering = ['-criada_em']
     search_fields = ['titulo', 'texto']
     
     def get_queryset(self):
@@ -588,44 +556,34 @@ class ComunicacaoViewSet(viewsets.ModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return Comunicacao.objects.none()
             
-        # Inicia com select_related para otimizar consultas
-        queryset = Comunicacao.objects.select_related(
+        # Usa select_related para otimizar consultas
+        return Comunicacao.objects.select_related(
             'projeto', 'remetente'
-        )
-        
-        # Filtra por projeto
-        projeto_id = self.request.GET.get('projeto')
-        if projeto_id:
-            try:
-                projeto_id = int(projeto_id)
-                queryset = queryset.filter(projeto_id=projeto_id)
-            except (ValueError, TypeError):
-                pass
-                
-        # Filtra por tipo
-        tipo = self.request.GET.get('tipo')
-        if tipo and tipo in dict(Comunicacao.TIPO_CHOICES).keys():
-            queryset = queryset.filter(tipo=tipo)
-                
-        # Filtra por data
-        data_inicio = self.request.GET.get('data_inicio')
-        if data_inicio:
-            queryset = queryset.filter(criada_em__gte=data_inicio)
-        
-        data_fim = self.request.GET.get('data_fim')
-        if data_fim:
-            queryset = queryset.filter(criada_em__lte=data_fim)
-            
-        return queryset
+        ).prefetch_related('destinatarios')
     
     def perform_create(self, serializer):
         """
-        Define o remetente como o usuário atual ao criar uma nova comunicação.
+        Define o remetente como o usuário atual e usa o serviço de comunicação
+        para criar com notificações.
         
         Args:
             serializer: O serializer com os dados validados
         """
-        serializer.save(remetente=self.request.user)
+        # Usar o serviço de comunicação para criar com notificações
+        from .services import CommunicationService
+        
+        comunicacao = CommunicationService.send_formal_communication(
+            projeto=serializer.validated_data['projeto'],
+            remetente=self.request.user,
+            destinatarios=serializer.validated_data.get('destinatarios', []),
+            tipo=serializer.validated_data['tipo'],
+            titulo=serializer.validated_data['titulo'],
+            texto=serializer.validated_data['texto'],
+            notify_recipients=True
+        )
+        
+        # Retornar a comunicação criada através do serializer
+        serializer.instance = comunicacao
         
     def update(self, request, *args, **kwargs):
         """

@@ -5,6 +5,9 @@ from .views import (
     OrcamentoTarefaViewSet, AlertaViewSet
 )
 
+# Define the app name to support namespace in include()
+app_name = 'costs'
+
 router = DefaultRouter()
 router.register(r'categorias', CategoriaViewSet)
 router.register(r'custos', CustoViewSet)

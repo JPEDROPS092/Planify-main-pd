@@ -1,473 +1,734 @@
-# Módulo de Usuários - Planify
+# Documentação da API Planify - Módulo de Usuários
 
-## Visão Geral
+## 1. Introdução
 
-O módulo de usuários é um componente central do sistema Planify, responsável pela autenticação, autorização e controle de acesso. Implementa um modelo robusto de segurança com controle de acesso baseado em papéis (RBAC), gerenciamento de permissões e recursos avançados de segurança de conta.
+Esta documentação detalha os endpoints da API para o módulo de Usuários do Planify. Ela cobre autenticação, gerenciamento de usuários, perfis, perfis de acesso e permissões.
 
-## Estrutura do Módulo
+**URL Base da API:** `/api/`
 
-```
-users/
-├── __init__.py
-├── models.py                    # Modelos de dados
-├── views.py                     # Views da API
-├── serializers.py               # Serializers DRF
-├── authentication.py            # Sistema de autenticação JWT
-├── permissions.py               # Sistema de permissões
-├── validators.py                # Validadores customizados
-├── utils.py                     # Funções utilitárias
-├── security_notifications.py   # Notificações de segurança
-├── audit.py                     # Sistema de auditoria
-├── middleware.py                # Middleware de segurança
-├── admin.py                     # Interface administrativa
-├── urls.py                      # Configuração de URLs
-├── apps.py                      # Configuração da aplicação
-├── tests/                       # Testes automatizados
-│   ├── __init__.py
-│   ├── test_models.py
-│   ├── test_views.py
-│   └── test_security.py
-└── README.md                    # Esta documentação
-```
+## 2. Endpoints de Autenticação
 
-## Modelos de Dados
+Esses endpoints são tipicamente fornecidos por Djoser e JWT Simple, localizados sob o prefixo `/api/auth/`.
 
-### User (Usuário)
-Modelo principal que estende `AbstractBaseUser` e `PermissionsMixin`.
+### 2.1. Login (Obter Tokens JWT)
 
-**Campos principais:**
-- `uuid`: UUID único para identificação segura
-- `username`: Nome de usuário único
-- `email`: Email único
-- `full_name`: Nome completo
-- `role`: Papel do usuário (ADMIN, PROJECT_MANAGER, TEAM_LEADER, TEAM_MEMBER, STAKEHOLDER, AUDITOR)
-- `is_active`: Status de ativação
-- `failed_login_attempts`: Contador de tentativas falhadas de login
-- `is_locked`: Status de bloqueio da conta
-- `locked_until`: Data/hora até quando a conta está bloqueada
-- `password_change_required`: Indica se alteração de senha é obrigatória
-- `last_password_change`: Data da última alteração de senha
-
-**Métodos importantes:**
-- `increment_failed_login()`: Incrementa tentativas falhadas e bloqueia se necessário
-- `reset_failed_login()`: Reset contador de tentativas falhadas
-- `has_permission(module, action)`: Verifica permissões específicas
-
-### UserProfile (Perfil do Usuário)
-Informações estendidas do usuário.
-
-**Campos:**
-- `user`: Relação OneToOne com User
-- `phone`: Telefone (opcional)
-- `profile_picture`: Foto de perfil (opcional)
-- `theme_preference`: Preferência de tema (LIGHT, DARK, SYSTEM)
-- `email_notifications`: Ativar notificações por email
-- `system_notifications`: Ativar notificações do sistema
-
-### AccessProfile (Perfil de Acesso)
-Define conjuntos de permissões que podem ser atribuídos aos usuários.
-
-**Campos:**
-- `name`: Nome do perfil
-- `description`: Descrição do perfil
-- `created_at`: Data de criação
-- `updated_at`: Data de atualização
-
-### Permission (Permissão)
-Permissões individuais para módulos e ações específicas.
-
-**Campos:**
-- `access_profile`: Relação com AccessProfile
-- `module`: Módulo do sistema (PROJECTS, TASKS, TEAMS, etc.)
-- `action`: Ação permitida (VIEW, CREATE, EDIT, DELETE, etc.)
-
-### UserAccessProfile (Associação Usuário-Perfil)
-Relaciona usuários com perfis de acesso.
-
-### BlacklistedTokens (Tokens Invalidados)
-Armazena tokens JWT invalidados.
-
-**Campos:**
-- `token`: Token JWT invalidado
-- `user`: Usuário associado (opcional)
-- `created_at`: Data de criação
-
-### PasswordHistory (Histórico de Senhas)
-Mantém histórico das últimas senhas para evitar reutilização.
-
-**Campos:**
-- `user`: Usuário
-- `password_hash`: Hash da senha anterior
-- `created_at`: Data de criação
-
-### AuditLog (Log de Auditoria)
-Registra ações de segurança e administrativas.
-
-**Campos:**
-- `user`: Usuário que executou a ação
-- `action`: Tipo de ação (LOGIN, LOGOUT, PASSWORD_CHANGE, etc.)
-- `timestamp`: Data/hora da ação
-- `ip_address`: Endereço IP de origem
-- `user_agent`: User agent do navegador
-- `details`: Detalhes adicionais em JSON
-
-## Sistema de Autenticação
-
-### JWT Customizado
-Implementa autenticação JWT com recursos avançados:
-
-- **CustomJWTAuthentication**: Classe customizada que verifica tokens blacklisted
-- **Suporte a múltiplos formatos**: Aceita tanto "Bearer" quanto "JWT" como prefixo
-- **Blacklist automática**: Tokens invalidados durante logout
-
-### Views de Autenticação
-
-#### LoginView
-```
-POST /api/auth/login/
-{
-    "username": "usuario",
-    "password": "senha"
-}
-```
-
-**Recursos:**
-- Verificação de conta bloqueada
-- Controle de tentativas falhadas
-- Reset automático de contador após login bem-sucedido
-- Logs de auditoria
-
-#### LogoutView
-```
-POST /api/auth/logout/
-{
-    "refresh": "token_refresh"
-}
-```
-
-**Recursos:**
-- Adiciona tokens à blacklist
-- Invalida tanto refresh quanto access token
-- Logs de auditoria
-
-#### CustomTokenRefreshView
-```
-POST /api/auth/token/refresh/
-{
-    "refresh": "token_refresh"
-}
-```
-
-**Recursos:**
-- Verifica blacklist antes de renovar
-- Logs de auditoria
-
-## Sistema de Permissões
-
-### Estrutura Hierárquica
-1. **Papéis (Roles)**: Definem o nível básico de acesso
-2. **Perfis de Acesso**: Conjuntos de permissões específicas
-3. **Permissões**: Controle granular por módulo e ação
-
-### Módulos Disponíveis
-- PROJECTS (Projetos)
-- TASKS (Tarefas)
-- TEAMS (Equipes)
-- RESOURCES (Recursos)
-- COMMUNICATIONS (Comunicações)
-- RISKS (Riscos)
-- COSTS (Custos)
-- DOCUMENTS (Documentos)
-- REPORTS (Relatórios)
-- USERS (Usuários)
-- SETTINGS (Configurações)
-- DASHBOARD (Dashboard)
-- NOTIFICATIONS (Notificações)
-- APPROVALS (Aprovações)
-
-### Ações Disponíveis
-- VIEW (Visualizar)
-- CREATE (Criar)
-- EDIT (Editar)
-- DELETE (Excluir)
-- APPROVE (Aprovar)
-- ASSIGN (Atribuir)
-- EXPORT (Exportar)
-- IMPORT (Importar)
-- COMMENT (Comentar)
-
-### HasModulePermission
-Classe de permissão customizada para verificar acesso a módulos específicos:
-
-```python
-@permission_classes([HasModulePermission('PROJECTS', 'CREATE')])
-def create_project(request):
-    # Lógica para criar projeto
-    pass
-```
-
-## Sistema de Validação
-
-### PasswordPolicyValidator
-Validador robusto de políticas de senha:
-
-**Verificações:**
-- Comprimento mínimo e máximo
-- Presença de letras maiúsculas e minúsculas
-- Presença de números
-- Presença de caracteres especiais
-- Verificação contra senhas comuns
-- Verificação contra informações pessoais do usuário
-
-### Outros Validadores
-- `validate_username()`: Valida formato e unicidade de usernames
-- `validate_full_name()`: Valida formato de nomes completos
-- `validate_password_history()`: Verifica reutilização de senhas
-
-## Sistema de Segurança
-
-### Controle de Tentativas de Login
-- Contador automático de tentativas falhadas
-- Bloqueio automático após 5 tentativas
-- Desbloqueio automático após período configurável
-- Logs de todas as tentativas
-
-### Notificações de Segurança
-O `SecurityNotificationService` envia emails automáticos para:
-- Alterações de senha
-- Logins suspeitos
-- Bloqueios de conta
-- Desbloqueios de conta
-
-### Sistema de Auditoria
-Registra automaticamente:
-- Logins e logouts
-- Alterações de senha
-- Alterações de perfil
-- Bloqueios/desbloqueios de conta
-- Criação/modificação de usuários
-
-## API Endpoints
-
-### Autenticação
-```
-POST /api/auth/login/          # Login
-POST /api/auth/logout/         # Logout
-POST /api/auth/token/refresh/  # Renovar token
-```
-
-### Usuários
-```
-GET    /api/users/             # Listar usuários
-POST   /api/users/             # Criar usuário
-GET    /api/users/{id}/        # Obter usuário
-PUT    /api/users/{id}/        # Atualizar usuário
-PATCH  /api/users/{id}/        # Atualizar parcialmente
-DELETE /api/users/{id}/        # Excluir usuário
-
-GET    /api/users/me/          # Meus dados
-GET    /api/users/permissions/ # Minhas permissões
-POST   /api/users/change-password/    # Alterar senha
-POST   /api/users/{id}/reset-password/ # Reset senha (admin)
-POST   /api/users/{id}/activate/      # Ativar usuário
-POST   /api/users/{id}/deactivate/    # Desativar usuário
-POST   /api/users/{id}/unlock/        # Desbloquear usuário
-```
-
-### Permissões
-```
-GET    /api/permissions/       # Listar permissões
-POST   /api/permissions/       # Criar permissão
-GET    /api/permissions/{id}/  # Obter permissão
-PUT    /api/permissions/{id}/  # Atualizar permissão
-DELETE /api/permissions/{id}/  # Excluir permissão
-```
-
-## Testes
-
-O módulo inclui testes abrangentes organizados em:
-
-### test_models.py
-- Testes de criação e validação de modelos
-- Testes de métodos personalizados
-- Testes de relacionamentos
-- Testes de constraints
-
-### test_views.py
-- Testes de endpoints da API
-- Testes de autenticação e autorização
-- Testes de permissões
-- Testes de fluxos completos
-
-### test_security.py
-- Testes de validadores de senha
-- Testes de sistema de bloqueio
-- Testes de notificações de segurança
-- Testes de auditoria
-- Testes de utilitários de segurança
-
-### Executar Testes
-```bash
-# Todos os testes do módulo
-python manage.py test users
-
-# Testes específicos
-python manage.py test users.tests.test_models
-python manage.py test users.tests.test_views
-python manage.py test users.tests.test_security
-
-# Com cobertura
-coverage run --source='.' manage.py test users
-coverage report
-```
-
-## Configuração
-
-### Settings Recomendadas
-```python
-# settings.py
-
-# Autenticação JWT
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
-
-# Validadores de senha
-AUTH_PASSWORD_VALIDATORS = [
+-   **Endpoint:** `POST /api/auth/jwt/create/`
+-   **Descrição:** Autentica um usuário e retorna tokens JWT de acesso e atualização.
+-   **Permissões:** `AllowAny`
+-   **Request Body:**
+    ```json
     {
-        'NAME': 'users.validators.PasswordPolicyValidator',
-        'OPTIONS': {
-            'min_length': 8,
-            'max_length': 128,
-            'require_uppercase': True,
-            'require_lowercase': True,
-            'require_numbers': True,
-            'require_special': True,
+        "username": "seu_usuario",
+        "password": "sua_senha"
+    }
+    ```
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+
+### 2.2. Logout (Invalidar Tokens)
+
+-   **Endpoint:** `POST /api/auth/logout/`
+-   **Descrição:** Invalida o token de atualização (refresh token) adicionando-o à blacklist. O token de acesso deve ser descartado pelo cliente.
+-   **Permissões:** `IsAuthenticated`
+-   **Request Body:**
+    ```json
+    {
+        "refresh": "seu_refresh_token"
+    }
+    ```
+-   **Response Body (200 OK):** (Utilizando `LogoutResponseSerializer`)
+    ```json
+    {
+        "message": "Logout bem-sucedido."
+    }
+    ```
+    *(Nota: A implementação exata da resposta pode variar; Djoser pode retornar 204 No Content para logout se configurado para invalidar tokens)*
+
+### 2.3. Atualizar Token de Acesso (Refresh Token)
+
+-   **Endpoint:** `POST /api/auth/jwt/refresh/`
+-   **Descrição:** Gera um novo token de acesso usando um token de atualização válido.
+-   **Permissões:** `AllowAny` (o token de atualização em si é a autorização)
+-   **Request Body:**
+    ```json
+    {
+        "refresh": "seu_refresh_token_valido"
+    }
+    ```
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+
+### 2.4. Verificar Token de Acesso
+
+-   **Endpoint:** `POST /api/auth/jwt/verify/`
+-   **Descrição:** Verifica se um token de acesso é válido.
+-   **Permissões:** `AllowAny`
+-   **Request Body:**
+    ```json
+    {
+        "token": "seu_token_de_acesso"
+    }
+    ```
+-   **Response Body (200 OK):**
+    ```json
+    {}
+    ```
+    *(Retorna 200 OK se válido, 401 Unauthorized se inválido)*
+
+## 3. Registro de Usuário
+
+Endpoint fornecido por Djoser.
+
+### 3.1. Registrar Novo Usuário
+
+-   **Endpoint:** `POST /api/auth/users/`
+-   **Descrição:** Cria um novo usuário no sistema.
+-   **Permissões:** `AllowAny` (tipicamente)
+-   **Request Body (`UserCreateSerializer`):**
+    ```json
+    {
+        "username": "novousuario",
+        "email": "novousuario@example.com",
+        "full_name": "Nome Completo do Novo Usuário",
+        "password": "senha_forte_123!",
+        "role": "TEAM_MEMBER" // Opcional, default 'TEAM_MEMBER'
+    }
+    ```
+-   **Response Body (201 Created - `UserSerializer` ou similar Djoser):**
+    ```json
+    {
+        "id": 1,
+        "username": "novousuario",
+        "email": "novousuario@example.com",
+        "full_name": "Nome Completo do Novo Usuário",
+        "role": "TEAM_MEMBER",
+        "is_active": true,
+        "date_joined": "YYYY-MM-DDTHH:MM:SSZ",
+        "profile": null // ou dados do perfil se criado automaticamente
+    }
+    ```
+
+## 4. Gerenciamento da Conta do Usuário (Logado)
+
+Endpoints fornecidos por Djoser, para o usuário atualmente autenticado.
+
+### 4.1. Obter Detalhes do Usuário Logado
+
+-   **Endpoint:** `GET /api/auth/users/me/`
+-   **Descrição:** Retorna os detalhes do usuário atualmente autenticado.
+-   **Permissões:** `IsAuthenticated`
+-   **Response Body (200 OK - `UserSerializer` ou similar Djoser):**
+    ```json
+    {
+        "id": 1,
+        "username": "usuario_logado",
+        "email": "usuario@example.com",
+        "full_name": "Nome do Usuário Logado",
+        "role": "PROJECT_MANAGER",
+        "is_active": true,
+        "date_joined": "YYYY-MM-DDTHH:MM:SSZ",
+        "profile": {
+            "user": 1,
+            "phone": "123456789",
+            "profile_picture": null, // ou URL da imagem
+            "theme_preference": "SYSTEM",
+            "email_notifications": true,
+            "system_notifications": true
+        },
+        "access_profiles": [
+            // Lista de UserAccessProfileSerializer
+        ]
+    }
+    ```
+
+### 4.2. Atualizar Detalhes do Usuário Logado
+
+-   **Endpoint:** `PUT /api/auth/users/me/` (atualização completa) ou `PATCH /api/auth/users/me/` (atualização parcial)
+-   **Descrição:** Atualiza os detalhes do usuário atualmente autenticado.
+-   **Permissões:** `IsAuthenticated`
+-   **Request Body (`UserSerializer` campos relevantes, ou Djoser's UserSerializer):**
+    ```json
+    // Exemplo para PATCH
+    {
+        "full_name": "Novo Nome Completo",
+        "email": "novoemail@example.com"
+    }
+    ```
+-   **Response Body (200 OK - `UserSerializer` ou similar Djoser):**
+    *Similar ao GET, com os dados atualizados.*
+
+### 4.3. Alterar Senha do Usuário Logado
+
+-   **Endpoint:** `POST /api/auth/users/set_password/`
+-   **Descrição:** Permite que o usuário autenticado altere sua própria senha.
+-   **Permissões:** `IsAuthenticated`
+-   **Request Body (Djoser's `SetPasswordSerializer`):**
+    ```json
+    {
+        "new_password": "nova_senha_super_forte!",
+        "current_password": "senha_antiga_correta"
+    }
+    ```
+-   **Response Body (204 No Content ou mensagem de sucesso):**
+    *(Djoser normalmente retorna 204 No Content)*
+
+### 4.4. Solicitar Redefinição de Senha
+
+-   **Endpoint:** `POST /api/auth/users/reset_password/`
+-   **Descrição:** Envia um email para o usuário com um link para redefinir a senha.
+-   **Permissões:** `AllowAny`
+-   **Request Body (`ResetPasswordSerializer`):**
+    ```json
+    {
+        "email": "email_do_usuario@example.com"
+    }
+    ```
+-   **Response Body (204 No Content ou mensagem de sucesso):**
+    *(Djoser normalmente retorna 204 No Content)*
+
+### 4.5. Confirmar Redefinição de Senha
+
+-   **Endpoint:** `POST /api/auth/users/reset_password_confirm/`
+-   **Descrição:** Define uma nova senha usando o token e uid enviados por email.
+-   **Permissões:** `AllowAny`
+-   **Request Body (`SetNewPasswordSerializer` ou Djoser's `PasswordResetConfirmSerializer`):**
+    ```json
+    {
+        "uid": "base64_encoded_user_id",
+        "token": "password_reset_token",
+        "new_password": "nova_senha_escolhida"
+    }
+    ```
+-   **Response Body (204 No Content ou mensagem de sucesso):**
+    *(Djoser normalmente retorna 204 No Content)*
+
+## 5. Gerenciamento de Usuários (Administração)
+
+Endpoints para administradores gerenciarem todos os usuários, localizados sob `/api/users/admin/users/`.
+
+### 5.1. Listar Usuários
+
+-   **Endpoint:** `GET /api/users/admin/users/`
+-   **Sumário:** Listar usuários.
+-   **Descrição:** Retorna uma lista paginada de usuários.
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK - Lista de `UserSerializer`):**
+    ```json
+    [
+        {
+            "id": 1,
+            "username": "usuario1",
+            "email": "usuario1@example.com",
+            "full_name": "Nome Usuário Um",
+            "role": "TEAM_MEMBER",
+            "is_active": true,
+            "date_joined": "YYYY-MM-DDTHH:MM:SSZ",
+            "profile": { /* UserProfileSerializer data */ },
+            "access_profiles": [ /* UserAccessProfileSerializer data */ ]
+        },
+        // ... outros usuários
+    ]
+    ```
+
+### 5.2. Criar Novo Usuário (Admin)
+
+-   **Endpoint:** `POST /api/users/admin/users/`
+-   **Sumário:** Criar novo usuário.
+-   **Descrição:** Cria um novo usuário.
+-   **Permissões:** `HasModulePermission('USERS', 'CREATE')`
+-   **Request Body (`UserCreateSerializer`):**
+    ```json
+    {
+        "username": "novoadminuser",
+        "email": "novoadminuser@example.com",
+        "full_name": "Admin Criado Usuario",
+        "password": "senha_segura123!",
+        "role": "PROJECT_MANAGER" // Ou outro papel
+    }
+    ```
+-   **Response Body (201 Created - `UserCreateSerializer` ou `UserSerializer`):**
+    *Similar à resposta do registro de usuário.*
+
+### 5.3. Obter Detalhes do Usuário (Admin)
+
+-   **Endpoint:** `GET /api/users/admin/users/{id}/`
+-   **Sumário:** Obter detalhes do usuário.
+-   **Descrição:** Retorna informações detalhadas de um usuário específico.
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK - `UserSerializer`):**
+    *Similar à resposta de "Listar Usuários", para um único usuário.*
+
+### 5.4. Atualizar Usuário (Admin)
+
+-   **Endpoint:** `PUT /api/users/admin/users/{id}/`
+-   **Sumário:** Atualizar usuário.
+-   **Descrição:** Atualiza todos os campos de um usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`UserSerializer`):**
+    ```json
+    {
+        "username": "usuario_atualizado",
+        "email": "email_atualizado@example.com",
+        "full_name": "Nome Completo Atualizado",
+        "role": "TEAM_LEADER",
+        "is_active": true,
+        // "password": "nova_senha_se_for_alterar", // Opcional
+        "profile": { /* UserProfileSerializer data para atualizar/criar perfil */ }
+    }
+    ```
+-   **Response Body (200 OK - `UserSerializer`):**
+    *Dados do usuário atualizado.*
+
+### 5.5. Atualizar Usuário Parcialmente (Admin)
+
+-   **Endpoint:** `PATCH /api/users/admin/users/{id}/`
+-   **Sumário:** Atualizar usuário parcialmente.
+-   **Descrição:** Atualiza parcialmente um usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (Campos parciais do `UserSerializer`):**
+    ```json
+    {
+        "full_name": "Apenas Nome Atualizado",
+        "is_active": false
+    }
+    ```
+-   **Response Body (200 OK - `UserSerializer`):**
+    *Dados do usuário atualizado.*
+
+### 5.6. Excluir Usuário (Admin)
+
+-   **Endpoint:** `DELETE /api/users/admin/users/{id}/`
+-   **Sumário:** Excluir usuário.
+-   **Descrição:** Remove um usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'DELETE')`
+-   **Response Body (204 No Content):**
+
+### 5.7. Obter Minhas Permissões (Usuário Logado)
+
+-   **Endpoint:** `GET /api/users/admin/users/permissions/`
+-   **Sumário:** Retornar minhas permissões.
+-   **Descrição:** Retorna as permissões do usuário autenticado.
+-   **Permissões:** `IsAuthenticated`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "role": "PROJECT_MANAGER",
+        "permissions": [
+            "PROJECTS.VIEW",
+            "PROJECTS.CREATE",
+            "TASKS.EDIT"
+            // ... outras permissões no formato "MODULO.ACAO"
+        ]
+    }
+    ```
+
+### 5.8. Ativar Usuário (Admin)
+
+-   **Endpoint:** `POST /api/users/admin/users/{id}/activate/`
+-   **Sumário:** Ativar usuário.
+-   **Descrição:** Ativa um usuário inativo.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "detail": "Usuário ativado com sucesso"
+    }
+    ```
+
+### 5.9. Desativar Usuário (Admin)
+
+-   **Endpoint:** `POST /api/users/admin/users/{id}/deactivate/`
+-   **Sumário:** Desativar usuário.
+-   **Descrição:** Desativa um usuário ativo.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "detail": "Usuário desativado com sucesso"
+    }
+    ```
+
+### 5.10. Desbloquear Usuário (Admin)
+
+-   **Endpoint:** `POST /api/users/admin/users/{id}/unlock/`
+-   **Sumário:** Desbloquear usuário.
+-   **Descrição:** Desbloqueia um usuário após tentativas de login malsucedidas.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "detail": "Usuário desbloqueado com sucesso"
+    }
+    ```
+
+## 6. Gerenciamento de Perfis de Usuário (Administração)
+
+Endpoints para administradores gerenciarem perfis de usuários, localizados sob `/api/users/admin/profiles/`.
+
+### 6.1. Listar Perfis de Usuário
+
+-   **Endpoint:** `GET /api/users/admin/profiles/`
+-   **Sumário:** Listar perfis de usuário.
+-   **Descrição:** Retorna uma lista de perfis de usuário. (Sem paginação)
+-   **Permissões:** `IsAuthenticated`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "results": [
+            {
+                "user": 1, // ID do usuário
+                "phone": "11999998888",
+                "profile_picture": "/media/profile_pictures/user1.jpg", // URL
+                "theme_preference": "DARK",
+                "email_notifications": true,
+                "system_notifications": false
+            }
+            // ... outros perfis
+        ]
+    }
+    ```
+
+### 6.2. Criar Novo Perfil de Usuário (para o Admin Logado)
+
+-   **Endpoint:** `POST /api/users/admin/profiles/`
+-   **Sumário:** Criar novo perfil de usuário.
+-   **Descrição:** Cria um novo perfil de usuário **para o usuário autenticado (admin)**.
+-   **Permissões:** `IsAuthenticated`
+-   **Request Body (`UserProfileSerializer` - campo `user` é ignorado e definido como o admin logado):**
+    ```json
+    {
+        // "user": 1, // Este campo será ignorado e definido como o admin logado
+        "phone": "22888887777",
+        "profile_picture": null, // ou URL de uma imagem pré-upload
+        "theme_preference": "LIGHT",
+        "email_notifications": false,
+        "system_notifications": true
+    }
+    ```
+-   **Response Body (201 Created - `UserProfileSerializer`):**
+    *Dados do perfil criado, com o campo `user` preenchido com o ID do admin.*
+
+### 6.3. Obter Detalhes do Perfil de Usuário
+
+-   **Endpoint:** `GET /api/users/admin/profiles/{id}/` (onde `{id}` é o PK do UserProfile)
+-   **Sumário:** Obter detalhes do perfil de usuário.
+-   **Descrição:** Retorna informações detalhadas de um perfil de usuário específico.
+-   **Permissões:** `IsAuthenticated`
+-   **Response Body (200 OK - `UserProfileSerializer`):**
+    *Similar à entrada na lista de perfis.*
+
+### 6.4. Atualizar Perfil de Usuário
+
+-   **Endpoint:** `PUT /api/users/admin/profiles/{id}/`
+-   **Sumário:** Atualizar perfil de usuário.
+-   **Descrição:** Atualiza todos os campos de um perfil de usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`UserProfileSerializer`):**
+    ```json
+    {
+        "user": 1, // ID do usuário associado (geralmente não alterado)
+        "phone": "33777776666",
+        "profile_picture": null,
+        "theme_preference": "SYSTEM",
+        "email_notifications": true,
+        "system_notifications": true
+    }
+    ```
+-   **Response Body (200 OK - `UserProfileSerializer`):**
+    *Dados do perfil atualizado.*
+
+### 6.5. Atualizar Perfil de Usuário Parcialmente
+
+-   **Endpoint:** `PATCH /api/users/admin/profiles/{id}/`
+-   **Sumário:** Atualizar perfil de usuário parcialmente.
+-   **Descrição:** Atualiza parcialmente um perfil de usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (Campos parciais do `UserProfileSerializer`):**
+    ```json
+    {
+        "phone": "44666665555",
+        "theme_preference": "DARK"
+    }
+    ```
+-   **Response Body (200 OK - `UserProfileSerializer`):**
+    *Dados do perfil atualizado.*
+
+### 6.6. Excluir Perfil de Usuário
+
+-   **Endpoint:** `DELETE /api/users/admin/profiles/{id}/`
+-   **Sumário:** Excluir perfil de usuário.
+-   **Descrição:** Remove um perfil de usuário existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (204 No Content):**
+
+## 7. Gerenciamento de Perfis de Acesso (Administração)
+
+Endpoints para administradores gerenciarem perfis de acesso, localizados sob `/api/users/admin/access-profiles/`.
+
+### 7.1. Listar Perfis de Acesso
+
+-   **Endpoint:** `GET /api/users/admin/access-profiles/`
+-   **Sumário:** Listar perfis de acesso.
+-   **Descrição:** Retorna uma lista paginada de perfis de acesso.
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK - Lista de `AccessProfileSerializer`):**
+    ```json
+    [
+        {
+            "id": 1,
+            "name": "Gerente de Projeto",
+            "description": "Perfil para gerentes de projeto com acesso total a projetos.",
+            "permissions": [
+                {
+                    "id": 1,
+                    "access_profile": 1,
+                    "module": "PROJECTS",
+                    "module_display": "Projects",
+                    "action": "VIEW",
+                    "action_display": "View"
+                }
+                // ... outras permissões
+            ],
+            "created_at": "YYYY-MM-DDTHH:MM:SSZ",
+            "updated_at": "YYYY-MM-DDTHH:MM:SSZ"
         }
-    },
-]
+        // ... outros perfis de acesso
+    ]
+    ```
 
-# Configurações de sessão e segurança
-SESSION_COOKIE_SECURE = True  # Em produção
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'
-CSRF_COOKIE_SECURE = True  # Em produção
+### 7.2. Criar Novo Perfil de Acesso
 
-# Email para notificações
-DEFAULT_FROM_EMAIL = 'noreply@planify.com'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+-   **Endpoint:** `POST /api/users/admin/access-profiles/`
+-   **Sumário:** Criar novo perfil de acesso.
+-   **Descrição:** Cria um novo perfil de acesso.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`AccessProfileSerializer` - sem `id`, `permissions`, `created_at`, `updated_at`):**
+    ```json
+    {
+        "name": "Visualizador de Relatórios",
+        "description": "Perfil com permissão apenas para visualizar relatórios."
+    }
+    ```
+-   **Response Body (201 Created - `AccessProfileSerializer`):**
+    *Dados do perfil de acesso criado.*
 
-# Logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'security_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/security.log',
-        },
-    },
-    'loggers': {
-        'users': {
-            'handlers': ['security_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
-```
+### 7.3. Obter Detalhes do Perfil de Acesso
 
-## Comandos de Gerenciamento
+-   **Endpoint:** `GET /api/users/admin/access-profiles/{id}/`
+-   **Sumário:** Obter detalhes do perfil de acesso.
+-   **Descrição:** Retorna informações detalhadas de um perfil de acesso específico.
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK - `AccessProfileSerializer`):**
+    *Similar à entrada na lista de perfis de acesso.*
 
-### Criar Comando de Limpeza de Tokens
-```python
-# users/management/commands/cleanup_expired_tokens.py
-from django.core.management.base import BaseCommand
-from users.utils import clean_expired_tokens
+### 7.4. Atualizar Perfil de Acesso
 
-class Command(BaseCommand):
-    help = 'Remove tokens expirados da blacklist'
-    
-    def handle(self, *args, **options):
-        clean_expired_tokens()
-        self.stdout.write('Limpeza concluída')
-```
+-   **Endpoint:** `PUT /api/users/admin/access-profiles/{id}/`
+-   **Sumário:** Atualizar perfil de acesso.
+-   **Descrição:** Atualiza todos os campos de um perfil de acesso existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`AccessProfileSerializer` - sem `id`, `permissions`, `created_at`, `updated_at`):**
+    ```json
+    {
+        "name": "Visualizador de Relatórios (Atualizado)",
+        "description": "Descrição atualizada."
+    }
+    ```
+-   **Response Body (200 OK - `AccessProfileSerializer`):**
+    *Dados do perfil de acesso atualizado.*
 
-### Uso
-```bash
-python manage.py cleanup_expired_tokens
-```
+### 7.5. Atualizar Perfil de Acesso Parcialmente
 
-## Boas Práticas de Segurança
+-   **Endpoint:** `PATCH /api/users/admin/access-profiles/{id}/`
+-   **Sumário:** Atualizar perfil de acesso parcialmente.
+-   **Descrição:** Atualiza parcialmente um perfil de acesso existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (Campos parciais do `AccessProfileSerializer`):**
+    ```json
+    {
+        "description": "Nova descrição parcial."
+    }
+    ```
+-   **Response Body (200 OK - `AccessProfileSerializer`):**
+    *Dados do perfil de acesso atualizado.*
 
-### Para Desenvolvedores
-1. **Sempre usar HTTPS em produção**
-2. **Validar todas as entradas do usuário**
-3. **Implementar rate limiting**
-4. **Manter logs de segurança**
-5. **Usar senhas seguras por padrão**
-6. **Implementar 2FA quando possível**
+### 7.6. Excluir Perfil de Acesso
 
-### Para Administradores
-1. **Revisar logs de auditoria regularmente**
-2. **Monitorar tentativas de login falhadas**
-3. **Configurar alertas para atividades suspeitas**
-4. **Manter sistema atualizado**
-5. **Fazer backup regular dos dados**
+-   **Endpoint:** `DELETE /api/users/admin/access-profiles/{id}/`
+-   **Sumário:** Excluir perfil de acesso.
+-   **Descrição:** Remove um perfil de acesso existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (204 No Content):**
 
-## Troubleshooting
+## 8. Gerenciamento de Permissões (Administração)
 
-### Problemas Comuns
+Endpoints para administradores gerenciarem permissões individuais, localizados sob `/api/users/admin/permissions/`.
 
-#### Conta Bloqueada
-**Sintoma:** Usuário não consegue fazer login
-**Solução:** 
-```python
-from users.utils import unlock_user_account
-user = User.objects.get(username='usuario')
-unlock_user_account(user)
-```
+### 8.1. Listar Permissões
 
-#### Token Inválido
-**Sintoma:** Erro 401 mesmo com token aparentemente válido
-**Verificar:** 
-1. Token está na blacklist?
-2. Token expirou?
-3. Formato do header está correto?
+-   **Endpoint:** `GET /api/users/admin/permissions/`
+-   **Sumário:** Listar permissões do sistema.
+-   **Descrição:** Retorna uma lista de permissões do sistema. (Sem paginação)
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK):**
+    ```json
+    {
+        "results": [
+            {
+                "id": 1,
+                "access_profile": 1, // ID do AccessProfile associado
+                "module": "TASKS",
+                "module_display": "Tasks",
+                "action": "CREATE",
+                "action_display": "Create"
+            }
+            // ... outras permissões
+        ]
+    }
+    ```
 
-#### Permissões Negadas
-**Sintoma:** Erro 403 para usuário aparentemente autorizado
-**Verificar:**
-1. Usuário tem o papel correto?
-2. Perfil de acesso está configurado?
-3. Permissão específica existe?
+### 8.2. Criar Nova Permissão
 
-## Roadmap Futuro
+-   **Endpoint:** `POST /api/users/admin/permissions/`
+-   **Sumário:** Criar nova permissão.
+-   **Descrição:** Cria uma nova permissão e a associa a um perfil de acesso.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`PermissionSerializer` - sem `id`, `module_display`, `action_display`):**
+    ```json
+    {
+        "access_profile": 1, // ID do AccessProfile
+        "module": "REPORTS",
+        "action": "VIEW"
+    }
+    ```
+-   **Response Body (201 Created - `PermissionSerializer`):**
+    *Dados da permissão criada.*
 
-### Melhorias Planejadas
-- [ ] Autenticação de dois fatores (2FA)
-- [ ] Single Sign-On (SSO)
-- [ ] Rate limiting por IP
-- [ ] Análise de comportamento suspeito
-- [ ] Políticas de senha mais avançadas
-- [ ] Integração com sistemas externos de autenticação
+### 8.3. Obter Detalhes da Permissão
 
-### Contribuindo
-Para contribuir com melhorias:
-1. Fork o repositório
-2. Crie uma branch para sua feature
-3. Implemente os testes
-4. Implemente a funcionalidade
-5. Atualize a documentação
-6. Abra um Pull Request
+-   **Endpoint:** `GET /api/users/admin/permissions/{id}/`
+-   **Sumário:** Obter detalhes da permissão.
+-   **Descrição:** Retorna informações detalhadas de uma permissão específica.
+-   **Permissões:** `HasModulePermission('USERS', 'VIEW')`
+-   **Response Body (200 OK - `PermissionSerializer`):**
+    *Similar à entrada na lista de permissões.*
 
-## Licença
-Este módulo é parte do sistema Planify e segue a mesma licença do projeto principal.
+### 8.4. Atualizar Permissão
+
+-   **Endpoint:** `PUT /api/users/admin/permissions/{id}/`
+-   **Sumário:** Atualizar permissão.
+-   **Descrição:** Atualiza todos os campos de uma permissão existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (`PermissionSerializer` - sem `id`, `module_display`, `action_display`):**
+    ```json
+    {
+        "access_profile": 2,
+        "module": "DOCUMENTS",
+        "action": "EDIT"
+    }
+    ```
+-   **Response Body (200 OK - `PermissionSerializer`):**
+    *Dados da permissão atualizada.*
+
+### 8.5. Atualizar Permissão Parcialmente
+
+-   **Endpoint:** `PATCH /api/users/admin/permissions/{id}/`
+-   **Sumário:** Atualizar permissão parcialmente.
+-   **Descrição:** Atualiza parcialmente uma permissão existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Request Body (Campos parciais do `PermissionSerializer`):**
+    ```json
+    {
+        "action": "DELETE"
+    }
+    ```
+-   **Response Body (200 OK - `PermissionSerializer`):**
+    *Dados da permissão atualizada.*
+
+### 8.6. Excluir Permissão
+
+-   **Endpoint:** `DELETE /api/users/admin/permissions/{id}/`
+-   **Sumário:** Excluir permissão.
+-   **Descrição:** Remove uma permissão existente.
+-   **Permissões:** `HasModulePermission('USERS', 'EDIT')`
+-   **Response Body (204 No Content):**
+
+## 9. Modelos de Dados (Serializers) Principais
+
+### UserSerializer
+
+Representa um usuário do sistema.
+
+-   `id` (Integer, Read-only): Identificador único do usuário.
+-   `username` (String): Nome de usuário único.
+-   `email` (String): Endereço de email único.
+-   `full_name` (String): Nome completo do usuário.
+-   `role` (String): Papel do usuário (ex: 'ADMIN', 'TEAM_MEMBER').
+-   `is_active` (Boolean): Indica se o usuário está ativo.
+-   `date_joined` (DateTime, Read-only): Data de registro do usuário.
+-   `password` (String, Write-only): Senha do usuário (usada para criação/atualização).
+-   `profile` (Object, Opcional): Dados do perfil do usuário (`UserProfileSerializer`).
+-   `access_profiles` (Array de Objects, Read-only): Perfis de acesso associados ao usuário (`UserAccessProfileSerializer`).
+
+### UserCreateSerializer
+
+Usado para criar novos usuários.
+
+-   `username` (String): Nome de usuário único.
+-   `email` (String): Endereço de email único.
+-   `full_name` (String): Nome completo do usuário.
+-   `password` (String, Write-only): Senha para o novo usuário.
+-   `role` (String, Opcional): Papel do usuário (default: 'TEAM_MEMBER').
+
+### UserProfileSerializer
+
+Representa o perfil de um usuário.
+
+-   `user` (Integer): ID do usuário associado.
+-   `phone` (String, Opcional): Número de telefone.
+-   `profile_picture` (String/File, Opcional): URL da foto de perfil ou arquivo para upload.
+-   `theme_preference` (String): Preferência de tema (ex: 'LIGHT', 'DARK', 'SYSTEM').
+-   `email_notifications` (Boolean): Habilita/desabilita notificações por email.
+-   `system_notifications` (Boolean): Habilita/desabilita notificações no sistema.
+
+### AccessProfileSerializer
+
+Representa um perfil de acesso (conjunto de permissões).
+
+-   `id` (Integer, Read-only): Identificador único do perfil de acesso.
+-   `name` (String): Nome do perfil de acesso.
+-   `description` (String, Opcional): Descrição do perfil.
+-   `permissions` (Array de Objects, Read-only): Lista de permissões associadas (`PermissionSerializer`).
+-   `created_at` (DateTime, Read-only): Data de criação.
+-   `updated_at` (DateTime, Read-only): Data da última atualização.
+
+### PermissionSerializer
+
+Representa uma permissão individual.
+
+-   `id` (Integer, Read-only): Identificador único da permissão.
+-   `access_profile` (Integer): ID do `AccessProfile` ao qual esta permissão pertence.
+-   `module` (String): Módulo do sistema (ex: 'PROJECTS', 'TASKS').
+-   `module_display` (String, Read-only): Nome de exibição do módulo.
+-   `action` (String): Ação permitida (ex: 'VIEW', 'CREATE', 'EDIT').
+-   `action_display` (String, Read-only): Nome de exibição da ação.
+
+### UserAccessProfileSerializer
+
+Representa a associação entre um usuário e um perfil de acesso.
+
+-   `id` (Integer, Read-only): Identificador único da associação.
+-   `access_profile` (Object, Read-only): Dados do perfil de acesso associado (`AccessProfileSerializer`).
+-   `access_profile_id` (Integer, Write-only): ID do `AccessProfile` para associar ao criar/atualizar.
 
 ---
-**Última atualização:** Junho 2025
-**Versão:** 2.0
+**Última atualização:** Baseado nos arquivos fornecidos.

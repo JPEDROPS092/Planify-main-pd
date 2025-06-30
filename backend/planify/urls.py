@@ -8,7 +8,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 from django.http import JsonResponse
-import debug_toolbar
 
 # Importações da drf_spectacular para geração de documentação OpenAPI
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -35,11 +34,14 @@ urlpatterns = [
     # Redireciona a rota raiz para o admin
     path('', RedirectView.as_view(url='/admin/', permanent=True), name='root'),
 
+    # Redireciona /docs para a documentação da API
+    path('docs/', RedirectView.as_view(url='/api/schema/swagger-ui/', permanent=True), name='docs'),
+
     # Admin do Django
     path('admin/', admin.site.urls),
 
     # === API URLs ===
-    # Todas as URLs da API serão prefixadas com 'api/'
+
     path('api/', include([
         # Raiz da API
         path('', api_root_view, name='api-root'), # Endpoint informativo na raiz da API
@@ -49,20 +51,18 @@ urlpatterns = [
         path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
         path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-        # MÓDULO DE USUÁRIOS (Autenticação e Gerenciamento de Usuários)
-        # users.urls já contém 'auth/' e os endpoints do router como 'users/', 'profiles/', etc.
-        # Então, as URLs finais serão como:
-        # /api/users/auth/login/
-        # /api/users/users/
-        # /api/users/profiles/
-        path('users/', include('users.urls', namespace='users')),
+        # === AUTENTICAÇÃO SIMPLIFICADA COM DJOSER ===
+        # Estes endpoints substituem as views manuais de autenticação
+        path('auth/', include('djoser.urls')),         # /auth/users/, /auth/users/me/, etc.
+        path('auth/', include('djoser.urls.jwt')),     # /auth/jwt/create/, /auth/jwt/refresh/, etc.
 
         # === OUTROS MÓDULOS DO SISTEMA ===
-        # Exemplo: /api/teams/
-        path('teams/', include('teams.urls', namespace='teams')), # Adicionar namespace é boa prática
-        # Exemplo: /api/projects/
+       path('users/', include('users.urls', namespace='users')),
+
+        path('teams/', include('teams.urls', namespace='teams')), 
+        
         path('projects/', include('projects.urls', namespace='projects')),
-        # Exemplo: /api/tasks/
+        
         path('tasks/', include('tasks.urls', namespace='tasks')),
         # Exemplo: /api/risks/
         path('risks/', include('risks.urls', namespace='risks')),
@@ -82,5 +82,3 @@ if settings.DEBUG:
     # o runserver do Django, pois ele já serve arquivos estáticos automaticamente.
     # Mas não faz mal se você quiser ser explícito ou se tiver uma configuração diferente.
     # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    if 'debug_toolbar' in settings.INSTALLED_APPS: # Verifica se o debug_toolbar está instalado
-        urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
