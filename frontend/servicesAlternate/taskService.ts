@@ -316,29 +316,11 @@ export const useTaskService = () => {
     },
     
     getTasksBySprint: async (sprintId: number, params: Omit<TaskFilters, 'sprint'> = {}): Promise<PaginatedTarefaListList> => {
-      const response = await tasksApi.tasksTarefasList(
-        params.atrasada,
-        params.data_inicio_antes_after,
-        params.data_inicio_antes_before,
-        params.data_inicio_apos_after,
-        params.data_inicio_apos_before,
-        params.data_termino_antes_after,
-        params.data_termino_antes_before,
-        params.data_termino_apos_after,
-        params.data_termino_apos_before,
-        params.descricao,
-        params.minhas_tarefas,
-        params.ordering,
-        params.page,
+      const response = await tasksApi.tasksTarefasSprintList(
         params.prioridade,
-        params.projeto,
         params.responsavel,
-        params.search,
-        params.sem_responsavel,
-        params.sem_sprint,
         sprintId,
         params.status,
-        params.titulo
       );
       return response.data;
     },

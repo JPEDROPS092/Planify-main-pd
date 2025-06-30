@@ -4,423 +4,92 @@ info:
   version: 1.0.0
   description: Sistema de Gerenciamento de Projetos
 paths:
-  /api/auth/login/:
+  /api/auth/jwt/create/:
     post:
-      operationId: auth_login_create
-      description: "\n    Realiza o login do usuário e retorna os tokens de acesso\
-        \ e refresh.\n    \n    O token de acesso deve ser usado no header de todas\
-        \ as requisições:\n    `Authorization: JWT <access_token>`\n    \n    Quando\
-        \ o token de acesso expirar (após 1 hora), use o token de refresh para obter\
-        \ um novo.\n    "
-      summary: Login de usuário
+      operationId: auth_jwt_create_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
       tags:
-      - Autenticação
+      - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
+              $ref: '#/components/schemas/TokenObtainPairRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
+              $ref: '#/components/schemas/TokenObtainPairRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
+              $ref: '#/components/schemas/TokenObtainPairRequest'
         required: true
       security:
-      - Bearer: []
-      - {}
+      - JWT Authentication: []
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/TokenObtainPair'
           description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginError'
-          description: Credenciais inválidas
-  /api/auth/logout/:
+  /api/auth/jwt/refresh/:
     post:
-      operationId: auth_logout_create
-      description: Realiza o logout do usuário invalidando o token atual.
-      summary: Logout de usuário
+      operationId: auth_jwt_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
       tags:
-      - Autenticação
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogoutResponse'
+                $ref: '#/components/schemas/TokenRefresh'
           description: ''
-  /api/auth/permissions/:
-    get:
-      operationId: auth_permissions_list
-      description: Retorna uma lista paginada de permissões.
-      summary: Listar permissões
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - Permissões
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedPermissionList'
-          description: ''
+  /api/auth/jwt/verify/:
     post:
-      operationId: auth_permissions_create
-      description: Cria uma nova permissão.
-      summary: Criar nova permissão
+      operationId: auth_jwt_verify_create
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
       tags:
-      - Permissões
+      - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PermissionRequest'
+              $ref: '#/components/schemas/TokenVerifyRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PermissionRequest'
+              $ref: '#/components/schemas/TokenVerifyRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PermissionRequest'
+              $ref: '#/components/schemas/TokenVerifyRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Permission'
-          description: ''
-  /api/auth/permissions/{id}/:
-    get:
-      operationId: auth_permissions_retrieve
-      description: Retorna informações detalhadas de uma permissão específica.
-      summary: Obter detalhes da permissão
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this permission.
-        required: true
-      tags:
-      - Permissões
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - JWT Authentication: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Permission'
-          description: ''
-    put:
-      operationId: auth_permissions_update
-      description: Atualiza todos os campos de uma permissão existente.
-      summary: Atualizar permissão
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this permission.
-        required: true
-      tags:
-      - Permissões
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PermissionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PermissionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PermissionRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Permission'
-          description: ''
-    patch:
-      operationId: auth_permissions_partial_update
-      description: Atualiza parcialmente uma permissão existente.
-      summary: Atualizar permissão parcialmente
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this permission.
-        required: true
-      tags:
-      - Permissões
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedPermissionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedPermissionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedPermissionRequest'
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Permission'
-          description: ''
-    delete:
-      operationId: auth_permissions_destroy
-      description: Remove uma permissão existente.
-      summary: Excluir permissão
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this permission.
-        required: true
-      tags:
-      - Permissões
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '204':
           description: No response body
-  /api/auth/profiles/:
-    get:
-      operationId: auth_profiles_list
-      description: Retorna uma lista paginada de perfis.
-      summary: Listar perfis
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - Perfis
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedUserProfileList'
-          description: ''
-    post:
-      operationId: auth_profiles_create
-      description: Cria um novo perfil.
-      summary: Criar novo perfil
-      tags:
-      - Perfis
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
-  /api/auth/profiles/{id}/:
-    get:
-      operationId: auth_profiles_retrieve
-      description: Retorna informações detalhadas de um perfil específico.
-      summary: Obter detalhes do perfil
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user profile.
-        required: true
-      tags:
-      - Perfis
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
-    put:
-      operationId: auth_profiles_update
-      description: Atualiza todos os campos de um perfil existente.
-      summary: Atualizar perfil
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user profile.
-        required: true
-      tags:
-      - Perfis
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserProfileRequest'
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
-    patch:
-      operationId: auth_profiles_partial_update
-      description: Atualiza parcialmente um perfil existente.
-      summary: Atualizar perfil parcialmente
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user profile.
-        required: true
-      tags:
-      - Perfis
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfileRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfileRequest'
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
-    delete:
-      operationId: auth_profiles_destroy
-      description: Remove um perfil existente.
-      summary: Excluir perfil
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user profile.
-        required: true
-      tags:
-      - Perfis
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '204':
-          description: No response body
-  /api/auth/token/refresh/:
-    post:
-      operationId: auth_token_refresh_create
-      description: "\n    Atualiza um token de acesso expirado usando o token de refresh.\n\
-        \    "
-      summary: Atualizar token de acesso
-      tags:
-      - Autenticação
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshRequestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RefreshRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RefreshRequestRequest'
-        required: true
-      security:
-      - Bearer: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RefreshResponse'
-          description: ''
   /api/auth/users/:
     get:
       operationId: auth_users_list
-      description: Retorna uma lista paginada de usuários.
-      summary: Listar usuários
       parameters:
       - name: page
         required: false
@@ -429,10 +98,10 @@ paths:
         schema:
           type: integer
       tags:
-      - Usuários
+      - auth
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -442,10 +111,8 @@ paths:
           description: ''
     post:
       operationId: auth_users_create
-      description: Cria um novo usuário.
-      summary: Criar novo usuário
       tags:
-      - Usuários
+      - auth
       requestBody:
         content:
           application/json:
@@ -459,8 +126,9 @@ paths:
               $ref: '#/components/schemas/UserCreateRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
       responses:
         '201':
           content:
@@ -471,8 +139,6 @@ paths:
   /api/auth/users/{id}/:
     get:
       operationId: auth_users_retrieve
-      description: Retorna informações detalhadas de um usuário específico.
-      summary: Obter detalhes do usuário
       parameters:
       - in: path
         name: id
@@ -481,10 +147,10 @@ paths:
         description: A unique integer value identifying this user.
         required: true
       tags:
-      - Usuários
+      - auth
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -494,8 +160,6 @@ paths:
           description: ''
     put:
       operationId: auth_users_update
-      description: Atualiza todos os campos de um usuário existente.
-      summary: Atualizar usuário
       parameters:
       - in: path
         name: id
@@ -504,7 +168,7 @@ paths:
         description: A unique integer value identifying this user.
         required: true
       tags:
-      - Usuários
+      - auth
       requestBody:
         content:
           application/json:
@@ -518,8 +182,8 @@ paths:
               $ref: '#/components/schemas/UserRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -529,8 +193,6 @@ paths:
           description: ''
     patch:
       operationId: auth_users_partial_update
-      description: Atualiza parcialmente um usuário existente.
-      summary: Atualizar usuário parcialmente
       parameters:
       - in: path
         name: id
@@ -539,7 +201,7 @@ paths:
         description: A unique integer value identifying this user.
         required: true
       tags:
-      - Usuários
+      - auth
       requestBody:
         content:
           application/json:
@@ -552,8 +214,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -563,8 +225,6 @@ paths:
           description: ''
     delete:
       operationId: auth_users_destroy
-      description: Remove um usuário existente.
-      summary: Excluir usuário
       parameters:
       - in: path
         name: id
@@ -573,232 +233,49 @@ paths:
         description: A unique integer value identifying this user.
         required: true
       tags:
-      - Usuários
+      - auth
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
-  /api/auth/users/{id}/activate/:
+  /api/auth/users/activation/:
     post:
-      operationId: auth_users_activate_create
-      description: Ativa um usuário inativo.
-      summary: Ativar usuário
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user.
-        required: true
+      operationId: auth_users_activation_create
       tags:
-      - Usuários
+      - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRequest'
+              $ref: '#/components/schemas/ActivationRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserRequest'
+              $ref: '#/components/schemas/ActivationRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserRequest'
+              $ref: '#/components/schemas/ActivationRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
       responses:
         '200':
-          description: No response body
-  /api/auth/users/{id}/deactivate/:
-    post:
-      operationId: auth_users_deactivate_create
-      description: Desativa um usuário ativo.
-      summary: Desativar usuário
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user.
-        required: true
-      tags:
-      - Usuários
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
-  /api/auth/users/{id}/reset-password/:
-    post:
-      operationId: auth_users_reset_password_create
-      description: Redefine a senha do usuário para uma senha temporária.
-      summary: Redefinir senha
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Usuários
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
-  /api/auth/users/{id}/reset_password/:
-    post:
-      operationId: auth_users_reset_password_create_2
-      description: Redefine a senha do usuário para uma senha temporária.
-      summary: Redefinir senha
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user.
-        required: true
-      tags:
-      - Usuários
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
-  /api/auth/users/{id}/unlock/:
-    post:
-      operationId: auth_users_unlock_create
-      description: Desbloqueia um usuário após tentativas de login malsucedidas.
-      summary: Desbloquear usuário
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user.
-        required: true
-      tags:
-      - Usuários
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
-  /api/auth/users/change-password/:
-    post:
-      operationId: auth_users_change_password_create
-      description: Altera a senha do usuário autenticado.
-      summary: Alterar senha
-      tags:
-      - Perfil
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
-  /api/auth/users/change_password/:
-    post:
-      operationId: auth_users_change_password_create_2
-      description: Altera a senha do usuário autenticado.
-      summary: Alterar senha
-      tags:
-      - Perfil
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+          description: ''
   /api/auth/users/me/:
     get:
       operationId: auth_users_me_retrieve
-      description: Retorna as informações do usuário autenticado.
-      summary: Retornar minhas informações
       tags:
-      - Perfil
+      - auth
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -806,18 +283,544 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
-  /api/auth/users/permissions/:
-    get:
-      operationId: auth_users_permissions_retrieve
-      description: Retorna as permissões do usuário autenticado.
-      summary: Retornar minhas permissões
+    put:
+      operationId: auth_users_me_update
       tags:
-      - Perfil
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: auth_users_me_partial_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: auth_users_me_destroy
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/users/resend_activation/:
+    post:
+      operationId: auth_users_resend_activation_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_password/:
+    post:
+      operationId: auth_users_reset_password_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_password_confirm/:
+    post:
+      operationId: auth_users_reset_password_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetConfirm'
+          description: ''
+  /api/auth/users/reset_username/:
+    post:
+      operationId: auth_users_reset_username_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendEmailResetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailReset'
+          description: ''
+  /api/auth/users/reset_username_confirm/:
+    post:
+      operationId: auth_users_reset_username_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UsernameResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameResetConfirm'
+          description: ''
+  /api/auth/users/set_password/:
+    post:
+      operationId: auth_users_set_password_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetPassword'
+          description: ''
+  /api/auth/users/set_username/:
+    post:
+      operationId: auth_users_set_username_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetUsernameRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUsername'
+          description: ''
+  /api/communications/:
+    get:
+      operationId: communications_list
+      description: |-
+        ViewSet para gerenciamento de comunicações formais.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Comunicações formais são documentos oficiais como atas, memorandos e relatórios.
+
+        Endpoints:
+        - GET /comunicacoes/ - Lista todas as comunicações (com filtros)
+        - POST /comunicacoes/ - Cria uma nova comunicação
+        - GET /comunicacoes/{id}/ - Obtém detalhes de uma comunicação
+        - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
+        - DELETE /comunicacoes/{id}/ - Remove uma comunicação
+      parameters:
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: 'Data de fim para filtrar comunicações (formato: YYYY-MM-DD)'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: 'Data de início para filtrar comunicações (formato: YYYY-MM-DD)'
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: projeto
+        schema:
+          type: integer
+      - in: query
+        name: remetente
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: texto
+        schema:
+          type: string
+        description: Texto contido no conteúdo da comunicação (busca case-insensitive)
+      - in: query
+        name: tipo
+        schema:
+          type: string
+          enum:
+          - ATA
+          - COMUNICADO
+          - MEMORANDO
+          - OFICIO
+          - OUTRO
+          - RELATORIO
+        description: |-
+          Tipo de comunicação formal
+
+          * `ATA` - Ata de Reunião
+          * `MEMORANDO` - Memorando
+          * `RELATORIO` - Relatório
+          * `OFICIO` - Ofício
+          * `COMUNICADO` - Comunicado Geral
+          * `OUTRO` - Outro
+      - in: query
+        name: titulo
+        schema:
+          type: string
+        description: Texto contido no título da comunicação (busca case-insensitive)
+      tags:
+      - communications
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedComunicacaoList'
+          description: ''
+    post:
+      operationId: communications_create
+      description: |-
+        ViewSet para gerenciamento de comunicações formais.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Comunicações formais são documentos oficiais como atas, memorandos e relatórios.
+
+        Endpoints:
+        - GET /comunicacoes/ - Lista todas as comunicações (com filtros)
+        - POST /comunicacoes/ - Cria uma nova comunicação
+        - GET /comunicacoes/{id}/ - Obtém detalhes de uma comunicação
+        - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
+        - DELETE /comunicacoes/{id}/ - Remove uma comunicação
+      tags:
+      - communications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comunicacao'
+          description: ''
+  /api/communications/{id}/:
+    get:
+      operationId: communications_retrieve
+      description: |-
+        ViewSet para gerenciamento de comunicações formais.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Comunicações formais são documentos oficiais como atas, memorandos e relatórios.
+
+        Endpoints:
+        - GET /comunicacoes/ - Lista todas as comunicações (com filtros)
+        - POST /comunicacoes/ - Cria uma nova comunicação
+        - GET /comunicacoes/{id}/ - Obtém detalhes de uma comunicação
+        - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
+        - DELETE /comunicacoes/{id}/ - Remove uma comunicação
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Comunicação.
+        required: true
+      tags:
+      - communications
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comunicacao'
+          description: ''
+    put:
+      operationId: communications_update
+      description: |-
+        Sobrescreve o método de atualização para verificar permissões.
+
+        Apenas o remetente original ou um administrador pode atualizar uma comunicação.
+
+        Args:
+            request: Objeto de requisição
+
+        Returns:
+            Response: Resposta da atualização ou erro de permissão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Comunicação.
+        required: true
+      tags:
+      - communications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ComunicacaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comunicacao'
+          description: ''
+    patch:
+      operationId: communications_partial_update
+      description: |-
+        ViewSet para gerenciamento de comunicações formais.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Comunicações formais são documentos oficiais como atas, memorandos e relatórios.
+
+        Endpoints:
+        - GET /comunicacoes/ - Lista todas as comunicações (com filtros)
+        - POST /comunicacoes/ - Cria uma nova comunicação
+        - GET /comunicacoes/{id}/ - Obtém detalhes de uma comunicação
+        - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
+        - DELETE /comunicacoes/{id}/ - Remove uma comunicação
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Comunicação.
+        required: true
+      tags:
+      - communications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedComunicacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedComunicacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedComunicacaoRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comunicacao'
+          description: ''
+    delete:
+      operationId: communications_destroy
+      description: |-
+        ViewSet para gerenciamento de comunicações formais.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Comunicações formais são documentos oficiais como atas, memorandos e relatórios.
+
+        Endpoints:
+        - GET /comunicacoes/ - Lista todas as comunicações (com filtros)
+        - POST /comunicacoes/ - Cria uma nova comunicação
+        - GET /comunicacoes/{id}/ - Obtém detalhes de uma comunicação
+        - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
+        - DELETE /comunicacoes/{id}/ - Remove uma comunicação
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Comunicação.
+        required: true
+      tags:
+      - communications
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
           description: No response body
   /api/communications/configuracoes/:
     get:
@@ -834,8 +837,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -860,10 +863,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ConfiguracaoNotificacaoRequest'
-        required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -886,8 +888,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -919,10 +921,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ConfiguracaoNotificacaoRequest'
-        required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -955,8 +956,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedConfiguracaoNotificacaoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -978,8 +979,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -992,8 +993,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1011,6 +1012,18 @@ paths:
         name: autor
         schema:
           type: integer
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: 'Data de fim para filtrar mensagens (formato: YYYY-MM-DD)'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: 'Data de início para filtrar mensagens (formato: YYYY-MM-DD)'
       - name: ordering
         required: false
         in: query
@@ -1027,11 +1040,22 @@ paths:
         name: projeto
         schema:
           type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: texto
+        schema:
+          type: string
+        description: Texto contido na mensagem (busca case-insensitive)
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1058,8 +1082,8 @@ paths:
               $ref: '#/components/schemas/ChatMensagemRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -1082,8 +1106,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1117,8 +1141,8 @@ paths:
               $ref: '#/components/schemas/ChatMensagemRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1151,8 +1175,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedChatMensagemRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1174,8 +1198,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -1214,8 +1238,8 @@ paths:
               $ref: '#/components/schemas/ChatMensagemRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1241,8 +1265,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1257,9 +1281,34 @@ paths:
       summary: Listar notificações
       parameters:
       - in: query
+        name: content_type
+        schema:
+          type: integer
+      - in: query
+        name: content_type_model
+        schema:
+          type: string
+        description: 'Filtrar por tipo de objeto relacionado (ex: projeto, tarefa)'
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+        description: 'Data de fim para filtrar notificações (formato: YYYY-MM-DD)'
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+        description: 'Data de início para filtrar notificações (formato: YYYY-MM-DD)'
+      - in: query
         name: lida
         schema:
           type: boolean
+      - in: query
+        name: object_id
+        schema:
+          type: integer
       - name: ordering
         required: false
         in: query
@@ -1290,6 +1339,12 @@ paths:
         name: projeto
         schema:
           type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       - in: query
         name: tarefa
         schema:
@@ -1299,6 +1354,7 @@ paths:
         schema:
           type: string
           enum:
+          - CHAT
           - DOCUMENTO
           - EQUIPE
           - PROJETO
@@ -1314,11 +1370,17 @@ paths:
           * `RISCO` - Risco
           * `DOCUMENTO` - Documento
           * `SISTEMA` - Sistema
+          * `CHAT` - Chat
+      - in: query
+        name: titulo
+        schema:
+          type: string
+        description: Texto contido no título da notificação (busca case-insensitive)
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1345,8 +1407,8 @@ paths:
               $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -1369,8 +1431,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1404,8 +1466,8 @@ paths:
               $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1438,8 +1500,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedNotificacaoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1461,8 +1523,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -1503,8 +1565,8 @@ paths:
               $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1542,8 +1604,8 @@ paths:
               $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1568,8 +1630,8 @@ paths:
       tags:
       - Comunicação
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1628,8 +1690,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1656,8 +1718,8 @@ paths:
               $ref: '#/components/schemas/AlertaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -1680,8 +1742,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1715,8 +1777,8 @@ paths:
               $ref: '#/components/schemas/AlertaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1749,8 +1811,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAlertaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1772,8 +1834,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -1806,8 +1868,8 @@ paths:
               $ref: '#/components/schemas/AlertaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -1840,8 +1902,8 @@ paths:
               $ref: '#/components/schemas/AlertaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -1855,8 +1917,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -1887,8 +1949,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1915,8 +1977,8 @@ paths:
               $ref: '#/components/schemas/CategoriaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -1939,8 +2001,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -1974,8 +2036,8 @@ paths:
               $ref: '#/components/schemas/CategoriaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2008,8 +2070,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCategoriaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2031,8 +2093,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -2092,8 +2154,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2120,8 +2182,8 @@ paths:
               $ref: '#/components/schemas/CustoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -2144,8 +2206,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2179,8 +2241,8 @@ paths:
               $ref: '#/components/schemas/CustoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2213,8 +2275,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCustoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2236,8 +2298,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -2251,8 +2313,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2266,8 +2328,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2281,8 +2343,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2294,8 +2356,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2318,8 +2380,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2346,8 +2408,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -2370,8 +2432,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2405,8 +2467,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2439,8 +2501,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedOrcamentoProjetoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2462,8 +2524,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -2496,8 +2558,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2509,8 +2571,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2537,8 +2599,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2565,8 +2627,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -2589,8 +2651,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2624,8 +2686,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2658,8 +2720,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedOrcamentoTarefaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2681,8 +2743,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -2715,8 +2777,8 @@ paths:
               $ref: '#/components/schemas/OrcamentoTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2728,8 +2790,8 @@ paths:
       tags:
       - Custo
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -2795,8 +2857,8 @@ paths:
       tags:
       - Documentos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2823,8 +2885,8 @@ paths:
               $ref: '#/components/schemas/DocumentoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -2859,8 +2921,8 @@ paths:
       tags:
       - Documentos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2896,8 +2958,8 @@ paths:
               $ref: '#/components/schemas/DocumentoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2934,8 +2996,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedDocumentoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -2961,8 +3023,8 @@ paths:
       tags:
       - Documentos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: Documento excluído com sucesso
@@ -2990,8 +3052,8 @@ paths:
               example:
                 texto: Este documento precisa de revisão na seção 3.
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -3026,8 +3088,8 @@ paths:
               example:
                 tarefa_id: 1
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3054,8 +3116,8 @@ paths:
       tags:
       - Documentos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3096,8 +3158,8 @@ paths:
       - Documentos
       - Comentários
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3126,8 +3188,8 @@ paths:
               $ref: '#/components/schemas/ComentarioRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -3160,8 +3222,8 @@ paths:
       - Documentos
       - Comentários
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3199,8 +3261,8 @@ paths:
               $ref: '#/components/schemas/ComentarioRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3241,8 +3303,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedComentarioRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3272,8 +3334,8 @@ paths:
       - Documentos
       - Comentários
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: Comentário excluído com sucesso
@@ -3307,8 +3369,8 @@ paths:
       - Documentos
       - Histórico
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3333,8 +3395,8 @@ paths:
       - Documentos
       - Histórico
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3360,6 +3422,25 @@ paths:
           type: boolean
         description: Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)
       - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: criado_por
+        schema:
+          type: integer
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+      - in: query
         name: data_fim_antes_after
         schema:
           type: string
@@ -3383,6 +3464,11 @@ paths:
           type: string
           format: date
         description: Filtra projetos com data de fim após a data especificada
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
       - in: query
         name: data_inicio_antes_after
         schema:
@@ -3412,6 +3498,15 @@ paths:
         schema:
           type: string
         description: Filtra por descrição (case insensitive)
+      - in: query
+        name: has_sprints
+        schema:
+          type: boolean
+      - in: query
+        name: member
+        schema:
+          type: string
+        description: Member Username
       - in: query
         name: membro
         schema:
@@ -3453,8 +3548,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3481,8 +3576,8 @@ paths:
               $ref: '#/components/schemas/ProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -3505,8 +3600,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3540,8 +3635,8 @@ paths:
               $ref: '#/components/schemas/ProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3574,8 +3669,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedProjetoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3597,8 +3692,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -3629,8 +3724,8 @@ paths:
               $ref: '#/components/schemas/MembroProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -3665,8 +3760,8 @@ paths:
               $ref: '#/components/schemas/ProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3702,8 +3797,8 @@ paths:
               $ref: '#/components/schemas/ProjetoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3726,8 +3821,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3750,8 +3845,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3774,6 +3869,25 @@ paths:
         schema:
           type: boolean
         description: Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: criado_por
+        schema:
+          type: integer
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
       - in: query
         name: data_fim_antes_after
         schema:
@@ -3798,6 +3912,11 @@ paths:
           type: string
           format: date
         description: Filtra projetos com data de fim após a data especificada
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
       - in: query
         name: data_inicio_antes_after
         schema:
@@ -3827,12 +3946,21 @@ paths:
         schema:
           type: string
         description: Filtra por descrição (case insensitive)
+      - in: query
+        name: has_sprints
+        schema:
+          type: boolean
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this Projeto.
         required: true
+      - in: query
+        name: member
+        schema:
+          type: string
+        description: Member Username
       - in: query
         name: membro
         schema:
@@ -3874,8 +4002,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3899,8 +4027,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3930,14 +4058,14 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
   /api/projects/{id}/sprints/:
     get:
-      operationId: projects_sprints_retrieve
+      operationId: projects_sprints_retrieve_2
       description: Listar sprints do projeto.
       summary: Sprints do projeto
       parameters:
@@ -3950,8 +4078,8 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -3959,381 +4087,138 @@ paths:
               schema:
                 $ref: '#/components/schemas/Projeto'
           description: ''
-  /api/projects/{projeto_id}/dashboard/:
+  /api/projects/history/:
     get:
-      operationId: projects_dashboard_retrieve
-      description: Fornece dados para o dashboard de um projeto específico, incluindo
-        visualizações Kanban e Gantt
-      summary: Dashboard do projeto
-      parameters:
-      - in: path
-        name: projeto_id
-        schema:
-          type: integer
-        required: true
-      - in: query
-        name: projeto_id
-        schema:
-          type: integer
-        description: ID do projeto
-        required: true
-      tags:
-      - Projetos
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjetoDashboardResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-  /api/projects/{projeto_id}/exportar/:
-    get:
-      operationId: projects_exportar_retrieve
-      description: Exporta dados detalhados de um projeto específico em formatos CSV
-        ou JSON. O usuário deve ser membro do projeto ou um administrador para acessá-lo.
-        É possível selecionar diferentes seções de dados para incluir na exportação,
-        como informações básicas do projeto, lista de tarefas, equipe, riscos e custos.
-      summary: Exportar dados do projeto
+      operationId: projects_history_list
+      description: Retorna uma lista paginada de alterações de status de projetos.
+      summary: Listar histórico de status
       parameters:
       - in: query
-        name: format
+        name: alterado_em
         schema:
           type: string
-          default: csv
-        description: 'Formato de exportação desejado. Opções: "csv" ou "json".'
+          format: date-time
       - in: query
-        name: include_costs
+        name: alterado_em_antes_after
         schema:
-          type: boolean
-          default: false
-        description: Define se os custos associados ao projeto devem ser incluídos.
+          type: string
+          format: date
+        description: Filtra registros alterados antes da data especificada
       - in: query
-        name: include_project
+        name: alterado_em_antes_before
         schema:
-          type: boolean
-          default: true
-        description: Define se os dados básicos do projeto devem ser incluídos.
+          type: string
+          format: date
+        description: Filtra registros alterados antes da data especificada
       - in: query
-        name: include_risks
+        name: alterado_em_apos_after
         schema:
-          type: boolean
-          default: false
-        description: Define se os riscos associados ao projeto devem ser incluídos.
+          type: string
+          format: date
+        description: Filtra registros alterados após a data especificada
       - in: query
-        name: include_tasks
+        name: alterado_em_apos_before
         schema:
-          type: boolean
-          default: true
-        description: Define se as tarefas (incluindo dados para Kanban e Gantt) do
-          projeto devem ser incluídas.
+          type: string
+          format: date
+        description: Filtra registros alterados após a data especificada
       - in: query
-        name: include_team
-        schema:
-          type: boolean
-          default: false
-        description: Define se os dados da equipe do projeto devem ser incluídos.
-      - in: path
-        name: projeto_id
+        name: alterado_por
         schema:
           type: integer
-        description: ID do projeto a ser exportado.
-        required: true
+        description: Filtrar por ID do usuário que alterou
+      - in: query
+        name: alterado_por_username
+        schema:
+          type: string
+        description: Filtra por username do usuário que alterou (case insensitive)
+      - in: query
+        name: novo_status
+        schema:
+          type: string
+        description: Filtrar por novo status (separados por vírgula)
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenar resultados (ex: -alterado_em)'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: projeto
+        schema:
+          type: integer
+        description: Filtrar por ID do projeto
+      - in: query
+        name: projeto_titulo
+        schema:
+          type: string
+        description: Filtra por título do projeto (case insensitive)
+      - in: query
+        name: status_anterior
+        schema:
+          type: string
+        description: Filtrar por status anterior (separados por vírgula)
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: string
-                format: binary
+                $ref: '#/components/schemas/PaginatedHistoricoStatusProjetoList'
           description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-  /api/projects/{projeto_id}/gantt/:
+  /api/projects/history/{id}/:
     get:
-      operationId: projects_gantt_retrieve
-      description: Fornece dados para a visualização Gantt de um projeto, com tarefas
-        e suas dependências
-      summary: Visualização Gantt do projeto
+      operationId: projects_history_retrieve
+      description: Retorna informações detalhadas de uma alteração específica de status.
+      summary: Obter detalhe de alteração de status
       parameters:
       - in: path
-        name: projeto_id
+        name: id
         schema:
           type: integer
-        required: true
-      - in: query
-        name: projeto_id
-        schema:
-          type: integer
-        description: ID do projeto
+        description: A unique integer value identifying this Histórico de Status.
         required: true
       tags:
-      - Projetos
+      - projects
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GanttResponse'
+                $ref: '#/components/schemas/HistoricoStatusProjeto'
           description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-  /api/projects/{projeto_id}/kanban/:
+  /api/projects/history/resumo_por_projeto/:
     get:
-      operationId: projects_kanban_retrieve
-      description: Fornece dados para a visualização Kanban de um projeto, com tarefas
-        agrupadas por status
-      summary: Visualização Kanban do projeto
-      parameters:
-      - in: path
-        name: projeto_id
-        schema:
-          type: integer
-        required: true
+      operationId: projects_history_resumo_por_projeto_retrieve
+      description: Retorna um resumo estatístico das alterações de status agrupadas
+        por projeto.
+      summary: Resumo de alterações por projeto
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KanbanResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-    patch:
-      operationId: projects_kanban_partial_update
-      description: Atualiza os quadro Kanban de um projeto existente.
-      summary: Atualizar Kanban do projeto
-      parameters:
-      - in: path
-        name: projeto_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Projetos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedKanbanResponseRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedKanbanResponseRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedKanbanResponseRequest'
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/KanbanResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-  /api/projects/{projeto_id}/tarefas/criar/:
-    post:
-      operationId: projects_tarefas_criar_create
-      description: Cria uma nova tarefa no contexto de um projeto específico
-      summary: Criar tarefa no projeto
-      parameters:
-      - in: path
-        name: projeto_id
-        schema:
-          type: integer
-        required: true
-      - in: query
-        name: projeto_id
-        schema:
-          type: integer
-        description: ID do projeto
-        required: true
-      tags:
-      - Projetos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TarefaCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TarefaCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TarefaCreateRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tarefa'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-  /api/projects/{projeto_id}/tarefas/criar-multiplas/:
-    post:
-      operationId: projects_tarefas_criar_multiplas_create
-      description: Cria múltiplas tarefas em lote no contexto de um projeto específico
-      summary: Criar múltiplas tarefas no projeto
-      parameters:
-      - in: path
-        name: projeto_id
-        schema:
-          type: integer
-        required: true
-      - in: query
-        name: projeto_id
-        schema:
-          type: integer
-        description: ID do projeto
-        required: true
-      tags:
-      - Projetos
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TarefasBulkCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TarefasBulkCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TarefasBulkCreateRequest'
-        required: true
-      security:
-      - JWT_Authentication: []
-      - Bearer: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '207':
-          description: Criação parcial - algumas tarefas foram criadas com sucesso,
-            outras falharam
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/HistoricoStatusProjeto'
           description: ''
   /api/projects/my_projects/:
     get:
@@ -4350,6 +4235,25 @@ paths:
         schema:
           type: boolean
         description: Filtra projetos atrasados (data_fim < hoje e status != CONCLUIDO)
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: criado_por
+        schema:
+          type: integer
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
       - in: query
         name: data_fim_antes_after
         schema:
@@ -4374,6 +4278,11 @@ paths:
           type: string
           format: date
         description: Filtra projetos com data de fim após a data especificada
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
       - in: query
         name: data_inicio_antes_after
         schema:
@@ -4403,6 +4312,15 @@ paths:
         schema:
           type: string
         description: Filtra por descrição (case insensitive)
+      - in: query
+        name: has_sprints
+        schema:
+          type: boolean
+      - in: query
+        name: member
+        schema:
+          type: string
+        description: Member Username
       - in: query
         name: membro
         schema:
@@ -4444,14 +4362,343 @@ paths:
       tags:
       - Projetos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedProjetoList'
+          description: ''
+  /api/projects/sprints/:
+    get:
+      operationId: projects_sprints_list
+      description: Retorna uma lista paginada de sprints com informações detalhadas.
+      summary: Listar sprints
+      parameters:
+      - in: query
+        name: ativa
+        schema:
+          type: boolean
+        description: Filtrar sprints ativas
+      - in: query
+        name: data_fim
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: data_fim_antes_after
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de fim antes da data especificada
+      - in: query
+        name: data_fim_antes_before
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de fim antes da data especificada
+      - in: query
+        name: data_fim_apos_after
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de fim após a data especificada
+      - in: query
+        name: data_fim_apos_before
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de fim após a data especificada
+      - in: query
+        name: data_inicio
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: data_inicio_antes_after
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de início antes da data especificada
+      - in: query
+        name: data_inicio_antes_before
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de início antes da data especificada
+      - in: query
+        name: data_inicio_apos_after
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de início após a data especificada
+      - in: query
+        name: data_inicio_apos_before
+        schema:
+          type: string
+          format: date
+        description: Filtra sprints com data de início após a data especificada
+      - in: query
+        name: descricao
+        schema:
+          type: string
+        description: Filtra por descrição (case insensitive)
+      - in: query
+        name: nome
+        schema:
+          type: string
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenar resultados (ex: -data_inicio,titulo)'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: projeto
+        schema:
+          type: integer
+        description: Filtrar por ID do projeto
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Buscar por título ou descrição
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filtrar por status
+      - in: query
+        name: titulo
+        schema:
+          type: string
+        description: Filtra por título (case insensitive)
+      tags:
+      - Projetos
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSprintList'
+          description: ''
+    post:
+      operationId: projects_sprints_create
+      description: Cria uma nova sprint associada a um projeto.
+      summary: Criar nova sprint
+      tags:
+      - Projetos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+          description: ''
+  /api/projects/sprints/{id}/:
+    get:
+      operationId: projects_sprints_retrieve
+      description: Retorna informações detalhadas de uma sprint específica.
+      summary: Obter detalhes da sprint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      tags:
+      - Projetos
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+          description: ''
+    put:
+      operationId: projects_sprints_update
+      description: Atualiza todos os campos de uma sprint existente.
+      summary: Atualizar sprint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      tags:
+      - Projetos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SprintRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+          description: ''
+    patch:
+      operationId: projects_sprints_partial_update
+      description: Atualiza parcialmente uma sprint existente.
+      summary: Atualizar sprint parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      tags:
+      - Projetos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSprintRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSprintRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSprintRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+          description: ''
+    delete:
+      operationId: projects_sprints_destroy
+      description: Remove permanentemente uma sprint.
+      summary: Excluir sprint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      tags:
+      - Projetos
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/sprints/{id}/resumo/:
+    get:
+      operationId: projects_sprints_resumo_retrieve
+      description: Retorna um resumo estatístico da sprint, incluindo progresso, tarefas
+        por status e outros indicadores.
+      summary: Resumo da sprint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      tags:
+      - Projetos
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+          description: ''
+  /api/projects/sprints/{id}/tarefas/:
+    get:
+      operationId: projects_sprints_tarefas_retrieve
+      description: Retorna todas as tarefas associadas a uma sprint específica.
+      summary: Listar tarefas da sprint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Sprint.
+        required: true
+      - in: query
+        name: prioridade
+        schema:
+          type: string
+        description: 'Filtrar por prioridade (ex: ALTA,MEDIA)'
+      - in: query
+        name: responsavel
+        schema:
+          type: integer
+        description: Filtrar por responsável (ID do usuário)
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: 'Filtrar por status (ex: PENDENTE,EM_ANDAMENTO)'
+      tags:
+      - Projetos
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
           description: ''
   /api/risks/historico/:
     get:
@@ -4476,8 +4723,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4500,8 +4747,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4584,8 +4831,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4612,8 +4859,8 @@ paths:
               $ref: '#/components/schemas/RiscoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -4636,8 +4883,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4671,8 +4918,8 @@ paths:
               $ref: '#/components/schemas/RiscoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4705,8 +4952,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedRiscoRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4728,8 +4975,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -4760,8 +5007,8 @@ paths:
               $ref: '#/components/schemas/RiscoRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -4780,8 +5027,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -4793,8 +5040,8 @@ paths:
       tags:
       - Riscos
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           description: No response body
@@ -4829,8 +5076,8 @@ paths:
       tags:
       - Atribuições
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4857,8 +5104,8 @@ paths:
               $ref: '#/components/schemas/AtribuicaoTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -4881,8 +5128,8 @@ paths:
       tags:
       - Atribuições
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4919,8 +5166,8 @@ paths:
               $ref: '#/components/schemas/AtribuicaoTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4956,8 +5203,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAtribuicaoTarefaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -4979,8 +5226,8 @@ paths:
       tags:
       - Atribuições
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -5020,8 +5267,8 @@ paths:
       tags:
       - Comentários de Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5048,8 +5295,8 @@ paths:
               $ref: '#/components/schemas/ComentarioTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -5072,8 +5319,8 @@ paths:
       tags:
       - Comentários de Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5107,8 +5354,8 @@ paths:
               $ref: '#/components/schemas/ComentarioTarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5141,8 +5388,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedComentarioTarefaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5164,8 +5411,8 @@ paths:
       tags:
       - Comentários de Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -5299,8 +5546,8 @@ paths:
       tags:
       - Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5327,8 +5574,8 @@ paths:
               $ref: '#/components/schemas/TarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -5351,8 +5598,8 @@ paths:
       tags:
       - Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5386,8 +5633,8 @@ paths:
               $ref: '#/components/schemas/TarefaRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5420,8 +5667,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedTarefaRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5443,8 +5690,8 @@ paths:
       tags:
       - Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -5474,8 +5721,8 @@ paths:
               required:
               - texto
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -5526,8 +5773,8 @@ paths:
               required:
               - sprint_id
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5575,8 +5822,8 @@ paths:
               required:
               - usuario_id
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -5639,8 +5886,8 @@ paths:
                   comentario: Tarefa finalizada conforme requisitos
                 summary: Exemplo de atualização para Concluído
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5807,8 +6054,8 @@ paths:
       tags:
       - Tarefas
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5842,8 +6089,8 @@ paths:
               required:
               - usuario_id
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -5903,8 +6150,8 @@ paths:
       tags:
       - Equipes
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5931,8 +6178,8 @@ paths:
               $ref: '#/components/schemas/EquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -5955,8 +6202,8 @@ paths:
       tags:
       - Equipes
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -5990,8 +6237,8 @@ paths:
               $ref: '#/components/schemas/EquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6024,8 +6271,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedEquipeRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6047,8 +6294,8 @@ paths:
       tags:
       - Equipes
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -6079,8 +6326,8 @@ paths:
               $ref: '#/components/schemas/MembroEquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -6115,8 +6362,8 @@ paths:
               $ref: '#/components/schemas/MembroEquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6157,8 +6404,8 @@ paths:
       tags:
       - Equipes
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6193,8 +6440,8 @@ paths:
               $ref: '#/components/schemas/EquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
           description: No response body
@@ -6225,8 +6472,8 @@ paths:
       tags:
       - Equipes
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6249,8 +6496,8 @@ paths:
       tags:
       - Permissões de Equipe
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6277,8 +6524,8 @@ paths:
               $ref: '#/components/schemas/PermissaoEquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '201':
           content:
@@ -6301,8 +6548,8 @@ paths:
       tags:
       - Permissões de Equipe
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6336,8 +6583,8 @@ paths:
               $ref: '#/components/schemas/PermissaoEquipeRequest'
         required: true
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6370,8 +6617,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedPermissaoEquipeRequest'
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '200':
           content:
@@ -6393,10 +6640,765 @@ paths:
       tags:
       - Permissões de Equipe
       security:
-      - JWT_Authentication: []
-      - Bearer: []
+      - jwtAuth: []
+      - JWT Authentication: []
       responses:
         '204':
+          description: No response body
+  /api/users/admin/access-profiles/:
+    get:
+      operationId: admin_access_profiles_list
+      description: Retorna uma lista paginada de perfis de acesso.
+      summary: Listar perfis de acesso
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Administração - Perfis de Acesso
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccessProfileList'
+          description: ''
+    post:
+      operationId: admin_access_profiles_create
+      description: Cria um novo perfil de acesso.
+      summary: Criar novo perfil de acesso
+      tags:
+      - Administração - Perfis de Acesso
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessProfile'
+          description: ''
+  /api/users/admin/access-profiles/{id}/:
+    get:
+      operationId: admin_access_profiles_retrieve
+      description: Retorna informações detalhadas de um perfil de acesso específico.
+      summary: Obter detalhes do perfil de acesso
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this access profile.
+        required: true
+      tags:
+      - Administração - Perfis de Acesso
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessProfile'
+          description: ''
+    put:
+      operationId: admin_access_profiles_update
+      description: Atualiza todos os campos de um perfil de acesso existente.
+      summary: Atualizar perfil de acesso
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this access profile.
+        required: true
+      tags:
+      - Administração - Perfis de Acesso
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccessProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessProfile'
+          description: ''
+    patch:
+      operationId: admin_access_profiles_partial_update
+      description: Atualiza parcialmente um perfil de acesso existente.
+      summary: Atualizar perfil de acesso parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this access profile.
+        required: true
+      tags:
+      - Administração - Perfis de Acesso
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccessProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAccessProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAccessProfileRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessProfile'
+          description: ''
+    delete:
+      operationId: admin_access_profiles_destroy
+      description: Remove um perfil de acesso existente.
+      summary: Excluir perfil de acesso
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this access profile.
+        required: true
+      tags:
+      - Administração - Perfis de Acesso
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/permissions/:
+    get:
+      operationId: admin_permissions_list
+      description: Retorna uma lista paginada de permissões do sistema.
+      summary: Listar permissões do sistema
+      tags:
+      - Administração - Permissões
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+          description: ''
+    post:
+      operationId: admin_permissions_create
+      description: Cria uma nova permissão.
+      summary: Criar nova permissão
+      tags:
+      - Administração - Permissões
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+          description: ''
+  /api/users/admin/permissions/{id}/:
+    get:
+      operationId: admin_permissions_retrieve
+      description: Retorna informações detalhadas de uma permissão específica.
+      summary: Obter detalhes da permissão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this permission.
+        required: true
+      tags:
+      - Administração - Permissões
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+          description: ''
+    put:
+      operationId: admin_permissions_update
+      description: Atualiza todos os campos de uma permissão existente.
+      summary: Atualizar permissão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this permission.
+        required: true
+      tags:
+      - Administração - Permissões
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PermissionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+          description: ''
+    patch:
+      operationId: admin_permissions_partial_update
+      description: Atualiza parcialmente uma permissão existente.
+      summary: Atualizar permissão parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this permission.
+        required: true
+      tags:
+      - Administração - Permissões
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+          description: ''
+    delete:
+      operationId: admin_permissions_destroy
+      description: Remove uma permissão existente.
+      summary: Excluir permissão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this permission.
+        required: true
+      tags:
+      - Administração - Permissões
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/profiles/:
+    get:
+      operationId: admin_user_profiles_list
+      description: Retorna uma lista paginada de perfis de usuário.
+      summary: Listar perfis de usuário
+      tags:
+      - Administração - Perfis de Usuário
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+          description: ''
+    post:
+      operationId: admin_user_profiles_create
+      description: Cria um novo perfil de usuário.
+      summary: Criar novo perfil de usuário
+      tags:
+      - Administração - Perfis de Usuário
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/users/admin/profiles/{id}/:
+    get:
+      operationId: admin_user_profiles_retrieve
+      description: Retorna informações detalhadas de um perfil de usuário específico.
+      summary: Obter detalhes do perfil de usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user profile.
+        required: true
+      tags:
+      - Administração - Perfis de Usuário
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    put:
+      operationId: admin_user_profiles_update
+      description: Atualiza todos os campos de um perfil de usuário existente.
+      summary: Atualizar perfil de usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user profile.
+        required: true
+      tags:
+      - Administração - Perfis de Usuário
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: admin_user_profiles_partial_update
+      description: Atualiza parcialmente um perfil de usuário existente.
+      summary: Atualizar perfil de usuário parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user profile.
+        required: true
+      tags:
+      - Administração - Perfis de Usuário
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    delete:
+      operationId: admin_user_profiles_destroy
+      description: Remove um perfil de usuário existente.
+      summary: Excluir perfil de usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user profile.
+        required: true
+      tags:
+      - Administração - Perfis de Usuário
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/users/:
+    get:
+      operationId: users_admin_users_list
+      description: Retorna uma lista paginada de usuários.
+      summary: Listar usuários
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Usuários
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: users_admin_users_create
+      description: Cria um novo usuário.
+      summary: Criar novo usuário
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+          description: ''
+  /api/users/admin/users/{id}/:
+    get:
+      operationId: users_admin_users_retrieve
+      description: Retorna informações detalhadas de um usuário específico.
+      summary: Obter detalhes do usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_admin_users_update
+      description: Atualiza todos os campos de um usuário existente.
+      summary: Atualizar usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_admin_users_partial_update
+      description: Atualiza parcialmente um usuário existente.
+      summary: Atualizar usuário parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: users_admin_users_destroy
+      description: Remove um usuário existente.
+      summary: Excluir usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/users/{id}/activate/:
+    post:
+      operationId: users_admin_users_activate_create
+      description: Ativa um usuário inativo.
+      summary: Ativar usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/users/{id}/deactivate/:
+    post:
+      operationId: users_admin_users_deactivate_create
+      description: Desativa um usuário ativo.
+      summary: Desativar usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/users/{id}/unlock/:
+    post:
+      operationId: users_admin_users_unlock_create
+      description: Desbloqueia um usuário após tentativas de login malsucedidas.
+      summary: Desbloquear usuário
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - Usuários
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/users/permissions/:
+    get:
+      operationId: users_my_permissions_list
+      description: Retorna as permissões do usuário autenticado.
+      summary: Retornar minhas permissões
+      tags:
+      - Perfil
+      security:
+      - jwtAuth: []
+      - JWT Authentication: []
+      responses:
+        '200':
           description: No response body
 components:
   schemas:
@@ -6465,6 +7467,28 @@ components:
         * `EXPORT` - Export
         * `IMPORT` - Import
         * `COMMENT` - Comment
+    Activation:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+      required:
+      - token
+      - uid
+    ActivationRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+      - uid
     Alerta:
       type: object
       description: |-
@@ -6663,19 +7687,6 @@ components:
           nullable: true
       required:
       - nome
-    ChangePasswordRequest:
-      type: object
-      description: Serializer para alteração de senha com validação da senha atual.
-      properties:
-        old_password:
-          type: string
-          minLength: 1
-        new_password:
-          type: string
-          minLength: 1
-      required:
-      - new_password
-      - old_password
     ChatMensagem:
       type: object
       properties:
@@ -6787,44 +7798,6 @@ components:
       required:
       - projeto
       - texto
-    ColunaKanban:
-      type: object
-      properties:
-        status:
-          type: string
-          description: Status das tarefas nesta coluna
-        titulo:
-          type: string
-          description: Título da coluna
-        tarefas:
-          type: array
-          items:
-            $ref: '#/components/schemas/TarefaKanban'
-          description: Lista de tarefas nesta coluna
-      required:
-      - status
-      - tarefas
-      - titulo
-    ColunaKanbanRequest:
-      type: object
-      properties:
-        status:
-          type: string
-          minLength: 1
-          description: Status das tarefas nesta coluna
-        titulo:
-          type: string
-          minLength: 1
-          description: Título da coluna
-        tarefas:
-          type: array
-          items:
-            $ref: '#/components/schemas/TarefaKanbanRequest'
-          description: Lista de tarefas nesta coluna
-      required:
-      - status
-      - tarefas
-      - titulo
     Comentario:
       type: object
       properties:
@@ -6905,14 +7878,161 @@ components:
       - autor
       - tarefa
       - texto
+    Comunicacao:
+      type: object
+      description: |-
+        Serializer para o modelo Comunicacao.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Inclui campos calculados para exibir informações relacionadas de forma mais amigável.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        projeto:
+          type: integer
+          description: Projeto ao qual esta comunicação está associada
+        projeto_nome:
+          type: string
+          readOnly: true
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/ComunicacaoTipoEnum'
+          description: |-
+            Tipo de comunicação formal
+
+            * `ATA` - Ata de Reunião
+            * `MEMORANDO` - Memorando
+            * `RELATORIO` - Relatório
+            * `OFICIO` - Ofício
+            * `COMUNICADO` - Comunicado Geral
+            * `OUTRO` - Outro
+        tipo_display:
+          type: string
+          readOnly: true
+        titulo:
+          type: string
+          description: Título ou assunto da comunicação
+          maxLength: 200
+        texto:
+          type: string
+          description: Conteúdo detalhado da comunicação
+        remetente:
+          type: integer
+          readOnly: true
+          description: Usuário que enviou a comunicação
+        remetente_nome:
+          type: string
+          readOnly: true
+        remetente_username:
+          type: string
+          readOnly: true
+        destinatarios:
+          type: array
+          items:
+            type: integer
+          description: Usuários que receberam esta comunicação
+        destinatarios_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/DestinatarioInfo'
+          readOnly: true
+        criada_em:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Data e hora em que a comunicação foi criada
+        atualizada_em:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Data e hora da última atualização da comunicação
+      required:
+      - atualizada_em
+      - criada_em
+      - destinatarios
+      - destinatarios_info
+      - id
+      - projeto
+      - projeto_nome
+      - remetente
+      - remetente_nome
+      - remetente_username
+      - texto
+      - tipo_display
+      - titulo
+    ComunicacaoRequest:
+      type: object
+      description: |-
+        Serializer para o modelo Comunicacao.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Inclui campos calculados para exibir informações relacionadas de forma mais amigável.
+      properties:
+        projeto:
+          type: integer
+          description: Projeto ao qual esta comunicação está associada
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/ComunicacaoTipoEnum'
+          description: |-
+            Tipo de comunicação formal
+
+            * `ATA` - Ata de Reunião
+            * `MEMORANDO` - Memorando
+            * `RELATORIO` - Relatório
+            * `OFICIO` - Ofício
+            * `COMUNICADO` - Comunicado Geral
+            * `OUTRO` - Outro
+        titulo:
+          type: string
+          minLength: 1
+          description: Título ou assunto da comunicação
+          maxLength: 200
+        texto:
+          type: string
+          minLength: 1
+          description: Conteúdo detalhado da comunicação
+        destinatarios:
+          type: array
+          items:
+            type: integer
+          description: Usuários que receberam esta comunicação
+      required:
+      - destinatarios
+      - projeto
+      - texto
+      - titulo
+    ComunicacaoTipoEnum:
+      enum:
+      - ATA
+      - MEMORANDO
+      - RELATORIO
+      - OFICIO
+      - COMUNICADO
+      - OUTRO
+      type: string
+      description: |-
+        * `ATA` - Ata de Reunião
+        * `MEMORANDO` - Memorando
+        * `RELATORIO` - Relatório
+        * `OFICIO` - Ofício
+        * `COMUNICADO` - Comunicado Geral
+        * `OUTRO` - Outro
     ConfiguracaoNotificacao:
       type: object
+      description: |-
+        Serializer simplificado para configurações de notificação.
+
+        A lógica de get_or_create foi movida para a view, tornando este
+        serializer mais simples e focado apenas na serialização/deserialização.
       properties:
         id:
           type: integer
           readOnly: true
         usuario:
           type: integer
+          readOnly: true
           description: Usuário ao qual estas configurações pertencem
         usuario_nome:
           type: string
@@ -7003,10 +8123,12 @@ components:
       - usuario_nome
     ConfiguracaoNotificacaoRequest:
       type: object
+      description: |-
+        Serializer simplificado para configurações de notificação.
+
+        A lógica de get_or_create foi movida para a view, tornando este
+        serializer mais simples e focado apenas na serialização/deserialização.
       properties:
-        usuario:
-          type: integer
-          description: Usuário ao qual estas configurações pertencem
         tarefa_atribuida:
           allOf:
           - $ref: '#/components/schemas/TarefaAtribuidaEnum'
@@ -7087,8 +8209,6 @@ components:
             * `SISTEMA` - Sistema
             * `AMBOS` - Ambos
             * `NENHUM` - Nenhum
-      required:
-      - usuario
     Custo:
       type: object
       description: |-
@@ -7271,6 +8391,20 @@ components:
         * `FIXO` - Custo Fixo
         * `VARIAVEL` - Custo Variável
         * `RECORRENTE` - Custo Recorrente
+    DestinatarioInfo:
+      type: object
+      description: Serializer auxiliar para descrever informações básicas de um destinatário.
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nome:
+          type: string
+      required:
+      - id
+      - nome
+      - username
     Documento:
       type: object
       properties:
@@ -7559,32 +8693,6 @@ components:
           nullable: true
       required:
       - nome
-    ErrorResponse:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Mensagem de erro detalhada
-      required:
-      - detail
-    GanttResponse:
-      type: object
-      properties:
-        projeto:
-          type: integer
-          description: ID do projeto
-        titulo:
-          type: string
-          description: Título do projeto
-        tarefas:
-          type: array
-          items:
-            $ref: '#/components/schemas/TarefaGantt'
-          description: Tarefas do projeto para visualização Gantt
-      required:
-      - projeto
-      - tarefas
-      - titulo
     HistoricoDocumento:
       type: object
       properties:
@@ -7754,6 +8862,47 @@ components:
       - probabilidade_anterior
       - risco
       - status_anterior
+    HistoricoStatusProjeto:
+      type: object
+      description: |-
+        Serializer para histórico de alterações de status de projeto.
+
+        Registra as mudanças de status com informações sobre quem e quando alterou.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        projeto:
+          type: integer
+        projeto_titulo:
+          type: string
+          readOnly: true
+          description: Título do projeto
+        status_anterior:
+          $ref: '#/components/schemas/StatusAnterior18dEnum'
+        status_anterior_display:
+          type: string
+          readOnly: true
+          description: Nome do status anterior para exibição
+        alterado_por:
+          type: integer
+          nullable: true
+        alterado_por_username:
+          type: string
+          readOnly: true
+          description: Nome de usuário de quem alterou o status
+        alterado_em:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alterado_em
+      - alterado_por_username
+      - id
+      - projeto
+      - projeto_titulo
+      - status_anterior
+      - status_anterior_display
     HistoricoStatusTarefa:
       type: object
       properties:
@@ -7801,62 +8950,6 @@ components:
         * `BAIXO` - Baixo
         * `MEDIO` - Médio
         * `ALTO` - Alto
-    KanbanResponse:
-      type: object
-      properties:
-        projeto:
-          type: integer
-          description: ID do projeto
-        titulo:
-          type: string
-          description: Título do projeto
-        colunas:
-          type: array
-          items:
-            $ref: '#/components/schemas/ColunaKanban'
-          description: Colunas do quadro Kanban
-      required:
-      - colunas
-      - projeto
-      - titulo
-    LoginError:
-      type: object
-      properties:
-        detail:
-          type: string
-      required:
-      - detail
-    LoginRequestRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          minLength: 1
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - password
-      - username
-    LoginResponse:
-      type: object
-      properties:
-        access:
-          type: string
-        refresh:
-          type: string
-      required:
-      - access
-      - refresh
-    LogoutResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          readOnly: true
-      required:
-      - message
     MembroEquipe:
       type: object
       properties:
@@ -7939,11 +9032,14 @@ components:
           type: string
           readOnly: true
           description: Nome do papel para exibição
+        projeto:
+          type: integer
       required:
       - full_name
       - id
       - papel
       - papel_display
+      - projeto
       - username
       - usuario_id
     MembroProjetoPapelEnum:
@@ -7972,8 +9068,11 @@ components:
           writeOnly: true
         papel:
           $ref: '#/components/schemas/MembroProjetoPapelEnum'
+        projeto:
+          type: integer
       required:
       - papel
+      - projeto
       - usuario
     MensagemChatEnum:
       enum:
@@ -8035,6 +9134,11 @@ components:
         * `CUSTOS` - Custos
     Notificacao:
       type: object
+      description: |-
+        Serializer para notificações com suporte ao GenericForeignKey.
+
+        Inclui campos para exibir informações sobre o objeto relacionado
+        através do GenericForeignKey de forma amigável.
       properties:
         id:
           type: integer
@@ -8054,6 +9158,7 @@ components:
             * `RISCO` - Risco
             * `DOCUMENTO` - Documento
             * `SISTEMA` - Sistema
+            * `CHAT` - Chat
         tipo_display:
           type: string
           readOnly: true
@@ -8093,14 +9198,14 @@ components:
         projeto:
           type: integer
           nullable: true
-          description: Projeto relacionado à notificação (se aplicável)
+          description: Projeto relacionado à notificação (se aplicável) - DEPRECATED
         projeto_nome:
           type: string
           readOnly: true
         tarefa:
           type: integer
           nullable: true
-          description: Tarefa relacionada à notificação (se aplicável)
+          description: Tarefa relacionada à notificação (se aplicável) - DEPRECATED
         tarefa_titulo:
           type: string
           readOnly: true
@@ -8109,13 +9214,33 @@ components:
           nullable: true
           description: URL para redirecionamento quando a notificação for clicada
           maxLength: 255
+        content_type:
+          type: integer
+          nullable: true
+          description: 'O tipo do objeto relacionado (ex: Projeto, Tarefa, Risco).'
+        object_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: O ID do objeto relacionado.
+        content_type_name:
+          type: string
+          readOnly: true
+        related_object_info:
+          allOf:
+          - $ref: '#/components/schemas/RelatedObjectInfo'
+          readOnly: true
       required:
+      - content_type_name
       - criada_em
       - id
       - lida_em
       - mensagem
       - prioridade_display
       - projeto_nome
+      - related_object_info
       - tarefa_titulo
       - tipo
       - tipo_display
@@ -8123,6 +9248,11 @@ components:
       - usuario
     NotificacaoRequest:
       type: object
+      description: |-
+        Serializer para notificações com suporte ao GenericForeignKey.
+
+        Inclui campos para exibir informações sobre o objeto relacionado
+        através do GenericForeignKey de forma amigável.
       properties:
         usuario:
           type: integer
@@ -8139,6 +9269,7 @@ components:
             * `RISCO` - Risco
             * `DOCUMENTO` - Documento
             * `SISTEMA` - Sistema
+            * `CHAT` - Chat
         titulo:
           type: string
           minLength: 1
@@ -8163,16 +9294,27 @@ components:
         projeto:
           type: integer
           nullable: true
-          description: Projeto relacionado à notificação (se aplicável)
+          description: Projeto relacionado à notificação (se aplicável) - DEPRECATED
         tarefa:
           type: integer
           nullable: true
-          description: Tarefa relacionada à notificação (se aplicável)
+          description: Tarefa relacionada à notificação (se aplicável) - DEPRECATED
         url:
           type: string
           nullable: true
           description: URL para redirecionamento quando a notificação for clicada
           maxLength: 255
+        content_type:
+          type: integer
+          nullable: true
+          description: 'O tipo do objeto relacionado (ex: Projeto, Tarefa, Risco).'
+        object_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: O ID do objeto relacionado.
       required:
       - mensagem
       - tipo
@@ -8186,6 +9328,7 @@ components:
       - RISCO
       - DOCUMENTO
       - SISTEMA
+      - CHAT
       type: string
       description: |-
         * `TAREFA` - Tarefa
@@ -8194,6 +9337,7 @@ components:
         * `RISCO` - Risco
         * `DOCUMENTO` - Documento
         * `SISTEMA` - Sistema
+        * `CHAT` - Chat
     NovaProbabilidadeEnum:
       enum:
       - BAIXA
@@ -8398,6 +9542,26 @@ components:
       required:
       - tarefa
       - valor
+    PaginatedAccessProfileList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessProfile'
     PaginatedAlertaList:
       type: object
       properties:
@@ -8518,6 +9682,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ComentarioTarefa'
+    PaginatedComunicacaoList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comunicacao'
     PaginatedConfiguracaoNotificacaoList:
       type: object
       properties:
@@ -8638,6 +9822,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HistoricoRisco'
+    PaginatedHistoricoStatusProjetoList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoricoStatusProjeto'
     PaginatedHistoricoStatusTarefaList:
       type: object
       properties:
@@ -8778,26 +9982,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PermissaoEquipe'
-    PaginatedPermissionList:
-      type: object
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Permission'
     PaginatedProjetoList:
       type: object
       properties:
@@ -8858,6 +10042,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Risco'
+    PaginatedSprintList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sprint'
     PaginatedTarefaListList:
       type: object
       properties:
@@ -8918,26 +10122,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserMinimal'
-    PaginatedUserProfileList:
-      type: object
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserProfile'
     PapelF38Enum:
       enum:
       - PO
@@ -8954,6 +10138,45 @@ components:
         * `QA` - Analista de Qualidade
         * `DESIGN` - Designer
         * `ANALISTA` - Analista
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        new_password:
+          type: string
+      required:
+      - new_password
+      - token
+      - uid
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - token
+      - uid
+    PatchedAccessProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
     PatchedAlertaRequest:
       type: object
       description: |-
@@ -9042,12 +10265,51 @@ components:
         texto:
           type: string
           minLength: 1
+    PatchedComunicacaoRequest:
+      type: object
+      description: |-
+        Serializer para o modelo Comunicacao.
+
+        Permite criar, listar, atualizar e excluir comunicações formais em projetos.
+        Inclui campos calculados para exibir informações relacionadas de forma mais amigável.
+      properties:
+        projeto:
+          type: integer
+          description: Projeto ao qual esta comunicação está associada
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/ComunicacaoTipoEnum'
+          description: |-
+            Tipo de comunicação formal
+
+            * `ATA` - Ata de Reunião
+            * `MEMORANDO` - Memorando
+            * `RELATORIO` - Relatório
+            * `OFICIO` - Ofício
+            * `COMUNICADO` - Comunicado Geral
+            * `OUTRO` - Outro
+        titulo:
+          type: string
+          minLength: 1
+          description: Título ou assunto da comunicação
+          maxLength: 200
+        texto:
+          type: string
+          minLength: 1
+          description: Conteúdo detalhado da comunicação
+        destinatarios:
+          type: array
+          items:
+            type: integer
+          description: Usuários que receberam esta comunicação
     PatchedConfiguracaoNotificacaoRequest:
       type: object
+      description: |-
+        Serializer simplificado para configurações de notificação.
+
+        A lógica de get_or_create foi movida para a view, tornando este
+        serializer mais simples e focado apenas na serialização/deserialização.
       properties:
-        usuario:
-          type: integer
-          description: Usuário ao qual estas configurações pertencem
         tarefa_atribuida:
           allOf:
           - $ref: '#/components/schemas/TarefaAtribuidaEnum'
@@ -9208,23 +10470,13 @@ components:
         criado_por:
           type: integer
           nullable: true
-    PatchedKanbanResponseRequest:
-      type: object
-      properties:
-        projeto:
-          type: integer
-          description: ID do projeto
-        titulo:
-          type: string
-          minLength: 1
-          description: Título do projeto
-        colunas:
-          type: array
-          items:
-            $ref: '#/components/schemas/ColunaKanbanRequest'
-          description: Colunas do quadro Kanban
     PatchedNotificacaoRequest:
       type: object
+      description: |-
+        Serializer para notificações com suporte ao GenericForeignKey.
+
+        Inclui campos para exibir informações sobre o objeto relacionado
+        através do GenericForeignKey de forma amigável.
       properties:
         usuario:
           type: integer
@@ -9241,6 +10493,7 @@ components:
             * `RISCO` - Risco
             * `DOCUMENTO` - Documento
             * `SISTEMA` - Sistema
+            * `CHAT` - Chat
         titulo:
           type: string
           minLength: 1
@@ -9265,16 +10518,27 @@ components:
         projeto:
           type: integer
           nullable: true
-          description: Projeto relacionado à notificação (se aplicável)
+          description: Projeto relacionado à notificação (se aplicável) - DEPRECATED
         tarefa:
           type: integer
           nullable: true
-          description: Tarefa relacionada à notificação (se aplicável)
+          description: Tarefa relacionada à notificação (se aplicável) - DEPRECATED
         url:
           type: string
           nullable: true
           description: URL para redirecionamento quando a notificação for clicada
           maxLength: 255
+        content_type:
+          type: integer
+          nullable: true
+          description: 'O tipo do objeto relacionado (ex: Projeto, Tarefa, Risco).'
+        object_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: O ID do objeto relacionado.
     PatchedOrcamentoProjetoRequest:
       type: object
       description: |-
@@ -9331,6 +10595,8 @@ components:
     PatchedPermissionRequest:
       type: object
       properties:
+        access_profile:
+          type: integer
         module:
           $ref: '#/components/schemas/ModuleEnum'
         action:
@@ -9387,6 +10653,31 @@ components:
         criado_por:
           type: integer
           nullable: true
+    PatchedSprintRequest:
+      type: object
+      description: |-
+        Serializer para sprints.
+
+        Inclui informações básicas da sprint e estatísticas de tarefas.
+      properties:
+        projeto:
+          type: integer
+          nullable: true
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/SprintStatusEnum'
     PatchedTarefaRequest:
       type: object
       properties:
@@ -9415,6 +10706,8 @@ components:
     PatchedUserProfileRequest:
       type: object
       properties:
+        user:
+          type: integer
         phone:
           type: string
           nullable: true
@@ -9522,6 +10815,8 @@ components:
         id:
           type: integer
           readOnly: true
+        access_profile:
+          type: integer
         module:
           $ref: '#/components/schemas/ModuleEnum'
         module_display:
@@ -9533,6 +10828,7 @@ components:
           type: string
           readOnly: true
       required:
+      - access_profile
       - action
       - action_display
       - id
@@ -9541,11 +10837,14 @@ components:
     PermissionRequest:
       type: object
       properties:
+        access_profile:
+          type: integer
         module:
           $ref: '#/components/schemas/ModuleEnum'
         action:
           $ref: '#/components/schemas/ActionEnum'
       required:
+      - access_profile
       - action
       - module
     PrioridadeEnum:
@@ -9611,6 +10910,28 @@ components:
           type: string
           readOnly: true
           description: Nome da prioridade para exibição
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        arquivado:
+          type: boolean
+        tasks_count:
+          type: integer
+          description: Número total de tarefas neste projeto
+          readOnly: true
+        progresso:
+          type: integer
+          description: Progresso do projeto em percentual (0-100)
+          readOnly: true
+        atrasado:
+          type: boolean
+          description: Indica se o projeto está atrasado
+          readOnly: true
         criado_por:
           type: integer
           readOnly: true
@@ -9623,16 +10944,6 @@ components:
           type: string
           readOnly: true
           description: Nome completo do criador
-        criado_em:
-          type: string
-          format: date-time
-          readOnly: true
-        atualizado_em:
-          type: string
-          format: date-time
-          readOnly: true
-        arquivado:
-          type: boolean
         membros:
           type: array
           items:
@@ -9643,21 +10954,9 @@ components:
           type: integer
           description: Número total de sprints neste projeto
           readOnly: true
-        tasks_count:
-          type: integer
-          description: Número total de tarefas neste projeto
-          readOnly: true
-        progresso:
-          type: integer
-          description: Progresso do projeto em percentual (0-100)
-          readOnly: true
         dias_restantes:
           type: integer
           description: Dias restantes até a data de fim
-          readOnly: true
-        atrasado:
-          type: boolean
-          description: Indica se o projeto está atrasado
           readOnly: true
       required:
       - atrasado
@@ -9678,35 +10977,6 @@ components:
       - status_display
       - tasks_count
       - titulo
-    ProjetoDashboardResponse:
-      type: object
-      properties:
-        projeto:
-          type: object
-          additionalProperties: {}
-          description: Detalhes do projeto
-        sprints:
-          type: array
-          items: {}
-          description: Lista de sprints do projeto
-        tarefas_kanban:
-          type: object
-          additionalProperties: {}
-          description: Tarefas agrupadas por status para visualização Kanban
-        metricas:
-          type: object
-          additionalProperties: {}
-          description: Métricas do projeto
-        atividades_recentes:
-          type: array
-          items: {}
-          description: Atividades recentes no projeto
-      required:
-      - atividades_recentes
-      - metricas
-      - projeto
-      - sprints
-      - tarefas_kanban
     ProjetoList:
       type: object
       description: |-
@@ -9750,10 +11020,6 @@ components:
           readOnly: true
         arquivado:
           type: boolean
-        membros_count:
-          type: integer
-          description: Número total de membros neste projeto
-          readOnly: true
         tasks_count:
           type: integer
           description: Número total de tarefas neste projeto
@@ -9762,14 +11028,18 @@ components:
           type: integer
           description: Progresso do projeto em percentual (0-100)
           readOnly: true
-        criador_username:
-          type: string
-          readOnly: true
-          description: Nome de usuário do criador
         atrasado:
           type: boolean
           description: Indica se o projeto está atrasado
           readOnly: true
+        membros_count:
+          type: integer
+          description: Número total de membros neste projeto
+          readOnly: true
+        criador_username:
+          type: string
+          readOnly: true
+          description: Nome de usuário do criador
       required:
       - atrasado
       - atualizado_em
@@ -9828,21 +11098,24 @@ components:
         * `SISTEMA` - Sistema
         * `AMBOS` - Ambos
         * `NENHUM` - Nenhum
-    RefreshRequestRequest:
+    RelatedObjectInfo:
       type: object
+      description: Serializer auxiliar para descrever informações de objetos relacionados
+        via GenericForeignKey.
       properties:
-        refresh:
+        type:
           type: string
-          minLength: 1
-      required:
-      - refresh
-    RefreshResponse:
-      type: object
-      properties:
-        access:
+        app_label:
+          type: string
+        id:
+          type: integer
+        str_representation:
           type: string
       required:
-      - access
+      - app_label
+      - id
+      - str_representation
+      - type
     Risco:
       type: object
       properties:
@@ -10035,7 +11308,198 @@ components:
         * `TEAM_MEMBER` - Team Member
         * `STAKEHOLDER` - Stakeholder/Client
         * `AUDITOR` - Auditor
+    SendEmailReset:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    SendEmailResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    SetPassword:
+      type: object
+      properties:
+        new_password:
+          type: string
+        current_password:
+          type: string
+      required:
+      - current_password
+      - new_password
+    SetPasswordRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+          minLength: 1
+        current_password:
+          type: string
+          minLength: 1
+      required:
+      - current_password
+      - new_password
+    SetUsername:
+      type: object
+      properties:
+        current_password:
+          type: string
+        new_email:
+          type: string
+          format: email
+          title: Email
+          maxLength: 254
+      required:
+      - current_password
+      - new_email
+    SetUsernameRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          minLength: 1
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email
+          maxLength: 254
+      required:
+      - current_password
+      - new_email
+    Sprint:
+      type: object
+      description: |-
+        Serializer para sprints.
+
+        Inclui informações básicas da sprint e estatísticas de tarefas.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        projeto:
+          type: integer
+          nullable: true
+        projeto_nome:
+          type: string
+          readOnly: true
+          description: Nome do projeto
+        nome:
+          type: string
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/SprintStatusEnum'
+        status_display:
+          type: string
+          readOnly: true
+          description: Nome do status para exibição
+        criado_por:
+          type: integer
+          readOnly: true
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        tasks_count:
+          type: integer
+          description: Número total de tarefas nesta sprint
+          readOnly: true
+        completed_tasks_count:
+          type: integer
+          description: Número de tarefas concluídas nesta sprint
+          readOnly: true
+        progresso:
+          type: integer
+          description: Progresso da sprint em percentual (0-100)
+          readOnly: true
+      required:
+      - completed_tasks_count
+      - criado_em
+      - criado_por
+      - data_fim
+      - data_inicio
+      - id
+      - nome
+      - progresso
+      - projeto
+      - projeto_nome
+      - status_display
+      - tasks_count
+    SprintRequest:
+      type: object
+      description: |-
+        Serializer para sprints.
+
+        Inclui informações básicas da sprint e estatísticas de tarefas.
+      properties:
+        projeto:
+          type: integer
+          nullable: true
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/SprintStatusEnum'
+      required:
+      - data_fim
+      - data_inicio
+      - nome
+      - projeto
+    SprintStatusEnum:
+      enum:
+      - PLANEJADO
+      - EM_ANDAMENTO
+      - CONCLUIDO
+      - CANCELADO
+      type: string
+      description: |-
+        * `PLANEJADO` - Planejado
+        * `EM_ANDAMENTO` - Em Andamento
+        * `CONCLUIDO` - Concluído
+        * `CANCELADO` - Cancelado
     Status18dEnum:
+      enum:
+      - PLANEJADO
+      - EM_ANDAMENTO
+      - PAUSADO
+      - CONCLUIDO
+      - CANCELADO
+      type: string
+      description: |-
+        * `PLANEJADO` - Planejado
+        * `EM_ANDAMENTO` - Em Andamento
+        * `PAUSADO` - Pausado
+        * `CONCLUIDO` - Concluído
+        * `CANCELADO` - Cancelado
+    StatusAnterior18dEnum:
       enum:
       - PLANEJADO
       - EM_ANDAMENTO
@@ -10128,187 +11592,6 @@ components:
         * `SISTEMA` - Sistema
         * `AMBOS` - Ambos
         * `NENHUM` - Nenhum
-    TarefaCreateRequest:
-      type: object
-      properties:
-        titulo:
-          type: string
-          minLength: 1
-          description: Título da tarefa
-        descricao:
-          type: string
-          nullable: true
-          minLength: 1
-          description: Descrição da tarefa
-        data_inicio:
-          type: string
-          format: date
-          description: Data de início da tarefa
-        data_fim:
-          type: string
-          format: date
-          description: Data de término prevista da tarefa
-        prioridade:
-          allOf:
-          - $ref: '#/components/schemas/PrioridadeEnum'
-          description: |-
-            Prioridade da tarefa
-
-            * `BAIXA` - BAIXA
-            * `MEDIA` - MEDIA
-            * `ALTA` - ALTA
-        status:
-          allOf:
-          - $ref: '#/components/schemas/TarefaCreateStatusEnum'
-          description: |-
-            Status inicial da tarefa
-
-            * `PENDENTE` - PENDENTE
-            * `EM_ANDAMENTO` - EM_ANDAMENTO
-            * `CONCLUIDA` - CONCLUIDA
-            * `BLOQUEADA` - BLOQUEADA
-        responsaveis:
-          type: array
-          items:
-            type: integer
-          description: IDs dos usuários responsáveis pela tarefa
-      required:
-      - data_fim
-      - data_inicio
-      - prioridade
-      - status
-      - titulo
-    TarefaCreateStatusEnum:
-      enum:
-      - PENDENTE
-      - EM_ANDAMENTO
-      - CONCLUIDA
-      - BLOQUEADA
-      type: string
-      description: |-
-        * `PENDENTE` - PENDENTE
-        * `EM_ANDAMENTO` - EM_ANDAMENTO
-        * `CONCLUIDA` - CONCLUIDA
-        * `BLOQUEADA` - BLOQUEADA
-    TarefaGantt:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: ID da tarefa
-        titulo:
-          type: string
-          description: Título da tarefa
-        data_inicio:
-          type: string
-          format: date
-          description: Data de início da tarefa
-        data_fim:
-          type: string
-          format: date
-          description: Data de término prevista da tarefa
-        progresso:
-          type: number
-          format: double
-          description: Percentual de conclusão da tarefa
-        dependencias:
-          type: array
-          items:
-            type: integer
-          description: IDs das tarefas das quais esta tarefa depende
-      required:
-      - data_fim
-      - data_inicio
-      - dependencias
-      - id
-      - progresso
-      - titulo
-    TarefaKanban:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: ID da tarefa
-        titulo:
-          type: string
-          description: Título da tarefa
-        descricao:
-          type: string
-          description: Descrição da tarefa
-        status:
-          type: string
-          description: Status atual da tarefa
-        prioridade:
-          type: string
-          description: Prioridade da tarefa
-        data_inicio:
-          type: string
-          format: date
-          description: Data de início da tarefa
-        data_fim:
-          type: string
-          format: date
-          description: Data de término prevista da tarefa
-        responsaveis:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-          description: Lista de usuários responsáveis pela tarefa
-      required:
-      - data_fim
-      - data_inicio
-      - descricao
-      - id
-      - prioridade
-      - responsaveis
-      - status
-      - titulo
-    TarefaKanbanRequest:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: ID da tarefa
-        titulo:
-          type: string
-          minLength: 1
-          description: Título da tarefa
-        descricao:
-          type: string
-          minLength: 1
-          description: Descrição da tarefa
-        status:
-          type: string
-          minLength: 1
-          description: Status atual da tarefa
-        prioridade:
-          type: string
-          minLength: 1
-          description: Prioridade da tarefa
-        data_inicio:
-          type: string
-          format: date
-          description: Data de início da tarefa
-        data_fim:
-          type: string
-          format: date
-          description: Data de término prevista da tarefa
-        responsaveis:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-          description: Lista de usuários responsáveis pela tarefa
-      required:
-      - data_fim
-      - data_inicio
-      - descricao
-      - id
-      - prioridade
-      - responsaveis
-      - status
-      - titulo
     TarefaList:
       type: object
       properties:
@@ -10390,16 +11673,6 @@ components:
       - descricao
       - projeto
       - titulo
-    TarefasBulkCreateRequest:
-      type: object
-      properties:
-        tarefas:
-          type: array
-          items:
-            $ref: '#/components/schemas/TarefaCreateRequest'
-          description: Lista de tarefas a serem criadas em lote
-      required:
-      - tarefas
     ThemePreferenceEnum:
       enum:
       - LIGHT
@@ -10426,6 +11699,60 @@ components:
         * `RELATORIO` - Relatório
         * `ATA` - Ata de Reunião
         * `OUTRO` - Outro
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - token
     User:
       type: object
       description: Serializer para operações de usuário (leitura, atualização).
@@ -10488,7 +11815,9 @@ components:
       - access_profile_id
     UserCreate:
       type: object
-      description: Serializer para criação de usuários com validação de senha.
+      description: |-
+        Serializer específico para o registro de novos usuários.
+        Pede apenas os campos essenciais e valida a senha.
       properties:
         username:
           type: string
@@ -10501,16 +11830,18 @@ components:
           type: string
           maxLength: 100
         role:
-          $ref: '#/components/schemas/RoleEnum'
-        profile:
-          $ref: '#/components/schemas/UserProfile'
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: TEAM_MEMBER
       required:
       - email
       - full_name
       - username
     UserCreateRequest:
       type: object
-      description: Serializer para criação de usuários com validação de senha.
+      description: |-
+        Serializer específico para o registro de novos usuários.
+        Pede apenas os campos essenciais e valida a senha.
       properties:
         username:
           type: string
@@ -10525,14 +11856,14 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-        role:
-          $ref: '#/components/schemas/RoleEnum'
-        profile:
-          $ref: '#/components/schemas/UserProfileRequest'
         password:
           type: string
           writeOnly: true
           minLength: 1
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: TEAM_MEMBER
       required:
       - email
       - full_name
@@ -10563,6 +11894,8 @@ components:
     UserProfile:
       type: object
       properties:
+        user:
+          type: integer
         phone:
           type: string
           nullable: true
@@ -10577,9 +11910,13 @@ components:
           type: boolean
         system_notifications:
           type: boolean
+      required:
+      - user
     UserProfileRequest:
       type: object
       properties:
+        user:
+          type: integer
         phone:
           type: string
           nullable: true
@@ -10594,6 +11931,8 @@ components:
           type: boolean
         system_notifications:
           type: boolean
+      required:
+      - user
     UserRequest:
       type: object
       description: Serializer para operações de usuário (leitura, atualização).
@@ -10625,31 +11964,37 @@ components:
       - email
       - full_name
       - username
+    UsernameResetConfirm:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          title: Email
+          maxLength: 254
+      required:
+      - new_email
+    UsernameResetConfirmRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email
+          maxLength: 254
+      required:
+      - new_email
   securitySchemes:
-    JWT_Authentication:
+    jwtAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: 'Token JWT para autenticação. Formato: Bearer [token]'
 servers:
 - url: http://localhost:8000
-  description: Local Development
+  description: Servidor de Desenvolvimento Local
 tags:
 - name: Autenticação
   description: Endpoints de autenticação
 - name: Usuários
   description: Gerenciamento de usuários
-- name: Projetos
-  description: Gerenciamento de projetos
-- name: Tarefas
-  description: Gerenciamento de tarefas
-- name: Equipes
-  description: Gerenciamento de equipes
-- name: Comunicações
-  description: Gerenciamento de comunicações
-- name: Riscos
-  description: Gerenciamento de riscos
-- name: Custos
-  description: Gerenciamento de custos
-- name: Documentos
-  description: Gerenciamento de documentos
