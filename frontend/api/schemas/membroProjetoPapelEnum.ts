@@ -8,19 +8,19 @@
 
 /**
  * * `GERENTE` - Gerente de Projeto
-* `DESENVOLVEDOR` - Desenvolvedor
-* `TESTADOR` - Testador
-* `ANALISTA` - Analista
-* `DESIGNER` - Designer
+ * `DESENVOLVEDOR` - Desenvolvedor
+ * `TESTADOR` - Testador
+ * `ANALISTA` - Analista
+ * `DESIGNER` - Designer
  */
-export type MembroProjetoPapelEnum = typeof MembroProjetoPapelEnum[keyof typeof MembroProjetoPapelEnum];
-
+export type MembroProjetoPapelEnum =
+  (typeof MembroProjetoPapelEnum)[keyof typeof MembroProjetoPapelEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MembroProjetoPapelEnum = {
-  GERENTE: 'GERENTE',
-  DESENVOLVEDOR: 'DESENVOLVEDOR',
-  TESTADOR: 'TESTADOR',
-  ANALISTA: 'ANALISTA',
-  DESIGNER: 'DESIGNER',
+  GERENTE: "GERENTE",
+  DESENVOLVEDOR: "DESENVOLVEDOR",
+  TESTADOR: "TESTADOR",
+  ANALISTA: "ANALISTA",
+  DESIGNER: "DESIGNER",
 } as const;

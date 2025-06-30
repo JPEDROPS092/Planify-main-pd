@@ -5,48 +5,48 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CommunicationsNotificacoesListPrioridade } from './communicationsNotificacoesListPrioridade';
-import type { CommunicationsNotificacoesListTipo } from './communicationsNotificacoesListTipo';
+import type { CommunicationsNotificacoesListPrioridade } from "./communicationsNotificacoesListPrioridade";
+import type { CommunicationsNotificacoesListTipo } from "./communicationsNotificacoesListTipo";
 
 export type CommunicationsNotificacoesListParams = {
-content_type?: number;
-/**
- * Filtrar por tipo de objeto relacionado (ex: projeto, tarefa)
- */
-content_type_model?: string;
-/**
- * Data de fim para filtrar notificações (formato: YYYY-MM-DD)
- */
-data_fim?: string;
-/**
- * Data de início para filtrar notificações (formato: YYYY-MM-DD)
- */
-data_inicio?: string;
-lida?: boolean;
-object_id?: number;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-/**
+  content_type?: number;
+  /**
+   * Filtrar por tipo de objeto relacionado (ex: projeto, tarefa)
+   */
+  content_type_model?: string;
+  /**
+   * Data de fim para filtrar notificações (formato: YYYY-MM-DD)
+   */
+  data_fim?: string;
+  /**
+   * Data de início para filtrar notificações (formato: YYYY-MM-DD)
+   */
+  data_inicio?: string;
+  lida?: boolean;
+  object_id?: number;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
  * Nível de prioridade da notificação
 
 * `BAIXA` - Baixa
 * `MEDIA` - Média
 * `ALTA` - Alta
  */
-prioridade?: CommunicationsNotificacoesListPrioridade;
-projeto?: number;
-/**
- * A search term.
- */
-search?: string;
-tarefa?: number;
-/**
+  prioridade?: CommunicationsNotificacoesListPrioridade;
+  projeto?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  tarefa?: number;
+  /**
  * Tipo de objeto relacionado à notificação
 
 * `TAREFA` - Tarefa
@@ -57,9 +57,9 @@ tarefa?: number;
 * `SISTEMA` - Sistema
 * `CHAT` - Chat
  */
-tipo?: CommunicationsNotificacoesListTipo;
-/**
- * Texto contido no título da notificação (busca case-insensitive)
- */
-titulo?: string;
+  tipo?: CommunicationsNotificacoesListTipo;
+  /**
+   * Texto contido no título da notificação (busca case-insensitive)
+   */
+  titulo?: string;
 };

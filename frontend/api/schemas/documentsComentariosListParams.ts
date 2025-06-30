@@ -7,20 +7,20 @@
  */
 
 export type DocumentsComentariosListParams = {
-/**
- * Filtrar por ID do autor do comentário
- */
-autor?: number;
-/**
- * Filtrar por ID do documento ao qual o comentário pertence
- */
-documento?: number;
-/**
- * Campo para ordenação (ex: criado_em, -criado_em)
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
+  /**
+   * Filtrar por ID do autor do comentário
+   */
+  autor?: number;
+  /**
+   * Filtrar por ID do documento ao qual o comentário pertence
+   */
+  documento?: number;
+  /**
+   * Campo para ordenação (ex: criado_em, -criado_em)
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
 };

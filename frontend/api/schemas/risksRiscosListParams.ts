@@ -5,43 +5,43 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { RisksRiscosListImpacto } from './risksRiscosListImpacto';
-import type { RisksRiscosListProbabilidade } from './risksRiscosListProbabilidade';
-import type { RisksRiscosListStatus } from './risksRiscosListStatus';
+import type { RisksRiscosListImpacto } from "./risksRiscosListImpacto";
+import type { RisksRiscosListProbabilidade } from "./risksRiscosListProbabilidade";
+import type { RisksRiscosListStatus } from "./risksRiscosListStatus";
 
 export type RisksRiscosListParams = {
-/**
- * * `BAIXO` - Baixo
-* `MEDIO` - Médio
-* `ALTO` - Alto
- */
-impacto?: RisksRiscosListImpacto;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-/**
- * * `BAIXA` - Baixa
-* `MEDIA` - Média
-* `ALTA` - Alta
- */
-probabilidade?: RisksRiscosListProbabilidade;
-projeto?: number;
-responsavel_mitigacao?: number;
-/**
- * A search term.
- */
-search?: string;
-/**
- * * `IDENTIFICADO` - Identificado
-* `EM_ANALISE` - Em Análise
-* `MITIGADO` - Mitigado
-* `ACEITO` - Aceito
-* `ELIMINADO` - Eliminado
- */
-status?: RisksRiscosListStatus;
+  /**
+   * * `BAIXO` - Baixo
+   * `MEDIO` - Médio
+   * `ALTO` - Alto
+   */
+  impacto?: RisksRiscosListImpacto;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
+   * * `BAIXA` - Baixa
+   * `MEDIA` - Média
+   * `ALTA` - Alta
+   */
+  probabilidade?: RisksRiscosListProbabilidade;
+  projeto?: number;
+  responsavel_mitigacao?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  /**
+   * * `IDENTIFICADO` - Identificado
+   * `EM_ANALISE` - Em Análise
+   * `MITIGADO` - Mitigado
+   * `ACEITO` - Aceito
+   * `ELIMINADO` - Eliminado
+   */
+  status?: RisksRiscosListStatus;
 };

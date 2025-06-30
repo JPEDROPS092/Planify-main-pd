@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { HistoricoDocumento } from './historicoDocumento';
+import type { HistoricoDocumento } from "./historicoDocumento";
 
 export interface PaginatedHistoricoDocumentoList {
   count?: number;

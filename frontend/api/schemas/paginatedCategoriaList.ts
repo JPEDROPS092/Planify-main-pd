@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Categoria } from './categoria';
+import type { Categoria } from "./categoria";
 
 export interface PaginatedCategoriaList {
   count?: number;

@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { UserMinimal } from './userMinimal';
+import type { UserMinimal } from "./userMinimal";
 
 export interface PaginatedUserMinimalList {
   count?: number;

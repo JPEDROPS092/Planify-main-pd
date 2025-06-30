@@ -5,23 +5,17 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
 
-import {
-  HttpResponse,
-  delay,
-  http
-} from 'msw';
+import { HttpResponse, delay, http } from "msw";
 
 import {
   MembroProjetoPapelEnum,
   PrioridadeEnum,
   SprintStatusEnum,
   Status477Enum,
-  StatusAnterior477Enum
-} from '.././schemas';
+  StatusAnterior477Enum,
+} from ".././schemas";
 import type {
   HistoricoStatusProjeto,
   MembroProjeto,
@@ -33,366 +27,1504 @@ import type {
   ProjectsProjectsArchiveCreate200,
   ProjectsProjectsMetricsRetrieve200,
   Projeto,
-  Sprint
-} from '.././schemas';
+  Sprint,
+} from ".././schemas";
 
+export const getProjectsHistoryListResponseMock = (
+  overrideResponse: Partial<PaginatedHistoricoStatusProjetoList> = {},
+): PaginatedHistoricoStatusProjetoList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      projeto: faker.number.int({ min: undefined, max: undefined }),
+      projeto_titulo: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      status_anterior: faker.helpers.arrayElement(
+        Object.values(StatusAnterior477Enum),
+      ),
+      status_anterior_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      alterado_por: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.number.int({ min: undefined, max: undefined }),
+          null,
+        ]),
+        undefined,
+      ]),
+      alterado_por_username: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getProjectsHistoryListResponseMock = (overrideResponse: Partial< PaginatedHistoricoStatusProjetoList > = {}): PaginatedHistoricoStatusProjetoList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_titulo: faker.string.alpha({length: {min: 10, max: 20}}), status_anterior: faker.helpers.arrayElement(Object.values(StatusAnterior477Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_username: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`})), undefined]), ...overrideResponse})
+export const getProjectsHistoryResumoPorProjetoRetrieveResponseMock = (
+  overrideResponse: Partial<HistoricoStatusProjeto> = {},
+): HistoricoStatusProjeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  projeto_titulo: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status_anterior: faker.helpers.arrayElement(
+    Object.values(StatusAnterior477Enum),
+  ),
+  status_anterior_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  alterado_por: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  alterado_por_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  ...overrideResponse,
+});
 
-export const getProjectsHistoryResumoPorProjetoRetrieveResponseMock = (overrideResponse: Partial< HistoricoStatusProjeto > = {}): HistoricoStatusProjeto => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_titulo: faker.string.alpha({length: {min: 10, max: 20}}), status_anterior: faker.helpers.arrayElement(Object.values(StatusAnterior477Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_username: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, ...overrideResponse})
+export const getProjectsProjectsListResponseMock = (
+  overrideResponse: Partial<PaginatedProjetoListList> = {},
+): PaginatedProjetoListList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      data_inicio: faker.date.past().toISOString().split("T")[0],
+      data_fim: faker.date.past().toISOString().split("T")[0],
+      status: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(Status477Enum)),
+        undefined,
+      ]),
+      status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      prioridade: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+        undefined,
+      ]),
+      prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      arquivado: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      tasks_count: faker.number.int({ min: undefined, max: undefined }),
+      progresso: faker.number.int({ min: undefined, max: undefined }),
+      atrasado: faker.datatype.boolean(),
+      membros_count: faker.number.int({ min: undefined, max: undefined }),
+      criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsListResponseMock = (overrideResponse: Partial< PaginatedProjetoListList > = {}): PaginatedProjetoListList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), membros_count: faker.number.int({min: undefined, max: undefined}), criador_username: faker.string.alpha({length: {min: 10, max: 20}})})), undefined]), ...overrideResponse})
+export const getProjectsProjectsCreateResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsCreateResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsRetrieveResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsRetrieveResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsUpdateResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsUpdateResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsPartialUpdateResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsPartialUpdateResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsAdicionarMembroCreateResponseMock = (
+  overrideResponse: Partial<MembroProjeto> = {},
+): MembroProjeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  usuario_id: faker.number.int({ min: undefined, max: undefined }),
+  username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+  papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsAdicionarMembroCreateResponseMock = (overrideResponse: Partial< MembroProjeto > = {}): MembroProjeto => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsArchiveCreateResponseMock =
+  (): ProjectsProjectsArchiveCreate200 => ({
+    [faker.string.alphanumeric(5)]: {},
+  });
 
-export const getProjectsProjectsArchiveCreateResponseMock = (): ProjectsProjectsArchiveCreate200 => ({
-        [faker.string.alphanumeric(5)]: {}
-      })
+export const getProjectsProjectsCriarSprintCreateResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsCriarSprintCreateResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsExportProjectRetrieveResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsExportProjectRetrieveResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsHistoricoStatusRetrieveResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsHistoricoStatusRetrieveResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsListarMembrosListResponseMock = (
+  overrideResponse: Partial<PaginatedMembroProjetoList> = {},
+): PaginatedMembroProjetoList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      usuario_id: faker.number.int({ min: undefined, max: undefined }),
+      username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+      papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      projeto: faker.number.int({ min: undefined, max: undefined }),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsListarMembrosListResponseMock = (overrideResponse: Partial< PaginatedMembroProjetoList > = {}): PaginatedMembroProjetoList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), undefined]), ...overrideResponse})
+export const getProjectsProjectsMetricsRetrieveResponseMock =
+  (): ProjectsProjectsMetricsRetrieve200 => ({
+    [faker.string.alphanumeric(5)]: {},
+  });
 
-export const getProjectsProjectsMetricsRetrieveResponseMock = (): ProjectsProjectsMetricsRetrieve200 => ({
-        [faker.string.alphanumeric(5)]: {}
-      })
+export const getProjectsProjectsSprintsRetrieveResponseMock = (
+  overrideResponse: Partial<Projeto> = {},
+): Projeto => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(Status477Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  atrasado: faker.datatype.boolean(),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  membros: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    usuario_id: faker.number.int({ min: undefined, max: undefined }),
+    username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)),
+    papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projeto: faker.number.int({ min: undefined, max: undefined }),
+  })),
+  sprints_count: faker.number.int({ min: undefined, max: undefined }),
+  dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsSprintsRetrieveResponseMock = (overrideResponse: Partial< Projeto > = {}): Projeto => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsProjectsMyProjectsListResponseMock = (
+  overrideResponse: Partial<PaginatedProjetoList> = {},
+): PaginatedProjetoList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      titulo: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      data_inicio: faker.date.past().toISOString().split("T")[0],
+      data_fim: faker.date.past().toISOString().split("T")[0],
+      status: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(Status477Enum)),
+        undefined,
+      ]),
+      status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      prioridade: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+        undefined,
+      ]),
+      prioridade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      arquivado: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      tasks_count: faker.number.int({ min: undefined, max: undefined }),
+      progresso: faker.number.int({ min: undefined, max: undefined }),
+      atrasado: faker.datatype.boolean(),
+      criado_por: faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      criador_username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      criador_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      membros: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        usuario_id: faker.number.int({ min: undefined, max: undefined }),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        full_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        papel: faker.helpers.arrayElement(
+          Object.values(MembroProjetoPapelEnum),
+        ),
+        papel_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        projeto: faker.number.int({ min: undefined, max: undefined }),
+      })),
+      sprints_count: faker.number.int({ min: undefined, max: undefined }),
+      dias_restantes: faker.number.int({ min: undefined, max: undefined }),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getProjectsProjectsMyProjectsListResponseMock = (overrideResponse: Partial< PaginatedProjetoList > = {}): PaginatedProjetoList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), titulo: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(Status477Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), prioridade: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(PrioridadeEnum)), undefined]), prioridade_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, arquivado: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), atrasado: faker.datatype.boolean(), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criador_username: faker.string.alpha({length: {min: 10, max: 20}}), criador_nome: faker.string.alpha({length: {min: 10, max: 20}}), membros: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), usuario_id: faker.number.int({min: undefined, max: undefined}), username: faker.string.alpha({length: {min: 10, max: 20}}), full_name: faker.string.alpha({length: {min: 10, max: 20}}), papel: faker.helpers.arrayElement(Object.values(MembroProjetoPapelEnum)), papel_display: faker.string.alpha({length: {min: 10, max: 20}}), projeto: faker.number.int({min: undefined, max: undefined})})), sprints_count: faker.number.int({min: undefined, max: undefined}), dias_restantes: faker.number.int({min: undefined, max: undefined})})), undefined]), ...overrideResponse})
+export const getProjectsSprintsListResponseMock = (
+  overrideResponse: Partial<PaginatedSprintList> = {},
+): PaginatedSprintList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      projeto: faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      descricao: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        undefined,
+      ]),
+      data_inicio: faker.date.past().toISOString().split("T")[0],
+      data_fim: faker.date.past().toISOString().split("T")[0],
+      status: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+        undefined,
+      ]),
+      status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      criado_por: faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      tasks_count: faker.number.int({ min: undefined, max: undefined }),
+      completed_tasks_count: faker.number.int({
+        min: undefined,
+        max: undefined,
+      }),
+      progresso: faker.number.int({ min: undefined, max: undefined }),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsListResponseMock = (overrideResponse: Partial< PaginatedSprintList > = {}): PaginatedSprintList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined})})), undefined]), ...overrideResponse})
+export const getProjectsSprintsCreateResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsCreateResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsSprintsRetrieveResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsRetrieveResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsSprintsUpdateResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsUpdateResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsSprintsPartialUpdateResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsPartialUpdateResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsSprintsResumoRetrieveResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsResumoRetrieveResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsSprintsTarefasRetrieveResponseMock = (
+  overrideResponse: Partial<Sprint> = {},
+): Sprint => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  nome: faker.string.alpha({ length: { min: 10, max: 100 } }),
+  descricao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_fim: faker.date.past().toISOString().split("T")[0],
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(SprintStatusEnum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_por: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    null,
+  ]),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  completed_tasks_count: faker.number.int({ min: undefined, max: undefined }),
+  progresso: faker.number.int({ min: undefined, max: undefined }),
+  ...overrideResponse,
+});
 
-export const getProjectsSprintsTarefasRetrieveResponseMock = (overrideResponse: Partial< Sprint > = {}): Sprint => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), nome: faker.string.alpha({length: {min: 10, max: 100}}), descricao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_inicio: faker.date.past().toISOString().split('T')[0], data_fim: faker.date.past().toISOString().split('T')[0], status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(SprintStatusEnum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), criado_por: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), criado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, tasks_count: faker.number.int({min: undefined, max: undefined}), completed_tasks_count: faker.number.int({min: undefined, max: undefined}), progresso: faker.number.int({min: undefined, max: undefined}), ...overrideResponse})
+export const getProjectsHistoryListMockHandler = (
+  overrideResponse?:
+    | PaginatedHistoricoStatusProjetoList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        | Promise<PaginatedHistoricoStatusProjetoList>
+        | PaginatedHistoricoStatusProjetoList),
+) => {
+  return http.get("*/api/projects/history/", async (info) => {
+    await delay(1000);
 
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsHistoryListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsHistoryListMockHandler = (overrideResponse?: PaginatedHistoricoStatusProjetoList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedHistoricoStatusProjetoList> | PaginatedHistoricoStatusProjetoList)) => {
-  return http.get('*/api/projects/history/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsHistoryListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsHistoryResumoPorProjetoRetrieveMockHandler = (
+  overrideResponse?:
+    | HistoricoStatusProjeto
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<HistoricoStatusProjeto> | HistoricoStatusProjeto),
+) => {
+  return http.get(
+    "*/api/projects/history/resumo_por_projeto/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsHistoryResumoPorProjetoRetrieveMockHandler = (overrideResponse?: HistoricoStatusProjeto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<HistoricoStatusProjeto> | HistoricoStatusProjeto)) => {
-  return http.get('*/api/projects/history/resumo_por_projeto/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsHistoryResumoPorProjetoRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsHistoryResumoPorProjetoRetrieveResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsProjectsListMockHandler = (overrideResponse?: PaginatedProjetoListList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedProjetoListList> | PaginatedProjetoListList)) => {
-  return http.get('*/api/projects/projects/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsListMockHandler = (
+  overrideResponse?:
+    | PaginatedProjetoListList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedProjetoListList> | PaginatedProjetoListList),
+) => {
+  return http.get("*/api/projects/projects/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsCreateMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.post('*/api/projects/projects/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsCreateResponseMock()),
-      { status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsRetrieveMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.get('*/api/projects/projects/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsCreateMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.post("*/api/projects/projects/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsUpdateMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.put('*/api/projects/projects/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsPartialUpdateMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.patch('*/api/projects/projects/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsPartialUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsRetrieveMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.get("*/api/projects/projects/:id/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsDestroyMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void)) => {
-  return http.delete('*/api/projects/projects/:id/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 204,
-        
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsAdicionarMembroCreateMockHandler = (overrideResponse?: MembroProjeto | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<MembroProjeto> | MembroProjeto)) => {
-  return http.post('*/api/projects/projects/:id/adicionar_membro/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsAdicionarMembroCreateResponseMock()),
-      { status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsUpdateMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.put("*/api/projects/projects/:id/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsArchiveCreateMockHandler = (overrideResponse?: ProjectsProjectsArchiveCreate200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ProjectsProjectsArchiveCreate200> | ProjectsProjectsArchiveCreate200)) => {
-  return http.post('*/api/projects/projects/:id/archive/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsArchiveCreateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsCriarSprintCreateMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.post('*/api/projects/projects/:id/criar_sprint/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsCriarSprintCreateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsPartialUpdateMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.patch("*/api/projects/projects/:id/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsExportProjectRetrieveMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.get('*/api/projects/projects/:id/export_project/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsExportProjectRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsPartialUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsHistoricoStatusRetrieveMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.get('*/api/projects/projects/:id/historico_status/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsHistoricoStatusRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete("*/api/projects/projects/:id/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 204 });
+  });
+};
 
-export const getProjectsProjectsListarMembrosListMockHandler = (overrideResponse?: PaginatedMembroProjetoList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedMembroProjetoList> | PaginatedMembroProjetoList)) => {
-  return http.get('*/api/projects/projects/:id/listar_membros/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsListarMembrosListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsAdicionarMembroCreateMockHandler = (
+  overrideResponse?:
+    | MembroProjeto
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<MembroProjeto> | MembroProjeto),
+) => {
+  return http.post(
+    "*/api/projects/projects/:id/adicionar_membro/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsProjectsMetricsRetrieveMockHandler = (overrideResponse?: ProjectsProjectsMetricsRetrieve200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ProjectsProjectsMetricsRetrieve200> | ProjectsProjectsMetricsRetrieve200)) => {
-  return http.get('*/api/projects/projects/:id/metrics/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsMetricsRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsProjectsAdicionarMembroCreateResponseMock(),
+        ),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsProjectsRemoverMembroDestroyMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void)) => {
-  return http.delete('*/api/projects/projects/:id/remover_membro/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 204,
-        
-      })
-  })
-}
+export const getProjectsProjectsArchiveCreateMockHandler = (
+  overrideResponse?:
+    | ProjectsProjectsArchiveCreate200
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) =>
+        | Promise<ProjectsProjectsArchiveCreate200>
+        | ProjectsProjectsArchiveCreate200),
+) => {
+  return http.post("*/api/projects/projects/:id/archive/", async (info) => {
+    await delay(1000);
 
-export const getProjectsProjectsSprintsRetrieveMockHandler = (overrideResponse?: Projeto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Projeto> | Projeto)) => {
-  return http.get('*/api/projects/projects/:id/sprints/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsSprintsRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsArchiveCreateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getProjectsProjectsMyProjectsListMockHandler = (overrideResponse?: PaginatedProjetoList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedProjetoList> | PaginatedProjetoList)) => {
-  return http.get('*/api/projects/projects/my_projects/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsProjectsMyProjectsListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsCriarSprintCreateMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.post(
+    "*/api/projects/projects/:id/criar_sprint/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsSprintsListMockHandler = (overrideResponse?: PaginatedSprintList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedSprintList> | PaginatedSprintList)) => {
-  return http.get('*/api/projects/sprints/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsProjectsCriarSprintCreateResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsSprintsCreateMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.post('*/api/projects/sprints/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsCreateResponseMock()),
-      { status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsExportProjectRetrieveMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.get(
+    "*/api/projects/projects/:id/export_project/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsSprintsRetrieveMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.get('*/api/projects/sprints/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsProjectsExportProjectRetrieveResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsSprintsUpdateMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.put('*/api/projects/sprints/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsHistoricoStatusRetrieveMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.get(
+    "*/api/projects/projects/:id/historico_status/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsSprintsPartialUpdateMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.patch('*/api/projects/sprints/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsPartialUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsProjectsHistoricoStatusRetrieveResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsSprintsDestroyMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void)) => {
-  return http.delete('*/api/projects/sprints/:id/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 204,
-        
-      })
-  })
-}
+export const getProjectsProjectsListarMembrosListMockHandler = (
+  overrideResponse?:
+    | PaginatedMembroProjetoList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedMembroProjetoList> | PaginatedMembroProjetoList),
+) => {
+  return http.get(
+    "*/api/projects/projects/:id/listar_membros/",
+    async (info) => {
+      await delay(1000);
 
-export const getProjectsSprintsResumoRetrieveMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.get('*/api/projects/sprints/:id/resumo/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsResumoRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getProjectsProjectsListarMembrosListResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
 
-export const getProjectsSprintsTarefasRetrieveMockHandler = (overrideResponse?: Sprint | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Sprint> | Sprint)) => {
-  return http.get('*/api/projects/sprints/:id/tarefas/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getProjectsSprintsTarefasRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getProjectsProjectsMetricsRetrieveMockHandler = (
+  overrideResponse?:
+    | ProjectsProjectsMetricsRetrieve200
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        | Promise<ProjectsProjectsMetricsRetrieve200>
+        | ProjectsProjectsMetricsRetrieve200),
+) => {
+  return http.get("*/api/projects/projects/:id/metrics/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsMetricsRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsProjectsRemoverMembroDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete(
+    "*/api/projects/projects/:id/remover_membro/",
+    async (info) => {
+      await delay(1000);
+      if (typeof overrideResponse === "function") {
+        await overrideResponse(info);
+      }
+      return new HttpResponse(null, { status: 204 });
+    },
+  );
+};
+
+export const getProjectsProjectsSprintsRetrieveMockHandler = (
+  overrideResponse?:
+    | Projeto
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Projeto> | Projeto),
+) => {
+  return http.get("*/api/projects/projects/:id/sprints/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsSprintsRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsProjectsMyProjectsListMockHandler = (
+  overrideResponse?:
+    | PaginatedProjetoList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedProjetoList> | PaginatedProjetoList),
+) => {
+  return http.get("*/api/projects/projects/my_projects/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsProjectsMyProjectsListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsListMockHandler = (
+  overrideResponse?:
+    | PaginatedSprintList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedSprintList> | PaginatedSprintList),
+) => {
+  return http.get("*/api/projects/sprints/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsCreateMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.post("*/api/projects/sprints/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsRetrieveMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.get("*/api/projects/sprints/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsUpdateMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.put("*/api/projects/sprints/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsPartialUpdateMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.patch("*/api/projects/sprints/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsPartialUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete("*/api/projects/sprints/:id/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 204 });
+  });
+};
+
+export const getProjectsSprintsResumoRetrieveMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.get("*/api/projects/sprints/:id/resumo/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsResumoRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getProjectsSprintsTarefasRetrieveMockHandler = (
+  overrideResponse?:
+    | Sprint
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Sprint> | Sprint),
+) => {
+  return http.get("*/api/projects/sprints/:id/tarefas/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getProjectsSprintsTarefasRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 export const getProjetosMock = () => [
   getProjectsHistoryListMockHandler(),
   getProjectsHistoryResumoPorProjetoRetrieveMockHandler(),
@@ -419,5 +1551,5 @@ export const getProjetosMock = () => [
   getProjectsSprintsPartialUpdateMockHandler(),
   getProjectsSprintsDestroyMockHandler(),
   getProjectsSprintsResumoRetrieveMockHandler(),
-  getProjectsSprintsTarefasRetrieveMockHandler()
-]
+  getProjectsSprintsTarefasRetrieveMockHandler(),
+];

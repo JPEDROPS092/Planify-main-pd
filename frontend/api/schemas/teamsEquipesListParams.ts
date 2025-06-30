@@ -7,28 +7,28 @@
  */
 
 export type TeamsEquipesListParams = {
-/**
- * Filtrar apenas minhas equipes
- */
-minhas_equipes?: boolean;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-/**
- * A search term.
- */
-search?: string;
-/**
- * Filtrar por nome ou descrição
- */
-texto?: string;
-/**
- * Filtrar por membro da equipe
- */
-usuario?: number;
+  /**
+   * Filtrar apenas minhas equipes
+   */
+  minhas_equipes?: boolean;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  /**
+   * Filtrar por nome ou descrição
+   */
+  texto?: string;
+  /**
+   * Filtrar por membro da equipe
+   */
+  usuario?: number;
 };

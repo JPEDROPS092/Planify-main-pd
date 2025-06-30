@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { AccessProfile } from './accessProfile';
+import type { AccessProfile } from "./accessProfile";
 
 export interface PaginatedAccessProfileList {
   count?: number;

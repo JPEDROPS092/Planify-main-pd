@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RisksRiscosListProbabilidade = typeof RisksRiscosListProbabilidade[keyof typeof RisksRiscosListProbabilidade];
-
+export type RisksRiscosListProbabilidade =
+  (typeof RisksRiscosListProbabilidade)[keyof typeof RisksRiscosListProbabilidade];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RisksRiscosListProbabilidade = {
-  ALTA: 'ALTA',
-  BAIXA: 'BAIXA',
-  MEDIA: 'MEDIA',
+  ALTA: "ALTA",
+  BAIXA: "BAIXA",
+  MEDIA: "MEDIA",
 } as const;

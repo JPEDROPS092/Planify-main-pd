@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ProjetoList } from './projetoList';
+import type { ProjetoList } from "./projetoList";
 
 export interface PaginatedProjetoListList {
   count?: number;

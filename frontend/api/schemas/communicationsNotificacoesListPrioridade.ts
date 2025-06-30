@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CommunicationsNotificacoesListPrioridade = typeof CommunicationsNotificacoesListPrioridade[keyof typeof CommunicationsNotificacoesListPrioridade];
-
+export type CommunicationsNotificacoesListPrioridade =
+  (typeof CommunicationsNotificacoesListPrioridade)[keyof typeof CommunicationsNotificacoesListPrioridade];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CommunicationsNotificacoesListPrioridade = {
-  ALTA: 'ALTA',
-  BAIXA: 'BAIXA',
-  MEDIA: 'MEDIA',
+  ALTA: "ALTA",
+  BAIXA: "BAIXA",
+  MEDIA: "MEDIA",
 } as const;

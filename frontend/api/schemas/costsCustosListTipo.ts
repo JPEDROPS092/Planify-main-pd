@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CostsCustosListTipo = typeof CostsCustosListTipo[keyof typeof CostsCustosListTipo];
-
+export type CostsCustosListTipo =
+  (typeof CostsCustosListTipo)[keyof typeof CostsCustosListTipo];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CostsCustosListTipo = {
-  FIXO: 'FIXO',
-  RECORRENTE: 'RECORRENTE',
-  VARIAVEL: 'VARIAVEL',
+  FIXO: "FIXO",
+  RECORRENTE: "RECORRENTE",
+  VARIAVEL: "VARIAVEL",
 } as const;

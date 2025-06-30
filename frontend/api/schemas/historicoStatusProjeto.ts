@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { StatusAnterior477Enum } from './statusAnterior477Enum';
+import type { StatusAnterior477Enum } from "./statusAnterior477Enum";
 
 /**
  * Serializer para histórico de alterações de status de projeto.

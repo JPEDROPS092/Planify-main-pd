@@ -5,92 +5,102 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useQuery
-} from '@tanstack/vue-query';
+import { useQuery } from "@tanstack/vue-query";
 import type {
   DataTag,
   QueryClient,
   QueryFunction,
   QueryKey,
   UseQueryOptions,
-  UseQueryReturnType
-} from '@tanstack/vue-query';
+  UseQueryReturnType,
+} from "@tanstack/vue-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import {
-  unref
-} from 'vue';
-
-
-
-
+import { unref } from "vue";
 
 /**
  * Retorna as permissões do usuário autenticado.
  * @summary Retornar minhas permissões
  */
 export const usersMyPermissionsList = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.get(
-      `/api/users/admin/users/permissions/`,options
-    );
-  }
-
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  return axios.get(`/api/users/admin/users/permissions/`, options);
+};
 
 export const getUsersMyPermissionsListQueryKey = () => {
-    return ['api','users','admin','users','permissions'] as const;
-    }
+  return ["api", "users", "admin", "users", "permissions"] as const;
+};
 
-    
-export const getUsersMyPermissionsListQueryOptions = <TData = Awaited<ReturnType<typeof usersMyPermissionsList>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersMyPermissionsList>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+export const getUsersMyPermissionsListQueryOptions = <
+  TData = Awaited<ReturnType<typeof usersMyPermissionsList>>,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof usersMyPermissionsList>>,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getUsersMyPermissionsListQueryKey();
 
-  const queryKey =  getUsersMyPermissionsListQueryKey();
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof usersMyPermissionsList>>
+  > = ({ signal }) => usersMyPermissionsList({ signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof usersMyPermissionsList>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof usersMyPermissionsList>>> = ({ signal }) => usersMyPermissionsList({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof usersMyPermissionsList>>, TError, TData> 
-}
-
-export type UsersMyPermissionsListQueryResult = NonNullable<Awaited<ReturnType<typeof usersMyPermissionsList>>>
-export type UsersMyPermissionsListQueryError = AxiosError<unknown>
-
+export type UsersMyPermissionsListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof usersMyPermissionsList>>
+>;
+export type UsersMyPermissionsListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Retornar minhas permissões
  */
 
-export function useUsersMyPermissionsList<TData = Awaited<ReturnType<typeof usersMyPermissionsList>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersMyPermissionsList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useUsersMyPermissionsList<
+  TData = Awaited<ReturnType<typeof usersMyPermissionsList>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersMyPermissionsList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getUsersMyPermissionsListQueryOptions(options);
 
-  const queryOptions = getUsersMyPermissionsListQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
-

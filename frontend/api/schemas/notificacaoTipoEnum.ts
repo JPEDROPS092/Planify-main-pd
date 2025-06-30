@@ -8,23 +8,23 @@
 
 /**
  * * `TAREFA` - Tarefa
-* `PROJETO` - Projeto
-* `EQUIPE` - Equipe
-* `RISCO` - Risco
-* `DOCUMENTO` - Documento
-* `SISTEMA` - Sistema
-* `CHAT` - Chat
+ * `PROJETO` - Projeto
+ * `EQUIPE` - Equipe
+ * `RISCO` - Risco
+ * `DOCUMENTO` - Documento
+ * `SISTEMA` - Sistema
+ * `CHAT` - Chat
  */
-export type NotificacaoTipoEnum = typeof NotificacaoTipoEnum[keyof typeof NotificacaoTipoEnum];
-
+export type NotificacaoTipoEnum =
+  (typeof NotificacaoTipoEnum)[keyof typeof NotificacaoTipoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const NotificacaoTipoEnum = {
-  TAREFA: 'TAREFA',
-  PROJETO: 'PROJETO',
-  EQUIPE: 'EQUIPE',
-  RISCO: 'RISCO',
-  DOCUMENTO: 'DOCUMENTO',
-  SISTEMA: 'SISTEMA',
-  CHAT: 'CHAT',
+  TAREFA: "TAREFA",
+  PROJETO: "PROJETO",
+  EQUIPE: "EQUIPE",
+  RISCO: "RISCO",
+  DOCUMENTO: "DOCUMENTO",
+  SISTEMA: "SISTEMA",
+  CHAT: "CHAT",
 } as const;

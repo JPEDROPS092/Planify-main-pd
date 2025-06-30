@@ -5,50 +5,2682 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
+
+import { HttpResponse, delay, http } from "msw";
 
 import {
-  HttpResponse,
-  delay,
-  http
-} from 'msw';
-
+  ActionEnum,
+  ModuleEnum,
+  NovoStatusBbcEnum,
+  PrioridadeEnum,
+  RoleEnum,
+  ThemePreferenceEnum,
+} from ".././schemas";
 import type {
-  AtribuicaoTarefa
-} from '.././schemas';
+  AtribuicaoTarefa,
+  ComentarioTarefa,
+  PaginatedHistoricoStatusTarefaList,
+  PaginatedTarefaListList,
+  Tarefa,
+} from ".././schemas";
 
+export const getTasksTarefasListResponseMock = (
+  overrideResponse: Partial<PaginatedTarefaListList> = {},
+): PaginatedTarefaListList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+      projeto: faker.number.int({ min: undefined, max: undefined }),
+      sprint: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.number.int({ min: undefined, max: undefined }),
+          null,
+        ]),
+        undefined,
+      ]),
+      status: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+        undefined,
+      ]),
+      prioridade: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+        undefined,
+      ]),
+      data_termino: faker.date.past().toISOString().split("T")[0],
+      atribuicoes: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        tarefa: faker.number.int({ min: undefined, max: undefined }),
+        usuario: {
+          ...{
+            username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+            email: faker.internet.email(),
+            full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            role: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(RoleEnum)),
+              undefined,
+            ]),
+            profile: faker.helpers.arrayElement([
+              {
+                user: faker.number.int({ min: undefined, max: undefined }),
+                phone: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    null,
+                  ]),
+                  undefined,
+                ]),
+                profile_picture: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement([faker.internet.url(), null]),
+                  undefined,
+                ]),
+                theme_preference: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement(
+                    Object.values(ThemePreferenceEnum),
+                  ),
+                  undefined,
+                ]),
+                email_notifications: faker.helpers.arrayElement([
+                  faker.datatype.boolean(),
+                  undefined,
+                ]),
+                system_notifications: faker.helpers.arrayElement([
+                  faker.datatype.boolean(),
+                  undefined,
+                ]),
+              },
+              undefined,
+            ]),
+            id: faker.number.int({ min: undefined, max: undefined }),
+            is_active: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            access_profiles: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: {
+                ...{
+                  id: faker.number.int({ min: undefined, max: undefined }),
+                  name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+                  description: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                      faker.string.alpha({ length: { min: 10, max: 20 } }),
+                      null,
+                    ]),
+                    undefined,
+                  ]),
+                  permissions: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1,
+                  ).map(() => ({
+                    id: faker.number.int({ min: undefined, max: undefined }),
+                    access_profile: faker.number.int({
+                      min: undefined,
+                      max: undefined,
+                    }),
+                    module: faker.helpers.arrayElement(
+                      Object.values(ModuleEnum),
+                    ),
+                    module_display: faker.string.alpha({
+                      length: { min: 10, max: 20 },
+                    }),
+                    action: faker.helpers.arrayElement(
+                      Object.values(ActionEnum),
+                    ),
+                    action_display: faker.string.alpha({
+                      length: { min: 10, max: 20 },
+                    }),
+                  })),
+                  created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+                  updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+                },
+              },
+            })),
+          },
+        },
+        atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        atribuido_por: {
+          ...{
+            username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+            email: faker.internet.email(),
+            full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            role: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(RoleEnum)),
+              undefined,
+            ]),
+            profile: faker.helpers.arrayElement([
+              {
+                user: faker.number.int({ min: undefined, max: undefined }),
+                phone: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    null,
+                  ]),
+                  undefined,
+                ]),
+                profile_picture: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement([faker.internet.url(), null]),
+                  undefined,
+                ]),
+                theme_preference: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement(
+                    Object.values(ThemePreferenceEnum),
+                  ),
+                  undefined,
+                ]),
+                email_notifications: faker.helpers.arrayElement([
+                  faker.datatype.boolean(),
+                  undefined,
+                ]),
+                system_notifications: faker.helpers.arrayElement([
+                  faker.datatype.boolean(),
+                  undefined,
+                ]),
+              },
+              undefined,
+            ]),
+            id: faker.number.int({ min: undefined, max: undefined }),
+            is_active: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            access_profiles: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: {
+                ...{
+                  id: faker.number.int({ min: undefined, max: undefined }),
+                  name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+                  description: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                      faker.string.alpha({ length: { min: 10, max: 20 } }),
+                      null,
+                    ]),
+                    undefined,
+                  ]),
+                  permissions: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1,
+                  ).map(() => ({
+                    id: faker.number.int({ min: undefined, max: undefined }),
+                    access_profile: faker.number.int({
+                      min: undefined,
+                      max: undefined,
+                    }),
+                    module: faker.helpers.arrayElement(
+                      Object.values(ModuleEnum),
+                    ),
+                    module_display: faker.string.alpha({
+                      length: { min: 10, max: 20 },
+                    }),
+                    action: faker.helpers.arrayElement(
+                      Object.values(ActionEnum),
+                    ),
+                    action_display: faker.string.alpha({
+                      length: { min: 10, max: 20 },
+                    }),
+                  })),
+                  created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+                  updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+                },
+              },
+            })),
+          },
+        },
+      })),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getTasksAtribuicoesUpdateResponseMock = (overrideResponse: Partial< AtribuicaoTarefa > = {}): AtribuicaoTarefa => ({id: faker.number.int({min: undefined, max: undefined}), tarefa: faker.number.int({min: undefined, max: undefined}), usuario: faker.number.int({min: undefined, max: undefined}), usuario_nome: faker.string.alpha({length: {min: 10, max: 20}}), atribuido_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atribuido_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), atribuido_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+export const getTasksTarefasCreateResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
 
-export const getTasksAtribuicoesPartialUpdateResponseMock = (overrideResponse: Partial< AtribuicaoTarefa > = {}): AtribuicaoTarefa => ({id: faker.number.int({min: undefined, max: undefined}), tarefa: faker.number.int({min: undefined, max: undefined}), usuario: faker.number.int({min: undefined, max: undefined}), usuario_nome: faker.string.alpha({length: {min: 10, max: 20}}), atribuido_em: `${faker.date.past().toISOString().split('.')[0]}Z`, atribuido_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), atribuido_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+export const getTasksTarefasRetrieveResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
 
+export const getTasksTarefasUpdateResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
 
-export const getTasksAtribuicoesUpdateMockHandler = (overrideResponse?: AtribuicaoTarefa | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<AtribuicaoTarefa> | AtribuicaoTarefa)) => {
-  return http.put('*/api/tasks/atribuicoes/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getTasksAtribuicoesUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getTasksTarefasPartialUpdateResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
 
-export const getTasksAtribuicoesPartialUpdateMockHandler = (overrideResponse?: AtribuicaoTarefa | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<AtribuicaoTarefa> | AtribuicaoTarefa)) => {
-  return http.patch('*/api/tasks/atribuicoes/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getTasksAtribuicoesPartialUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getTasksTarefasAddCommentCreateResponseMock = (
+  overrideResponse: Partial<ComentarioTarefa> = {},
+): ComentarioTarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  tarefa: faker.number.int({ min: undefined, max: undefined }),
+  autor: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  texto: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  ...overrideResponse,
+});
+
+export const getTasksTarefasAssignUserCreateResponseMock = (
+  overrideResponse: Partial<AtribuicaoTarefa> = {},
+): AtribuicaoTarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  tarefa: faker.number.int({ min: undefined, max: undefined }),
+  usuario: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuido_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  ...overrideResponse,
+});
+
+export const getTasksTarefasAssociateSprintCreateResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
+
+export const getTasksTarefasStatusHistoryListResponseMock = (
+  overrideResponse: Partial<PaginatedHistoricoStatusTarefaList> = {},
+): PaginatedHistoricoStatusTarefaList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      tarefa: faker.number.int({ min: undefined, max: undefined }),
+      status_anterior: faker.helpers.arrayElement(
+        Object.values(NovoStatusBbcEnum),
+      ),
+      novo_status: faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+      alterado_por: {
+        ...{
+          username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+          email: faker.internet.email(),
+          full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+          role: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(RoleEnum)),
+            undefined,
+          ]),
+          profile: faker.helpers.arrayElement([
+            {
+              user: faker.number.int({ min: undefined, max: undefined }),
+              phone: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              profile_picture: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([faker.internet.url(), null]),
+                undefined,
+              ]),
+              theme_preference: faker.helpers.arrayElement([
+                faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+                undefined,
+              ]),
+              email_notifications: faker.helpers.arrayElement([
+                faker.datatype.boolean(),
+                undefined,
+              ]),
+              system_notifications: faker.helpers.arrayElement([
+                faker.datatype.boolean(),
+                undefined,
+              ]),
+            },
+            undefined,
+          ]),
+          id: faker.number.int({ min: undefined, max: undefined }),
+          is_active: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          access_profiles: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1,
+          ).map(() => ({
+            id: faker.number.int({ min: undefined, max: undefined }),
+            access_profile: {
+              ...{
+                id: faker.number.int({ min: undefined, max: undefined }),
+                name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+                description: faker.helpers.arrayElement([
+                  faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    null,
+                  ]),
+                  undefined,
+                ]),
+                permissions: Array.from(
+                  { length: faker.number.int({ min: 1, max: 10 }) },
+                  (_, i) => i + 1,
+                ).map(() => ({
+                  id: faker.number.int({ min: undefined, max: undefined }),
+                  access_profile: faker.number.int({
+                    min: undefined,
+                    max: undefined,
+                  }),
+                  module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                  module_display: faker.string.alpha({
+                    length: { min: 10, max: 20 },
+                  }),
+                  action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                  action_display: faker.string.alpha({
+                    length: { min: 10, max: 20 },
+                  }),
+                })),
+                created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+                updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              },
+            },
+          })),
+        },
+      },
+      alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
+
+export const getTasksTarefasUpdateStatusCreateResponseMock = (
+  overrideResponse: Partial<Tarefa> = {},
+): Tarefa => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  titulo: faker.string.alpha({ length: { min: 10, max: 200 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  sprint: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_inicio: faker.date.past().toISOString().split("T")[0],
+  data_termino: faker.date.past().toISOString().split("T")[0],
+  prioridade: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PrioridadeEnum)),
+    undefined,
+  ]),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatusBbcEnum)),
+    undefined,
+  ]),
+  criado_por: {
+    ...{
+      username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+      email: faker.internet.email(),
+      full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+      role: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(RoleEnum)),
+        undefined,
+      ]),
+      profile: faker.helpers.arrayElement([
+        {
+          user: faker.number.int({ min: undefined, max: undefined }),
+          phone: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            undefined,
+          ]),
+          profile_picture: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([faker.internet.url(), null]),
+            undefined,
+          ]),
+          theme_preference: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+            undefined,
+          ]),
+          email_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+          system_notifications: faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            undefined,
+          ]),
+        },
+        undefined,
+      ]),
+      id: faker.number.int({ min: undefined, max: undefined }),
+      is_active: faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        undefined,
+      ]),
+      date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      access_profiles: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        access_profile: {
+          ...{
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+            description: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            permissions: Array.from(
+              { length: faker.number.int({ min: 1, max: 10 }) },
+              (_, i) => i + 1,
+            ).map(() => ({
+              id: faker.number.int({ min: undefined, max: undefined }),
+              access_profile: faker.number.int({
+                min: undefined,
+                max: undefined,
+              }),
+              module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+              module_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+              action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+              action_display: faker.string.alpha({
+                length: { min: 10, max: 20 },
+              }),
+            })),
+            created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+          },
+        },
+      })),
+    },
+  },
+  criado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  atribuicoes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    tarefa: faker.number.int({ min: undefined, max: undefined }),
+    usuario: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+    atribuido_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    atribuido_por: {
+      ...{
+        username: faker.string.alpha({ length: { min: 10, max: 30 } }),
+        email: faker.internet.email(),
+        full_name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+        role: faker.helpers.arrayElement([
+          faker.helpers.arrayElement(Object.values(RoleEnum)),
+          undefined,
+        ]),
+        profile: faker.helpers.arrayElement([
+          {
+            user: faker.number.int({ min: undefined, max: undefined }),
+            phone: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+              ]),
+              undefined,
+            ]),
+            profile_picture: faker.helpers.arrayElement([
+              faker.helpers.arrayElement([faker.internet.url(), null]),
+              undefined,
+            ]),
+            theme_preference: faker.helpers.arrayElement([
+              faker.helpers.arrayElement(Object.values(ThemePreferenceEnum)),
+              undefined,
+            ]),
+            email_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+            system_notifications: faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              undefined,
+            ]),
+          },
+          undefined,
+        ]),
+        id: faker.number.int({ min: undefined, max: undefined }),
+        is_active: faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          undefined,
+        ]),
+        date_joined: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        access_profiles: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => ({
+          id: faker.number.int({ min: undefined, max: undefined }),
+          access_profile: {
+            ...{
+              id: faker.number.int({ min: undefined, max: undefined }),
+              name: faker.string.alpha({ length: { min: 10, max: 100 } }),
+              description: faker.helpers.arrayElement([
+                faker.helpers.arrayElement([
+                  faker.string.alpha({ length: { min: 10, max: 20 } }),
+                  null,
+                ]),
+                undefined,
+              ]),
+              permissions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+              ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                access_profile: faker.number.int({
+                  min: undefined,
+                  max: undefined,
+                }),
+                module: faker.helpers.arrayElement(Object.values(ModuleEnum)),
+                module_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+                action: faker.helpers.arrayElement(Object.values(ActionEnum)),
+                action_display: faker.string.alpha({
+                  length: { min: 10, max: 20 },
+                }),
+              })),
+              created_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+              updated_at: `${faker.date.past().toISOString().split(".")[0]}Z`,
+            },
+          },
+        })),
+      },
+    },
+  })),
+  ...overrideResponse,
+});
+
+export const getTasksTarefasListMockHandler = (
+  overrideResponse?:
+    | PaginatedTarefaListList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedTarefaListList> | PaginatedTarefaListList),
+) => {
+  return http.get("*/api/tasks/tarefas/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasCreateMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.post("*/api/tasks/tarefas/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasRetrieveMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.get("*/api/tasks/tarefas/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasUpdateMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.put("*/api/tasks/tarefas/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasPartialUpdateMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.patch("*/api/tasks/tarefas/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasPartialUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete("*/api/tasks/tarefas/:id/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 204 });
+  });
+};
+
+export const getTasksTarefasAddCommentCreateMockHandler = (
+  overrideResponse?:
+    | ComentarioTarefa
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ComentarioTarefa> | ComentarioTarefa),
+) => {
+  return http.post("*/api/tasks/tarefas/:id/add-comment/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasAddCommentCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasAssignUserCreateMockHandler = (
+  overrideResponse?:
+    | AtribuicaoTarefa
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AtribuicaoTarefa> | AtribuicaoTarefa),
+) => {
+  return http.post("*/api/tasks/tarefas/:id/assign-user/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasAssignUserCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasAssociateSprintCreateMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.post(
+    "*/api/tasks/tarefas/:id/associate-sprint/",
+    async (info) => {
+      await delay(1000);
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getTasksTarefasAssociateSprintCreateResponseMock(),
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  );
+};
+
+export const getTasksTarefasStatusHistoryListMockHandler = (
+  overrideResponse?:
+    | PaginatedHistoricoStatusTarefaList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        | Promise<PaginatedHistoricoStatusTarefaList>
+        | PaginatedHistoricoStatusTarefaList),
+) => {
+  return http.get("*/api/tasks/tarefas/:id/status-history/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasStatusHistoryListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getTasksTarefasUnassignUserCreateMockHandler = (
+  overrideResponse?:
+    | unknown
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<unknown> | unknown),
+) => {
+  return http.post("*/api/tasks/tarefas/:id/unassign-user/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 200 });
+  });
+};
+
+export const getTasksTarefasUpdateStatusCreateMockHandler = (
+  overrideResponse?:
+    | Tarefa
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<Tarefa> | Tarefa),
+) => {
+  return http.post("*/api/tasks/tarefas/:id/update-status/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getTasksTarefasUpdateStatusCreateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 export const getTasksMock = () => [
-  getTasksAtribuicoesUpdateMockHandler(),
-  getTasksAtribuicoesPartialUpdateMockHandler()
-]
+  getTasksTarefasListMockHandler(),
+  getTasksTarefasCreateMockHandler(),
+  getTasksTarefasRetrieveMockHandler(),
+  getTasksTarefasUpdateMockHandler(),
+  getTasksTarefasPartialUpdateMockHandler(),
+  getTasksTarefasDestroyMockHandler(),
+  getTasksTarefasAddCommentCreateMockHandler(),
+  getTasksTarefasAssignUserCreateMockHandler(),
+  getTasksTarefasAssociateSprintCreateMockHandler(),
+  getTasksTarefasStatusHistoryListMockHandler(),
+  getTasksTarefasUnassignUserCreateMockHandler(),
+  getTasksTarefasUpdateStatusCreateMockHandler(),
+];

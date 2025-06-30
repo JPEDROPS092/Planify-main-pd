@@ -8,37 +8,36 @@
 
 /**
  * * `PROJECTS` - Projects
-* `TASKS` - Tasks
-* `TEAMS` - Teams
-* `RESOURCES` - Resources
-* `COMMUNICATIONS` - Communications
-* `RISKS` - Risks
-* `COSTS` - Costs
-* `DOCUMENTS` - Documents
-* `REPORTS` - Reports
-* `USERS` - Users
-* `SETTINGS` - Settings
-* `DASHBOARD` - Dashboard
-* `NOTIFICATIONS` - Notifications
-* `APPROVALS` - Approvals
+ * `TASKS` - Tasks
+ * `TEAMS` - Teams
+ * `RESOURCES` - Resources
+ * `COMMUNICATIONS` - Communications
+ * `RISKS` - Risks
+ * `COSTS` - Costs
+ * `DOCUMENTS` - Documents
+ * `REPORTS` - Reports
+ * `USERS` - Users
+ * `SETTINGS` - Settings
+ * `DASHBOARD` - Dashboard
+ * `NOTIFICATIONS` - Notifications
+ * `APPROVALS` - Approvals
  */
-export type ModuleEnum = typeof ModuleEnum[keyof typeof ModuleEnum];
-
+export type ModuleEnum = (typeof ModuleEnum)[keyof typeof ModuleEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ModuleEnum = {
-  PROJECTS: 'PROJECTS',
-  TASKS: 'TASKS',
-  TEAMS: 'TEAMS',
-  RESOURCES: 'RESOURCES',
-  COMMUNICATIONS: 'COMMUNICATIONS',
-  RISKS: 'RISKS',
-  COSTS: 'COSTS',
-  DOCUMENTS: 'DOCUMENTS',
-  REPORTS: 'REPORTS',
-  USERS: 'USERS',
-  SETTINGS: 'SETTINGS',
-  DASHBOARD: 'DASHBOARD',
-  NOTIFICATIONS: 'NOTIFICATIONS',
-  APPROVALS: 'APPROVALS',
+  PROJECTS: "PROJECTS",
+  TASKS: "TASKS",
+  TEAMS: "TEAMS",
+  RESOURCES: "RESOURCES",
+  COMMUNICATIONS: "COMMUNICATIONS",
+  RISKS: "RISKS",
+  COSTS: "COSTS",
+  DOCUMENTS: "DOCUMENTS",
+  REPORTS: "REPORTS",
+  USERS: "USERS",
+  SETTINGS: "SETTINGS",
+  DASHBOARD: "DASHBOARD",
+  NOTIFICATIONS: "NOTIFICATIONS",
+  APPROVALS: "APPROVALS",
 } as const;

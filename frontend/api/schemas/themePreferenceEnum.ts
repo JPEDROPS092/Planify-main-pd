@@ -8,15 +8,15 @@
 
 /**
  * * `LIGHT` - Light
-* `DARK` - Dark
-* `SYSTEM` - System
+ * `DARK` - Dark
+ * `SYSTEM` - System
  */
-export type ThemePreferenceEnum = typeof ThemePreferenceEnum[keyof typeof ThemePreferenceEnum];
-
+export type ThemePreferenceEnum =
+  (typeof ThemePreferenceEnum)[keyof typeof ThemePreferenceEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ThemePreferenceEnum = {
-  LIGHT: 'LIGHT',
-  DARK: 'DARK',
-  SYSTEM: 'SYSTEM',
+  LIGHT: "LIGHT",
+  DARK: "DARK",
+  SYSTEM: "SYSTEM",
 } as const;

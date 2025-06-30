@@ -6,16 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CommunicationsNotificacoesListTipo = typeof CommunicationsNotificacoesListTipo[keyof typeof CommunicationsNotificacoesListTipo];
-
+export type CommunicationsNotificacoesListTipo =
+  (typeof CommunicationsNotificacoesListTipo)[keyof typeof CommunicationsNotificacoesListTipo];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CommunicationsNotificacoesListTipo = {
-  CHAT: 'CHAT',
-  DOCUMENTO: 'DOCUMENTO',
-  EQUIPE: 'EQUIPE',
-  PROJETO: 'PROJETO',
-  RISCO: 'RISCO',
-  SISTEMA: 'SISTEMA',
-  TAREFA: 'TAREFA',
+  CHAT: "CHAT",
+  DOCUMENTO: "DOCUMENTO",
+  EQUIPE: "EQUIPE",
+  PROJETO: "PROJETO",
+  RISCO: "RISCO",
+  SISTEMA: "SISTEMA",
+  TAREFA: "TAREFA",
 } as const;

@@ -7,53 +7,53 @@
  */
 
 export type ProjectsHistoryListParams = {
-alterado_em?: string;
-/**
- * Filtra registros alterados antes da data especificada
- */
-alterado_em_antes_after?: string;
-/**
- * Filtra registros alterados antes da data especificada
- */
-alterado_em_antes_before?: string;
-/**
- * Filtra registros alterados após a data especificada
- */
-alterado_em_apos_after?: string;
-/**
- * Filtra registros alterados após a data especificada
- */
-alterado_em_apos_before?: string;
-/**
- * Filtrar por ID do usuário que alterou
- */
-alterado_por?: number;
-/**
- * Filtra por username do usuário que alterou (case insensitive)
- */
-alterado_por_username?: string;
-/**
- * Filtrar por novo status (separados por vírgula)
- */
-novo_status?: string;
-/**
- * Ordenar resultados (ex: -alterado_em)
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-/**
- * Filtrar por ID do projeto
- */
-projeto?: number;
-/**
- * Filtra por título do projeto (case insensitive)
- */
-projeto_titulo?: string;
-/**
- * Filtrar por status anterior (separados por vírgula)
- */
-status_anterior?: string;
+  alterado_em?: string;
+  /**
+   * Filtra registros alterados antes da data especificada
+   */
+  alterado_em_antes_after?: string;
+  /**
+   * Filtra registros alterados antes da data especificada
+   */
+  alterado_em_antes_before?: string;
+  /**
+   * Filtra registros alterados após a data especificada
+   */
+  alterado_em_apos_after?: string;
+  /**
+   * Filtra registros alterados após a data especificada
+   */
+  alterado_em_apos_before?: string;
+  /**
+   * Filtrar por ID do usuário que alterou
+   */
+  alterado_por?: number;
+  /**
+   * Filtra por username do usuário que alterou (case insensitive)
+   */
+  alterado_por_username?: string;
+  /**
+   * Filtrar por novo status (separados por vírgula)
+   */
+  novo_status?: string;
+  /**
+   * Ordenar resultados (ex: -alterado_em)
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
+   * Filtrar por ID do projeto
+   */
+  projeto?: number;
+  /**
+   * Filtra por título do projeto (case insensitive)
+   */
+  projeto_titulo?: string;
+  /**
+   * Filtrar por status anterior (separados por vírgula)
+   */
+  status_anterior?: string;
 };

@@ -8,21 +8,20 @@
 
 /**
  * * `REQUISITO` - Requisito
-* `DESIGN` - Design
-* `MANUAL` - Manual
-* `RELATORIO` - Relatório
-* `ATA` - Ata de Reunião
-* `OUTRO` - Outro
+ * `DESIGN` - Design
+ * `MANUAL` - Manual
+ * `RELATORIO` - Relatório
+ * `ATA` - Ata de Reunião
+ * `OUTRO` - Outro
  */
-export type TipoC51Enum = typeof TipoC51Enum[keyof typeof TipoC51Enum];
-
+export type TipoC51Enum = (typeof TipoC51Enum)[keyof typeof TipoC51Enum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TipoC51Enum = {
-  REQUISITO: 'REQUISITO',
-  DESIGN: 'DESIGN',
-  MANUAL: 'MANUAL',
-  RELATORIO: 'RELATORIO',
-  ATA: 'ATA',
-  OUTRO: 'OUTRO',
+  REQUISITO: "REQUISITO",
+  DESIGN: "DESIGN",
+  MANUAL: "MANUAL",
+  RELATORIO: "RELATORIO",
+  ATA: "ATA",
+  OUTRO: "OUTRO",
 } as const;

@@ -5,10 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/vue-query';
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import type {
   DataTag,
   MutationFunction,
@@ -18,407 +15,554 @@ import type {
   UseMutationOptions,
   UseMutationReturnType,
   UseQueryOptions,
-  UseQueryReturnType
-} from '@tanstack/vue-query';
+  UseQueryReturnType,
+} from "@tanstack/vue-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import {
-  computed,
-  unref
-} from 'vue';
-import type {
-  MaybeRef
-} from 'vue';
+import { computed, unref } from "vue";
+import type { MaybeRef } from "vue";
 
 import type {
   PatchedPermissionRequest,
   Permission,
-  PermissionRequest
-} from '.././schemas';
-
-
-
-
+  PermissionRequest,
+} from ".././schemas";
 
 /**
  * Retorna uma lista paginada de permissões do sistema.
  * @summary Listar permissões do sistema
  */
 export const adminPermissionsList = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Permission[]>> => {
-    
-    
-    return axios.get(
-      `/api/users/admin/permissions/`,options
-    );
-  }
-
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Permission[]>> => {
+  return axios.get(`/api/users/admin/permissions/`, options);
+};
 
 export const getAdminPermissionsListQueryKey = () => {
-    return ['api','users','admin','permissions'] as const;
-    }
+  return ["api", "users", "admin", "permissions"] as const;
+};
 
-    
-export const getAdminPermissionsListQueryOptions = <TData = Awaited<ReturnType<typeof adminPermissionsList>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsList>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+export const getAdminPermissionsListQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminPermissionsList>>,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof adminPermissionsList>>,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getAdminPermissionsListQueryKey();
 
-  const queryKey =  getAdminPermissionsListQueryKey();
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminPermissionsList>>
+  > = ({ signal }) => adminPermissionsList({ signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminPermissionsList>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminPermissionsList>>> = ({ signal }) => adminPermissionsList({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsList>>, TError, TData> 
-}
-
-export type AdminPermissionsListQueryResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsList>>>
-export type AdminPermissionsListQueryError = AxiosError<unknown>
-
+export type AdminPermissionsListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsList>>
+>;
+export type AdminPermissionsListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar permissões do sistema
  */
 
-export function useAdminPermissionsList<TData = Awaited<ReturnType<typeof adminPermissionsList>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminPermissionsList<
+  TData = Awaited<ReturnType<typeof adminPermissionsList>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminPermissionsList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAdminPermissionsListQueryOptions(options);
 
-  const queryOptions = getAdminPermissionsListQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria uma nova permissão.
  * @summary Criar nova permissão
  */
 export const adminPermissionsCreate = (
-    permissionRequest: MaybeRef<PermissionRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Permission>> => {
-    permissionRequest = unref(permissionRequest);
-    
-    return axios.post(
-      `/api/users/admin/permissions/`,
-      permissionRequest,options
-    );
-  }
+  permissionRequest: MaybeRef<PermissionRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Permission>> => {
+  permissionRequest = unref(permissionRequest);
 
+  return axios.post(
+    `/api/users/admin/permissions/`,
+    permissionRequest,
+    options,
+  );
+};
 
+export const getAdminPermissionsCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPermissionsCreate>>,
+    TError,
+    { data: PermissionRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPermissionsCreate>>,
+  TError,
+  { data: PermissionRequest },
+  TContext
+> => {
+  const mutationKey = ["adminPermissionsCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminPermissionsCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsCreate>>, TError,{data: PermissionRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsCreate>>, TError,{data: PermissionRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPermissionsCreate>>,
+    { data: PermissionRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['adminPermissionsCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminPermissionsCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminPermissionsCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsCreate>>
+>;
+export type AdminPermissionsCreateMutationBody = PermissionRequest;
+export type AdminPermissionsCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminPermissionsCreate>>, {data: PermissionRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  adminPermissionsCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminPermissionsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsCreate>>>
-    export type AdminPermissionsCreateMutationBody = PermissionRequest
-    export type AdminPermissionsCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar nova permissão
  */
-export const useAdminPermissionsCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsCreate>>, TError,{data: PermissionRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminPermissionsCreate>>,
-        TError,
-        {data: PermissionRequest},
-        TContext
-      > => {
+export const useAdminPermissionsCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminPermissionsCreate>>,
+      TError,
+      { data: PermissionRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminPermissionsCreate>>,
+  TError,
+  { data: PermissionRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminPermissionsCreateMutationOptions(options);
 
-      const mutationOptions = getAdminPermissionsCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de uma permissão específica.
  * @summary Obter detalhes da permissão
  */
 export const adminPermissionsRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Permission>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/users/admin/permissions/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Permission>> => {
+  id = unref(id);
 
+  return axios.get(`/api/users/admin/permissions/${id}/`, options);
+};
 
-export const getAdminPermissionsRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','users','admin','permissions',id] as const;
-    }
+export const getAdminPermissionsRetrieveQueryKey = (id: MaybeRef<number>) => {
+  return ["api", "users", "admin", "permissions", id] as const;
+};
 
-    
-export const getAdminPermissionsRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof adminPermissionsRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getAdminPermissionsRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminPermissionsRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminPermissionsRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getAdminPermissionsRetrieveQueryKey(id);
 
-  const queryKey =  getAdminPermissionsRetrieveQueryKey(id);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminPermissionsRetrieve>>
+  > = ({ signal }) => adminPermissionsRetrieve(id, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminPermissionsRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminPermissionsRetrieve>>> = ({ signal }) => adminPermissionsRetrieve(id, { signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsRetrieve>>, TError, TData> 
-}
-
-export type AdminPermissionsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsRetrieve>>>
-export type AdminPermissionsRetrieveQueryError = AxiosError<unknown>
-
+export type AdminPermissionsRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsRetrieve>>
+>;
+export type AdminPermissionsRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes da permissão
  */
 
-export function useAdminPermissionsRetrieve<TData = Awaited<ReturnType<typeof adminPermissionsRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminPermissionsRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminPermissionsRetrieve<
+  TData = Awaited<ReturnType<typeof adminPermissionsRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminPermissionsRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAdminPermissionsRetrieveQueryOptions(id, options);
 
-  const queryOptions = getAdminPermissionsRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de uma permissão existente.
  * @summary Atualizar permissão
  */
 export const adminPermissionsUpdate = (
-    id: MaybeRef<number>,
-    permissionRequest: MaybeRef<PermissionRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Permission>> => {
-    id = unref(id);
-permissionRequest = unref(permissionRequest);
-    
-    return axios.put(
-      `/api/users/admin/permissions/${id}/`,
-      permissionRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  permissionRequest: MaybeRef<PermissionRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Permission>> => {
+  id = unref(id);
+  permissionRequest = unref(permissionRequest);
 
+  return axios.put(
+    `/api/users/admin/permissions/${id}/`,
+    permissionRequest,
+    options,
+  );
+};
 
+export const getAdminPermissionsUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPermissionsUpdate>>,
+    TError,
+    { id: number; data: PermissionRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPermissionsUpdate>>,
+  TError,
+  { id: number; data: PermissionRequest },
+  TContext
+> => {
+  const mutationKey = ["adminPermissionsUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminPermissionsUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsUpdate>>, TError,{id: number;data: PermissionRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsUpdate>>, TError,{id: number;data: PermissionRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPermissionsUpdate>>,
+    { id: number; data: PermissionRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['adminPermissionsUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminPermissionsUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminPermissionsUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsUpdate>>
+>;
+export type AdminPermissionsUpdateMutationBody = PermissionRequest;
+export type AdminPermissionsUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminPermissionsUpdate>>, {id: number;data: PermissionRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  adminPermissionsUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminPermissionsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsUpdate>>>
-    export type AdminPermissionsUpdateMutationBody = PermissionRequest
-    export type AdminPermissionsUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar permissão
  */
-export const useAdminPermissionsUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsUpdate>>, TError,{id: number;data: PermissionRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminPermissionsUpdate>>,
-        TError,
-        {id: number;data: PermissionRequest},
-        TContext
-      > => {
+export const useAdminPermissionsUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminPermissionsUpdate>>,
+      TError,
+      { id: number; data: PermissionRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminPermissionsUpdate>>,
+  TError,
+  { id: number; data: PermissionRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminPermissionsUpdateMutationOptions(options);
 
-      const mutationOptions = getAdminPermissionsUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente uma permissão existente.
  * @summary Atualizar permissão parcialmente
  */
 export const adminPermissionsPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedPermissionRequest: MaybeRef<PatchedPermissionRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Permission>> => {
-    id = unref(id);
-patchedPermissionRequest = unref(patchedPermissionRequest);
-    
-    return axios.patch(
-      `/api/users/admin/permissions/${id}/`,
-      patchedPermissionRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedPermissionRequest: MaybeRef<PatchedPermissionRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Permission>> => {
+  id = unref(id);
+  patchedPermissionRequest = unref(patchedPermissionRequest);
 
+  return axios.patch(
+    `/api/users/admin/permissions/${id}/`,
+    patchedPermissionRequest,
+    options,
+  );
+};
 
+export const getAdminPermissionsPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedPermissionRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedPermissionRequest },
+  TContext
+> => {
+  const mutationKey = ["adminPermissionsPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminPermissionsPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>, TError,{id: number;data: PatchedPermissionRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>, TError,{id: number;data: PatchedPermissionRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
+    { id: number; data: PatchedPermissionRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['adminPermissionsPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminPermissionsPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminPermissionsPartialUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>
+>;
+export type AdminPermissionsPartialUpdateMutationBody =
+  PatchedPermissionRequest;
+export type AdminPermissionsPartialUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>, {id: number;data: PatchedPermissionRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  adminPermissionsPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminPermissionsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>>
-    export type AdminPermissionsPartialUpdateMutationBody = PatchedPermissionRequest
-    export type AdminPermissionsPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar permissão parcialmente
  */
-export const useAdminPermissionsPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>, TError,{id: number;data: PatchedPermissionRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedPermissionRequest},
-        TContext
-      > => {
+export const useAdminPermissionsPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedPermissionRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminPermissionsPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedPermissionRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getAdminPermissionsPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getAdminPermissionsPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove uma permissão existente.
  * @summary Excluir permissão
  */
 export const adminPermissionsDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/users/admin/permissions/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/users/admin/permissions/${id}/`, options);
+};
 
+export const getAdminPermissionsDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPermissionsDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPermissionsDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminPermissionsDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminPermissionsDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPermissionsDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['adminPermissionsDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminPermissionsDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminPermissionsDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPermissionsDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminPermissionsDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type AdminPermissionsDestroyMutationError = AxiosError<unknown>;
 
-          return  adminPermissionsDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminPermissionsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof adminPermissionsDestroy>>>
-    
-    export type AdminPermissionsDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir permissão
  */
-export const useAdminPermissionsDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminPermissionsDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminPermissionsDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useAdminPermissionsDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminPermissionsDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminPermissionsDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getAdminPermissionsDestroyMutationOptions(options);
 
-      const mutationOptions = getAdminPermissionsDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

@@ -5,8 +5,8 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { MembroEquipe } from './membroEquipe';
-import type { PermissaoEquipe } from './permissaoEquipe';
+import type { MembroEquipe } from "./membroEquipe";
+import type { PermissaoEquipe } from "./permissaoEquipe";
 
 export interface Equipe {
   readonly id: number;

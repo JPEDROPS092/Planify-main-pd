@@ -5,36 +5,36 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CommunicationsListTipo } from './communicationsListTipo';
+import type { CommunicationsListTipo } from "./communicationsListTipo";
 
 export type CommunicationsListParams = {
-/**
- * Data de fim para filtrar comunicações (formato: YYYY-MM-DD)
- */
-data_fim?: string;
-/**
- * Data de início para filtrar comunicações (formato: YYYY-MM-DD)
- */
-data_inicio?: string;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-projeto?: number;
-remetente?: number;
-/**
- * A search term.
- */
-search?: string;
-/**
- * Texto contido no conteúdo da comunicação (busca case-insensitive)
- */
-texto?: string;
-/**
+  /**
+   * Data de fim para filtrar comunicações (formato: YYYY-MM-DD)
+   */
+  data_fim?: string;
+  /**
+   * Data de início para filtrar comunicações (formato: YYYY-MM-DD)
+   */
+  data_inicio?: string;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  projeto?: number;
+  remetente?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  /**
+   * Texto contido no conteúdo da comunicação (busca case-insensitive)
+   */
+  texto?: string;
+  /**
  * Tipo de comunicação formal
 
 * `ATA` - Ata de Reunião
@@ -44,9 +44,9 @@ texto?: string;
 * `COMUNICADO` - Comunicado Geral
 * `OUTRO` - Outro
  */
-tipo?: CommunicationsListTipo;
-/**
- * Texto contido no título da comunicação (busca case-insensitive)
- */
-titulo?: string;
+  tipo?: CommunicationsListTipo;
+  /**
+   * Texto contido no título da comunicação (busca case-insensitive)
+   */
+  titulo?: string;
 };

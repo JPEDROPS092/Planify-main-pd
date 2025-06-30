@@ -8,15 +8,15 @@
 
 /**
  * * `BAIXA` - Baixa
-* `MEDIA` - Média
-* `ALTA` - Alta
+ * `MEDIA` - Média
+ * `ALTA` - Alta
  */
-export type ProbabilidadeEnum = typeof ProbabilidadeEnum[keyof typeof ProbabilidadeEnum];
-
+export type ProbabilidadeEnum =
+  (typeof ProbabilidadeEnum)[keyof typeof ProbabilidadeEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ProbabilidadeEnum = {
-  BAIXA: 'BAIXA',
-  MEDIA: 'MEDIA',
-  ALTA: 'ALTA',
+  BAIXA: "BAIXA",
+  MEDIA: "MEDIA",
+  ALTA: "ALTA",
 } as const;

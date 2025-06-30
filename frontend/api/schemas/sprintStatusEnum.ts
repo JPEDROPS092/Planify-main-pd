@@ -8,17 +8,17 @@
 
 /**
  * * `PLANEJADO` - Planejado
-* `EM_ANDAMENTO` - Em Andamento
-* `CONCLUIDO` - Concluído
-* `CANCELADO` - Cancelado
+ * `EM_ANDAMENTO` - Em Andamento
+ * `CONCLUIDO` - Concluído
+ * `CANCELADO` - Cancelado
  */
-export type SprintStatusEnum = typeof SprintStatusEnum[keyof typeof SprintStatusEnum];
-
+export type SprintStatusEnum =
+  (typeof SprintStatusEnum)[keyof typeof SprintStatusEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SprintStatusEnum = {
-  PLANEJADO: 'PLANEJADO',
-  EM_ANDAMENTO: 'EM_ANDAMENTO',
-  CONCLUIDO: 'CONCLUIDO',
-  CANCELADO: 'CANCELADO',
+  PLANEJADO: "PLANEJADO",
+  EM_ANDAMENTO: "EM_ANDAMENTO",
+  CONCLUIDO: "CONCLUIDO",
+  CANCELADO: "CANCELADO",
 } as const;

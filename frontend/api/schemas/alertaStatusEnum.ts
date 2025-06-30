@@ -8,15 +8,15 @@
 
 /**
  * * `ATIVO` - Ativo
-* `RESOLVIDO` - Resolvido
-* `IGNORADO` - Ignorado
+ * `RESOLVIDO` - Resolvido
+ * `IGNORADO` - Ignorado
  */
-export type AlertaStatusEnum = typeof AlertaStatusEnum[keyof typeof AlertaStatusEnum];
-
+export type AlertaStatusEnum =
+  (typeof AlertaStatusEnum)[keyof typeof AlertaStatusEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AlertaStatusEnum = {
-  ATIVO: 'ATIVO',
-  RESOLVIDO: 'RESOLVIDO',
-  IGNORADO: 'IGNORADO',
+  ATIVO: "ATIVO",
+  RESOLVIDO: "RESOLVIDO",
+  IGNORADO: "IGNORADO",
 } as const;

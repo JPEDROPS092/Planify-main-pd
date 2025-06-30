@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { TarefaList } from './tarefaList';
+import type { TarefaList } from "./tarefaList";
 
 export interface PaginatedTarefaListList {
   count?: number;

@@ -8,17 +8,17 @@
 
 /**
  * * `EMAIL` - E-mail
-* `SISTEMA` - Sistema
-* `AMBOS` - Ambos
-* `NENHUM` - Nenhum
+ * `SISTEMA` - Sistema
+ * `AMBOS` - Ambos
+ * `NENHUM` - Nenhum
  */
-export type TarefaComentarioEnum = typeof TarefaComentarioEnum[keyof typeof TarefaComentarioEnum];
-
+export type TarefaComentarioEnum =
+  (typeof TarefaComentarioEnum)[keyof typeof TarefaComentarioEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const TarefaComentarioEnum = {
-  EMAIL: 'EMAIL',
-  SISTEMA: 'SISTEMA',
-  AMBOS: 'AMBOS',
-  NENHUM: 'NENHUM',
+  EMAIL: "EMAIL",
+  SISTEMA: "SISTEMA",
+  AMBOS: "AMBOS",
+  NENHUM: "NENHUM",
 } as const;

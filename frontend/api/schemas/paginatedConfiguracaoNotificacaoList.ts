@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ConfiguracaoNotificacao } from './configuracaoNotificacao';
+import type { ConfiguracaoNotificacao } from "./configuracaoNotificacao";
 
 export interface PaginatedConfiguracaoNotificacaoList {
   count?: number;

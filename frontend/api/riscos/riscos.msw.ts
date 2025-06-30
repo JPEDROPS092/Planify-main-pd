@@ -5,170 +5,842 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
 
-import {
-  HttpResponse,
-  delay,
-  http
-} from 'msw';
+import { HttpResponse, delay, http } from "msw";
 
 import {
   ImpactoEnum,
   NovaProbabilidadeEnum,
   NovoStatus346Enum,
   ProbabilidadeAnteriorEnum,
-  ProbabilidadeEnum
-} from '.././schemas';
+  ProbabilidadeEnum,
+} from ".././schemas";
 import type {
   HistoricoRisco,
   PaginatedHistoricoRiscoList,
   PaginatedRiscoList,
   Risco,
-  RiscoList
-} from '.././schemas';
+  RiscoList,
+} from ".././schemas";
 
+export const getRisksHistoricoListResponseMock = (
+  overrideResponse: Partial<PaginatedHistoricoRiscoList> = {},
+): PaginatedHistoricoRiscoList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      risco: faker.number.int({ min: undefined, max: undefined }),
+      status_anterior: faker.helpers.arrayElement(
+        Object.values(NovoStatus346Enum),
+      ),
+      status_anterior_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+      novo_status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      probabilidade_anterior: faker.helpers.arrayElement(
+        Object.values(ProbabilidadeAnteriorEnum),
+      ),
+      probabilidade_anterior_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      nova_probabilidade: faker.helpers.arrayElement(
+        Object.values(NovaProbabilidadeEnum),
+      ),
+      nova_probabilidade_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+      impacto_anterior_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+      novo_impacto_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      alterado_por: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.number.int({ min: undefined, max: undefined }),
+          null,
+        ]),
+        undefined,
+      ]),
+      alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      observacao: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        undefined,
+      ]),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getRisksHistoricoListResponseMock = (overrideResponse: Partial< PaginatedHistoricoRiscoList > = {}): PaginatedHistoricoRiscoList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined])})), undefined]), ...overrideResponse})
+export const getRisksHistoricoRetrieveResponseMock = (
+  overrideResponse: Partial<HistoricoRisco> = {},
+): HistoricoRisco => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  risco: faker.number.int({ min: undefined, max: undefined }),
+  status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+  status_anterior_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+  novo_status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  probabilidade_anterior: faker.helpers.arrayElement(
+    Object.values(ProbabilidadeAnteriorEnum),
+  ),
+  probabilidade_anterior_display: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  nova_probabilidade: faker.helpers.arrayElement(
+    Object.values(NovaProbabilidadeEnum),
+  ),
+  nova_probabilidade_display: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  impacto_anterior_display: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  novo_impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  alterado_por: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  observacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getRisksHistoricoRetrieveResponseMock = (overrideResponse: Partial< HistoricoRisco > = {}): HistoricoRisco => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), ...overrideResponse})
+export const getRisksRiscosListResponseMock = (
+  overrideResponse: Partial<PaginatedRiscoList> = {},
+): PaginatedRiscoList => ({
+  count: faker.helpers.arrayElement([
+    faker.number.int({ min: undefined, max: undefined }),
+    undefined,
+  ]),
+  next: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  previous: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([faker.internet.url(), null]),
+    undefined,
+  ]),
+  results: faker.helpers.arrayElement([
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      id: faker.number.int({ min: undefined, max: undefined }),
+      projeto: faker.number.int({ min: undefined, max: undefined }),
+      projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      probabilidade: faker.helpers.arrayElement(
+        Object.values(ProbabilidadeEnum),
+      ),
+      probabilidade_display: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+      impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      status: faker.helpers.arrayElement([
+        faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+        undefined,
+      ]),
+      status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      responsavel_mitigacao: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.number.int({ min: undefined, max: undefined }),
+          null,
+        ]),
+        undefined,
+      ]),
+      responsavel_mitigacao_nome: faker.string.alpha({
+        length: { min: 10, max: 20 },
+      }),
+      plano_mitigacao: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        undefined,
+      ]),
+      plano_contingencia: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        undefined,
+      ]),
+      data_identificacao: faker.date.past().toISOString().split("T")[0],
+      criado_por: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.number.int({ min: undefined, max: undefined }),
+          null,
+        ]),
+        undefined,
+      ]),
+      criado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+      nivel_risco: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      historico: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        id: faker.number.int({ min: undefined, max: undefined }),
+        risco: faker.number.int({ min: undefined, max: undefined }),
+        status_anterior: faker.helpers.arrayElement(
+          Object.values(NovoStatus346Enum),
+        ),
+        status_anterior_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        novo_status: faker.helpers.arrayElement(
+          Object.values(NovoStatus346Enum),
+        ),
+        novo_status_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        probabilidade_anterior: faker.helpers.arrayElement(
+          Object.values(ProbabilidadeAnteriorEnum),
+        ),
+        probabilidade_anterior_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        nova_probabilidade: faker.helpers.arrayElement(
+          Object.values(NovaProbabilidadeEnum),
+        ),
+        nova_probabilidade_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        impacto_anterior: faker.helpers.arrayElement(
+          Object.values(ImpactoEnum),
+        ),
+        impacto_anterior_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+        novo_impacto_display: faker.string.alpha({
+          length: { min: 10, max: 20 },
+        }),
+        alterado_por: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.number.int({ min: undefined, max: undefined }),
+            null,
+          ]),
+          undefined,
+        ]),
+        alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+        observacao: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          undefined,
+        ]),
+      })),
+    })),
+    undefined,
+  ]),
+  ...overrideResponse,
+});
 
-export const getRisksRiscosListResponseMock = (overrideResponse: Partial< PaginatedRiscoList > = {}): PaginatedRiscoList => ({count: faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), undefined]), next: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), previous: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.internet.url(), null]), undefined]), results: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)), probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), responsavel_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), responsavel_mitigacao_nome: faker.string.alpha({length: {min: 10, max: 20}}), plano_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), plano_contingencia: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_identificacao: faker.date.past().toISOString().split('T')[0], criado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), criado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, nivel_risco: faker.string.alpha({length: {min: 10, max: 20}}), historico: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined])}))})), undefined]), ...overrideResponse})
+export const getRisksRiscosCreateResponseMock = (
+  overrideResponse: Partial<RiscoList> = {},
+): RiscoList => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)),
+  probabilidade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  responsavel_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  responsavel_mitigacao_nome: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  data_identificacao: faker.date.past().toISOString().split("T")[0],
+  nivel_risco: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ...overrideResponse,
+});
 
-export const getRisksRiscosCreateResponseMock = (overrideResponse: Partial< RiscoList > = {}): RiscoList => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)), probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), responsavel_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), responsavel_mitigacao_nome: faker.string.alpha({length: {min: 10, max: 20}}), data_identificacao: faker.date.past().toISOString().split('T')[0], nivel_risco: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
+export const getRisksRiscosRetrieveResponseMock = (
+  overrideResponse: Partial<Risco> = {},
+): Risco => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)),
+  probabilidade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  responsavel_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  responsavel_mitigacao_nome: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  plano_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  plano_contingencia: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_identificacao: faker.date.past().toISOString().split("T")[0],
+  criado_por: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  criado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  nivel_risco: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  historico: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    risco: faker.number.int({ min: undefined, max: undefined }),
+    status_anterior: faker.helpers.arrayElement(
+      Object.values(NovoStatus346Enum),
+    ),
+    status_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    novo_status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    probabilidade_anterior: faker.helpers.arrayElement(
+      Object.values(ProbabilidadeAnteriorEnum),
+    ),
+    probabilidade_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    nova_probabilidade: faker.helpers.arrayElement(
+      Object.values(NovaProbabilidadeEnum),
+    ),
+    nova_probabilidade_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    impacto_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    novo_impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_por: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      undefined,
+    ]),
+    alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    observacao: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
+  })),
+  ...overrideResponse,
+});
 
-export const getRisksRiscosRetrieveResponseMock = (overrideResponse: Partial< Risco > = {}): Risco => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)), probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), responsavel_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), responsavel_mitigacao_nome: faker.string.alpha({length: {min: 10, max: 20}}), plano_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), plano_contingencia: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_identificacao: faker.date.past().toISOString().split('T')[0], criado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), criado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, nivel_risco: faker.string.alpha({length: {min: 10, max: 20}}), historico: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined])})), ...overrideResponse})
+export const getRisksRiscosUpdateResponseMock = (
+  overrideResponse: Partial<Risco> = {},
+): Risco => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)),
+  probabilidade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  responsavel_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  responsavel_mitigacao_nome: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  plano_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  plano_contingencia: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_identificacao: faker.date.past().toISOString().split("T")[0],
+  criado_por: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  criado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  nivel_risco: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  historico: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    risco: faker.number.int({ min: undefined, max: undefined }),
+    status_anterior: faker.helpers.arrayElement(
+      Object.values(NovoStatus346Enum),
+    ),
+    status_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    novo_status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    probabilidade_anterior: faker.helpers.arrayElement(
+      Object.values(ProbabilidadeAnteriorEnum),
+    ),
+    probabilidade_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    nova_probabilidade: faker.helpers.arrayElement(
+      Object.values(NovaProbabilidadeEnum),
+    ),
+    nova_probabilidade_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    impacto_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    novo_impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_por: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      undefined,
+    ]),
+    alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    observacao: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
+  })),
+  ...overrideResponse,
+});
 
-export const getRisksRiscosUpdateResponseMock = (overrideResponse: Partial< Risco > = {}): Risco => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)), probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), responsavel_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), responsavel_mitigacao_nome: faker.string.alpha({length: {min: 10, max: 20}}), plano_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), plano_contingencia: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_identificacao: faker.date.past().toISOString().split('T')[0], criado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), criado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, nivel_risco: faker.string.alpha({length: {min: 10, max: 20}}), historico: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined])})), ...overrideResponse})
+export const getRisksRiscosPartialUpdateResponseMock = (
+  overrideResponse: Partial<Risco> = {},
+): Risco => ({
+  id: faker.number.int({ min: undefined, max: undefined }),
+  projeto: faker.number.int({ min: undefined, max: undefined }),
+  projeto_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  descricao: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)),
+  probabilidade_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+  impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    undefined,
+  ]),
+  status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  responsavel_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  responsavel_mitigacao_nome: faker.string.alpha({
+    length: { min: 10, max: 20 },
+  }),
+  plano_mitigacao: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  plano_contingencia: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    undefined,
+  ]),
+  data_identificacao: faker.date.past().toISOString().split("T")[0],
+  criado_por: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.number.int({ min: undefined, max: undefined }),
+      null,
+    ]),
+    undefined,
+  ]),
+  criado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  atualizado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+  nivel_risco: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  historico: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    id: faker.number.int({ min: undefined, max: undefined }),
+    risco: faker.number.int({ min: undefined, max: undefined }),
+    status_anterior: faker.helpers.arrayElement(
+      Object.values(NovoStatus346Enum),
+    ),
+    status_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)),
+    novo_status_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    probabilidade_anterior: faker.helpers.arrayElement(
+      Object.values(ProbabilidadeAnteriorEnum),
+    ),
+    probabilidade_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    nova_probabilidade: faker.helpers.arrayElement(
+      Object.values(NovaProbabilidadeEnum),
+    ),
+    nova_probabilidade_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    impacto_anterior_display: faker.string.alpha({
+      length: { min: 10, max: 20 },
+    }),
+    novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)),
+    novo_impacto_display: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_por: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.number.int({ min: undefined, max: undefined }),
+        null,
+      ]),
+      undefined,
+    ]),
+    alterado_por_nome: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    alterado_em: `${faker.date.past().toISOString().split(".")[0]}Z`,
+    observacao: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
+  })),
+  ...overrideResponse,
+});
 
-export const getRisksRiscosPartialUpdateResponseMock = (overrideResponse: Partial< Risco > = {}): Risco => ({id: faker.number.int({min: undefined, max: undefined}), projeto: faker.number.int({min: undefined, max: undefined}), projeto_nome: faker.string.alpha({length: {min: 10, max: 20}}), descricao: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade: faker.helpers.arrayElement(Object.values(ProbabilidadeEnum)), probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement([faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), undefined]), status_display: faker.string.alpha({length: {min: 10, max: 20}}), responsavel_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), responsavel_mitigacao_nome: faker.string.alpha({length: {min: 10, max: 20}}), plano_mitigacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), plano_contingencia: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined]), data_identificacao: faker.date.past().toISOString().split('T')[0], criado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), criado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), atualizado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, nivel_risco: faker.string.alpha({length: {min: 10, max: 20}}), historico: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.int({min: undefined, max: undefined}), risco: faker.number.int({min: undefined, max: undefined}), status_anterior: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), status_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_status: faker.helpers.arrayElement(Object.values(NovoStatus346Enum)), novo_status_display: faker.string.alpha({length: {min: 10, max: 20}}), probabilidade_anterior: faker.helpers.arrayElement(Object.values(ProbabilidadeAnteriorEnum)), probabilidade_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), nova_probabilidade: faker.helpers.arrayElement(Object.values(NovaProbabilidadeEnum)), nova_probabilidade_display: faker.string.alpha({length: {min: 10, max: 20}}), impacto_anterior: faker.helpers.arrayElement(Object.values(ImpactoEnum)), impacto_anterior_display: faker.string.alpha({length: {min: 10, max: 20}}), novo_impacto: faker.helpers.arrayElement(Object.values(ImpactoEnum)), novo_impacto_display: faker.string.alpha({length: {min: 10, max: 20}}), alterado_por: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.int({min: undefined, max: undefined}), null]), undefined]), alterado_por_nome: faker.string.alpha({length: {min: 10, max: 20}}), alterado_em: `${faker.date.past().toISOString().split('.')[0]}Z`, observacao: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), undefined])})), ...overrideResponse})
+export const getRisksHistoricoListMockHandler = (
+  overrideResponse?:
+    | PaginatedHistoricoRiscoList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedHistoricoRiscoList> | PaginatedHistoricoRiscoList),
+) => {
+  return http.get("*/api/risks/historico/", async (info) => {
+    await delay(1000);
 
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksHistoricoListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksHistoricoListMockHandler = (overrideResponse?: PaginatedHistoricoRiscoList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedHistoricoRiscoList> | PaginatedHistoricoRiscoList)) => {
-  return http.get('*/api/risks/historico/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksHistoricoListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getRisksHistoricoRetrieveMockHandler = (
+  overrideResponse?:
+    | HistoricoRisco
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<HistoricoRisco> | HistoricoRisco),
+) => {
+  return http.get("*/api/risks/historico/:id/", async (info) => {
+    await delay(1000);
 
-export const getRisksHistoricoRetrieveMockHandler = (overrideResponse?: HistoricoRisco | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<HistoricoRisco> | HistoricoRisco)) => {
-  return http.get('*/api/risks/historico/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksHistoricoRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksHistoricoRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksRiscosListMockHandler = (overrideResponse?: PaginatedRiscoList | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedRiscoList> | PaginatedRiscoList)) => {
-  return http.get('*/api/risks/riscos/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksRiscosListResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getRisksRiscosListMockHandler = (
+  overrideResponse?:
+    | PaginatedRiscoList
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PaginatedRiscoList> | PaginatedRiscoList),
+) => {
+  return http.get("*/api/risks/riscos/", async (info) => {
+    await delay(1000);
 
-export const getRisksRiscosCreateMockHandler = (overrideResponse?: RiscoList | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<RiscoList> | RiscoList)) => {
-  return http.post('*/api/risks/riscos/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksRiscosCreateResponseMock()),
-      { status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksRiscosListResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksRiscosRetrieveMockHandler = (overrideResponse?: Risco | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Risco> | Risco)) => {
-  return http.get('*/api/risks/riscos/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksRiscosRetrieveResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getRisksRiscosCreateMockHandler = (
+  overrideResponse?:
+    | RiscoList
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<RiscoList> | RiscoList),
+) => {
+  return http.post("*/api/risks/riscos/", async (info) => {
+    await delay(1000);
 
-export const getRisksRiscosUpdateMockHandler = (overrideResponse?: Risco | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<Risco> | Risco)) => {
-  return http.put('*/api/risks/riscos/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksRiscosUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksRiscosCreateResponseMock(),
+      ),
+      { status: 201, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksRiscosPartialUpdateMockHandler = (overrideResponse?: Risco | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<Risco> | Risco)) => {
-  return http.patch('*/api/risks/riscos/:id/', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRisksRiscosPartialUpdateResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  })
-}
+export const getRisksRiscosRetrieveMockHandler = (
+  overrideResponse?:
+    | Risco
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<Risco> | Risco),
+) => {
+  return http.get("*/api/risks/riscos/:id/", async (info) => {
+    await delay(1000);
 
-export const getRisksRiscosDestroyMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void)) => {
-  return http.delete('*/api/risks/riscos/:id/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 204,
-        
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksRiscosRetrieveResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksRiscosAtualizarStatusCreateMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void)) => {
-  return http.post('*/api/risks/riscos/:id/atualizar_status/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 200,
-        
-      })
-  })
-}
+export const getRisksRiscosUpdateMockHandler = (
+  overrideResponse?:
+    | Risco
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<Risco> | Risco),
+) => {
+  return http.put("*/api/risks/riscos/:id/", async (info) => {
+    await delay(1000);
 
-export const getRisksRiscosHistoricoRetrieveMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<void> | void)) => {
-  return http.get('*/api/risks/riscos/:id/historico/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 200,
-        
-      })
-  })
-}
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksRiscosUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
 
-export const getRisksRiscosExcluirVariosDestroyMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void)) => {
-  return http.delete('*/api/risks/riscos/excluir_varios/', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 200,
-        
-      })
-  })
-}
+export const getRisksRiscosPartialUpdateMockHandler = (
+  overrideResponse?:
+    | Risco
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<Risco> | Risco),
+) => {
+  return http.patch("*/api/risks/riscos/:id/", async (info) => {
+    await delay(1000);
+
+    return new HttpResponse(
+      JSON.stringify(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRisksRiscosPartialUpdateResponseMock(),
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  });
+};
+
+export const getRisksRiscosDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete("*/api/risks/riscos/:id/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 204 });
+  });
+};
+
+export const getRisksRiscosAtualizarStatusCreateMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.post("*/api/risks/riscos/:id/atualizar_status/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 200 });
+  });
+};
+
+export const getRisksRiscosHistoricoRetrieveMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.get("*/api/risks/riscos/:id/historico/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 200 });
+  });
+};
+
+export const getRisksRiscosExcluirVariosDestroyMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+) => {
+  return http.delete("*/api/risks/riscos/excluir_varios/", async (info) => {
+    await delay(1000);
+    if (typeof overrideResponse === "function") {
+      await overrideResponse(info);
+    }
+    return new HttpResponse(null, { status: 200 });
+  });
+};
 export const getRiscosMock = () => [
   getRisksHistoricoListMockHandler(),
   getRisksHistoricoRetrieveMockHandler(),
@@ -180,5 +852,5 @@ export const getRiscosMock = () => [
   getRisksRiscosDestroyMockHandler(),
   getRisksRiscosAtualizarStatusCreateMockHandler(),
   getRisksRiscosHistoricoRetrieveMockHandler(),
-  getRisksRiscosExcluirVariosDestroyMockHandler()
-]
+  getRisksRiscosExcluirVariosDestroyMockHandler(),
+];

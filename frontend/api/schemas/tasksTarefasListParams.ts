@@ -7,92 +7,58 @@
  */
 
 export type TasksTarefasListParams = {
-/**
- * Filtrar tarefas atrasadas
- */
-atrasada?: boolean;
-/**
- * Filtra tarefas com data de início antes da data especificada
- */
-data_inicio_antes_after?: string;
-/**
- * Filtra tarefas com data de início antes da data especificada
- */
-data_inicio_antes_before?: string;
-/**
- * Filtra tarefas com data de início após a data especificada
- */
-data_inicio_apos_after?: string;
-/**
- * Filtra tarefas com data de início após a data especificada
- */
-data_inicio_apos_before?: string;
-/**
- * Filtra tarefas com data de término antes da data especificada
- */
-data_termino_antes_after?: string;
-/**
- * Filtra tarefas com data de término antes da data especificada
- */
-data_termino_antes_before?: string;
-/**
- * Filtra tarefas com data de término após a data especificada
- */
-data_termino_apos_after?: string;
-/**
- * Filtra tarefas com data de término após a data especificada
- */
-data_termino_apos_before?: string;
-/**
- * Filtra por descrição (case insensitive)
- */
-descricao?: string;
-/**
- * Filtrar minhas tarefas
- */
-minhas_tarefas?: boolean;
-/**
- * Ordenar resultados (ex: -data_termino)
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-/**
- * Filtrar por prioridade (separadas por vírgula)
- */
-prioridade?: string;
-/**
- * Filtrar por ID do projeto
- */
-projeto?: number;
-/**
- * Filtrar por ID do usuário responsável
- */
-responsavel?: number;
-/**
- * A search term.
- */
-search?: string;
-/**
- * Filtra tarefas sem responsáveis atribuídos
- */
-sem_responsavel?: boolean;
-/**
- * Filtrar tarefas sem sprint
- */
-sem_sprint?: boolean;
-/**
- * Filtrar por ID da sprint
- */
-sprint?: number;
-/**
- * Filtrar por status (separados por vírgula)
- */
-status?: string;
-/**
- * Filtra por título (case insensitive)
- */
-titulo?: string;
+  /**
+   * Filtra tarefas atrasadas (data_termino < hoje e status não é 'FEITO').
+   */
+  atrasada?: boolean;
+  data_inicio_range_after?: string;
+  data_inicio_range_before?: string;
+  data_termino_range_after?: string;
+  data_termino_range_before?: string;
+  /**
+   * Filtra por parte da descrição (case-insensitive).
+   */
+  descricao?: string;
+  /**
+   * Filtra apenas as tarefas atribuídas ao usuário autenticado.
+   */
+  minhas_tarefas?: boolean;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
+   * Filtra por prioridade (pode ser uma ou múltiplas, separadas por vírgula).
+   */
+  prioridade?: string;
+  projeto?: number;
+  /**
+   * Filtra tarefas por um ID de usuário responsável específico.
+   */
+  responsavel_id?: string;
+  /**
+   * A search term.
+   */
+  search?: string;
+  /**
+   * Filtra tarefas sem responsáveis atribuídos.
+   */
+  sem_responsavel?: boolean;
+  /**
+   * Filtra tarefas que não estão associadas a nenhuma sprint.
+   */
+  sem_sprint?: boolean;
+  sprint?: number;
+  /**
+   * Filtra por status (pode ser um ou múltiplos, separados por vírgula).
+   */
+  status?: string;
+  /**
+   * Filtra por parte do título (case-insensitive).
+   */
+  titulo?: string;
 };

@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { RoleEnum } from './roleEnum';
+import type { RoleEnum } from "./roleEnum";
 
 /**
  * Serializer específico para o registro de novos usuários.

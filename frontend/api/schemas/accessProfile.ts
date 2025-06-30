@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Permission } from './permission';
+import type { Permission } from "./permission";
 
 export interface AccessProfile {
   readonly id: number;

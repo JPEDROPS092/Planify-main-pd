@@ -5,9 +5,12 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { PrioridadeEnum } from './prioridadeEnum';
-import type { NovoStatusBbcEnum } from './novoStatusBbcEnum';
+import type { PrioridadeEnum } from "./prioridadeEnum";
+import type { NovoStatusBbcEnum } from "./novoStatusBbcEnum";
 
+/**
+ * Serializer detalhado para uma única tarefa.
+ */
 export interface PatchedTarefaRequest {
   /**
    * @minLength 1

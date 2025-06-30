@@ -5,8 +5,8 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { AlertaTipoEnum } from './alertaTipoEnum';
-import type { AlertaStatusEnum } from './alertaStatusEnum';
+import type { AlertaTipoEnum } from "./alertaTipoEnum";
+import type { AlertaStatusEnum } from "./alertaStatusEnum";
 
 /**
  * Serializer para o modelo Alerta.

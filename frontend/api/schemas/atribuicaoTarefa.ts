@@ -5,14 +5,12 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
+import type { User } from "./user";
 
 export interface AtribuicaoTarefa {
   readonly id: number;
   tarefa: number;
-  usuario: number;
-  readonly usuario_nome: string;
+  readonly usuario: User;
   readonly atribuido_em: string;
-  /** @nullable */
-  atribuido_por?: number | null;
-  readonly atribuido_por_nome: string;
+  readonly atribuido_por: User;
 }

@@ -8,19 +8,18 @@
 
 /**
  * * `PLANEJADO` - Planejado
-* `EM_ANDAMENTO` - Em Andamento
-* `PAUSADO` - Pausado
-* `CONCLUIDO` - Concluído
-* `CANCELADO` - Cancelado
+ * `EM_ANDAMENTO` - Em Andamento
+ * `PAUSADO` - Pausado
+ * `CONCLUIDO` - Concluído
+ * `CANCELADO` - Cancelado
  */
-export type Status477Enum = typeof Status477Enum[keyof typeof Status477Enum];
-
+export type Status477Enum = (typeof Status477Enum)[keyof typeof Status477Enum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const Status477Enum = {
-  PLANEJADO: 'PLANEJADO',
-  EM_ANDAMENTO: 'EM_ANDAMENTO',
-  PAUSADO: 'PAUSADO',
-  CONCLUIDO: 'CONCLUIDO',
-  CANCELADO: 'CANCELADO',
+  PLANEJADO: "PLANEJADO",
+  EM_ANDAMENTO: "EM_ANDAMENTO",
+  PAUSADO: "PAUSADO",
+  CONCLUIDO: "CONCLUIDO",
+  CANCELADO: "CANCELADO",
 } as const;

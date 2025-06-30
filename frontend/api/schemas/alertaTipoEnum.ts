@@ -8,13 +8,13 @@
 
 /**
  * * `PROJETO` - Projeto
-* `TAREFA` - Tarefa
+ * `TAREFA` - Tarefa
  */
-export type AlertaTipoEnum = typeof AlertaTipoEnum[keyof typeof AlertaTipoEnum];
-
+export type AlertaTipoEnum =
+  (typeof AlertaTipoEnum)[keyof typeof AlertaTipoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AlertaTipoEnum = {
-  PROJETO: 'PROJETO',
-  TAREFA: 'TAREFA',
+  PROJETO: "PROJETO",
+  TAREFA: "TAREFA",
 } as const;

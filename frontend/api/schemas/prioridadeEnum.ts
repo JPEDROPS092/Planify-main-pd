@@ -8,15 +8,15 @@
 
 /**
  * * `BAIXA` - Baixa
-* `MEDIA` - Média
-* `ALTA` - Alta
+ * `MEDIA` - Média
+ * `ALTA` - Alta
  */
-export type PrioridadeEnum = typeof PrioridadeEnum[keyof typeof PrioridadeEnum];
-
+export type PrioridadeEnum =
+  (typeof PrioridadeEnum)[keyof typeof PrioridadeEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PrioridadeEnum = {
-  BAIXA: 'BAIXA',
-  MEDIA: 'MEDIA',
-  ALTA: 'ALTA',
+  BAIXA: "BAIXA",
+  MEDIA: "MEDIA",
+  ALTA: "ALTA",
 } as const;

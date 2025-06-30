@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CustoTipoEnum } from './custoTipoEnum';
+import type { CustoTipoEnum } from "./custoTipoEnum";
 
 /**
  * Serializer detalhado para o modelo Custo.

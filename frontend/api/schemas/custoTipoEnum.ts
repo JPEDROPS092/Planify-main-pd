@@ -8,15 +8,14 @@
 
 /**
  * * `FIXO` - Custo Fixo
-* `VARIAVEL` - Custo Variável
-* `RECORRENTE` - Custo Recorrente
+ * `VARIAVEL` - Custo Variável
+ * `RECORRENTE` - Custo Recorrente
  */
-export type CustoTipoEnum = typeof CustoTipoEnum[keyof typeof CustoTipoEnum];
-
+export type CustoTipoEnum = (typeof CustoTipoEnum)[keyof typeof CustoTipoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CustoTipoEnum = {
-  FIXO: 'FIXO',
-  VARIAVEL: 'VARIAVEL',
-  RECORRENTE: 'RECORRENTE',
+  FIXO: "FIXO",
+  VARIAVEL: "VARIAVEL",
+  RECORRENTE: "RECORRENTE",
 } as const;

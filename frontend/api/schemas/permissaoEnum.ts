@@ -8,17 +8,16 @@
 
 /**
  * * `VISUALIZAR` - Visualizar
-* `CRIAR` - Criar
-* `EDITAR` - Editar
-* `EXCLUIR` - Excluir
+ * `CRIAR` - Criar
+ * `EDITAR` - Editar
+ * `EXCLUIR` - Excluir
  */
-export type PermissaoEnum = typeof PermissaoEnum[keyof typeof PermissaoEnum];
-
+export type PermissaoEnum = (typeof PermissaoEnum)[keyof typeof PermissaoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PermissaoEnum = {
-  VISUALIZAR: 'VISUALIZAR',
-  CRIAR: 'CRIAR',
-  EDITAR: 'EDITAR',
-  EXCLUIR: 'EXCLUIR',
+  VISUALIZAR: "VISUALIZAR",
+  CRIAR: "CRIAR",
+  EDITAR: "EDITAR",
+  EXCLUIR: "EXCLUIR",
 } as const;

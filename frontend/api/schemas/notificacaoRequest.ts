@@ -5,8 +5,8 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { NotificacaoTipoEnum } from './notificacaoTipoEnum';
-import type { PrioridadeEnum } from './prioridadeEnum';
+import type { NotificacaoTipoEnum } from "./notificacaoTipoEnum";
+import type { PrioridadeEnum } from "./prioridadeEnum";
 
 /**
  * Serializer para notificações com suporte ao GenericForeignKey.

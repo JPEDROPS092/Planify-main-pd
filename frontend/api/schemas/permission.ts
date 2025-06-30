@@ -5,8 +5,8 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ModuleEnum } from './moduleEnum';
-import type { ActionEnum } from './actionEnum';
+import type { ModuleEnum } from "./moduleEnum";
+import type { ActionEnum } from "./actionEnum";
 
 export interface Permission {
   readonly id: number;

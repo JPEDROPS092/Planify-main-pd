@@ -8,15 +8,15 @@
 
 /**
  * * `A_FAZER` - A Fazer
-* `EM_ANDAMENTO` - Em Andamento
-* `FEITO` - Feito
+ * `EM_ANDAMENTO` - Em Andamento
+ * `FEITO` - Feito
  */
-export type NovoStatusBbcEnum = typeof NovoStatusBbcEnum[keyof typeof NovoStatusBbcEnum];
-
+export type NovoStatusBbcEnum =
+  (typeof NovoStatusBbcEnum)[keyof typeof NovoStatusBbcEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const NovoStatusBbcEnum = {
-  A_FAZER: 'A_FAZER',
-  EM_ANDAMENTO: 'EM_ANDAMENTO',
-  FEITO: 'FEITO',
+  A_FAZER: "A_FAZER",
+  EM_ANDAMENTO: "EM_ANDAMENTO",
+  FEITO: "FEITO",
 } as const;

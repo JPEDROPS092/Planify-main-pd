@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Comentario } from './comentario';
+import type { Comentario } from "./comentario";
 
 export interface PaginatedComentarioList {
   count?: number;

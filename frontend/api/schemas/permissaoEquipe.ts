@@ -5,9 +5,9 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Papel130Enum } from './papel130Enum';
-import type { ModuloEnum } from './moduloEnum';
-import type { PermissaoEnum } from './permissaoEnum';
+import type { Papel130Enum } from "./papel130Enum";
+import type { ModuloEnum } from "./moduloEnum";
+import type { PermissaoEnum } from "./permissaoEnum";
 
 export interface PermissaoEquipe {
   readonly id: number;

@@ -8,17 +8,17 @@
 
 /**
  * * `EMAIL` - E-mail
-* `SISTEMA` - Sistema
-* `AMBOS` - Ambos
-* `NENHUM` - Nenhum
+ * `SISTEMA` - Sistema
+ * `AMBOS` - Ambos
+ * `NENHUM` - Nenhum
  */
-export type EquipeAlteracaoEnum = typeof EquipeAlteracaoEnum[keyof typeof EquipeAlteracaoEnum];
-
+export type EquipeAlteracaoEnum =
+  (typeof EquipeAlteracaoEnum)[keyof typeof EquipeAlteracaoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const EquipeAlteracaoEnum = {
-  EMAIL: 'EMAIL',
-  SISTEMA: 'SISTEMA',
-  AMBOS: 'AMBOS',
-  NENHUM: 'NENHUM',
+  EMAIL: "EMAIL",
+  SISTEMA: "SISTEMA",
+  AMBOS: "AMBOS",
+  NENHUM: "NENHUM",
 } as const;

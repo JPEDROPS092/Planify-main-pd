@@ -6,15 +6,15 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DocumentsListTipo = typeof DocumentsListTipo[keyof typeof DocumentsListTipo];
-
+export type DocumentsListTipo =
+  (typeof DocumentsListTipo)[keyof typeof DocumentsListTipo];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const DocumentsListTipo = {
-  ATA: 'ATA',
-  DESIGN: 'DESIGN',
-  MANUAL: 'MANUAL',
-  OUTRO: 'OUTRO',
-  RELATORIO: 'RELATORIO',
-  REQUISITO: 'REQUISITO',
+  ATA: "ATA",
+  DESIGN: "DESIGN",
+  MANUAL: "MANUAL",
+  OUTRO: "OUTRO",
+  RELATORIO: "RELATORIO",
+  REQUISITO: "REQUISITO",
 } as const;

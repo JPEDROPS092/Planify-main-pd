@@ -6,7 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type TasksTarefasRemoverResponsavelCreateBody = {
-  /** ID do usuário a ser removido da tarefa */
+/**
+ * Serializer para atribuir/remover um usuário de uma tarefa.
+ */
+export interface TasksAssignUserRequest {
+  /** ID do usuário a ser manipulado. */
   usuario_id: number;
-};
+}

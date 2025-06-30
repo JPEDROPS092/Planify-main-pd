@@ -5,10 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/vue-query';
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import type {
   DataTag,
   MutationFunction,
@@ -18,23 +15,14 @@ import type {
   UseMutationOptions,
   UseMutationReturnType,
   UseQueryOptions,
-  UseQueryReturnType
-} from '@tanstack/vue-query';
+  UseQueryReturnType,
+} from "@tanstack/vue-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import {
-  computed,
-  unref
-} from 'vue';
-import type {
-  MaybeRef
-} from 'vue';
+import { computed, unref } from "vue";
+import type { MaybeRef } from "vue";
 
 import type {
   HistoricoRisco,
@@ -45,701 +33,1005 @@ import type {
   RiscoList,
   RiscoRequest,
   RisksHistoricoListParams,
-  RisksRiscosListParams
-} from '.././schemas';
-
-
-
-
+  RisksRiscosListParams,
+} from ".././schemas";
 
 /**
  * Retorna uma lista paginada de históricos do risco.
  * @summary Listar históricos do risco
  */
 export const risksHistoricoList = (
-    params?: MaybeRef<RisksHistoricoListParams>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PaginatedHistoricoRiscoList>> => {
-    params = unref(params);
-    
-    return axios.get(
-      `/api/risks/historico/`,{
+  params?: MaybeRef<RisksHistoricoListParams>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<PaginatedHistoricoRiscoList>> => {
+  params = unref(params);
+
+  return axios.get(`/api/risks/historico/`, {
     ...options,
-        params: {...unref(params), ...options?.params},}
-    );
-  }
+    params: { ...unref(params), ...options?.params },
+  });
+};
 
-
-export const getRisksHistoricoListQueryKey = (params?: MaybeRef<RisksHistoricoListParams>,) => {
-    return ['api','risks','historico', ...(params ? [params]: [])] as const;
-    }
-
-    
-export const getRisksHistoricoListQueryOptions = <TData = Awaited<ReturnType<typeof risksHistoricoList>>, TError = AxiosError<unknown>>(params?: MaybeRef<RisksHistoricoListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getRisksHistoricoListQueryKey = (
+  params?: MaybeRef<RisksHistoricoListParams>,
 ) => {
+  return ["api", "risks", "historico", ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getRisksHistoricoListQueryOptions = <
+  TData = Awaited<ReturnType<typeof risksHistoricoList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<RisksHistoricoListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksHistoricoList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getRisksHistoricoListQueryKey(params);
+  const queryKey = getRisksHistoricoListQueryKey(params);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof risksHistoricoList>>
+  > = ({ signal }) => risksHistoricoList(params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof risksHistoricoList>>> = ({ signal }) => risksHistoricoList(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof risksHistoricoList>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoList>>, TError, TData> 
-}
-
-export type RisksHistoricoListQueryResult = NonNullable<Awaited<ReturnType<typeof risksHistoricoList>>>
-export type RisksHistoricoListQueryError = AxiosError<unknown>
-
+export type RisksHistoricoListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof risksHistoricoList>>
+>;
+export type RisksHistoricoListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar históricos do risco
  */
 
-export function useRisksHistoricoList<TData = Awaited<ReturnType<typeof risksHistoricoList>>, TError = AxiosError<unknown>>(
- params?: MaybeRef<RisksHistoricoListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRisksHistoricoList<
+  TData = Awaited<ReturnType<typeof risksHistoricoList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<RisksHistoricoListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksHistoricoList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getRisksHistoricoListQueryOptions(params, options);
 
-  const queryOptions = getRisksHistoricoListQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Retorna o histórico detalhado de um risco específico.
  * @summary Obter detalhes do histórico do risco
  */
 export const risksHistoricoRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<HistoricoRisco>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/risks/historico/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<HistoricoRisco>> => {
+  id = unref(id);
 
+  return axios.get(`/api/risks/historico/${id}/`, options);
+};
 
-export const getRisksHistoricoRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','risks','historico',id] as const;
-    }
+export const getRisksHistoricoRetrieveQueryKey = (id: MaybeRef<number>) => {
+  return ["api", "risks", "historico", id] as const;
+};
 
-    
-export const getRisksHistoricoRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getRisksHistoricoRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getRisksHistoricoRetrieveQueryKey(id);
 
-  const queryKey =  getRisksHistoricoRetrieveQueryKey(id);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof risksHistoricoRetrieve>>
+  > = ({ signal }) => risksHistoricoRetrieve(id, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof risksHistoricoRetrieve>>> = ({ signal }) => risksHistoricoRetrieve(id, { signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoRetrieve>>, TError, TData> 
-}
-
-export type RisksHistoricoRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof risksHistoricoRetrieve>>>
-export type RisksHistoricoRetrieveQueryError = AxiosError<unknown>
-
+export type RisksHistoricoRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof risksHistoricoRetrieve>>
+>;
+export type RisksHistoricoRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes do histórico do risco
  */
 
-export function useRisksHistoricoRetrieve<TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksHistoricoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRisksHistoricoRetrieve<
+  TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getRisksHistoricoRetrieveQueryOptions(id, options);
 
-  const queryOptions = getRisksHistoricoRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Retorna uma lista paginada de riscos.
  * @summary Listar riscos
  */
 export const risksRiscosList = (
-    params?: MaybeRef<RisksRiscosListParams>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PaginatedRiscoList>> => {
-    params = unref(params);
-    
-    return axios.get(
-      `/api/risks/riscos/`,{
+  params?: MaybeRef<RisksRiscosListParams>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<PaginatedRiscoList>> => {
+  params = unref(params);
+
+  return axios.get(`/api/risks/riscos/`, {
     ...options,
-        params: {...unref(params), ...options?.params},}
-    );
-  }
+    params: { ...unref(params), ...options?.params },
+  });
+};
 
-
-export const getRisksRiscosListQueryKey = (params?: MaybeRef<RisksRiscosListParams>,) => {
-    return ['api','risks','riscos', ...(params ? [params]: [])] as const;
-    }
-
-    
-export const getRisksRiscosListQueryOptions = <TData = Awaited<ReturnType<typeof risksRiscosList>>, TError = AxiosError<unknown>>(params?: MaybeRef<RisksRiscosListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getRisksRiscosListQueryKey = (
+  params?: MaybeRef<RisksRiscosListParams>,
 ) => {
+  return ["api", "risks", "riscos", ...(params ? [params] : [])] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getRisksRiscosListQueryOptions = <
+  TData = Awaited<ReturnType<typeof risksRiscosList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<RisksRiscosListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getRisksRiscosListQueryKey(params);
+  const queryKey = getRisksRiscosListQueryKey(params);
 
-  
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof risksRiscosList>>> = ({
+    signal,
+  }) => risksRiscosList(params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof risksRiscosList>>> = ({ signal }) => risksRiscosList(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof risksRiscosList>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof risksRiscosList>>, TError, TData> 
-}
-
-export type RisksRiscosListQueryResult = NonNullable<Awaited<ReturnType<typeof risksRiscosList>>>
-export type RisksRiscosListQueryError = AxiosError<unknown>
-
+export type RisksRiscosListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosList>>
+>;
+export type RisksRiscosListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar riscos
  */
 
-export function useRisksRiscosList<TData = Awaited<ReturnType<typeof risksRiscosList>>, TError = AxiosError<unknown>>(
- params?: MaybeRef<RisksRiscosListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRisksRiscosList<
+  TData = Awaited<ReturnType<typeof risksRiscosList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<RisksRiscosListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getRisksRiscosListQueryOptions(params, options);
 
-  const queryOptions = getRisksRiscosListQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria um novo risco.
  * @summary Criar novo risco
  */
 export const risksRiscosCreate = (
-    riscoRequest: MaybeRef<RiscoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<RiscoList>> => {
-    riscoRequest = unref(riscoRequest);
-    
-    return axios.post(
-      `/api/risks/riscos/`,
-      riscoRequest,options
-    );
-  }
+  riscoRequest: MaybeRef<RiscoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<RiscoList>> => {
+  riscoRequest = unref(riscoRequest);
 
+  return axios.post(`/api/risks/riscos/`, riscoRequest, options);
+};
 
+export const getRisksRiscosCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosCreate>>,
+    TError,
+    { data: RiscoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosCreate>>,
+  TError,
+  { data: RiscoRequest },
+  TContext
+> => {
+  const mutationKey = ["risksRiscosCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRisksRiscosCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosCreate>>, TError,{data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosCreate>>, TError,{data: RiscoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosCreate>>,
+    { data: RiscoRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['risksRiscosCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return risksRiscosCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RisksRiscosCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosCreate>>
+>;
+export type RisksRiscosCreateMutationBody = RiscoRequest;
+export type RisksRiscosCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosCreate>>, {data: RiscoRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  risksRiscosCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosCreateMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosCreate>>>
-    export type RisksRiscosCreateMutationBody = RiscoRequest
-    export type RisksRiscosCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar novo risco
  */
-export const useRisksRiscosCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosCreate>>, TError,{data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosCreate>>,
-        TError,
-        {data: RiscoRequest},
-        TContext
-      > => {
+export const useRisksRiscosCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosCreate>>,
+      TError,
+      { data: RiscoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosCreate>>,
+  TError,
+  { data: RiscoRequest },
+  TContext
+> => {
+  const mutationOptions = getRisksRiscosCreateMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de um risco específico.
  * @summary Obter detalhes do risco
  */
 export const risksRiscosRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Risco>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/risks/riscos/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Risco>> => {
+  id = unref(id);
 
+  return axios.get(`/api/risks/riscos/${id}/`, options);
+};
 
-export const getRisksRiscosRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','risks','riscos',id] as const;
-    }
+export const getRisksRiscosRetrieveQueryKey = (id: MaybeRef<number>) => {
+  return ["api", "risks", "riscos", id] as const;
+};
 
-    
-export const getRisksRiscosRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getRisksRiscosRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getRisksRiscosRetrieveQueryKey(id);
 
-  const queryKey =  getRisksRiscosRetrieveQueryKey(id);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof risksRiscosRetrieve>>
+  > = ({ signal }) => risksRiscosRetrieve(id, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof risksRiscosRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof risksRiscosRetrieve>>> = ({ signal }) => risksRiscosRetrieve(id, { signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof risksRiscosRetrieve>>, TError, TData> 
-}
-
-export type RisksRiscosRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof risksRiscosRetrieve>>>
-export type RisksRiscosRetrieveQueryError = AxiosError<unknown>
-
+export type RisksRiscosRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosRetrieve>>
+>;
+export type RisksRiscosRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes do risco
  */
 
-export function useRisksRiscosRetrieve<TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRisksRiscosRetrieve<
+  TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getRisksRiscosRetrieveQueryOptions(id, options);
 
-  const queryOptions = getRisksRiscosRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de um risco existente.
  * @summary Atualizar risco
  */
 export const risksRiscosUpdate = (
-    id: MaybeRef<number>,
-    riscoRequest: MaybeRef<RiscoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Risco>> => {
-    id = unref(id);
-riscoRequest = unref(riscoRequest);
-    
-    return axios.put(
-      `/api/risks/riscos/${id}/`,
-      riscoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  riscoRequest: MaybeRef<RiscoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Risco>> => {
+  id = unref(id);
+  riscoRequest = unref(riscoRequest);
 
+  return axios.put(`/api/risks/riscos/${id}/`, riscoRequest, options);
+};
 
+export const getRisksRiscosUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosUpdate>>,
+    TError,
+    { id: number; data: RiscoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosUpdate>>,
+  TError,
+  { id: number; data: RiscoRequest },
+  TContext
+> => {
+  const mutationKey = ["risksRiscosUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRisksRiscosUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosUpdate>>, TError,{id: number;data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosUpdate>>, TError,{id: number;data: RiscoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosUpdate>>,
+    { id: number; data: RiscoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['risksRiscosUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return risksRiscosUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RisksRiscosUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosUpdate>>
+>;
+export type RisksRiscosUpdateMutationBody = RiscoRequest;
+export type RisksRiscosUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosUpdate>>, {id: number;data: RiscoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  risksRiscosUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosUpdate>>>
-    export type RisksRiscosUpdateMutationBody = RiscoRequest
-    export type RisksRiscosUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar risco
  */
-export const useRisksRiscosUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosUpdate>>, TError,{id: number;data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosUpdate>>,
-        TError,
-        {id: number;data: RiscoRequest},
-        TContext
-      > => {
+export const useRisksRiscosUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosUpdate>>,
+      TError,
+      { id: number; data: RiscoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosUpdate>>,
+  TError,
+  { id: number; data: RiscoRequest },
+  TContext
+> => {
+  const mutationOptions = getRisksRiscosUpdateMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente um risco existente.
  * @summary Atualizar risco parcialmente
  */
 export const risksRiscosPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedRiscoRequest: MaybeRef<PatchedRiscoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Risco>> => {
-    id = unref(id);
-patchedRiscoRequest = unref(patchedRiscoRequest);
-    
-    return axios.patch(
-      `/api/risks/riscos/${id}/`,
-      patchedRiscoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedRiscoRequest: MaybeRef<PatchedRiscoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Risco>> => {
+  id = unref(id);
+  patchedRiscoRequest = unref(patchedRiscoRequest);
 
+  return axios.patch(`/api/risks/riscos/${id}/`, patchedRiscoRequest, options);
+};
 
+export const getRisksRiscosPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedRiscoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedRiscoRequest },
+  TContext
+> => {
+  const mutationKey = ["risksRiscosPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRisksRiscosPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosPartialUpdate>>, TError,{id: number;data: PatchedRiscoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosPartialUpdate>>, TError,{id: number;data: PatchedRiscoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
+    { id: number; data: PatchedRiscoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['risksRiscosPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return risksRiscosPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RisksRiscosPartialUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosPartialUpdate>>
+>;
+export type RisksRiscosPartialUpdateMutationBody = PatchedRiscoRequest;
+export type RisksRiscosPartialUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosPartialUpdate>>, {id: number;data: PatchedRiscoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  risksRiscosPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosPartialUpdate>>>
-    export type RisksRiscosPartialUpdateMutationBody = PatchedRiscoRequest
-    export type RisksRiscosPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar risco parcialmente
  */
-export const useRisksRiscosPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosPartialUpdate>>, TError,{id: number;data: PatchedRiscoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedRiscoRequest},
-        TContext
-      > => {
+export const useRisksRiscosPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedRiscoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedRiscoRequest },
+  TContext
+> => {
+  const mutationOptions = getRisksRiscosPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove um risco existente.
  * @summary Excluir risco
  */
 export const risksRiscosDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/risks/riscos/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/risks/riscos/${id}/`, options);
+};
 
+export const getRisksRiscosDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["risksRiscosDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRisksRiscosDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['risksRiscosDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return risksRiscosDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RisksRiscosDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type RisksRiscosDestroyMutationError = AxiosError<unknown>;
 
-          return  risksRiscosDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosDestroy>>>
-    
-    export type RisksRiscosDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir risco
  */
-export const useRisksRiscosDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useRisksRiscosDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getRisksRiscosDestroyMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza o status de um risco.
  * @summary Atualizar status do risco
  */
 export const risksRiscosAtualizarStatusCreate = (
-    id: MaybeRef<number>,
-    riscoRequest: MaybeRef<RiscoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-riscoRequest = unref(riscoRequest);
-    
-    return axios.post(
-      `/api/risks/riscos/${id}/atualizar_status/`,
-      riscoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  riscoRequest: MaybeRef<RiscoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
+  riscoRequest = unref(riscoRequest);
 
+  return axios.post(
+    `/api/risks/riscos/${id}/atualizar_status/`,
+    riscoRequest,
+    options,
+  );
+};
 
+export const getRisksRiscosAtualizarStatusCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
+    TError,
+    { id: number; data: RiscoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
+  TError,
+  { id: number; data: RiscoRequest },
+  TContext
+> => {
+  const mutationKey = ["risksRiscosAtualizarStatusCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRisksRiscosAtualizarStatusCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>, TError,{id: number;data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>, TError,{id: number;data: RiscoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
+    { id: number; data: RiscoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['risksRiscosAtualizarStatusCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return risksRiscosAtualizarStatusCreate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RisksRiscosAtualizarStatusCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>
+>;
+export type RisksRiscosAtualizarStatusCreateMutationBody = RiscoRequest;
+export type RisksRiscosAtualizarStatusCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>, {id: number;data: RiscoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  risksRiscosAtualizarStatusCreate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosAtualizarStatusCreateMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>>
-    export type RisksRiscosAtualizarStatusCreateMutationBody = RiscoRequest
-    export type RisksRiscosAtualizarStatusCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar status do risco
  */
-export const useRisksRiscosAtualizarStatusCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>, TError,{id: number;data: RiscoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
-        TError,
-        {id: number;data: RiscoRequest},
-        TContext
-      > => {
+export const useRisksRiscosAtualizarStatusCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
+      TError,
+      { id: number; data: RiscoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
+  TError,
+  { id: number; data: RiscoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getRisksRiscosAtualizarStatusCreateMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosAtualizarStatusCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna o histórico de alterações do risco.
  * @summary Retorna histórico do risco
  */
 export const risksRiscosHistoricoRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/risks/riscos/${id}/historico/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.get(`/api/risks/riscos/${id}/historico/`, options);
+};
 
-export const getRisksRiscosHistoricoRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','risks','riscos',id,'historico'] as const;
-    }
-
-    
-export const getRisksRiscosHistoricoRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getRisksRiscosHistoricoRetrieveQueryKey = (
+  id: MaybeRef<number>,
 ) => {
+  return ["api", "risks", "riscos", id, "historico"] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getRisksRiscosHistoricoRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getRisksRiscosHistoricoRetrieveQueryKey(id);
+  const queryKey = getRisksRiscosHistoricoRetrieveQueryKey(id);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>
+  > = ({ signal }) =>
+    risksRiscosHistoricoRetrieve(id, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>> = ({ signal }) => risksRiscosHistoricoRetrieve(id, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>, TError, TData> 
-}
-
-export type RisksRiscosHistoricoRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>>
-export type RisksRiscosHistoricoRetrieveQueryError = AxiosError<unknown>
-
+export type RisksRiscosHistoricoRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>
+>;
+export type RisksRiscosHistoricoRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Retorna histórico do risco
  */
 
-export function useRisksRiscosHistoricoRetrieve<TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRisksRiscosHistoricoRetrieve<
+  TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getRisksRiscosHistoricoRetrieveQueryOptions(id, options);
 
-  const queryOptions = getRisksRiscosHistoricoRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Exclui múltiplos riscos de uma vez.
  * @summary Excluir múltiplos riscos
  */
 export const risksRiscosExcluirVariosDestroy = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.delete(
-      `/api/risks/riscos/excluir_varios/`,options
-    );
-  }
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  return axios.delete(`/api/risks/riscos/excluir_varios/`, options);
+};
 
+export const getRisksRiscosExcluirVariosDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
+    TError,
+    void,
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["risksRiscosExcluirVariosDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
+    void
+  > = () => {
+    return risksRiscosExcluirVariosDestroy(axiosOptions);
+  };
 
-export const getRisksRiscosExcluirVariosDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>, TError,void, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>, TError,void, TContext> => {
+  return { mutationFn, ...mutationOptions };
+};
 
-const mutationKey = ['risksRiscosExcluirVariosDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+export type RisksRiscosExcluirVariosDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>
+>;
 
-      
+export type RisksRiscosExcluirVariosDestroyMutationError = AxiosError<unknown>;
 
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>, void> = () => {
-          
-
-          return  risksRiscosExcluirVariosDestroy(axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RisksRiscosExcluirVariosDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>>
-    
-    export type RisksRiscosExcluirVariosDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir múltiplos riscos
  */
-export const useRisksRiscosExcluirVariosDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>, TError,void, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
-        TError,
-        void,
-        TContext
-      > => {
+export const useRisksRiscosExcluirVariosDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
+      TError,
+      void,
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions =
+    getRisksRiscosExcluirVariosDestroyMutationOptions(options);
 
-      const mutationOptions = getRisksRiscosExcluirVariosDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

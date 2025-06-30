@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { SprintStatusEnum } from './sprintStatusEnum';
+import type { SprintStatusEnum } from "./sprintStatusEnum";
 
 /**
  * Serializer para sprints.

@@ -7,16 +7,16 @@
  */
 
 export type ProjectsSprintsTarefasRetrieveParams = {
-/**
- * Filtrar por prioridade (ex: ALTA,MEDIA)
- */
-prioridade?: string;
-/**
- * Filtrar por responsável (ID do usuário)
- */
-responsavel?: number;
-/**
- * Filtrar por status (ex: PENDENTE,EM_ANDAMENTO)
- */
-status?: string;
+  /**
+   * Filtrar por prioridade (ex: ALTA,MEDIA)
+   */
+  prioridade?: string;
+  /**
+   * Filtrar por responsável (ID do usuário)
+   */
+  responsavel?: number;
+  /**
+   * Filtrar por status (ex: PENDENTE,EM_ANDAMENTO)
+   */
+  status?: string;
 };

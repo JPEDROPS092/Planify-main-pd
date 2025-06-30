@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { PermissaoEquipe } from './permissaoEquipe';
+import type { PermissaoEquipe } from "./permissaoEquipe";
 
 export interface PaginatedPermissaoEquipeList {
   count?: number;

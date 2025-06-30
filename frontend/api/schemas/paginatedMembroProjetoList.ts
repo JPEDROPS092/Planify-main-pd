@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { MembroProjeto } from './membroProjeto';
+import type { MembroProjeto } from "./membroProjeto";
 
 export interface PaginatedMembroProjetoList {
   count?: number;

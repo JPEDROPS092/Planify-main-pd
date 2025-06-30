@@ -5,14 +5,14 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { TarefaAtribuidaEnum } from './tarefaAtribuidaEnum';
-import type { TarefaComentarioEnum } from './tarefaComentarioEnum';
-import type { TarefaPrazoEnum } from './tarefaPrazoEnum';
-import type { ProjetoStatusEnum } from './projetoStatusEnum';
-import type { EquipeAlteracaoEnum } from './equipeAlteracaoEnum';
-import type { DocumentoNovoEnum } from './documentoNovoEnum';
-import type { RiscoNovoEnum } from './riscoNovoEnum';
-import type { MensagemChatEnum } from './mensagemChatEnum';
+import type { TarefaAtribuidaEnum } from "./tarefaAtribuidaEnum";
+import type { TarefaComentarioEnum } from "./tarefaComentarioEnum";
+import type { TarefaPrazoEnum } from "./tarefaPrazoEnum";
+import type { ProjetoStatusEnum } from "./projetoStatusEnum";
+import type { EquipeAlteracaoEnum } from "./equipeAlteracaoEnum";
+import type { DocumentoNovoEnum } from "./documentoNovoEnum";
+import type { RiscoNovoEnum } from "./riscoNovoEnum";
+import type { MensagemChatEnum } from "./mensagemChatEnum";
 
 /**
  * Serializer simplificado para configurações de notificação.

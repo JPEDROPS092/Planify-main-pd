@@ -8,19 +8,19 @@
 
 /**
  * * `IDENTIFICADO` - Identificado
-* `EM_ANALISE` - Em Análise
-* `MITIGADO` - Mitigado
-* `ACEITO` - Aceito
-* `ELIMINADO` - Eliminado
+ * `EM_ANALISE` - Em Análise
+ * `MITIGADO` - Mitigado
+ * `ACEITO` - Aceito
+ * `ELIMINADO` - Eliminado
  */
-export type NovoStatus346Enum = typeof NovoStatus346Enum[keyof typeof NovoStatus346Enum];
-
+export type NovoStatus346Enum =
+  (typeof NovoStatus346Enum)[keyof typeof NovoStatus346Enum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const NovoStatus346Enum = {
-  IDENTIFICADO: 'IDENTIFICADO',
-  EM_ANALISE: 'EM_ANALISE',
-  MITIGADO: 'MITIGADO',
-  ACEITO: 'ACEITO',
-  ELIMINADO: 'ELIMINADO',
+  IDENTIFICADO: "IDENTIFICADO",
+  EM_ANALISE: "EM_ANALISE",
+  MITIGADO: "MITIGADO",
+  ACEITO: "ACEITO",
+  ELIMINADO: "ELIMINADO",
 } as const;

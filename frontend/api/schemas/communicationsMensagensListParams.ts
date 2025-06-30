@@ -7,30 +7,30 @@
  */
 
 export type CommunicationsMensagensListParams = {
-autor?: number;
-/**
- * Data de fim para filtrar mensagens (formato: YYYY-MM-DD)
- */
-data_fim?: string;
-/**
- * Data de início para filtrar mensagens (formato: YYYY-MM-DD)
- */
-data_inicio?: string;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-projeto?: number;
-/**
- * A search term.
- */
-search?: string;
-/**
- * Texto contido na mensagem (busca case-insensitive)
- */
-texto?: string;
+  autor?: number;
+  /**
+   * Data de fim para filtrar mensagens (formato: YYYY-MM-DD)
+   */
+  data_fim?: string;
+  /**
+   * Data de início para filtrar mensagens (formato: YYYY-MM-DD)
+   */
+  data_inicio?: string;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  projeto?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  /**
+   * Texto contido na mensagem (busca case-insensitive)
+   */
+  texto?: string;
 };

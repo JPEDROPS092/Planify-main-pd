@@ -8,27 +8,26 @@
 
 /**
  * * `VIEW` - View
-* `CREATE` - Create
-* `EDIT` - Edit
-* `DELETE` - Delete
-* `APPROVE` - Approve
-* `ASSIGN` - Assign
-* `EXPORT` - Export
-* `IMPORT` - Import
-* `COMMENT` - Comment
+ * `CREATE` - Create
+ * `EDIT` - Edit
+ * `DELETE` - Delete
+ * `APPROVE` - Approve
+ * `ASSIGN` - Assign
+ * `EXPORT` - Export
+ * `IMPORT` - Import
+ * `COMMENT` - Comment
  */
-export type ActionEnum = typeof ActionEnum[keyof typeof ActionEnum];
-
+export type ActionEnum = (typeof ActionEnum)[keyof typeof ActionEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ActionEnum = {
-  VIEW: 'VIEW',
-  CREATE: 'CREATE',
-  EDIT: 'EDIT',
-  DELETE: 'DELETE',
-  APPROVE: 'APPROVE',
-  ASSIGN: 'ASSIGN',
-  EXPORT: 'EXPORT',
-  IMPORT: 'IMPORT',
-  COMMENT: 'COMMENT',
+  VIEW: "VIEW",
+  CREATE: "CREATE",
+  EDIT: "EDIT",
+  DELETE: "DELETE",
+  APPROVE: "APPROVE",
+  ASSIGN: "ASSIGN",
+  EXPORT: "EXPORT",
+  IMPORT: "IMPORT",
+  COMMENT: "COMMENT",
 } as const;

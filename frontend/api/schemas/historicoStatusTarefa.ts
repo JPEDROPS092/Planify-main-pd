@@ -5,17 +5,14 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { NovoStatusBbcEnum } from './novoStatusBbcEnum';
+import type { NovoStatusBbcEnum } from "./novoStatusBbcEnum";
+import type { User } from "./user";
 
 export interface HistoricoStatusTarefa {
   readonly id: number;
   tarefa: number;
   status_anterior: NovoStatusBbcEnum;
-  readonly status_anterior_display: string;
   novo_status: NovoStatusBbcEnum;
-  readonly novo_status_display: string;
-  /** @nullable */
-  alterado_por?: number | null;
-  readonly alterado_por_nome: string;
+  readonly alterado_por: User;
   readonly alterado_em: string;
 }

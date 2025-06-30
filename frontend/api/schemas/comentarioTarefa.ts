@@ -5,12 +5,12 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
+import type { User } from "./user";
 
 export interface ComentarioTarefa {
   readonly id: number;
   tarefa: number;
-  autor: number;
-  readonly autor_nome: string;
+  readonly autor: User;
   texto: string;
   readonly criado_em: string;
 }

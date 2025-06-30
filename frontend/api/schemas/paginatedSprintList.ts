@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Sprint } from './sprint';
+import type { Sprint } from "./sprint";
 
 export interface PaginatedSprintList {
   count?: number;

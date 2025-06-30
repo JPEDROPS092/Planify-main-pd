@@ -1,55 +1,81 @@
-// nuxt.config.ts
-
+// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: "2024-07-26", // Use uma data recente
+  // Manter a data de compatibilidade é uma boa prática.
+  compatibilityDate: "2024-07-26",
 
   // --- MÓDULOS ESSENCIAIS ---
+  // A ordem dos módulos geralmente não é crítica, mas é bom mantê-los organizados.
   modules: [
     "@nuxtjs/tailwindcss",
-    "nuxt-icon", // Para ícones SVG otimizados
-    "@vueuse/nuxt", // Coleção de composables úteis
-    // "@pinia/nuxt", // Descomente se for usar Pinia para estado global
+    "@pinia/nuxt", // Pinia é fundamental para sua store de autenticação.
+    "nuxt-icon",
+    "@vueuse/nuxt",
   ],
 
   // --- PLUGINS ---
-  // A ordem pode ser importante. O Axios deve ser configurado antes do TanStack Query ser usado.
-  plugins: ["~/plugins/axios.ts", "~/plugins/tanstack-query.client.ts"],
+  // Removido. A pasta `plugins` do Nuxt 3 carrega arquivos automaticamente.
+  // Você não precisa listar os plugins aqui, a menos que queira controlar a ordem
+  // de forma muito específica, o que raramente é necessário. O Nuxt lida com isso.
+
+  // --- BUILD ---
+  // ESSENCIAL: Garante que o TanStack Query funcione corretamente após o build.
+  build: {
+    transpile: ["@tanstack/vue-query"],
+  },
 
   // --- VARIÁVEIS DE AMBIENTE ---
   runtimeConfig: {
-    // Chaves privadas (apenas no servidor) - Ex: NUXT_API_KEY no seu .env
-    // apiKey: process.env.NUXT_API_KEY,
+    // Chaves privadas (apenas no servidor). Deixe como exemplo se não tiver.
+    // apiSecret: process.env.NUXT_API_SECRET,
 
     // Chaves públicas (acessíveis no cliente)
     public: {
-      // Use o prefixo NUXT_PUBLIC_ no seu arquivo .env
-      // Ex: NUXT_PUBLIC_API_BASE=http://localhost:8000
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8000",
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8000/",
     },
   },
 
-  // --- TAILWIND CSS ---
-  tailwindcss: {
-    exposeConfig: true, // Para intellisense do VSCode
-    viewer: true, // Habilita visualizador em http://localhost:3000/_tailwind/
+  // --- PINIA ---
+  // Adiciona configuração para auto-imports, simplificando o uso da store.
+  pinia: {
+    autoImports: ["defineStore", "acceptHMRUpdate"],
   },
 
-  // --- ALIASES DE IMPORTAÇÃO ---
-  // Simplifica os imports no seu código
-  alias: {
-    "@api": "~/api",
-    "@composables": "~/composables",
-    "@components": "~/components",
-    "@assets": "~/assets",
-    "@layouts": "~/layouts",
-    "@pages": "~/pages",
-    "@plugins": "~/plugins",
+  // Adicionar `stores` explicitamente aqui é uma boa prática para clareza.
+  imports: {
+    dirs: ["stores"],
   },
-
-  // --- DEVTOOLS ---
-  // Essencial para o desenvolvimento com Nuxt
-  devtools: { enabled: true },
 
   // --- CSS GLOBAL ---
   css: ["~/assets/css/main.css"],
+
+  // --- TAILWIND CSS ---
+  // Sua configuração está ótima. Nenhuma mudança necessária.
+  tailwindcss: {
+    exposeConfig: true,
+    viewer: true,
+  },
+
+  // --- HEAD GLOBAL (SEO) ---
+  // Adiciona metadados padrão para toda a aplicação. Melhora o SEO.
+  app: {
+    head: {
+      charset: "utf-8",
+      viewport: "width=device-width, initial-scale=1",
+      title: "Planify | Seu Gerenciador de Projetos", // Título padrão
+      meta: [
+        {
+          name: "description",
+          content:
+            "Organize suas tarefas, projetos e equipes de forma eficiente com o Planify.",
+        },
+      ],
+      link: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }, // Exemplo com SVG
+      ],
+    },
+  },
+
+  // --- DEVTOOLS ---
+  // Sua configuração está perfeita.
+  devtools: { enabled: true },
 });

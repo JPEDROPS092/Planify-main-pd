@@ -8,19 +8,18 @@
 
 /**
  * * `TAREFAS` - Tarefas
-* `SPRINTS` - Sprints
-* `DOCUMENTOS` - Documentos
-* `RISCOS` - Riscos
-* `CUSTOS` - Custos
+ * `SPRINTS` - Sprints
+ * `DOCUMENTOS` - Documentos
+ * `RISCOS` - Riscos
+ * `CUSTOS` - Custos
  */
-export type ModuloEnum = typeof ModuloEnum[keyof typeof ModuloEnum];
-
+export type ModuloEnum = (typeof ModuloEnum)[keyof typeof ModuloEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ModuloEnum = {
-  TAREFAS: 'TAREFAS',
-  SPRINTS: 'SPRINTS',
-  DOCUMENTOS: 'DOCUMENTOS',
-  RISCOS: 'RISCOS',
-  CUSTOS: 'CUSTOS',
+  TAREFAS: "TAREFAS",
+  SPRINTS: "SPRINTS",
+  DOCUMENTOS: "DOCUMENTOS",
+  RISCOS: "RISCOS",
+  CUSTOS: "CUSTOS",
 } as const;

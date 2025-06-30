@@ -1,103 +1,43 @@
-import axios from "axios";
-import { useAuth } from "~/composables/useAuth";
+import { defineNuxtPlugin, useRuntimeConfig } from "#app";
+import { useAuthStore } from "~/stores/auth";
+import axiosInstance from "~/api/axios-instance.ts"; // Importa a instância que criamos
 
 export default defineNuxtPlugin(() => {
-  const router = useRouter();
-
-  // Use a apiBase do runtimeConfig para o baseURL do Axios
+  // Pega a URL base do runtimeConfig. AQUI temos acesso garantido.
   const config = useRuntimeConfig();
-  axios.defaults.baseURL = config.public.apiBase.replace(
-    "http://localhost:8000"
-  ); // ex: http://localhost:8000
+  const apiBaseUrl = config.public.apiBase;
 
-  // Flag para evitar loop de refresh
-  let isRefreshing = false;
-  // Fila para requisições que falharam enquanto o token era atualizado
-  let failedQueue: Array<{
-    resolve: (token: string) => void;
-    reject: (error: any) => void;
-  }> = [];
+  // 1. Define a baseURL na nossa instância global.
+  axiosInstance.defaults.baseURL = apiBaseUrl;
 
-  const processQueue = (error: any, token: string | null = null) => {
-    failedQueue.forEach((prom) => {
-      if (error) {
-        prom.reject(error);
-      } else {
-        prom.resolve(token as string);
-      }
-    });
-    failedQueue = [];
-  };
+  console.log(
+    `[axios.ts plugin] Axios baseURL configurada para: ${apiBaseUrl}`
+  );
 
-  // --- INTERCEPTADOR DE REQUISIÇÃO (REQUEST) ---
-  axios.interceptors.request.use(
-    (config) => {
-      // Adiciona o token em todas as requisições, se ele existir
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("access_token");
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-      return config;
-    },
+  // 2. Adiciona o interceptor para o token de autenticação.
+  axiosInstance.interceptors.request.use((requestConfig) => {
+    // A store precisa ser chamada aqui dentro para ser reativa.
+    const authStore = useAuthStore();
+
+    if (authStore.accessToken) {
+      requestConfig.headers.Authorization = `Bearer ${authStore.accessToken}`;
+    }
+    return requestConfig;
+  });
+
+  // (Opcional, mas recomendado) Adiciona um interceptor de resposta para LOGAR erros.
+  // Isso ajuda MUITO a debugar o que o backend está respondendo.
+  axiosInstance.interceptors.response.use(
+    (response) => response, // Se for sucesso, apenas retorna a resposta
     (error) => {
+      console.error(
+        "[Axios Error Interceptor] Ocorreu um erro na requisição:",
+        error.response?.data || error.message
+      );
+      // Rejeita a promise para que o .catch() no seu código possa lidar com o erro
       return Promise.reject(error);
     }
   );
 
-  // --- INTERCEPTADOR DE RESPOSTA (RESPONSE) ---
-  axios.interceptors.response.use(
-    (response) => {
-      // Se a resposta for bem-sucedida, apenas a retorna.
-      return response;
-    },
-    async (error) => {
-      const originalRequest = error.config;
-
-      // Se o erro for 401 (Não Autorizado) e não for uma tentativa de refresh que falhou
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        if (isRefreshing) {
-          // Se já estivermos atualizando o token, adicionamos a requisição na fila de espera
-          return new Promise(function (resolve, reject) {
-            failedQueue.push({ resolve, reject });
-          }).then((token) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token;
-            return axios(originalRequest);
-          });
-        }
-
-        originalRequest._retry = true;
-        isRefreshing = true;
-
-        const { refreshToken, logout } = useAuth();
-
-        try {
-          // Tenta obter um novo access token usando o refreshToken
-          await refreshToken();
-
-          const newAccessToken = localStorage.getItem("access_token");
-          axios.defaults.headers.common["Authorization"] =
-            "Bearer " + newAccessToken;
-
-          // Processa a fila de requisições que estavam esperando
-          processQueue(null, newAccessToken);
-
-          // Tenta novamente a requisição original que falhou
-          return axios(originalRequest);
-        } catch (refreshError) {
-          // Se o refresh falhar (ex: refresh token inválido), desloga o usuário
-          processQueue(refreshError, null);
-          await logout();
-          router.push("/login");
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
-        }
-      }
-
-      // Para qualquer outro erro, apenas o retorna
-      return Promise.reject(error);
-    }
-  );
+  // Não precisa retornar nada. Apenas configuramos a instância global.
 });

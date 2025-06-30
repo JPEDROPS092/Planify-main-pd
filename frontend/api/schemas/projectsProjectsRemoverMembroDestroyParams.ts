@@ -7,8 +7,8 @@
  */
 
 export type ProjectsProjectsRemoverMembroDestroyParams = {
-/**
- * ID do membro a ser removido
- */
-membro_id: number;
+  /**
+   * ID do membro a ser removido
+   */
+  membro_id: number;
 };

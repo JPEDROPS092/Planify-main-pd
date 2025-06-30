@@ -5,9 +5,9 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Status477Enum } from './status477Enum';
-import type { PrioridadeEnum } from './prioridadeEnum';
-import type { MembroProjeto } from './membroProjeto';
+import type { Status477Enum } from "./status477Enum";
+import type { PrioridadeEnum } from "./prioridadeEnum";
+import type { MembroProjeto } from "./membroProjeto";
 
 /**
  * Serializer completo para projetos.

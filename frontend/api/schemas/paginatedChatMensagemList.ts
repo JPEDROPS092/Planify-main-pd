@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ChatMensagem } from './chatMensagem';
+import type { ChatMensagem } from "./chatMensagem";
 
 export interface PaginatedChatMensagemList {
   count?: number;

@@ -5,29 +5,29 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CostsCustosListTipo } from './costsCustosListTipo';
+import type { CostsCustosListTipo } from "./costsCustosListTipo";
 
 export type CostsCustosListParams = {
-categoria?: number;
-data?: string;
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-projeto?: number;
-/**
- * A search term.
- */
-search?: string;
-tarefa?: number;
-/**
- * * `FIXO` - Custo Fixo
-* `VARIAVEL` - Custo Variável
-* `RECORRENTE` - Custo Recorrente
- */
-tipo?: CostsCustosListTipo;
+  categoria?: number;
+  data?: string;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  projeto?: number;
+  /**
+   * A search term.
+   */
+  search?: string;
+  tarefa?: number;
+  /**
+   * * `FIXO` - Custo Fixo
+   * `VARIAVEL` - Custo Variável
+   * `RECORRENTE` - Custo Recorrente
+   */
+  tipo?: CostsCustosListTipo;
 };

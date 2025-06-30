@@ -8,21 +8,21 @@
 
 /**
  * * `ATA` - Ata de Reunião
-* `MEMORANDO` - Memorando
-* `RELATORIO` - Relatório
-* `OFICIO` - Ofício
-* `COMUNICADO` - Comunicado Geral
-* `OUTRO` - Outro
+ * `MEMORANDO` - Memorando
+ * `RELATORIO` - Relatório
+ * `OFICIO` - Ofício
+ * `COMUNICADO` - Comunicado Geral
+ * `OUTRO` - Outro
  */
-export type ComunicacaoTipoEnum = typeof ComunicacaoTipoEnum[keyof typeof ComunicacaoTipoEnum];
-
+export type ComunicacaoTipoEnum =
+  (typeof ComunicacaoTipoEnum)[keyof typeof ComunicacaoTipoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ComunicacaoTipoEnum = {
-  ATA: 'ATA',
-  MEMORANDO: 'MEMORANDO',
-  RELATORIO: 'RELATORIO',
-  OFICIO: 'OFICIO',
-  COMUNICADO: 'COMUNICADO',
-  OUTRO: 'OUTRO',
+  ATA: "ATA",
+  MEMORANDO: "MEMORANDO",
+  RELATORIO: "RELATORIO",
+  OFICIO: "OFICIO",
+  COMUNICADO: "COMUNICADO",
+  OUTRO: "OUTRO",
 } as const;

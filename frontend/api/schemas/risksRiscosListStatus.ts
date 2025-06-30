@@ -6,14 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RisksRiscosListStatus = typeof RisksRiscosListStatus[keyof typeof RisksRiscosListStatus];
-
+export type RisksRiscosListStatus =
+  (typeof RisksRiscosListStatus)[keyof typeof RisksRiscosListStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RisksRiscosListStatus = {
-  ACEITO: 'ACEITO',
-  ELIMINADO: 'ELIMINADO',
-  EM_ANALISE: 'EM_ANALISE',
-  IDENTIFICADO: 'IDENTIFICADO',
-  MITIGADO: 'MITIGADO',
+  ACEITO: "ACEITO",
+  ELIMINADO: "ELIMINADO",
+  EM_ANALISE: "EM_ANALISE",
+  IDENTIFICADO: "IDENTIFICADO",
+  MITIGADO: "MITIGADO",
 } as const;

@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "vue.volar",
+    "vue.vscode-typescript-vue-plugin",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "johnsoncodehk.volar",
+    "formulahendry.auto-rename-tag",
+    "github.vscode-pull-request-github",
+    "antfu.iconify",
+    "nuxt.nuxt-vscode",
+    "lokalise.i18n-ally"
+  ],
+  "unwantedRecommendations": ["octref.vetur"]
+}

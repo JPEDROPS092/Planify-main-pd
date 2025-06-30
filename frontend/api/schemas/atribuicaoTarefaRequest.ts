@@ -8,7 +8,4 @@
 
 export interface AtribuicaoTarefaRequest {
   tarefa: number;
-  usuario: number;
-  /** @nullable */
-  atribuido_por?: number | null;
 }

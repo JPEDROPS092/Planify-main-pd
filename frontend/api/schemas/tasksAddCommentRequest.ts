@@ -6,9 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface ComentarioTarefaRequest {
-  tarefa: number;
-  autor: number;
-  /** @minLength 1 */
+/**
+ * Serializer para adicionar um comentário a uma tarefa.
+ */
+export interface TasksAddCommentRequest {
+  /**
+   * Conteúdo do comentário.
+   * @minLength 1
+   */
   texto: string;
 }

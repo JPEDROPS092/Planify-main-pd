@@ -5,11 +5,14 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { PrioridadeEnum } from './prioridadeEnum';
-import type { NovoStatusBbcEnum } from './novoStatusBbcEnum';
-import type { User } from './user';
-import type { AtribuicaoTarefa } from './atribuicaoTarefa';
+import type { PrioridadeEnum } from "./prioridadeEnum";
+import type { NovoStatusBbcEnum } from "./novoStatusBbcEnum";
+import type { User } from "./user";
+import type { AtribuicaoTarefa } from "./atribuicaoTarefa";
 
+/**
+ * Serializer detalhado para uma única tarefa.
+ */
 export interface Tarefa {
   readonly id: number;
   /** @maxLength 200 */
@@ -25,6 +28,5 @@ export interface Tarefa {
   readonly criado_por: User;
   readonly criado_em: string;
   readonly atualizado_em: string;
-  /** Lista de usuários atribuídos a esta tarefa. */
   readonly atribuicoes: readonly AtribuicaoTarefa[];
 }

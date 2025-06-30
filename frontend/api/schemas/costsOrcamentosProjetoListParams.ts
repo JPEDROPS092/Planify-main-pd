@@ -7,9 +7,9 @@
  */
 
 export type CostsOrcamentosProjetoListParams = {
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-projeto?: number;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  projeto?: number;
 };

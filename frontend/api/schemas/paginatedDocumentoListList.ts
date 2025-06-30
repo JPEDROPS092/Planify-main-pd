@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { DocumentoList } from './documentoList';
+import type { DocumentoList } from "./documentoList";
 
 export interface PaginatedDocumentoListList {
   count?: number;

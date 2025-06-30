@@ -8,6 +8,6 @@
 
 export interface SetUsername {
   current_password: string;
-  /** @maxLength 254 */
-  new_email: string;
+  /** @maxLength 30 */
+  new_username: string;
 }

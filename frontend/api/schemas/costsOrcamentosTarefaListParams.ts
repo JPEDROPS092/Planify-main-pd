@@ -7,10 +7,10 @@
  */
 
 export type CostsOrcamentosTarefaListParams = {
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-tarefa?: number;
-tarefa__projeto?: number;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  tarefa?: number;
+  tarefa__projeto?: number;
 };

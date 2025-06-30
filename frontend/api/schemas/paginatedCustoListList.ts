@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CustoList } from './custoList';
+import type { CustoList } from "./custoList";
 
 export interface PaginatedCustoListList {
   count?: number;

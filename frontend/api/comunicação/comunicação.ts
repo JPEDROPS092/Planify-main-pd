@@ -5,10 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/vue-query';
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import type {
   DataTag,
   MutationFunction,
@@ -18,23 +15,14 @@ import type {
   UseMutationOptions,
   UseMutationReturnType,
   UseQueryOptions,
-  UseQueryReturnType
-} from '@tanstack/vue-query';
+  UseQueryReturnType,
+} from "@tanstack/vue-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import {
-  computed,
-  unref
-} from 'vue';
-import type {
-  MaybeRef
-} from 'vue';
+import { computed, unref } from "vue";
+import type { MaybeRef } from "vue";
 
 import type {
   ChatMensagem,
@@ -51,830 +39,1275 @@ import type {
   PaginatedNotificacaoList,
   PatchedChatMensagemRequest,
   PatchedConfiguracaoNotificacaoRequest,
-  PatchedNotificacaoRequest
-} from '.././schemas';
-
-
-
-
+  PatchedNotificacaoRequest,
+} from ".././schemas";
 
 /**
  * Retorna uma lista paginada de configurações.
  * @summary Listar configurações
  */
 export const communicationsConfiguracoesList = (
-    params?: MaybeRef<CommunicationsConfiguracoesListParams>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PaginatedConfiguracaoNotificacaoList>> => {
-    params = unref(params);
-    
-    return axios.get(
-      `/api/communications/configuracoes/`,{
+  params?: MaybeRef<CommunicationsConfiguracoesListParams>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<PaginatedConfiguracaoNotificacaoList>> => {
+  params = unref(params);
+
+  return axios.get(`/api/communications/configuracoes/`, {
     ...options,
-        params: {...unref(params), ...options?.params},}
-    );
-  }
+    params: { ...unref(params), ...options?.params },
+  });
+};
 
-
-export const getCommunicationsConfiguracoesListQueryKey = (params?: MaybeRef<CommunicationsConfiguracoesListParams>,) => {
-    return ['api','communications','configuracoes', ...(params ? [params]: [])] as const;
-    }
-
-    
-export const getCommunicationsConfiguracoesListQueryOptions = <TData = Awaited<ReturnType<typeof communicationsConfiguracoesList>>, TError = AxiosError<unknown>>(params?: MaybeRef<CommunicationsConfiguracoesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsConfiguracoesListQueryKey = (
+  params?: MaybeRef<CommunicationsConfiguracoesListParams>,
 ) => {
+  return [
+    "api",
+    "communications",
+    "configuracoes",
+    ...(params ? [params] : []),
+  ] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsConfiguracoesListQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsConfiguracoesList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsConfiguracoesListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsConfiguracoesList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsConfiguracoesListQueryKey(params);
+  const queryKey = getCommunicationsConfiguracoesListQueryKey(params);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesList>>
+  > = ({ signal }) =>
+    communicationsConfiguracoesList(params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsConfiguracoesList>>> = ({ signal }) => communicationsConfiguracoesList(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesList>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesList>>, TError, TData> 
-}
-
-export type CommunicationsConfiguracoesListQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesList>>>
-export type CommunicationsConfiguracoesListQueryError = AxiosError<unknown>
-
+export type CommunicationsConfiguracoesListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsConfiguracoesList>>
+>;
+export type CommunicationsConfiguracoesListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar configurações
  */
 
-export function useCommunicationsConfiguracoesList<TData = Awaited<ReturnType<typeof communicationsConfiguracoesList>>, TError = AxiosError<unknown>>(
- params?: MaybeRef<CommunicationsConfiguracoesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsConfiguracoesList<
+  TData = Awaited<ReturnType<typeof communicationsConfiguracoesList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsConfiguracoesListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsConfiguracoesList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsConfiguracoesListQueryOptions(
+    params,
+    options,
+  );
 
-  const queryOptions = getCommunicationsConfiguracoesListQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria um nova configuração.
  * @summary Criar nova configuração
  */
 export const communicationsConfiguracoesCreate = (
-    configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
-    
-    return axios.post(
-      `/api/communications/configuracoes/`,
-      configuracaoNotificacaoRequest,options
-    );
-  }
+  configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
 
+  return axios.post(
+    `/api/communications/configuracoes/`,
+    configuracaoNotificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsConfiguracoesCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
+    TError,
+    { data: ConfiguracaoNotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
+  TError,
+  { data: ConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsConfiguracoesCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsConfiguracoesCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>, TError,{data: ConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>, TError,{data: ConfiguracaoNotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
+    { data: ConfiguracaoNotificacaoRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['communicationsConfiguracoesCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsConfiguracoesCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsConfiguracoesCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>
+>;
+export type CommunicationsConfiguracoesCreateMutationBody =
+  ConfiguracaoNotificacaoRequest;
+export type CommunicationsConfiguracoesCreateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>, {data: ConfiguracaoNotificacaoRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  communicationsConfiguracoesCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsConfiguracoesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>>
-    export type CommunicationsConfiguracoesCreateMutationBody = ConfiguracaoNotificacaoRequest
-    export type CommunicationsConfiguracoesCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar nova configuração
  */
-export const useCommunicationsConfiguracoesCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>, TError,{data: ConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
-        TError,
-        {data: ConfiguracaoNotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsConfiguracoesCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
+      TError,
+      { data: ConfiguracaoNotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
+  TError,
+  { data: ConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsConfiguracoesCreateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsConfiguracoesCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de uma configuração específica.
  * @summary Obter detalhes da configuração
  */
 export const communicationsConfiguracoesRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/communications/configuracoes/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  id = unref(id);
 
+  return axios.get(`/api/communications/configuracoes/${id}/`, options);
+};
 
-export const getCommunicationsConfiguracoesRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','communications','configuracoes',id] as const;
-    }
-
-    
-export const getCommunicationsConfiguracoesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsConfiguracoesRetrieveQueryKey = (
+  id: MaybeRef<number>,
 ) => {
+  return ["api", "communications", "configuracoes", id] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsConfiguracoesRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsConfiguracoesRetrieveQueryKey(id);
+  const queryKey = getCommunicationsConfiguracoesRetrieveQueryKey(id);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>
+  > = ({ signal }) =>
+    communicationsConfiguracoesRetrieve(id, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>> = ({ signal }) => communicationsConfiguracoesRetrieve(id, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsConfiguracoesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>>
-export type CommunicationsConfiguracoesRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsConfiguracoesRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>
+>;
+export type CommunicationsConfiguracoesRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes da configuração
  */
 
-export function useCommunicationsConfiguracoesRetrieve<TData = Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsConfiguracoesRetrieve<
+  TData = Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsConfiguracoesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsConfiguracoesRetrieveQueryOptions(
+    id,
+    options,
+  );
 
-  const queryOptions = getCommunicationsConfiguracoesRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de uma configuração existente.
  * @summary Atualizar configuração
  */
 export const communicationsConfiguracoesUpdate = (
-    id: MaybeRef<number>,
-    configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    id = unref(id);
-configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
-    
-    return axios.put(
-      `/api/communications/configuracoes/${id}/`,
-      configuracaoNotificacaoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  id = unref(id);
+  configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
 
+  return axios.put(
+    `/api/communications/configuracoes/${id}/`,
+    configuracaoNotificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsConfiguracoesUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
+    TError,
+    { id: number; data: ConfiguracaoNotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
+  TError,
+  { id: number; data: ConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsConfiguracoesUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsConfiguracoesUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>, TError,{id: number;data: ConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>, TError,{id: number;data: ConfiguracaoNotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
+    { id: number; data: ConfiguracaoNotificacaoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsConfiguracoesUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsConfiguracoesUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsConfiguracoesUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>
+>;
+export type CommunicationsConfiguracoesUpdateMutationBody =
+  ConfiguracaoNotificacaoRequest;
+export type CommunicationsConfiguracoesUpdateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>, {id: number;data: ConfiguracaoNotificacaoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsConfiguracoesUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsConfiguracoesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>>
-    export type CommunicationsConfiguracoesUpdateMutationBody = ConfiguracaoNotificacaoRequest
-    export type CommunicationsConfiguracoesUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar configuração
  */
-export const useCommunicationsConfiguracoesUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>, TError,{id: number;data: ConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
-        TError,
-        {id: number;data: ConfiguracaoNotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsConfiguracoesUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
+      TError,
+      { id: number; data: ConfiguracaoNotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
+  TError,
+  { id: number; data: ConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsConfiguracoesUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsConfiguracoesUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente uma configuração existente.
  * @summary Atualizar configuração parcialmente
  */
 export const communicationsConfiguracoesPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedConfiguracaoNotificacaoRequest: MaybeRef<PatchedConfiguracaoNotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    id = unref(id);
-patchedConfiguracaoNotificacaoRequest = unref(patchedConfiguracaoNotificacaoRequest);
-    
-    return axios.patch(
-      `/api/communications/configuracoes/${id}/`,
-      patchedConfiguracaoNotificacaoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedConfiguracaoNotificacaoRequest: MaybeRef<PatchedConfiguracaoNotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  id = unref(id);
+  patchedConfiguracaoNotificacaoRequest = unref(
+    patchedConfiguracaoNotificacaoRequest,
+  );
 
+  return axios.patch(
+    `/api/communications/configuracoes/${id}/`,
+    patchedConfiguracaoNotificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsConfiguracoesPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedConfiguracaoNotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsConfiguracoesPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsConfiguracoesPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>, TError,{id: number;data: PatchedConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>, TError,{id: number;data: PatchedConfiguracaoNotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
+    { id: number; data: PatchedConfiguracaoNotificacaoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsConfiguracoesPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsConfiguracoesPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsConfiguracoesPartialUpdateMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>
+  >;
+export type CommunicationsConfiguracoesPartialUpdateMutationBody =
+  PatchedConfiguracaoNotificacaoRequest;
+export type CommunicationsConfiguracoesPartialUpdateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>, {id: number;data: PatchedConfiguracaoNotificacaoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsConfiguracoesPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsConfiguracoesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>>
-    export type CommunicationsConfiguracoesPartialUpdateMutationBody = PatchedConfiguracaoNotificacaoRequest
-    export type CommunicationsConfiguracoesPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar configuração parcialmente
  */
-export const useCommunicationsConfiguracoesPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>, TError,{id: number;data: PatchedConfiguracaoNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedConfiguracaoNotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsConfiguracoesPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedConfiguracaoNotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedConfiguracaoNotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsConfiguracoesPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsConfiguracoesPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove uma configuração existente.
  * @summary Excluir configuração
  */
 export const communicationsConfiguracoesDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/communications/configuracoes/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/communications/configuracoes/${id}/`, options);
+};
 
+export const getCommunicationsConfiguracoesDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["communicationsConfiguracoesDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsConfiguracoesDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['communicationsConfiguracoesDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsConfiguracoesDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsConfiguracoesDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type CommunicationsConfiguracoesDestroyMutationError =
+  AxiosError<unknown>;
 
-          return  communicationsConfiguracoesDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsConfiguracoesDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>>
-    
-    export type CommunicationsConfiguracoesDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir configuração
  */
-export const useCommunicationsConfiguracoesDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useCommunicationsConfiguracoesDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsConfiguracoesDestroyMutationOptions(options);
 
-      const mutationOptions = getCommunicationsConfiguracoesDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna a configuração do usuário atual ou cria uma padrão se não existir.
  * @summary Ver minha configuração
  */
 export const communicationsConfiguracoesMinhaConfiguracaoRetrieve = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    
-    
-    return axios.get(
-      `/api/communications/configuracoes/minha_configuracao/`,options
-    );
-  }
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  return axios.get(
+    `/api/communications/configuracoes/minha_configuracao/`,
+    options,
+  );
+};
 
+export const getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryKey =
+  () => {
+    return [
+      "api",
+      "communications",
+      "configuracoes",
+      "minha_configuracao",
+    ] as const;
+  };
 
-export const getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryKey = () => {
-    return ['api','communications','configuracoes','minha_configuracao'] as const;
-    }
+export const getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>
+    >,
+    TError = AxiosError<unknown>,
+  >(options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  }) => {
+    const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-    
-export const getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+    const queryKey =
+      getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryKey();
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>
+      >
+    > = ({ signal }) =>
+      communicationsConfiguracoesMinhaConfiguracaoRetrieve({
+        signal,
+        ...axiosOptions,
+      });
 
-  const queryKey =  getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryKey();
+    return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+      Awaited<
+        ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>
+      >,
+      TError,
+      TData
+    >;
+  };
 
-  
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>> = ({ signal }) => communicationsConfiguracoesMinhaConfiguracaoRetrieve({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>>
-export type CommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>
+    >
+  >;
+export type CommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryError =
+  AxiosError<unknown>;
 
 /**
  * @summary Ver minha configuração
  */
 
-export function useCommunicationsConfiguracoesMinhaConfiguracaoRetrieve<TData = Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsConfiguracoesMinhaConfiguracaoRetrieve<
+  TData = Awaited<
+    ReturnType<typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve>
+  >,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof communicationsConfiguracoesMinhaConfiguracaoRetrieve
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions =
+    getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryOptions(
+      options,
+    );
 
-  const queryOptions = getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Retorna uma lista paginada de mensagens.
  * @summary Listar mensagens
  */
 export const communicationsMensagensList = (
-    params?: MaybeRef<CommunicationsMensagensListParams>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PaginatedChatMensagemList>> => {
-    params = unref(params);
-    
-    return axios.get(
-      `/api/communications/mensagens/`,{
+  params?: MaybeRef<CommunicationsMensagensListParams>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<PaginatedChatMensagemList>> => {
+  params = unref(params);
+
+  return axios.get(`/api/communications/mensagens/`, {
     ...options,
-        params: {...unref(params), ...options?.params},}
-    );
-  }
+    params: { ...unref(params), ...options?.params },
+  });
+};
 
-
-export const getCommunicationsMensagensListQueryKey = (params?: MaybeRef<CommunicationsMensagensListParams>,) => {
-    return ['api','communications','mensagens', ...(params ? [params]: [])] as const;
-    }
-
-    
-export const getCommunicationsMensagensListQueryOptions = <TData = Awaited<ReturnType<typeof communicationsMensagensList>>, TError = AxiosError<unknown>>(params?: MaybeRef<CommunicationsMensagensListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsMensagensListQueryKey = (
+  params?: MaybeRef<CommunicationsMensagensListParams>,
 ) => {
+  return [
+    "api",
+    "communications",
+    "mensagens",
+    ...(params ? [params] : []),
+  ] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsMensagensListQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsMensagensList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsMensagensListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsMensagensList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsMensagensListQueryKey(params);
+  const queryKey = getCommunicationsMensagensListQueryKey(params);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsMensagensList>>
+  > = ({ signal }) =>
+    communicationsMensagensList(params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsMensagensList>>> = ({ signal }) => communicationsMensagensList(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsMensagensList>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensList>>, TError, TData> 
-}
-
-export type CommunicationsMensagensListQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensList>>>
-export type CommunicationsMensagensListQueryError = AxiosError<unknown>
-
+export type CommunicationsMensagensListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensList>>
+>;
+export type CommunicationsMensagensListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar mensagens
  */
 
-export function useCommunicationsMensagensList<TData = Awaited<ReturnType<typeof communicationsMensagensList>>, TError = AxiosError<unknown>>(
- params?: MaybeRef<CommunicationsMensagensListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsMensagensList<
+  TData = Awaited<ReturnType<typeof communicationsMensagensList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsMensagensListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsMensagensList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsMensagensListQueryOptions(
+    params,
+    options,
+  );
 
-  const queryOptions = getCommunicationsMensagensListQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria um nova mensagem.
  * @summary Criar nova mensagem
  */
 export const communicationsMensagensCreate = (
-    chatMensagemRequest: MaybeRef<ChatMensagemRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ChatMensagem>> => {
-    chatMensagemRequest = unref(chatMensagemRequest);
-    
-    return axios.post(
-      `/api/communications/mensagens/`,
-      chatMensagemRequest,options
-    );
-  }
+  chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ChatMensagem>> => {
+  chatMensagemRequest = unref(chatMensagemRequest);
 
+  return axios.post(
+    `/api/communications/mensagens/`,
+    chatMensagemRequest,
+    options,
+  );
+};
 
+export const getCommunicationsMensagensCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsMensagensCreate>>,
+    TError,
+    { data: ChatMensagemRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsMensagensCreate>>,
+  TError,
+  { data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsMensagensCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsMensagensCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensCreate>>, TError,{data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensCreate>>, TError,{data: ChatMensagemRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsMensagensCreate>>,
+    { data: ChatMensagemRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['communicationsMensagensCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsMensagensCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsMensagensCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensCreate>>
+>;
+export type CommunicationsMensagensCreateMutationBody = ChatMensagemRequest;
+export type CommunicationsMensagensCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsMensagensCreate>>, {data: ChatMensagemRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  communicationsMensagensCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsMensagensCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensCreate>>>
-    export type CommunicationsMensagensCreateMutationBody = ChatMensagemRequest
-    export type CommunicationsMensagensCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar nova mensagem
  */
-export const useCommunicationsMensagensCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensCreate>>, TError,{data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsMensagensCreate>>,
-        TError,
-        {data: ChatMensagemRequest},
-        TContext
-      > => {
+export const useCommunicationsMensagensCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsMensagensCreate>>,
+      TError,
+      { data: ChatMensagemRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsMensagensCreate>>,
+  TError,
+  { data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsMensagensCreateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsMensagensCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de uma mensagem específica.
  * @summary Obter detalhes da mensagem
  */
 export const communicationsMensagensRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ChatMensagem>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/communications/mensagens/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ChatMensagem>> => {
+  id = unref(id);
 
+  return axios.get(`/api/communications/mensagens/${id}/`, options);
+};
 
-export const getCommunicationsMensagensRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','communications','mensagens',id] as const;
-    }
-
-    
-export const getCommunicationsMensagensRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsMensagensRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsMensagensRetrieveQueryKey = (
+  id: MaybeRef<number>,
 ) => {
+  return ["api", "communications", "mensagens", id] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsMensagensRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsMensagensRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsMensagensRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsMensagensRetrieveQueryKey(id);
+  const queryKey = getCommunicationsMensagensRetrieveQueryKey(id);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsMensagensRetrieve>>
+  > = ({ signal }) =>
+    communicationsMensagensRetrieve(id, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsMensagensRetrieve>>> = ({ signal }) => communicationsMensagensRetrieve(id, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsMensagensRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsMensagensRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensRetrieve>>>
-export type CommunicationsMensagensRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsMensagensRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensRetrieve>>
+>;
+export type CommunicationsMensagensRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes da mensagem
  */
 
-export function useCommunicationsMensagensRetrieve<TData = Awaited<ReturnType<typeof communicationsMensagensRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsMensagensRetrieve<
+  TData = Awaited<ReturnType<typeof communicationsMensagensRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsMensagensRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsMensagensRetrieveQueryOptions(
+    id,
+    options,
+  );
 
-  const queryOptions = getCommunicationsMensagensRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de uma mensagem existente.
  * @summary Atualizar mensagem
  */
 export const communicationsMensagensUpdate = (
-    id: MaybeRef<number>,
-    chatMensagemRequest: MaybeRef<ChatMensagemRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ChatMensagem>> => {
-    id = unref(id);
-chatMensagemRequest = unref(chatMensagemRequest);
-    
-    return axios.put(
-      `/api/communications/mensagens/${id}/`,
-      chatMensagemRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ChatMensagem>> => {
+  id = unref(id);
+  chatMensagemRequest = unref(chatMensagemRequest);
 
+  return axios.put(
+    `/api/communications/mensagens/${id}/`,
+    chatMensagemRequest,
+    options,
+  );
+};
 
+export const getCommunicationsMensagensUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
+    TError,
+    { id: number; data: ChatMensagemRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
+  TError,
+  { id: number; data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsMensagensUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsMensagensUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensUpdate>>, TError,{id: number;data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensUpdate>>, TError,{id: number;data: ChatMensagemRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
+    { id: number; data: ChatMensagemRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsMensagensUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsMensagensUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsMensagensUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensUpdate>>
+>;
+export type CommunicationsMensagensUpdateMutationBody = ChatMensagemRequest;
+export type CommunicationsMensagensUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsMensagensUpdate>>, {id: number;data: ChatMensagemRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsMensagensUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsMensagensUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensUpdate>>>
-    export type CommunicationsMensagensUpdateMutationBody = ChatMensagemRequest
-    export type CommunicationsMensagensUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar mensagem
  */
-export const useCommunicationsMensagensUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensUpdate>>, TError,{id: number;data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
-        TError,
-        {id: number;data: ChatMensagemRequest},
-        TContext
-      > => {
+export const useCommunicationsMensagensUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
+      TError,
+      { id: number; data: ChatMensagemRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
+  TError,
+  { id: number; data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsMensagensUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsMensagensUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente uma mensagem existente.
  * @summary Atualizar mensagem parcialmente
  */
 export const communicationsMensagensPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedChatMensagemRequest: MaybeRef<PatchedChatMensagemRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ChatMensagem>> => {
-    id = unref(id);
-patchedChatMensagemRequest = unref(patchedChatMensagemRequest);
-    
-    return axios.patch(
-      `/api/communications/mensagens/${id}/`,
-      patchedChatMensagemRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedChatMensagemRequest: MaybeRef<PatchedChatMensagemRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ChatMensagem>> => {
+  id = unref(id);
+  patchedChatMensagemRequest = unref(patchedChatMensagemRequest);
 
+  return axios.patch(
+    `/api/communications/mensagens/${id}/`,
+    patchedChatMensagemRequest,
+    options,
+  );
+};
 
+export const getCommunicationsMensagensPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedChatMensagemRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedChatMensagemRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsMensagensPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsMensagensPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>, TError,{id: number;data: PatchedChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>, TError,{id: number;data: PatchedChatMensagemRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
+    { id: number; data: PatchedChatMensagemRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsMensagensPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsMensagensPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsMensagensPartialUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>
+>;
+export type CommunicationsMensagensPartialUpdateMutationBody =
+  PatchedChatMensagemRequest;
+export type CommunicationsMensagensPartialUpdateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>, {id: number;data: PatchedChatMensagemRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsMensagensPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsMensagensPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>>
-    export type CommunicationsMensagensPartialUpdateMutationBody = PatchedChatMensagemRequest
-    export type CommunicationsMensagensPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar mensagem parcialmente
  */
-export const useCommunicationsMensagensPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>, TError,{id: number;data: PatchedChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedChatMensagemRequest},
-        TContext
-      > => {
+export const useCommunicationsMensagensPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedChatMensagemRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedChatMensagemRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsMensagensPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsMensagensPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove uma mensagem existente.
  * @summary Excluir mensagem
  */
 export const communicationsMensagensDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/communications/mensagens/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/communications/mensagens/${id}/`, options);
+};
 
+export const getCommunicationsMensagensDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["communicationsMensagensDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsMensagensDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['communicationsMensagensDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsMensagensDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsMensagensDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsMensagensDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsMensagensDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type CommunicationsMensagensDestroyMutationError = AxiosError<unknown>;
 
-          return  communicationsMensagensDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsMensagensDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensDestroy>>>
-    
-    export type CommunicationsMensagensDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir mensagem
  */
-export const useCommunicationsMensagensDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useCommunicationsMensagensDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsMensagensDestroyMutationOptions(options);
 
-      const mutationOptions = getCommunicationsMensagensDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Marca uma mensagem como lida pelo usuário atual.
 
 Args:
@@ -886,66 +1319,96 @@ Returns:
  * @summary Marcar mensagem como lida
  */
 export const communicationsMensagensMarcarComoLidaCreate = (
-    id: MaybeRef<number>,
-    chatMensagemRequest: MaybeRef<ChatMensagemRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    id = unref(id);
-chatMensagemRequest = unref(chatMensagemRequest);
-    
-    return axios.post(
-      `/api/communications/mensagens/${id}/marcar_como_lida/`,
-      chatMensagemRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  id = unref(id);
+  chatMensagemRequest = unref(chatMensagemRequest);
 
+  return axios.post(
+    `/api/communications/mensagens/${id}/marcar_como_lida/`,
+    chatMensagemRequest,
+    options,
+  );
+};
 
+export const getCommunicationsMensagensMarcarComoLidaCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
+    TError,
+    { id: number; data: ChatMensagemRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
+  TError,
+  { id: number; data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsMensagensMarcarComoLidaCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsMensagensMarcarComoLidaCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>, TError,{id: number;data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>, TError,{id: number;data: ChatMensagemRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
+    { id: number; data: ChatMensagemRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsMensagensMarcarComoLidaCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsMensagensMarcarComoLidaCreate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsMensagensMarcarComoLidaCreateMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>
+  >;
+export type CommunicationsMensagensMarcarComoLidaCreateMutationBody =
+  ChatMensagemRequest;
+export type CommunicationsMensagensMarcarComoLidaCreateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>, {id: number;data: ChatMensagemRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsMensagensMarcarComoLidaCreate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsMensagensMarcarComoLidaCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>>
-    export type CommunicationsMensagensMarcarComoLidaCreateMutationBody = ChatMensagemRequest
-    export type CommunicationsMensagensMarcarComoLidaCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Marcar mensagem como lida
  */
-export const useCommunicationsMensagensMarcarComoLidaCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>, TError,{id: number;data: ChatMensagemRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
-        TError,
-        {id: number;data: ChatMensagemRequest},
-        TContext
-      > => {
+export const useCommunicationsMensagensMarcarComoLidaCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
+      TError,
+      { id: number; data: ChatMensagemRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
+  TError,
+  { id: number; data: ChatMensagemRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsMensagensMarcarComoLidaCreateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsMensagensMarcarComoLidaCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna as mensagens não lidas pelo usuário atual.
 
 Suporta filtro por projeto através do parâmetro 'projeto' na query string.
@@ -959,441 +1422,682 @@ Returns:
  * @summary Listar mensagens não lidas
  */
 export const communicationsMensagensMensagensNaoLidasRetrieve = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    
-    
-    return axios.get(
-      `/api/communications/mensagens/mensagens_nao_lidas/`,options
-    );
-  }
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  return axios.get(
+    `/api/communications/mensagens/mensagens_nao_lidas/`,
+    options,
+  );
+};
 
+export const getCommunicationsMensagensMensagensNaoLidasRetrieveQueryKey =
+  () => {
+    return [
+      "api",
+      "communications",
+      "mensagens",
+      "mensagens_nao_lidas",
+    ] as const;
+  };
 
-export const getCommunicationsMensagensMensagensNaoLidasRetrieveQueryKey = () => {
-    return ['api','communications','mensagens','mensagens_nao_lidas'] as const;
-    }
+export const getCommunicationsMensagensMensagensNaoLidasRetrieveQueryOptions = <
+  TData = Awaited<
+    ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>
+  >,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<
+        ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>
+      >,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-    
-export const getCommunicationsMensagensMensagensNaoLidasRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+  const queryKey =
+    getCommunicationsMensagensMensagensNaoLidasRetrieveQueryKey();
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>
+  > = ({ signal }) =>
+    communicationsMensagensMensagensNaoLidasRetrieve({
+      signal,
+      ...axiosOptions,
+    });
 
-  const queryKey =  getCommunicationsMensagensMensagensNaoLidasRetrieveQueryKey();
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<
+      ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>
+    >,
+    TError,
+    TData
+  >;
+};
 
-  
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>> = ({ signal }) => communicationsMensagensMensagensNaoLidasRetrieve({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsMensagensMensagensNaoLidasRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>>
-export type CommunicationsMensagensMensagensNaoLidasRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsMensagensMensagensNaoLidasRetrieveQueryResult =
+  NonNullable<
+    Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>
+  >;
+export type CommunicationsMensagensMensagensNaoLidasRetrieveQueryError =
+  AxiosError<unknown>;
 
 /**
  * @summary Listar mensagens não lidas
  */
 
-export function useCommunicationsMensagensMensagensNaoLidasRetrieve<TData = Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsMensagensMensagensNaoLidasRetrieve<
+  TData = Awaited<
+    ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>
+  >,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof communicationsMensagensMensagensNaoLidasRetrieve>
+        >,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions =
+    getCommunicationsMensagensMensagensNaoLidasRetrieveQueryOptions(options);
 
-  const queryOptions = getCommunicationsMensagensMensagensNaoLidasRetrieveQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Retorna uma lista paginada de notificações.
  * @summary Listar notificações
  */
 export const communicationsNotificacoesList = (
-    params?: MaybeRef<CommunicationsNotificacoesListParams>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PaginatedNotificacaoList>> => {
-    params = unref(params);
-    
-    return axios.get(
-      `/api/communications/notificacoes/`,{
+  params?: MaybeRef<CommunicationsNotificacoesListParams>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<PaginatedNotificacaoList>> => {
+  params = unref(params);
+
+  return axios.get(`/api/communications/notificacoes/`, {
     ...options,
-        params: {...unref(params), ...options?.params},}
-    );
-  }
+    params: { ...unref(params), ...options?.params },
+  });
+};
 
-
-export const getCommunicationsNotificacoesListQueryKey = (params?: MaybeRef<CommunicationsNotificacoesListParams>,) => {
-    return ['api','communications','notificacoes', ...(params ? [params]: [])] as const;
-    }
-
-    
-export const getCommunicationsNotificacoesListQueryOptions = <TData = Awaited<ReturnType<typeof communicationsNotificacoesList>>, TError = AxiosError<unknown>>(params?: MaybeRef<CommunicationsNotificacoesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsNotificacoesListQueryKey = (
+  params?: MaybeRef<CommunicationsNotificacoesListParams>,
 ) => {
+  return [
+    "api",
+    "communications",
+    "notificacoes",
+    ...(params ? [params] : []),
+  ] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsNotificacoesListQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsNotificacoesList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsNotificacoesListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsNotificacoesList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsNotificacoesListQueryKey(params);
+  const queryKey = getCommunicationsNotificacoesListQueryKey(params);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesList>>
+  > = ({ signal }) =>
+    communicationsNotificacoesList(params, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsNotificacoesList>>> = ({ signal }) => communicationsNotificacoesList(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesList>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesList>>, TError, TData> 
-}
-
-export type CommunicationsNotificacoesListQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesList>>>
-export type CommunicationsNotificacoesListQueryError = AxiosError<unknown>
-
+export type CommunicationsNotificacoesListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesList>>
+>;
+export type CommunicationsNotificacoesListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar notificações
  */
 
-export function useCommunicationsNotificacoesList<TData = Awaited<ReturnType<typeof communicationsNotificacoesList>>, TError = AxiosError<unknown>>(
- params?: MaybeRef<CommunicationsNotificacoesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsNotificacoesList<
+  TData = Awaited<ReturnType<typeof communicationsNotificacoesList>>,
+  TError = AxiosError<unknown>,
+>(
+  params?: MaybeRef<CommunicationsNotificacoesListParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsNotificacoesList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsNotificacoesListQueryOptions(
+    params,
+    options,
+  );
 
-  const queryOptions = getCommunicationsNotificacoesListQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria um nova notificação.
  * @summary Criar nova notificação
  */
 export const communicationsNotificacoesCreate = (
-    notificacaoRequest: MaybeRef<NotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Notificacao>> => {
-    notificacaoRequest = unref(notificacaoRequest);
-    
-    return axios.post(
-      `/api/communications/notificacoes/`,
-      notificacaoRequest,options
-    );
-  }
+  notificacaoRequest: MaybeRef<NotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Notificacao>> => {
+  notificacaoRequest = unref(notificacaoRequest);
 
+  return axios.post(
+    `/api/communications/notificacoes/`,
+    notificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsNotificacoesCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
+    TError,
+    { data: NotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
+  TError,
+  { data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsNotificacoesCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesCreate>>, TError,{data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesCreate>>, TError,{data: NotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
+    { data: NotificacaoRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsNotificacoesCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsNotificacoesCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesCreate>>
+>;
+export type CommunicationsNotificacoesCreateMutationBody = NotificacaoRequest;
+export type CommunicationsNotificacoesCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesCreate>>, {data: NotificacaoRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  communicationsNotificacoesCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesCreate>>>
-    export type CommunicationsNotificacoesCreateMutationBody = NotificacaoRequest
-    export type CommunicationsNotificacoesCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar nova notificação
  */
-export const useCommunicationsNotificacoesCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesCreate>>, TError,{data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
-        TError,
-        {data: NotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
+      TError,
+      { data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
+  TError,
+  { data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesCreateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsNotificacoesCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de uma notificação específica.
  * @summary Obter detalhes da notificação
  */
 export const communicationsNotificacoesRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Notificacao>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/communications/notificacoes/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Notificacao>> => {
+  id = unref(id);
 
+  return axios.get(`/api/communications/notificacoes/${id}/`, options);
+};
 
-export const getCommunicationsNotificacoesRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','communications','notificacoes',id] as const;
-    }
-
-    
-export const getCommunicationsNotificacoesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getCommunicationsNotificacoesRetrieveQueryKey = (
+  id: MaybeRef<number>,
 ) => {
+  return ["api", "communications", "notificacoes", id] as const;
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getCommunicationsNotificacoesRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =  getCommunicationsNotificacoesRetrieveQueryKey(id);
+  const queryKey = getCommunicationsNotificacoesRetrieveQueryKey(id);
 
-  
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>
+  > = ({ signal }) =>
+    communicationsNotificacoesRetrieve(id, { signal, ...axiosOptions });
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>> = ({ signal }) => communicationsNotificacoesRetrieve(id, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsNotificacoesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>>
-export type CommunicationsNotificacoesRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsNotificacoesRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>
+>;
+export type CommunicationsNotificacoesRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes da notificação
  */
 
-export function useCommunicationsNotificacoesRetrieve<TData = Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsNotificacoesRetrieve<
+  TData = Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsNotificacoesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCommunicationsNotificacoesRetrieveQueryOptions(
+    id,
+    options,
+  );
 
-  const queryOptions = getCommunicationsNotificacoesRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de uma notificação existente.
  * @summary Atualizar notificação
  */
 export const communicationsNotificacoesUpdate = (
-    id: MaybeRef<number>,
-    notificacaoRequest: MaybeRef<NotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Notificacao>> => {
-    id = unref(id);
-notificacaoRequest = unref(notificacaoRequest);
-    
-    return axios.put(
-      `/api/communications/notificacoes/${id}/`,
-      notificacaoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  notificacaoRequest: MaybeRef<NotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Notificacao>> => {
+  id = unref(id);
+  notificacaoRequest = unref(notificacaoRequest);
 
+  return axios.put(
+    `/api/communications/notificacoes/${id}/`,
+    notificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsNotificacoesUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
+    TError,
+    { id: number; data: NotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
+  TError,
+  { id: number; data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsNotificacoesUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>, TError,{id: number;data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>, TError,{id: number;data: NotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
+    { id: number; data: NotificacaoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsNotificacoesUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsNotificacoesUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>
+>;
+export type CommunicationsNotificacoesUpdateMutationBody = NotificacaoRequest;
+export type CommunicationsNotificacoesUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>, {id: number;data: NotificacaoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsNotificacoesUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>>
-    export type CommunicationsNotificacoesUpdateMutationBody = NotificacaoRequest
-    export type CommunicationsNotificacoesUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar notificação
  */
-export const useCommunicationsNotificacoesUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>, TError,{id: number;data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
-        TError,
-        {id: number;data: NotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
+      TError,
+      { id: number; data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
+  TError,
+  { id: number; data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsNotificacoesUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente uma notificação existente.
  * @summary Atualizar notificação parcialmente
  */
 export const communicationsNotificacoesPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedNotificacaoRequest: MaybeRef<PatchedNotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Notificacao>> => {
-    id = unref(id);
-patchedNotificacaoRequest = unref(patchedNotificacaoRequest);
-    
-    return axios.patch(
-      `/api/communications/notificacoes/${id}/`,
-      patchedNotificacaoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedNotificacaoRequest: MaybeRef<PatchedNotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<Notificacao>> => {
+  id = unref(id);
+  patchedNotificacaoRequest = unref(patchedNotificacaoRequest);
 
+  return axios.patch(
+    `/api/communications/notificacoes/${id}/`,
+    patchedNotificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsNotificacoesPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedNotificacaoRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedNotificacaoRequest },
+  TContext
+> => {
+  const mutationKey = ["communicationsNotificacoesPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>, TError,{id: number;data: PatchedNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>, TError,{id: number;data: PatchedNotificacaoRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
+    { id: number; data: PatchedNotificacaoRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsNotificacoesPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsNotificacoesPartialUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>
+>;
+export type CommunicationsNotificacoesPartialUpdateMutationBody =
+  PatchedNotificacaoRequest;
+export type CommunicationsNotificacoesPartialUpdateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>, {id: number;data: PatchedNotificacaoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsNotificacoesPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>>
-    export type CommunicationsNotificacoesPartialUpdateMutationBody = PatchedNotificacaoRequest
-    export type CommunicationsNotificacoesPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar notificação parcialmente
  */
-export const useCommunicationsNotificacoesPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>, TError,{id: number;data: PatchedNotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedNotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedNotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedNotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsNotificacoesPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove uma notificação existente.
  * @summary Excluir notificação
  */
 export const communicationsNotificacoesDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/communications/notificacoes/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/communications/notificacoes/${id}/`, options);
+};
 
+export const getCommunicationsNotificacoesDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["communicationsNotificacoesDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return communicationsNotificacoesDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type CommunicationsNotificacoesDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type CommunicationsNotificacoesDestroyMutationError =
+  AxiosError<unknown>;
 
-          return  communicationsNotificacoesDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>>
-    
-    export type CommunicationsNotificacoesDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir notificação
  */
-export const useCommunicationsNotificacoesDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesDestroyMutationOptions(options);
 
-      const mutationOptions = getCommunicationsNotificacoesDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Marca uma notificação como lida.
 
 Define o campo 'lida' como True e registra a data/hora em 'lida_em'.
@@ -1407,66 +2111,104 @@ Returns:
  * @summary Marcar notificação como lida
  */
 export const communicationsNotificacoesMarcarComoLidaCreate = (
-    id: MaybeRef<number>,
-    notificacaoRequest: MaybeRef<NotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    id = unref(id);
-notificacaoRequest = unref(notificacaoRequest);
-    
-    return axios.post(
-      `/api/communications/notificacoes/${id}/marcar_como_lida/`,
-      notificacaoRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  notificacaoRequest: MaybeRef<NotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  id = unref(id);
+  notificacaoRequest = unref(notificacaoRequest);
 
+  return axios.post(
+    `/api/communications/notificacoes/${id}/marcar_como_lida/`,
+    notificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsNotificacoesMarcarComoLidaCreateMutationOptions =
+  <TError = AxiosError<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>
+      >,
+      TError,
+      { id: number; data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  }): UseMutationOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>,
+    TError,
+    { id: number; data: NotificacaoRequest },
+    TContext
+  > => {
+    const mutationKey = ["communicationsNotificacoesMarcarComoLidaCreate"];
+    const { mutation: mutationOptions, axios: axiosOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesMarcarComoLidaCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>, TError,{id: number;data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>, TError,{id: number;data: NotificacaoRequest}, TContext> => {
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>
+      >,
+      { id: number; data: NotificacaoRequest }
+    > = (props) => {
+      const { id, data } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesMarcarComoLidaCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+      return communicationsNotificacoesMarcarComoLidaCreate(
+        id,
+        data,
+        axiosOptions,
+      );
+    };
 
-      
+    return { mutationFn, ...mutationOptions };
+  };
 
+export type CommunicationsNotificacoesMarcarComoLidaCreateMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>
+  >;
+export type CommunicationsNotificacoesMarcarComoLidaCreateMutationBody =
+  NotificacaoRequest;
+export type CommunicationsNotificacoesMarcarComoLidaCreateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>, {id: number;data: NotificacaoRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  communicationsNotificacoesMarcarComoLidaCreate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesMarcarComoLidaCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>>
-    export type CommunicationsNotificacoesMarcarComoLidaCreateMutationBody = NotificacaoRequest
-    export type CommunicationsNotificacoesMarcarComoLidaCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Marcar notificação como lida
  */
-export const useCommunicationsNotificacoesMarcarComoLidaCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>, TError,{id: number;data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>,
-        TError,
-        {id: number;data: NotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesMarcarComoLidaCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>
+      >,
+      TError,
+      { id: number; data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>,
+  TError,
+  { id: number; data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesMarcarComoLidaCreateMutationOptions(options);
 
-      const mutationOptions = getCommunicationsNotificacoesMarcarComoLidaCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Marca todas as notificações não lidas do usuário como lidas.
 
 Atualiza em massa todas as notificações não lidas do usuário atual,
@@ -1480,64 +2222,111 @@ Returns:
  * @summary Marcar todas as notificações como lidas
  */
 export const communicationsNotificacoesMarcarTodasComoLidasCreate = (
-    notificacaoRequest: MaybeRef<NotificacaoRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    notificacaoRequest = unref(notificacaoRequest);
-    
-    return axios.post(
-      `/api/communications/notificacoes/marcar_todas_como_lidas/`,
-      notificacaoRequest,options
-    );
-  }
+  notificacaoRequest: MaybeRef<NotificacaoRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  notificacaoRequest = unref(notificacaoRequest);
 
+  return axios.post(
+    `/api/communications/notificacoes/marcar_todas_como_lidas/`,
+    notificacaoRequest,
+    options,
+  );
+};
 
+export const getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOptions =
+  <TError = AxiosError<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+      >,
+      TError,
+      { data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+    >,
+    TError,
+    { data: NotificacaoRequest },
+    TContext
+  > => {
+    const mutationKey = [
+      "communicationsNotificacoesMarcarTodasComoLidasCreate",
+    ];
+    const { mutation: mutationOptions, axios: axiosOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, axios: undefined };
 
-export const getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>, TError,{data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>, TError,{data: NotificacaoRequest}, TContext> => {
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+      >,
+      { data: NotificacaoRequest }
+    > = (props) => {
+      const { data } = props ?? {};
 
-const mutationKey = ['communicationsNotificacoesMarcarTodasComoLidasCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+      return communicationsNotificacoesMarcarTodasComoLidasCreate(
+        data,
+        axiosOptions,
+      );
+    };
 
-      
+    return { mutationFn, ...mutationOptions };
+  };
 
+export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+    >
+  >;
+export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationBody =
+  NotificacaoRequest;
+export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationError =
+  AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>, {data: NotificacaoRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  communicationsNotificacoesMarcarTodasComoLidasCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>>
-    export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationBody = NotificacaoRequest
-    export type CommunicationsNotificacoesMarcarTodasComoLidasCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Marcar todas as notificações como lidas
  */
-export const useCommunicationsNotificacoesMarcarTodasComoLidasCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>, TError,{data: NotificacaoRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>>,
-        TError,
-        {data: NotificacaoRequest},
-        TContext
-      > => {
+export const useCommunicationsNotificacoesMarcarTodasComoLidasCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+      >,
+      TError,
+      { data: NotificacaoRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<
+    ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
+  >,
+  TError,
+  { data: NotificacaoRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOptions(
+      options,
+    );
 
-      const mutationOptions = getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna apenas as notificações não lidas do usuário.
 
 Suporta filtros adicionais por tipo e prioridade através de parâmetros na query string.
@@ -1550,60 +2339,89 @@ Returns:
  * @summary Listar notificações não lidas
  */
 export const communicationsNotificacoesNaoLidasRetrieve = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
-    
-    
-    return axios.get(
-      `/api/communications/notificacoes/nao_lidas/`,options
-    );
-  }
-
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
+  return axios.get(`/api/communications/notificacoes/nao_lidas/`, options);
+};
 
 export const getCommunicationsNotificacoesNaoLidasRetrieveQueryKey = () => {
-    return ['api','communications','notificacoes','nao_lidas'] as const;
-    }
+  return ["api", "communications", "notificacoes", "nao_lidas"] as const;
+};
 
-    
-export const getCommunicationsNotificacoesNaoLidasRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+export const getCommunicationsNotificacoesNaoLidasRetrieveQueryOptions = <
+  TData = Awaited<
+    ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>
+  >,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getCommunicationsNotificacoesNaoLidasRetrieveQueryKey();
 
-  const queryKey =  getCommunicationsNotificacoesNaoLidasRetrieveQueryKey();
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>
+  > = ({ signal }) =>
+    communicationsNotificacoesNaoLidasRetrieve({ signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>> = ({ signal }) => communicationsNotificacoesNaoLidasRetrieve({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>, TError, TData> 
-}
-
-export type CommunicationsNotificacoesNaoLidasRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>>
-export type CommunicationsNotificacoesNaoLidasRetrieveQueryError = AxiosError<unknown>
-
+export type CommunicationsNotificacoesNaoLidasRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>
+>;
+export type CommunicationsNotificacoesNaoLidasRetrieveQueryError =
+  AxiosError<unknown>;
 
 /**
  * @summary Listar notificações não lidas
  */
 
-export function useCommunicationsNotificacoesNaoLidasRetrieve<TData = Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useCommunicationsNotificacoesNaoLidasRetrieve<
+  TData = Awaited<
+    ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>
+  >,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof communicationsNotificacoesNaoLidasRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions =
+    getCommunicationsNotificacoesNaoLidasRetrieveQueryOptions(options);
 
-  const queryOptions = getCommunicationsNotificacoesNaoLidasRetrieveQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
-

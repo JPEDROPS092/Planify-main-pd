@@ -8,17 +8,17 @@
 
 /**
  * * `EMAIL` - E-mail
-* `SISTEMA` - Sistema
-* `AMBOS` - Ambos
-* `NENHUM` - Nenhum
+ * `SISTEMA` - Sistema
+ * `AMBOS` - Ambos
+ * `NENHUM` - Nenhum
  */
-export type MensagemChatEnum = typeof MensagemChatEnum[keyof typeof MensagemChatEnum];
-
+export type MensagemChatEnum =
+  (typeof MensagemChatEnum)[keyof typeof MensagemChatEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const MensagemChatEnum = {
-  EMAIL: 'EMAIL',
-  SISTEMA: 'SISTEMA',
-  AMBOS: 'AMBOS',
-  NENHUM: 'NENHUM',
+  EMAIL: "EMAIL",
+  SISTEMA: "SISTEMA",
+  AMBOS: "AMBOS",
+  NENHUM: "NENHUM",
 } as const;

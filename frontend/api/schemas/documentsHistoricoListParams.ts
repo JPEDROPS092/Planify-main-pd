@@ -7,16 +7,16 @@
  */
 
 export type DocumentsHistoricoListParams = {
-/**
- * Filtrar por ID do usuário que realizou a alteração
- */
-alterado_por?: number;
-/**
- * Filtrar por ID do documento
- */
-documento?: number;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
+  /**
+   * Filtrar por ID do usuário que realizou a alteração
+   */
+  alterado_por?: number;
+  /**
+   * Filtrar por ID do documento
+   */
+  documento?: number;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
 };

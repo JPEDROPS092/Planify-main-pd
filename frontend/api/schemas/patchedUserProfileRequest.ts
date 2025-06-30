@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ThemePreferenceEnum } from './themePreferenceEnum';
+import type { ThemePreferenceEnum } from "./themePreferenceEnum";
 
 export interface PatchedUserProfileRequest {
   user?: number;

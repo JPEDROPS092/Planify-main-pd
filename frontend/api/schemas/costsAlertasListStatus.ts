@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CostsAlertasListStatus = typeof CostsAlertasListStatus[keyof typeof CostsAlertasListStatus];
-
+export type CostsAlertasListStatus =
+  (typeof CostsAlertasListStatus)[keyof typeof CostsAlertasListStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CostsAlertasListStatus = {
-  ATIVO: 'ATIVO',
-  IGNORADO: 'IGNORADO',
-  RESOLVIDO: 'RESOLVIDO',
+  ATIVO: "ATIVO",
+  IGNORADO: "IGNORADO",
+  RESOLVIDO: "RESOLVIDO",
 } as const;

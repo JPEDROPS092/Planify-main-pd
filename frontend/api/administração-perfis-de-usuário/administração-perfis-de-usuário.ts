@@ -5,10 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/vue-query';
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import type {
   DataTag,
   MutationFunction,
@@ -18,407 +15,551 @@ import type {
   UseMutationOptions,
   UseMutationReturnType,
   UseQueryOptions,
-  UseQueryReturnType
-} from '@tanstack/vue-query';
+  UseQueryReturnType,
+} from "@tanstack/vue-query";
 
-import axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-import {
-  computed,
-  unref
-} from 'vue';
-import type {
-  MaybeRef
-} from 'vue';
+import { computed, unref } from "vue";
+import type { MaybeRef } from "vue";
 
 import type {
   PatchedUserProfileRequest,
   UserProfile,
-  UserProfileRequest
-} from '.././schemas';
-
-
-
-
+  UserProfileRequest,
+} from ".././schemas";
 
 /**
  * Retorna uma lista paginada de perfis de usuário.
  * @summary Listar perfis de usuário
  */
 export const adminUserProfilesList = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserProfile[]>> => {
-    
-    
-    return axios.get(
-      `/api/users/admin/profiles/`,options
-    );
-  }
-
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<UserProfile[]>> => {
+  return axios.get(`/api/users/admin/profiles/`, options);
+};
 
 export const getAdminUserProfilesListQueryKey = () => {
-    return ['api','users','admin','profiles'] as const;
-    }
+  return ["api", "users", "admin", "profiles"] as const;
+};
 
-    
-export const getAdminUserProfilesListQueryOptions = <TData = Awaited<ReturnType<typeof adminUserProfilesList>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesList>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+export const getAdminUserProfilesListQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminUserProfilesList>>,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof adminUserProfilesList>>,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getAdminUserProfilesListQueryKey();
 
-  const queryKey =  getAdminUserProfilesListQueryKey();
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminUserProfilesList>>
+  > = ({ signal }) => adminUserProfilesList({ signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminUserProfilesList>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminUserProfilesList>>> = ({ signal }) => adminUserProfilesList({ signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesList>>, TError, TData> 
-}
-
-export type AdminUserProfilesListQueryResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesList>>>
-export type AdminUserProfilesListQueryError = AxiosError<unknown>
-
+export type AdminUserProfilesListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesList>>
+>;
+export type AdminUserProfilesListQueryError = AxiosError<unknown>;
 
 /**
  * @summary Listar perfis de usuário
  */
 
-export function useAdminUserProfilesList<TData = Awaited<ReturnType<typeof adminUserProfilesList>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesList>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminUserProfilesList<
+  TData = Awaited<ReturnType<typeof adminUserProfilesList>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminUserProfilesList>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAdminUserProfilesListQueryOptions(options);
 
-  const queryOptions = getAdminUserProfilesListQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Cria um novo perfil de usuário.
  * @summary Criar novo perfil de usuário
  */
 export const adminUserProfilesCreate = (
-    userProfileRequest: MaybeRef<UserProfileRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserProfile>> => {
-    userProfileRequest = unref(userProfileRequest);
-    
-    return axios.post(
-      `/api/users/admin/profiles/`,
-      userProfileRequest,options
-    );
-  }
+  userProfileRequest: MaybeRef<UserProfileRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<UserProfile>> => {
+  userProfileRequest = unref(userProfileRequest);
 
+  return axios.post(`/api/users/admin/profiles/`, userProfileRequest, options);
+};
 
+export const getAdminUserProfilesCreateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUserProfilesCreate>>,
+    TError,
+    { data: UserProfileRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUserProfilesCreate>>,
+  TError,
+  { data: UserProfileRequest },
+  TContext
+> => {
+  const mutationKey = ["adminUserProfilesCreate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminUserProfilesCreateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesCreate>>, TError,{data: UserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesCreate>>, TError,{data: UserProfileRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUserProfilesCreate>>,
+    { data: UserProfileRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['adminUserProfilesCreate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminUserProfilesCreate(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminUserProfilesCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesCreate>>
+>;
+export type AdminUserProfilesCreateMutationBody = UserProfileRequest;
+export type AdminUserProfilesCreateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUserProfilesCreate>>, {data: UserProfileRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  adminUserProfilesCreate(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminUserProfilesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesCreate>>>
-    export type AdminUserProfilesCreateMutationBody = UserProfileRequest
-    export type AdminUserProfilesCreateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Criar novo perfil de usuário
  */
-export const useAdminUserProfilesCreate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesCreate>>, TError,{data: UserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminUserProfilesCreate>>,
-        TError,
-        {data: UserProfileRequest},
-        TContext
-      > => {
+export const useAdminUserProfilesCreate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminUserProfilesCreate>>,
+      TError,
+      { data: UserProfileRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminUserProfilesCreate>>,
+  TError,
+  { data: UserProfileRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminUserProfilesCreateMutationOptions(options);
 
-      const mutationOptions = getAdminUserProfilesCreateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Retorna informações detalhadas de um perfil de usuário específico.
  * @summary Obter detalhes do perfil de usuário
  */
 export const adminUserProfilesRetrieve = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserProfile>> => {
-    id = unref(id);
-    
-    return axios.get(
-      `/api/users/admin/profiles/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<UserProfile>> => {
+  id = unref(id);
 
+  return axios.get(`/api/users/admin/profiles/${id}/`, options);
+};
 
-export const getAdminUserProfilesRetrieveQueryKey = (id: MaybeRef<number>,) => {
-    return ['api','users','admin','profiles',id] as const;
-    }
+export const getAdminUserProfilesRetrieveQueryKey = (id: MaybeRef<number>) => {
+  return ["api", "users", "admin", "profiles", id] as const;
+};
 
-    
-export const getAdminUserProfilesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof adminUserProfilesRetrieve>>, TError = AxiosError<unknown>>(id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getAdminUserProfilesRetrieveQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminUserProfilesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminUserProfilesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = getAdminUserProfilesRetrieveQueryKey(id);
 
-  const queryKey =  getAdminUserProfilesRetrieveQueryKey(id);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminUserProfilesRetrieve>>
+  > = ({ signal }) =>
+    adminUserProfilesRetrieve(id, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(() => !!unref(id)),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminUserProfilesRetrieve>>,
+    TError,
+    TData
+  >;
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminUserProfilesRetrieve>>> = ({ signal }) => adminUserProfilesRetrieve(id, { signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: computed(() => !!(unref(id))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesRetrieve>>, TError, TData> 
-}
-
-export type AdminUserProfilesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesRetrieve>>>
-export type AdminUserProfilesRetrieveQueryError = AxiosError<unknown>
-
+export type AdminUserProfilesRetrieveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesRetrieve>>
+>;
+export type AdminUserProfilesRetrieveQueryError = AxiosError<unknown>;
 
 /**
  * @summary Obter detalhes do perfil de usuário
  */
 
-export function useAdminUserProfilesRetrieve<TData = Awaited<ReturnType<typeof adminUserProfilesRetrieve>>, TError = AxiosError<unknown>>(
- id: MaybeRef<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof adminUserProfilesRetrieve>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useAdminUserProfilesRetrieve<
+  TData = Awaited<ReturnType<typeof adminUserProfilesRetrieve>>,
+  TError = AxiosError<unknown>,
+>(
+  id: MaybeRef<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof adminUserProfilesRetrieve>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAdminUserProfilesRetrieveQueryOptions(id, options);
 
-  const queryOptions = getAdminUserProfilesRetrieveQueryOptions(id,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions , queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >;
 
   return query;
 }
-
-
 
 /**
  * Atualiza todos os campos de um perfil de usuário existente.
  * @summary Atualizar perfil de usuário
  */
 export const adminUserProfilesUpdate = (
-    id: MaybeRef<number>,
-    userProfileRequest: MaybeRef<UserProfileRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserProfile>> => {
-    id = unref(id);
-userProfileRequest = unref(userProfileRequest);
-    
-    return axios.put(
-      `/api/users/admin/profiles/${id}/`,
-      userProfileRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  userProfileRequest: MaybeRef<UserProfileRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<UserProfile>> => {
+  id = unref(id);
+  userProfileRequest = unref(userProfileRequest);
 
+  return axios.put(
+    `/api/users/admin/profiles/${id}/`,
+    userProfileRequest,
+    options,
+  );
+};
 
+export const getAdminUserProfilesUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
+    TError,
+    { id: number; data: UserProfileRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
+  TError,
+  { id: number; data: UserProfileRequest },
+  TContext
+> => {
+  const mutationKey = ["adminUserProfilesUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminUserProfilesUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesUpdate>>, TError,{id: number;data: UserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesUpdate>>, TError,{id: number;data: UserProfileRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
+    { id: number; data: UserProfileRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['adminUserProfilesUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminUserProfilesUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminUserProfilesUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesUpdate>>
+>;
+export type AdminUserProfilesUpdateMutationBody = UserProfileRequest;
+export type AdminUserProfilesUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUserProfilesUpdate>>, {id: number;data: UserProfileRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  adminUserProfilesUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminUserProfilesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesUpdate>>>
-    export type AdminUserProfilesUpdateMutationBody = UserProfileRequest
-    export type AdminUserProfilesUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar perfil de usuário
  */
-export const useAdminUserProfilesUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesUpdate>>, TError,{id: number;data: UserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
-        TError,
-        {id: number;data: UserProfileRequest},
-        TContext
-      > => {
+export const useAdminUserProfilesUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
+      TError,
+      { id: number; data: UserProfileRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminUserProfilesUpdate>>,
+  TError,
+  { id: number; data: UserProfileRequest },
+  TContext
+> => {
+  const mutationOptions = getAdminUserProfilesUpdateMutationOptions(options);
 
-      const mutationOptions = getAdminUserProfilesUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Atualiza parcialmente um perfil de usuário existente.
  * @summary Atualizar perfil de usuário parcialmente
  */
 export const adminUserProfilesPartialUpdate = (
-    id: MaybeRef<number>,
-    patchedUserProfileRequest: MaybeRef<PatchedUserProfileRequest>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserProfile>> => {
-    id = unref(id);
-patchedUserProfileRequest = unref(patchedUserProfileRequest);
-    
-    return axios.patch(
-      `/api/users/admin/profiles/${id}/`,
-      patchedUserProfileRequest,options
-    );
-  }
+  id: MaybeRef<number>,
+  patchedUserProfileRequest: MaybeRef<PatchedUserProfileRequest>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<UserProfile>> => {
+  id = unref(id);
+  patchedUserProfileRequest = unref(patchedUserProfileRequest);
 
+  return axios.patch(
+    `/api/users/admin/profiles/${id}/`,
+    patchedUserProfileRequest,
+    options,
+  );
+};
 
+export const getAdminUserProfilesPartialUpdateMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
+    TError,
+    { id: number; data: PatchedUserProfileRequest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedUserProfileRequest },
+  TContext
+> => {
+  const mutationKey = ["adminUserProfilesPartialUpdate"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminUserProfilesPartialUpdateMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>, TError,{id: number;data: PatchedUserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>, TError,{id: number;data: PatchedUserProfileRequest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
+    { id: number; data: PatchedUserProfileRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
 
-const mutationKey = ['adminUserProfilesPartialUpdate'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminUserProfilesPartialUpdate(id, data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminUserProfilesPartialUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>
+>;
+export type AdminUserProfilesPartialUpdateMutationBody =
+  PatchedUserProfileRequest;
+export type AdminUserProfilesPartialUpdateMutationError = AxiosError<unknown>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>, {id: number;data: PatchedUserProfileRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  adminUserProfilesPartialUpdate(id,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminUserProfilesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>>
-    export type AdminUserProfilesPartialUpdateMutationBody = PatchedUserProfileRequest
-    export type AdminUserProfilesPartialUpdateMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Atualizar perfil de usuário parcialmente
  */
-export const useAdminUserProfilesPartialUpdate = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>, TError,{id: number;data: PatchedUserProfileRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
-        TError,
-        {id: number;data: PatchedUserProfileRequest},
-        TContext
-      > => {
+export const useAdminUserProfilesPartialUpdate = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
+      TError,
+      { id: number; data: PatchedUserProfileRequest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminUserProfilesPartialUpdate>>,
+  TError,
+  { id: number; data: PatchedUserProfileRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getAdminUserProfilesPartialUpdateMutationOptions(options);
 
-      const mutationOptions = getAdminUserProfilesPartialUpdateMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove um perfil de usuário existente.
  * @summary Excluir perfil de usuário
  */
 export const adminUserProfilesDestroy = (
-    id: MaybeRef<number>, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    id = unref(id);
-    
-    return axios.delete(
-      `/api/users/admin/profiles/${id}/`,options
-    );
-  }
+  id: MaybeRef<number>,
+  options?: AxiosRequestConfig,
+): Promise<AxiosResponse<void>> => {
+  id = unref(id);
 
+  return axios.delete(`/api/users/admin/profiles/${id}/`, options);
+};
 
+export const getAdminUserProfilesDestroyMutationOptions = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminUserProfilesDestroy"];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getAdminUserProfilesDestroyMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesDestroy>>, TError,{id: number}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
 
-const mutationKey = ['adminUserProfilesDestroy'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return adminUserProfilesDestroy(id, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AdminUserProfilesDestroyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUserProfilesDestroy>>
+>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUserProfilesDestroy>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+export type AdminUserProfilesDestroyMutationError = AxiosError<unknown>;
 
-          return  adminUserProfilesDestroy(id,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminUserProfilesDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof adminUserProfilesDestroy>>>
-    
-    export type AdminUserProfilesDestroyMutationError = AxiosError<unknown>
-
-    /**
+/**
  * @summary Excluir perfil de usuário
  */
-export const useAdminUserProfilesDestroy = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUserProfilesDestroy>>, TError,{id: number}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
+export const useAdminUserProfilesDestroy = <
+  TError = AxiosError<unknown>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
+      TError,
+      { id: number },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient,
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof adminUserProfilesDestroy>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationOptions = getAdminUserProfilesDestroyMutationOptions(options);
 
-      const mutationOptions = getAdminUserProfilesDestroyMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

@@ -8,15 +8,14 @@
 
 /**
  * * `BAIXO` - Baixo
-* `MEDIO` - Médio
-* `ALTO` - Alto
+ * `MEDIO` - Médio
+ * `ALTO` - Alto
  */
-export type ImpactoEnum = typeof ImpactoEnum[keyof typeof ImpactoEnum];
-
+export type ImpactoEnum = (typeof ImpactoEnum)[keyof typeof ImpactoEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ImpactoEnum = {
-  BAIXO: 'BAIXO',
-  MEDIO: 'MEDIO',
-  ALTO: 'ALTO',
+  BAIXO: "BAIXO",
+  MEDIO: "MEDIO",
+  ALTO: "ALTO",
 } as const;

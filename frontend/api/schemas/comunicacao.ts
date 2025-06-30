@@ -5,8 +5,8 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ComunicacaoTipoEnum } from './comunicacaoTipoEnum';
-import type { DestinatarioInfo } from './destinatarioInfo';
+import type { ComunicacaoTipoEnum } from "./comunicacaoTipoEnum";
+import type { DestinatarioInfo } from "./destinatarioInfo";
 
 /**
  * Serializer para o modelo Comunicacao.

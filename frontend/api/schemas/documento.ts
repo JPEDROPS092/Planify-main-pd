@@ -5,9 +5,9 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { TipoC51Enum } from './tipoC51Enum';
-import type { Comentario } from './comentario';
-import type { HistoricoDocumento } from './historicoDocumento';
+import type { TipoC51Enum } from "./tipoC51Enum";
+import type { Comentario } from "./comentario";
+import type { HistoricoDocumento } from "./historicoDocumento";
 
 export interface Documento {
   readonly id: number;

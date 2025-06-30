@@ -7,10 +7,10 @@
  */
 
 export type RisksHistoricoListParams = {
-alterado_por?: number;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-risco?: number;
+  alterado_por?: number;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  risco?: number;
 };

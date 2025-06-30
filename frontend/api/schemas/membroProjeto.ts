@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { MembroProjetoPapelEnum } from './membroProjetoPapelEnum';
+import type { MembroProjetoPapelEnum } from "./membroProjetoPapelEnum";
 
 /**
  * Serializer para membros de projeto.

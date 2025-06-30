@@ -5,10 +5,10 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ProbabilidadeEnum } from './probabilidadeEnum';
-import type { ImpactoEnum } from './impactoEnum';
-import type { NovoStatus346Enum } from './novoStatus346Enum';
-import type { HistoricoRisco } from './historicoRisco';
+import type { ProbabilidadeEnum } from "./probabilidadeEnum";
+import type { ImpactoEnum } from "./impactoEnum";
+import type { NovoStatus346Enum } from "./novoStatus346Enum";
+import type { HistoricoRisco } from "./historicoRisco";
 
 export interface Risco {
   readonly id: number;

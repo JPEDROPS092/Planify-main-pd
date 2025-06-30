@@ -8,21 +8,20 @@
 
 /**
  * * `PO` - Product Owner
-* `SM` - Scrum Master
-* `DEV` - Desenvolvedor
-* `QA` - Analista de Qualidade
-* `DESIGN` - Designer
-* `ANALISTA` - Analista
+ * `SM` - Scrum Master
+ * `DEV` - Desenvolvedor
+ * `QA` - Analista de Qualidade
+ * `DESIGN` - Designer
+ * `ANALISTA` - Analista
  */
-export type Papel130Enum = typeof Papel130Enum[keyof typeof Papel130Enum];
-
+export type Papel130Enum = (typeof Papel130Enum)[keyof typeof Papel130Enum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const Papel130Enum = {
-  PO: 'PO',
-  SM: 'SM',
-  DEV: 'DEV',
-  QA: 'QA',
-  DESIGN: 'DESIGN',
-  ANALISTA: 'ANALISTA',
+  PO: "PO",
+  SM: "SM",
+  DEV: "DEV",
+  QA: "QA",
+  DESIGN: "DESIGN",
+  ANALISTA: "ANALISTA",
 } as const;

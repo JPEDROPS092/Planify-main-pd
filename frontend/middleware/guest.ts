@@ -1,17 +1,20 @@
-/**
- * Middleware para redirecionar usuários autenticados para o dashboard
- * Deve ser usado em páginas de login e registro
- */
-export default defineNuxtRouteMiddleware(() => {
-  const { isAuthenticated } = useAuth()
-  
-  // Verificar no lado cliente apenas
-  if (typeof window === 'undefined') {
-    return
+import { useAuthStore } from "~/stores/auth";
+
+export default defineNuxtRouteMiddleware((to, from) => {
+  // 1. Instancie a store Pinia.
+  //    Não é necessário chamar `useAuthStore()` dentro do defineNuxtRouteMiddleware,
+  //    pode ser fora se for um middleware global. Mas aqui dentro é mais seguro.
+  const authStore = useAuthStore();
+
+  // 2. Verifique o estado `isAuthenticated` da store.
+  //    Acessamos diretamente a propriedade computada.
+  if (authStore.isAuthenticated) {
+    // Se o usuário já está autenticado, redirecione-o do /login para o /dashboard.
+    console.log(
+      "[Guest Middleware] Usuário autenticado tentando acessar uma página de convidado. Redirecionando para /dashboard."
+    );
+    return navigateTo("/dashboard");
   }
-  
-  // Se está autenticado, redireciona para dashboard
-  if (isAuthenticated.value) {
-    return navigateTo('/dashboard')
-  }
-})
+
+  // Se não estiver autenticado, não faz nada e permite o acesso à página de convidado.
+});

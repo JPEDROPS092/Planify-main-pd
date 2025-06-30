@@ -7,8 +7,8 @@
  */
 
 export type AdminAccessProfilesListParams = {
-/**
- * A page number within the paginated result set.
- */
-page?: number;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
 };

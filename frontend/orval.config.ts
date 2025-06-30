@@ -6,10 +6,7 @@ const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8000";
 export default {
   api: {
     // Usa a variável para construir a URL do schema.
-    input: `${apiBaseUrl}/api/schema/`, // Adicionada a vírgula aqui
-
-    // A vírgula que faltava era aqui:
-    // input: '...', <--- VÍRGULA
+    input: `${apiBaseUrl}/api/schema/`,
 
     output: {
       // O modo 'tags-split' é excelente para separar por recurso (auth, projects, tasks, etc.)
@@ -38,8 +35,10 @@ export default {
 
     override: {
       // Diga ao Orval para usar a instância global do 'axios' por padrão.
-      mutator: undefined,
-
+      mutator: {
+        path: "./api/axios-instance.ts", // Caminho para um arquivo que exporta o axios
+        name: "default", // Nome da exportação
+      },
       // Configurações globais para o vue-query
       query: {
         useQuery: true, // Garante que queries sejam geradas

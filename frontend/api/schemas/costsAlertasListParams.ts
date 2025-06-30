@@ -5,29 +5,29 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { CostsAlertasListStatus } from './costsAlertasListStatus';
-import type { CostsAlertasListTipo } from './costsAlertasListTipo';
+import type { CostsAlertasListStatus } from "./costsAlertasListStatus";
+import type { CostsAlertasListTipo } from "./costsAlertasListTipo";
 
 export type CostsAlertasListParams = {
-/**
- * Which field to use when ordering the results.
- */
-ordering?: string;
-/**
- * A page number within the paginated result set.
- */
-page?: number;
-projeto?: number;
-/**
- * * `ATIVO` - Ativo
-* `RESOLVIDO` - Resolvido
-* `IGNORADO` - Ignorado
- */
-status?: CostsAlertasListStatus;
-tarefa?: number;
-/**
- * * `PROJETO` - Projeto
-* `TAREFA` - Tarefa
- */
-tipo?: CostsAlertasListTipo;
+  /**
+   * Which field to use when ordering the results.
+   */
+  ordering?: string;
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  projeto?: number;
+  /**
+   * * `ATIVO` - Ativo
+   * `RESOLVIDO` - Resolvido
+   * `IGNORADO` - Ignorado
+   */
+  status?: CostsAlertasListStatus;
+  tarefa?: number;
+  /**
+   * * `PROJETO` - Projeto
+   * `TAREFA` - Tarefa
+   */
+  tipo?: CostsAlertasListTipo;
 };

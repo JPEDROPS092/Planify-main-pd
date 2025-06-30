@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { Comunicacao } from './comunicacao';
+import type { Comunicacao } from "./comunicacao";
 
 export interface PaginatedComunicacaoList {
   count?: number;

@@ -8,17 +8,17 @@
 
 /**
  * * `EMAIL` - E-mail
-* `SISTEMA` - Sistema
-* `AMBOS` - Ambos
-* `NENHUM` - Nenhum
+ * `SISTEMA` - Sistema
+ * `AMBOS` - Ambos
+ * `NENHUM` - Nenhum
  */
-export type ProjetoStatusEnum = typeof ProjetoStatusEnum[keyof typeof ProjetoStatusEnum];
-
+export type ProjetoStatusEnum =
+  (typeof ProjetoStatusEnum)[keyof typeof ProjetoStatusEnum];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ProjetoStatusEnum = {
-  EMAIL: 'EMAIL',
-  SISTEMA: 'SISTEMA',
-  AMBOS: 'AMBOS',
-  NENHUM: 'NENHUM',
+  EMAIL: "EMAIL",
+  SISTEMA: "SISTEMA",
+  AMBOS: "AMBOS",
+  NENHUM: "NENHUM",
 } as const;

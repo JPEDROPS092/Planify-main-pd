@@ -5,7 +5,7 @@
  * Sistema de Gerenciamento de Projetos
  * OpenAPI spec version: 1.0.0
  */
-import type { ChatMensagemLeitura } from './chatMensagemLeitura';
+import type { ChatMensagemLeitura } from "./chatMensagemLeitura";
 
 export interface ChatMensagem {
   readonly id: number;
