@@ -18,7 +18,7 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
+import axiosInstance from "../axios-instance";
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import { computed, unref } from "vue";
@@ -57,11 +57,15 @@ token pair to prove the authentication of those credentials.
  */
 export const authJwtCreateCreate = (
   tokenObtainPairRequest: MaybeRef<TokenObtainPairRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<TokenObtainPair>> => {
   tokenObtainPairRequest = unref(tokenObtainPairRequest);
 
-  return axios.post(`/api/auth/jwt/create/`, tokenObtainPairRequest, options);
+  return axiosInstance.post(
+    `/api/auth/jwt/create/`,
+    tokenObtainPairRequest,
+    options
+  );
 };
 
 export const getAuthJwtCreateCreateMutationOptions = <
@@ -121,7 +125,7 @@ export const useAuthJwtCreateCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtCreateCreate>>,
   TError,
@@ -138,11 +142,15 @@ token if the refresh token is valid.
  */
 export const authJwtRefreshCreate = (
   tokenRefreshRequest: MaybeRef<TokenRefreshRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<TokenRefresh>> => {
   tokenRefreshRequest = unref(tokenRefreshRequest);
 
-  return axios.post(`/api/auth/jwt/refresh/`, tokenRefreshRequest, options);
+  return axiosInstance.post(
+    `/api/auth/jwt/refresh/`,
+    tokenRefreshRequest,
+    options
+  );
 };
 
 export const getAuthJwtRefreshCreateMutationOptions = <
@@ -202,7 +210,7 @@ export const useAuthJwtRefreshCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtRefreshCreate>>,
   TError,
@@ -219,11 +227,15 @@ information about a token's fitness for a particular use.
  */
 export const authJwtVerifyCreate = (
   tokenVerifyRequest: MaybeRef<TokenVerifyRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   tokenVerifyRequest = unref(tokenVerifyRequest);
 
-  return axios.post(`/api/auth/jwt/verify/`, tokenVerifyRequest, options);
+  return axiosInstance.post(
+    `/api/auth/jwt/verify/`,
+    tokenVerifyRequest,
+    options
+  );
 };
 
 export const getAuthJwtVerifyCreateMutationOptions = <
@@ -283,7 +295,7 @@ export const useAuthJwtVerifyCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtVerifyCreate>>,
   TError,
@@ -296,18 +308,18 @@ export const useAuthJwtVerifyCreate = <
 };
 export const authUsersList = (
   params?: MaybeRef<AuthUsersListParams>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<PaginatedUserList>> => {
   params = unref(params);
 
-  return axios.get(`/api/auth/users/`, {
+  return axiosInstance.get(`/api/auth/users/`, {
     ...options,
     params: { ...unref(params), ...options?.params },
   });
 };
 
 export const getAuthUsersListQueryKey = (
-  params?: MaybeRef<AuthUsersListParams>,
+  params?: MaybeRef<AuthUsersListParams>
 ) => {
   return ["api", "auth", "users", ...(params ? [params] : [])] as const;
 };
@@ -322,7 +334,7 @@ export const getAuthUsersListQueryOptions = <
       UseQueryOptions<Awaited<ReturnType<typeof authUsersList>>, TError, TData>
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -355,7 +367,7 @@ export function useAuthUsersList<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -377,11 +389,11 @@ export function useAuthUsersList<
 
 export const authUsersCreate = (
   userCreateRequest: MaybeRef<UserCreateRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<UserCreate>> => {
   userCreateRequest = unref(userCreateRequest);
 
-  return axios.post(`/api/auth/users/`, userCreateRequest, options);
+  return axiosInstance.post(`/api/auth/users/`, userCreateRequest, options);
 };
 
 export const getAuthUsersCreateMutationOptions = <
@@ -441,7 +453,7 @@ export const useAuthUsersCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersCreate>>,
   TError,
@@ -454,11 +466,11 @@ export const useAuthUsersCreate = <
 };
 export const authUsersRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
   id = unref(id);
 
-  return axios.get(`/api/auth/users/${id}/`, options);
+  return axiosInstance.get(`/api/auth/users/${id}/`, options);
 };
 
 export const getAuthUsersRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -479,7 +491,7 @@ export const getAuthUsersRetrieveQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -521,7 +533,7 @@ export function useAuthUsersRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -544,12 +556,12 @@ export function useAuthUsersRetrieve<
 export const authUsersUpdate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axios.put(`/api/auth/users/${id}/`, userRequest, options);
+  return axiosInstance.put(`/api/auth/users/${id}/`, userRequest, options);
 };
 
 export const getAuthUsersUpdateMutationOptions = <
@@ -609,7 +621,7 @@ export const useAuthUsersUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersUpdate>>,
   TError,
@@ -623,12 +635,16 @@ export const useAuthUsersUpdate = <
 export const authUsersPartialUpdate = (
   id: MaybeRef<number>,
   patchedUserRequest: MaybeRef<PatchedUserRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
   id = unref(id);
   patchedUserRequest = unref(patchedUserRequest);
 
-  return axios.patch(`/api/auth/users/${id}/`, patchedUserRequest, options);
+  return axiosInstance.patch(
+    `/api/auth/users/${id}/`,
+    patchedUserRequest,
+    options
+  );
 };
 
 export const getAuthUsersPartialUpdateMutationOptions = <
@@ -688,7 +704,7 @@ export const useAuthUsersPartialUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersPartialUpdate>>,
   TError,
@@ -701,11 +717,11 @@ export const useAuthUsersPartialUpdate = <
 };
 export const authUsersDestroy = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   id = unref(id);
 
-  return axios.delete(`/api/auth/users/${id}/`, options);
+  return axiosInstance.delete(`/api/auth/users/${id}/`, options);
 };
 
 export const getAuthUsersDestroyMutationOptions = <
@@ -765,7 +781,7 @@ export const useAuthUsersDestroy = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersDestroy>>,
   TError,
@@ -778,11 +794,15 @@ export const useAuthUsersDestroy = <
 };
 export const authUsersActivationCreate = (
   activationRequest: MaybeRef<ActivationRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Activation>> => {
   activationRequest = unref(activationRequest);
 
-  return axios.post(`/api/auth/users/activation/`, activationRequest, options);
+  return axiosInstance.post(
+    `/api/auth/users/activation/`,
+    activationRequest,
+    options
+  );
 };
 
 export const getAuthUsersActivationCreateMutationOptions = <
@@ -842,7 +862,7 @@ export const useAuthUsersActivationCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersActivationCreate>>,
   TError,
@@ -854,9 +874,9 @@ export const useAuthUsersActivationCreate = <
   return useMutation(mutationOptions, queryClient);
 };
 export const authUsersMeRetrieve = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
-  return axios.get(`/api/auth/users/me/`, options);
+  return axiosInstance.get(`/api/auth/users/me/`, options);
 };
 
 export const getAuthUsersMeRetrieveQueryKey = () => {
@@ -910,7 +930,7 @@ export function useAuthUsersMeRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -932,11 +952,11 @@ export function useAuthUsersMeRetrieve<
 
 export const authUsersMeUpdate = (
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
   userRequest = unref(userRequest);
 
-  return axios.put(`/api/auth/users/me/`, userRequest, options);
+  return axiosInstance.put(`/api/auth/users/me/`, userRequest, options);
 };
 
 export const getAuthUsersMeUpdateMutationOptions = <
@@ -996,7 +1016,7 @@ export const useAuthUsersMeUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMeUpdate>>,
   TError,
@@ -1009,11 +1029,15 @@ export const useAuthUsersMeUpdate = <
 };
 export const authUsersMePartialUpdate = (
   patchedUserRequest: MaybeRef<PatchedUserRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<User>> => {
   patchedUserRequest = unref(patchedUserRequest);
 
-  return axios.patch(`/api/auth/users/me/`, patchedUserRequest, options);
+  return axiosInstance.patch(
+    `/api/auth/users/me/`,
+    patchedUserRequest,
+    options
+  );
 };
 
 export const getAuthUsersMePartialUpdateMutationOptions = <
@@ -1073,7 +1097,7 @@ export const useAuthUsersMePartialUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMePartialUpdate>>,
   TError,
@@ -1085,9 +1109,9 @@ export const useAuthUsersMePartialUpdate = <
   return useMutation(mutationOptions, queryClient);
 };
 export const authUsersMeDestroy = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
-  return axios.delete(`/api/auth/users/me/`, options);
+  return axiosInstance.delete(`/api/auth/users/me/`, options);
 };
 
 export const getAuthUsersMeDestroyMutationOptions = <
@@ -1145,7 +1169,7 @@ export const useAuthUsersMeDestroy = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMeDestroy>>,
   TError,
@@ -1158,14 +1182,14 @@ export const useAuthUsersMeDestroy = <
 };
 export const authUsersResendActivationCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<SendEmailReset>> => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/resend_activation/`,
     sendEmailResetRequest,
-    options,
+    options
   );
 };
 
@@ -1226,7 +1250,7 @@ export const useAuthUsersResendActivationCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResendActivationCreate>>,
   TError,
@@ -1240,14 +1264,14 @@ export const useAuthUsersResendActivationCreate = <
 };
 export const authUsersResetPasswordCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<SendEmailReset>> => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/reset_password/`,
     sendEmailResetRequest,
-    options,
+    options
   );
 };
 
@@ -1308,7 +1332,7 @@ export const useAuthUsersResetPasswordCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetPasswordCreate>>,
   TError,
@@ -1322,14 +1346,14 @@ export const useAuthUsersResetPasswordCreate = <
 };
 export const authUsersResetPasswordConfirmCreate = (
   passwordResetConfirmRequest: MaybeRef<PasswordResetConfirmRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<PasswordResetConfirm>> => {
   passwordResetConfirmRequest = unref(passwordResetConfirmRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/reset_password_confirm/`,
     passwordResetConfirmRequest,
-    options,
+    options
   );
 };
 
@@ -1392,7 +1416,7 @@ export const useAuthUsersResetPasswordConfirmCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetPasswordConfirmCreate>>,
   TError,
@@ -1406,14 +1430,14 @@ export const useAuthUsersResetPasswordConfirmCreate = <
 };
 export const authUsersResetUsernameCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<SendEmailReset>> => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/reset_username/`,
     sendEmailResetRequest,
-    options,
+    options
   );
 };
 
@@ -1474,7 +1498,7 @@ export const useAuthUsersResetUsernameCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetUsernameCreate>>,
   TError,
@@ -1488,14 +1512,14 @@ export const useAuthUsersResetUsernameCreate = <
 };
 export const authUsersResetUsernameConfirmCreate = (
   usernameResetConfirmRequest: MaybeRef<UsernameResetConfirmRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<UsernameResetConfirm>> => {
   usernameResetConfirmRequest = unref(usernameResetConfirmRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/reset_username_confirm/`,
     usernameResetConfirmRequest,
-    options,
+    options
   );
 };
 
@@ -1558,7 +1582,7 @@ export const useAuthUsersResetUsernameConfirmCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetUsernameConfirmCreate>>,
   TError,
@@ -1572,14 +1596,14 @@ export const useAuthUsersResetUsernameConfirmCreate = <
 };
 export const authUsersSetPasswordCreate = (
   setPasswordRequest: MaybeRef<SetPasswordRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<SetPassword>> => {
   setPasswordRequest = unref(setPasswordRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/set_password/`,
     setPasswordRequest,
-    options,
+    options
   );
 };
 
@@ -1640,7 +1664,7 @@ export const useAuthUsersSetPasswordCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersSetPasswordCreate>>,
   TError,
@@ -1653,14 +1677,14 @@ export const useAuthUsersSetPasswordCreate = <
 };
 export const authUsersSetUsernameCreate = (
   setUsernameRequest: MaybeRef<SetUsernameRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<SetUsername>> => {
   setUsernameRequest = unref(setUsernameRequest);
 
-  return axios.post(
+  return axiosInstance.post(
     `/api/auth/users/set_username/`,
     setUsernameRequest,
-    options,
+    options
   );
 };
 
@@ -1721,7 +1745,7 @@ export const useAuthUsersSetUsernameCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersSetUsernameCreate>>,
   TError,
