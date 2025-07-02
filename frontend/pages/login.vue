@@ -132,36 +132,40 @@
   </div>
 </template>
 
+<!-- filepath: pages/login.vue -->
 <script setup lang="ts">
 import { ref } from "vue";
-import { useAuth } from "@/composables/useAuth";
-import type { TokenObtainPairRequest } from "@/api/schemas";
+import { useAuth } from "~/composables/useAuth"; // Use '~/' para consistência
+import type { TokenObtainPairRequest } from "~/api/schemas"; // Use '~/'
 
-// Define que esta é uma página pública (não requer autenticação)
 definePageMeta({
   middleware: ["guest"],
+  layout: "auth", // É uma boa prática definir explicitamente o layout de autenticação
 });
 
+// Importe useRoute para acessar os parâmetros da URL
+const route = useRoute();
 const { login, isLoading, isError, error } = useAuth();
 
-// Dados do formulário
 const credentials = ref<TokenObtainPairRequest>({
   username: "",
   password: "",
 });
 
-// Função para lidar com o submit do formulário
 const handleLogin = () => {
   if (!credentials.value.username || !credentials.value.password) {
-    console.error("Usuário e senha são obrigatórios");
     return;
   }
 
-  console.log("Tentando fazer login com:", {
-    username: credentials.value.username,
-  });
+  // 1. Obtenha o caminho de redirecionamento da query da URL.
+  // Se não existir, defina um padrão como '/dashboard'.
+  const redirectPath = route.query.redirect?.toString() || "/dashboard";
 
-  // Execute o login através do composable
-  login(credentials.value);
+  console.log(
+    `Tentando fazer login... Redirecionar para ${redirectPath} em caso de sucesso.`
+  );
+
+  // 2. Passe o caminho de redirecionamento como o segundo argumento.
+  login(credentials.value, redirectPath);
 };
 </script>

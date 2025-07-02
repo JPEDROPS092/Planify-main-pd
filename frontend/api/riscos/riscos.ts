@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -36,19 +33,24 @@ import type {
   RisksRiscosListParams,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de históricos do risco.
  * @summary Listar históricos do risco
  */
 export const risksHistoricoList = (
   params?: MaybeRef<RisksHistoricoListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedHistoricoRiscoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/risks/historico/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedHistoricoRiscoList>({
+    url: `/api/risks/historico/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -60,7 +62,7 @@ export const getRisksHistoricoListQueryKey = (
 
 export const getRisksHistoricoListQueryOptions = <
   TData = Awaited<ReturnType<typeof risksHistoricoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<RisksHistoricoListParams>,
   options?: {
@@ -71,16 +73,15 @@ export const getRisksHistoricoListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getRisksHistoricoListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof risksHistoricoList>>
-  > = ({ signal }) => risksHistoricoList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => risksHistoricoList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof risksHistoricoList>>,
@@ -92,7 +93,7 @@ export const getRisksHistoricoListQueryOptions = <
 export type RisksHistoricoListQueryResult = NonNullable<
   Awaited<ReturnType<typeof risksHistoricoList>>
 >;
-export type RisksHistoricoListQueryError = AxiosError<unknown>;
+export type RisksHistoricoListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar históricos do risco
@@ -100,7 +101,7 @@ export type RisksHistoricoListQueryError = AxiosError<unknown>;
 
 export function useRisksHistoricoList<
   TData = Awaited<ReturnType<typeof risksHistoricoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<RisksHistoricoListParams>,
   options?: {
@@ -111,7 +112,6 @@ export function useRisksHistoricoList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -139,11 +139,15 @@ export function useRisksHistoricoList<
  */
 export const risksHistoricoRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<HistoricoRisco>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/risks/historico/${id}/`, options);
+  return customMutator<HistoricoRisco>({
+    url: `/api/risks/historico/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getRisksHistoricoRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -152,7 +156,7 @@ export const getRisksHistoricoRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getRisksHistoricoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -163,16 +167,15 @@ export const getRisksHistoricoRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getRisksHistoricoRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof risksHistoricoRetrieve>>
-  > = ({ signal }) => risksHistoricoRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => risksHistoricoRetrieve(id, signal);
 
   return {
     queryKey,
@@ -189,7 +192,7 @@ export const getRisksHistoricoRetrieveQueryOptions = <
 export type RisksHistoricoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof risksHistoricoRetrieve>>
 >;
-export type RisksHistoricoRetrieveQueryError = AxiosError<unknown>;
+export type RisksHistoricoRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do histórico do risco
@@ -197,7 +200,7 @@ export type RisksHistoricoRetrieveQueryError = AxiosError<unknown>;
 
 export function useRisksHistoricoRetrieve<
   TData = Awaited<ReturnType<typeof risksHistoricoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -208,7 +211,6 @@ export function useRisksHistoricoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -236,13 +238,15 @@ export function useRisksHistoricoRetrieve<
  */
 export const risksRiscosList = (
   params?: MaybeRef<RisksRiscosListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedRiscoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/risks/riscos/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedRiscoList>({
+    url: `/api/risks/riscos/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -254,7 +258,7 @@ export const getRisksRiscosListQueryKey = (
 
 export const getRisksRiscosListQueryOptions = <
   TData = Awaited<ReturnType<typeof risksRiscosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<RisksRiscosListParams>,
   options?: {
@@ -265,16 +269,15 @@ export const getRisksRiscosListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getRisksRiscosListQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof risksRiscosList>>> = ({
     signal,
-  }) => risksRiscosList(params, { signal, ...axiosOptions });
+  }) => risksRiscosList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof risksRiscosList>>,
@@ -286,7 +289,7 @@ export const getRisksRiscosListQueryOptions = <
 export type RisksRiscosListQueryResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosList>>
 >;
-export type RisksRiscosListQueryError = AxiosError<unknown>;
+export type RisksRiscosListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar riscos
@@ -294,7 +297,7 @@ export type RisksRiscosListQueryError = AxiosError<unknown>;
 
 export function useRisksRiscosList<
   TData = Awaited<ReturnType<typeof risksRiscosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<RisksRiscosListParams>,
   options?: {
@@ -305,7 +308,6 @@ export function useRisksRiscosList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -333,15 +335,21 @@ export function useRisksRiscosList<
  */
 export const risksRiscosCreate = (
   riscoRequest: MaybeRef<RiscoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<RiscoList>> => {
+  signal?: AbortSignal,
+) => {
   riscoRequest = unref(riscoRequest);
 
-  return axios.post(`/api/risks/riscos/`, riscoRequest, options);
+  return customMutator<RiscoList>({
+    url: `/api/risks/riscos/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: riscoRequest,
+    signal,
+  });
 };
 
 export const getRisksRiscosCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -350,7 +358,6 @@ export const getRisksRiscosCreateMutationOptions = <
     { data: RiscoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosCreate>>,
   TError,
@@ -358,13 +365,13 @@ export const getRisksRiscosCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosCreate>>,
@@ -372,7 +379,7 @@ export const getRisksRiscosCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return risksRiscosCreate(data, axiosOptions);
+    return risksRiscosCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -382,13 +389,13 @@ export type RisksRiscosCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosCreate>>
 >;
 export type RisksRiscosCreateMutationBody = RiscoRequest;
-export type RisksRiscosCreateMutationError = AxiosError<unknown>;
+export type RisksRiscosCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo risco
  */
 export const useRisksRiscosCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -398,7 +405,6 @@ export const useRisksRiscosCreate = <
       { data: RiscoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -417,11 +423,15 @@ export const useRisksRiscosCreate = <
  */
 export const risksRiscosRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Risco>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/risks/riscos/${id}/`, options);
+  return customMutator<Risco>({
+    url: `/api/risks/riscos/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getRisksRiscosRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -430,7 +440,7 @@ export const getRisksRiscosRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getRisksRiscosRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -441,16 +451,15 @@ export const getRisksRiscosRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getRisksRiscosRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof risksRiscosRetrieve>>
-  > = ({ signal }) => risksRiscosRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => risksRiscosRetrieve(id, signal);
 
   return {
     queryKey,
@@ -467,7 +476,7 @@ export const getRisksRiscosRetrieveQueryOptions = <
 export type RisksRiscosRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosRetrieve>>
 >;
-export type RisksRiscosRetrieveQueryError = AxiosError<unknown>;
+export type RisksRiscosRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do risco
@@ -475,7 +484,7 @@ export type RisksRiscosRetrieveQueryError = AxiosError<unknown>;
 
 export function useRisksRiscosRetrieve<
   TData = Awaited<ReturnType<typeof risksRiscosRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -486,7 +495,6 @@ export function useRisksRiscosRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -515,16 +523,20 @@ export function useRisksRiscosRetrieve<
 export const risksRiscosUpdate = (
   id: MaybeRef<number>,
   riscoRequest: MaybeRef<RiscoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Risco>> => {
+) => {
   id = unref(id);
   riscoRequest = unref(riscoRequest);
 
-  return axios.put(`/api/risks/riscos/${id}/`, riscoRequest, options);
+  return customMutator<Risco>({
+    url: `/api/risks/riscos/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: riscoRequest,
+  });
 };
 
 export const getRisksRiscosUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -533,7 +545,6 @@ export const getRisksRiscosUpdateMutationOptions = <
     { id: number; data: RiscoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosUpdate>>,
   TError,
@@ -541,13 +552,13 @@ export const getRisksRiscosUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosUpdate>>,
@@ -555,7 +566,7 @@ export const getRisksRiscosUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return risksRiscosUpdate(id, data, axiosOptions);
+    return risksRiscosUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -565,13 +576,13 @@ export type RisksRiscosUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosUpdate>>
 >;
 export type RisksRiscosUpdateMutationBody = RiscoRequest;
-export type RisksRiscosUpdateMutationError = AxiosError<unknown>;
+export type RisksRiscosUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar risco
  */
 export const useRisksRiscosUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -581,7 +592,6 @@ export const useRisksRiscosUpdate = <
       { id: number; data: RiscoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -601,16 +611,20 @@ export const useRisksRiscosUpdate = <
 export const risksRiscosPartialUpdate = (
   id: MaybeRef<number>,
   patchedRiscoRequest: MaybeRef<PatchedRiscoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Risco>> => {
+) => {
   id = unref(id);
   patchedRiscoRequest = unref(patchedRiscoRequest);
 
-  return axios.patch(`/api/risks/riscos/${id}/`, patchedRiscoRequest, options);
+  return customMutator<Risco>({
+    url: `/api/risks/riscos/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedRiscoRequest,
+  });
 };
 
 export const getRisksRiscosPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -619,7 +633,6 @@ export const getRisksRiscosPartialUpdateMutationOptions = <
     { id: number; data: PatchedRiscoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
   TError,
@@ -627,13 +640,13 @@ export const getRisksRiscosPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosPartialUpdate>>,
@@ -641,7 +654,7 @@ export const getRisksRiscosPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return risksRiscosPartialUpdate(id, data, axiosOptions);
+    return risksRiscosPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -651,13 +664,13 @@ export type RisksRiscosPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosPartialUpdate>>
 >;
 export type RisksRiscosPartialUpdateMutationBody = PatchedRiscoRequest;
-export type RisksRiscosPartialUpdateMutationError = AxiosError<unknown>;
+export type RisksRiscosPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar risco parcialmente
  */
 export const useRisksRiscosPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -667,7 +680,6 @@ export const useRisksRiscosPartialUpdate = <
       { id: number; data: PatchedRiscoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -684,17 +696,17 @@ export const useRisksRiscosPartialUpdate = <
  * Remove um risco existente.
  * @summary Excluir risco
  */
-export const risksRiscosDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const risksRiscosDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/risks/riscos/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/risks/riscos/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getRisksRiscosDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -703,7 +715,6 @@ export const getRisksRiscosDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosDestroy>>,
   TError,
@@ -711,13 +722,13 @@ export const getRisksRiscosDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosDestroy>>,
@@ -725,7 +736,7 @@ export const getRisksRiscosDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return risksRiscosDestroy(id, axiosOptions);
+    return risksRiscosDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -735,13 +746,13 @@ export type RisksRiscosDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosDestroy>>
 >;
 
-export type RisksRiscosDestroyMutationError = AxiosError<unknown>;
+export type RisksRiscosDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir risco
  */
 export const useRisksRiscosDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -751,7 +762,6 @@ export const useRisksRiscosDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -771,20 +781,22 @@ export const useRisksRiscosDestroy = <
 export const risksRiscosAtualizarStatusCreate = (
   id: MaybeRef<number>,
   riscoRequest: MaybeRef<RiscoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   riscoRequest = unref(riscoRequest);
 
-  return axios.post(
-    `/api/risks/riscos/${id}/atualizar_status/`,
-    riscoRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/risks/riscos/${id}/atualizar_status/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: riscoRequest,
+    signal,
+  });
 };
 
 export const getRisksRiscosAtualizarStatusCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -793,7 +805,6 @@ export const getRisksRiscosAtualizarStatusCreateMutationOptions = <
     { id: number; data: RiscoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
   TError,
@@ -801,13 +812,13 @@ export const getRisksRiscosAtualizarStatusCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosAtualizarStatusCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>,
@@ -815,7 +826,7 @@ export const getRisksRiscosAtualizarStatusCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return risksRiscosAtualizarStatusCreate(id, data, axiosOptions);
+    return risksRiscosAtualizarStatusCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -825,13 +836,13 @@ export type RisksRiscosAtualizarStatusCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosAtualizarStatusCreate>>
 >;
 export type RisksRiscosAtualizarStatusCreateMutationBody = RiscoRequest;
-export type RisksRiscosAtualizarStatusCreateMutationError = AxiosError<unknown>;
+export type RisksRiscosAtualizarStatusCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar status do risco
  */
 export const useRisksRiscosAtualizarStatusCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -841,7 +852,6 @@ export const useRisksRiscosAtualizarStatusCreate = <
       { id: number; data: RiscoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -861,11 +871,15 @@ export const useRisksRiscosAtualizarStatusCreate = <
  */
 export const risksRiscosHistoricoRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/risks/riscos/${id}/historico/`, options);
+  return customMutator<void>({
+    url: `/api/risks/riscos/${id}/historico/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getRisksRiscosHistoricoRetrieveQueryKey = (
@@ -876,7 +890,7 @@ export const getRisksRiscosHistoricoRetrieveQueryKey = (
 
 export const getRisksRiscosHistoricoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -887,17 +901,15 @@ export const getRisksRiscosHistoricoRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getRisksRiscosHistoricoRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>
-  > = ({ signal }) =>
-    risksRiscosHistoricoRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => risksRiscosHistoricoRetrieve(id, signal);
 
   return {
     queryKey,
@@ -914,7 +926,7 @@ export const getRisksRiscosHistoricoRetrieveQueryOptions = <
 export type RisksRiscosHistoricoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>
 >;
-export type RisksRiscosHistoricoRetrieveQueryError = AxiosError<unknown>;
+export type RisksRiscosHistoricoRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Retorna histórico do risco
@@ -922,7 +934,7 @@ export type RisksRiscosHistoricoRetrieveQueryError = AxiosError<unknown>;
 
 export function useRisksRiscosHistoricoRetrieve<
   TData = Awaited<ReturnType<typeof risksRiscosHistoricoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -933,7 +945,6 @@ export function useRisksRiscosHistoricoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -959,14 +970,15 @@ export function useRisksRiscosHistoricoRetrieve<
  * Exclui múltiplos riscos de uma vez.
  * @summary Excluir múltiplos riscos
  */
-export const risksRiscosExcluirVariosDestroy = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.delete(`/api/risks/riscos/excluir_varios/`, options);
+export const risksRiscosExcluirVariosDestroy = () => {
+  return customMutator<void>({
+    url: `/api/risks/riscos/excluir_varios/`,
+    method: "DELETE",
+  });
 };
 
 export const getRisksRiscosExcluirVariosDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -975,7 +987,6 @@ export const getRisksRiscosExcluirVariosDestroyMutationOptions = <
     void,
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
   TError,
@@ -983,19 +994,19 @@ export const getRisksRiscosExcluirVariosDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["risksRiscosExcluirVariosDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>,
     void
   > = () => {
-    return risksRiscosExcluirVariosDestroy(axiosOptions);
+    return risksRiscosExcluirVariosDestroy();
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1005,13 +1016,13 @@ export type RisksRiscosExcluirVariosDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof risksRiscosExcluirVariosDestroy>>
 >;
 
-export type RisksRiscosExcluirVariosDestroyMutationError = AxiosError<unknown>;
+export type RisksRiscosExcluirVariosDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir múltiplos riscos
  */
 export const useRisksRiscosExcluirVariosDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1021,7 +1032,6 @@ export const useRisksRiscosExcluirVariosDestroy = <
       void,
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

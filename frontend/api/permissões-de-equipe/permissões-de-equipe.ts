@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -32,19 +29,24 @@ import type {
   TeamsPermissoesListParams,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista de permissões de equipe.
  * @summary Listar permissões de equipe
  */
 export const teamsPermissoesList = (
   params?: MaybeRef<TeamsPermissoesListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedPermissaoEquipeList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/teams/permissoes/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedPermissaoEquipeList>({
+    url: `/api/teams/permissoes/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -56,7 +58,7 @@ export const getTeamsPermissoesListQueryKey = (
 
 export const getTeamsPermissoesListQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsPermissoesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsPermissoesListParams>,
   options?: {
@@ -67,16 +69,15 @@ export const getTeamsPermissoesListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsPermissoesListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsPermissoesList>>
-  > = ({ signal }) => teamsPermissoesList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsPermissoesList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof teamsPermissoesList>>,
@@ -88,7 +89,7 @@ export const getTeamsPermissoesListQueryOptions = <
 export type TeamsPermissoesListQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsPermissoesList>>
 >;
-export type TeamsPermissoesListQueryError = AxiosError<unknown>;
+export type TeamsPermissoesListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar permissões de equipe
@@ -96,7 +97,7 @@ export type TeamsPermissoesListQueryError = AxiosError<unknown>;
 
 export function useTeamsPermissoesList<
   TData = Awaited<ReturnType<typeof teamsPermissoesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsPermissoesListParams>,
   options?: {
@@ -107,7 +108,6 @@ export function useTeamsPermissoesList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -135,15 +135,21 @@ export function useTeamsPermissoesList<
  */
 export const teamsPermissoesCreate = (
   permissaoEquipeRequest: MaybeRef<PermissaoEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PermissaoEquipe>> => {
+  signal?: AbortSignal,
+) => {
   permissaoEquipeRequest = unref(permissaoEquipeRequest);
 
-  return axios.post(`/api/teams/permissoes/`, permissaoEquipeRequest, options);
+  return customMutator<PermissaoEquipe>({
+    url: `/api/teams/permissoes/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: permissaoEquipeRequest,
+    signal,
+  });
 };
 
 export const getTeamsPermissoesCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -152,7 +158,6 @@ export const getTeamsPermissoesCreateMutationOptions = <
     { data: PermissaoEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsPermissoesCreate>>,
   TError,
@@ -160,13 +165,13 @@ export const getTeamsPermissoesCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsPermissoesCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsPermissoesCreate>>,
@@ -174,7 +179,7 @@ export const getTeamsPermissoesCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return teamsPermissoesCreate(data, axiosOptions);
+    return teamsPermissoesCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -184,13 +189,13 @@ export type TeamsPermissoesCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsPermissoesCreate>>
 >;
 export type TeamsPermissoesCreateMutationBody = PermissaoEquipeRequest;
-export type TeamsPermissoesCreateMutationError = AxiosError<unknown>;
+export type TeamsPermissoesCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar permissão
  */
 export const useTeamsPermissoesCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -200,7 +205,6 @@ export const useTeamsPermissoesCreate = <
       { data: PermissaoEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -219,11 +223,15 @@ export const useTeamsPermissoesCreate = <
  */
 export const teamsPermissoesRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PermissaoEquipe>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/teams/permissoes/${id}/`, options);
+  return customMutator<PermissaoEquipe>({
+    url: `/api/teams/permissoes/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getTeamsPermissoesRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -232,7 +240,7 @@ export const getTeamsPermissoesRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getTeamsPermissoesRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsPermissoesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -243,16 +251,15 @@ export const getTeamsPermissoesRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsPermissoesRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsPermissoesRetrieve>>
-  > = ({ signal }) => teamsPermissoesRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsPermissoesRetrieve(id, signal);
 
   return {
     queryKey,
@@ -269,7 +276,7 @@ export const getTeamsPermissoesRetrieveQueryOptions = <
 export type TeamsPermissoesRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsPermissoesRetrieve>>
 >;
-export type TeamsPermissoesRetrieveQueryError = AxiosError<unknown>;
+export type TeamsPermissoesRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da permissão
@@ -277,7 +284,7 @@ export type TeamsPermissoesRetrieveQueryError = AxiosError<unknown>;
 
 export function useTeamsPermissoesRetrieve<
   TData = Awaited<ReturnType<typeof teamsPermissoesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -288,7 +295,6 @@ export function useTeamsPermissoesRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -317,20 +323,20 @@ export function useTeamsPermissoesRetrieve<
 export const teamsPermissoesUpdate = (
   id: MaybeRef<number>,
   permissaoEquipeRequest: MaybeRef<PermissaoEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PermissaoEquipe>> => {
+) => {
   id = unref(id);
   permissaoEquipeRequest = unref(permissaoEquipeRequest);
 
-  return axios.put(
-    `/api/teams/permissoes/${id}/`,
-    permissaoEquipeRequest,
-    options,
-  );
+  return customMutator<PermissaoEquipe>({
+    url: `/api/teams/permissoes/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: permissaoEquipeRequest,
+  });
 };
 
 export const getTeamsPermissoesUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -339,7 +345,6 @@ export const getTeamsPermissoesUpdateMutationOptions = <
     { id: number; data: PermissaoEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsPermissoesUpdate>>,
   TError,
@@ -347,13 +352,13 @@ export const getTeamsPermissoesUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsPermissoesUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsPermissoesUpdate>>,
@@ -361,7 +366,7 @@ export const getTeamsPermissoesUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsPermissoesUpdate(id, data, axiosOptions);
+    return teamsPermissoesUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -371,13 +376,13 @@ export type TeamsPermissoesUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsPermissoesUpdate>>
 >;
 export type TeamsPermissoesUpdateMutationBody = PermissaoEquipeRequest;
-export type TeamsPermissoesUpdateMutationError = AxiosError<unknown>;
+export type TeamsPermissoesUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar permissão
  */
 export const useTeamsPermissoesUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -387,7 +392,6 @@ export const useTeamsPermissoesUpdate = <
       { id: number; data: PermissaoEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -407,20 +411,20 @@ export const useTeamsPermissoesUpdate = <
 export const teamsPermissoesPartialUpdate = (
   id: MaybeRef<number>,
   patchedPermissaoEquipeRequest: MaybeRef<PatchedPermissaoEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PermissaoEquipe>> => {
+) => {
   id = unref(id);
   patchedPermissaoEquipeRequest = unref(patchedPermissaoEquipeRequest);
 
-  return axios.patch(
-    `/api/teams/permissoes/${id}/`,
-    patchedPermissaoEquipeRequest,
-    options,
-  );
+  return customMutator<PermissaoEquipe>({
+    url: `/api/teams/permissoes/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedPermissaoEquipeRequest,
+  });
 };
 
 export const getTeamsPermissoesPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -429,7 +433,6 @@ export const getTeamsPermissoesPartialUpdateMutationOptions = <
     { id: number; data: PatchedPermissaoEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsPermissoesPartialUpdate>>,
   TError,
@@ -437,13 +440,13 @@ export const getTeamsPermissoesPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsPermissoesPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsPermissoesPartialUpdate>>,
@@ -451,7 +454,7 @@ export const getTeamsPermissoesPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsPermissoesPartialUpdate(id, data, axiosOptions);
+    return teamsPermissoesPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -462,13 +465,13 @@ export type TeamsPermissoesPartialUpdateMutationResult = NonNullable<
 >;
 export type TeamsPermissoesPartialUpdateMutationBody =
   PatchedPermissaoEquipeRequest;
-export type TeamsPermissoesPartialUpdateMutationError = AxiosError<unknown>;
+export type TeamsPermissoesPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar permissão parcialmente
  */
 export const useTeamsPermissoesPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -478,7 +481,6 @@ export const useTeamsPermissoesPartialUpdate = <
       { id: number; data: PatchedPermissaoEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -496,17 +498,17 @@ export const useTeamsPermissoesPartialUpdate = <
  * Remove uma permissão de equipe.
  * @summary Excluir permissão
  */
-export const teamsPermissoesDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const teamsPermissoesDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/teams/permissoes/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/teams/permissoes/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getTeamsPermissoesDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -515,7 +517,6 @@ export const getTeamsPermissoesDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsPermissoesDestroy>>,
   TError,
@@ -523,13 +524,13 @@ export const getTeamsPermissoesDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsPermissoesDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsPermissoesDestroy>>,
@@ -537,7 +538,7 @@ export const getTeamsPermissoesDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return teamsPermissoesDestroy(id, axiosOptions);
+    return teamsPermissoesDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -547,13 +548,13 @@ export type TeamsPermissoesDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsPermissoesDestroy>>
 >;
 
-export type TeamsPermissoesDestroyMutationError = AxiosError<unknown>;
+export type TeamsPermissoesDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir permissão
  */
 export const useTeamsPermissoesDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -563,7 +564,6 @@ export const useTeamsPermissoesDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -50,19 +47,24 @@ import type {
   SprintRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de alterações de status de projetos.
  * @summary Listar histórico de status
  */
 export const projectsHistoryList = (
   params?: MaybeRef<ProjectsHistoryListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedHistoricoStatusProjetoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/projects/history/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedHistoricoStatusProjetoList>({
+    url: `/api/projects/history/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -74,7 +76,7 @@ export const getProjectsHistoryListQueryKey = (
 
 export const getProjectsHistoryListQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsHistoryList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsHistoryListParams>,
   options?: {
@@ -85,16 +87,15 @@ export const getProjectsHistoryListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsHistoryListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsHistoryList>>
-  > = ({ signal }) => projectsHistoryList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsHistoryList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof projectsHistoryList>>,
@@ -106,7 +107,7 @@ export const getProjectsHistoryListQueryOptions = <
 export type ProjectsHistoryListQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsHistoryList>>
 >;
-export type ProjectsHistoryListQueryError = AxiosError<unknown>;
+export type ProjectsHistoryListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar histórico de status
@@ -114,7 +115,7 @@ export type ProjectsHistoryListQueryError = AxiosError<unknown>;
 
 export function useProjectsHistoryList<
   TData = Awaited<ReturnType<typeof projectsHistoryList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsHistoryListParams>,
   options?: {
@@ -125,7 +126,6 @@ export function useProjectsHistoryList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -152,9 +152,13 @@ export function useProjectsHistoryList<
  * @summary Resumo de alterações por projeto
  */
 export const projectsHistoryResumoPorProjetoRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<HistoricoStatusProjeto>> => {
-  return axios.get(`/api/projects/history/resumo_por_projeto/`, options);
+  signal?: AbortSignal,
+) => {
+  return customMutator<HistoricoStatusProjeto>({
+    url: `/api/projects/history/resumo_por_projeto/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsHistoryResumoPorProjetoRetrieveQueryKey = () => {
@@ -163,7 +167,7 @@ export const getProjectsHistoryResumoPorProjetoRetrieveQueryKey = () => {
 
 export const getProjectsHistoryResumoPorProjetoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsHistoryResumoPorProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -172,16 +176,14 @@ export const getProjectsHistoryResumoPorProjetoRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsHistoryResumoPorProjetoRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsHistoryResumoPorProjetoRetrieve>>
-  > = ({ signal }) =>
-    projectsHistoryResumoPorProjetoRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => projectsHistoryResumoPorProjetoRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof projectsHistoryResumoPorProjetoRetrieve>>,
@@ -194,7 +196,7 @@ export type ProjectsHistoryResumoPorProjetoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsHistoryResumoPorProjetoRetrieve>>
 >;
 export type ProjectsHistoryResumoPorProjetoRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Resumo de alterações por projeto
@@ -202,7 +204,7 @@ export type ProjectsHistoryResumoPorProjetoRetrieveQueryError =
 
 export function useProjectsHistoryResumoPorProjetoRetrieve<
   TData = Awaited<ReturnType<typeof projectsHistoryResumoPorProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -212,7 +214,6 @@ export function useProjectsHistoryResumoPorProjetoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -241,13 +242,15 @@ export function useProjectsHistoryResumoPorProjetoRetrieve<
  */
 export const projectsProjectsList = (
   params?: MaybeRef<ProjectsProjectsListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedProjetoListList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/projects/projects/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedProjetoListList>({
+    url: `/api/projects/projects/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -259,7 +262,7 @@ export const getProjectsProjectsListQueryKey = (
 
 export const getProjectsProjectsListQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsProjectsListParams>,
   options?: {
@@ -270,16 +273,15 @@ export const getProjectsProjectsListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsList>>
-  > = ({ signal }) => projectsProjectsList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof projectsProjectsList>>,
@@ -291,7 +293,7 @@ export const getProjectsProjectsListQueryOptions = <
 export type ProjectsProjectsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsList>>
 >;
-export type ProjectsProjectsListQueryError = AxiosError<unknown>;
+export type ProjectsProjectsListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar projetos
@@ -299,7 +301,7 @@ export type ProjectsProjectsListQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsList<
   TData = Awaited<ReturnType<typeof projectsProjectsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsProjectsListParams>,
   options?: {
@@ -310,7 +312,6 @@ export function useProjectsProjectsList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -338,15 +339,21 @@ export function useProjectsProjectsList<
  */
 export const projectsProjectsCreate = (
   projetoRequest: MaybeRef<ProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   projetoRequest = unref(projetoRequest);
 
-  return axios.post(`/api/projects/projects/`, projetoRequest, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: projetoRequest,
+    signal,
+  });
 };
 
 export const getProjectsProjectsCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -355,7 +362,6 @@ export const getProjectsProjectsCreateMutationOptions = <
     { data: ProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsCreate>>,
   TError,
@@ -363,13 +369,13 @@ export const getProjectsProjectsCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsCreate>>,
@@ -377,7 +383,7 @@ export const getProjectsProjectsCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return projectsProjectsCreate(data, axiosOptions);
+    return projectsProjectsCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -387,13 +393,13 @@ export type ProjectsProjectsCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsCreate>>
 >;
 export type ProjectsProjectsCreateMutationBody = ProjetoRequest;
-export type ProjectsProjectsCreateMutationError = AxiosError<unknown>;
+export type ProjectsProjectsCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo projeto
  */
 export const useProjectsProjectsCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -403,7 +409,6 @@ export const useProjectsProjectsCreate = <
       { data: ProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -422,11 +427,15 @@ export const useProjectsProjectsCreate = <
  */
 export const projectsProjectsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/projects/${id}/`, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsProjectsRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -435,7 +444,7 @@ export const getProjectsProjectsRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getProjectsProjectsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -446,16 +455,15 @@ export const getProjectsProjectsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsRetrieve>>
-  > = ({ signal }) => projectsProjectsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -472,7 +480,7 @@ export const getProjectsProjectsRetrieveQueryOptions = <
 export type ProjectsProjectsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsRetrieve>>
 >;
-export type ProjectsProjectsRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsProjectsRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do projeto
@@ -480,7 +488,7 @@ export type ProjectsProjectsRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsRetrieve<
   TData = Awaited<ReturnType<typeof projectsProjectsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -491,7 +499,6 @@ export function useProjectsProjectsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -520,16 +527,20 @@ export function useProjectsProjectsRetrieve<
 export const projectsProjectsUpdate = (
   id: MaybeRef<number>,
   projetoRequest: MaybeRef<ProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+) => {
   id = unref(id);
   projetoRequest = unref(projetoRequest);
 
-  return axios.put(`/api/projects/projects/${id}/`, projetoRequest, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: projetoRequest,
+  });
 };
 
 export const getProjectsProjectsUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -538,7 +549,6 @@ export const getProjectsProjectsUpdateMutationOptions = <
     { id: number; data: ProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsUpdate>>,
   TError,
@@ -546,13 +556,13 @@ export const getProjectsProjectsUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsUpdate>>,
@@ -560,7 +570,7 @@ export const getProjectsProjectsUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsProjectsUpdate(id, data, axiosOptions);
+    return projectsProjectsUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -570,13 +580,13 @@ export type ProjectsProjectsUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsUpdate>>
 >;
 export type ProjectsProjectsUpdateMutationBody = ProjetoRequest;
-export type ProjectsProjectsUpdateMutationError = AxiosError<unknown>;
+export type ProjectsProjectsUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar projeto
  */
 export const useProjectsProjectsUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -586,7 +596,6 @@ export const useProjectsProjectsUpdate = <
       { id: number; data: ProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -606,20 +615,20 @@ export const useProjectsProjectsUpdate = <
 export const projectsProjectsPartialUpdate = (
   id: MaybeRef<number>,
   patchedProjetoRequest: MaybeRef<PatchedProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+) => {
   id = unref(id);
   patchedProjetoRequest = unref(patchedProjetoRequest);
 
-  return axios.patch(
-    `/api/projects/projects/${id}/`,
-    patchedProjetoRequest,
-    options,
-  );
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedProjetoRequest,
+  });
 };
 
 export const getProjectsProjectsPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -628,7 +637,6 @@ export const getProjectsProjectsPartialUpdateMutationOptions = <
     { id: number; data: PatchedProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsPartialUpdate>>,
   TError,
@@ -636,13 +644,13 @@ export const getProjectsProjectsPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsPartialUpdate>>,
@@ -650,7 +658,7 @@ export const getProjectsProjectsPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsProjectsPartialUpdate(id, data, axiosOptions);
+    return projectsProjectsPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -660,13 +668,13 @@ export type ProjectsProjectsPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsPartialUpdate>>
 >;
 export type ProjectsProjectsPartialUpdateMutationBody = PatchedProjetoRequest;
-export type ProjectsProjectsPartialUpdateMutationError = AxiosError<unknown>;
+export type ProjectsProjectsPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar projeto parcialmente
  */
 export const useProjectsProjectsPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -676,7 +684,6 @@ export const useProjectsProjectsPartialUpdate = <
       { id: number; data: PatchedProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -694,17 +701,17 @@ export const useProjectsProjectsPartialUpdate = <
  * Remove um projeto existente.
  * @summary Excluir projeto
  */
-export const projectsProjectsDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const projectsProjectsDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/projects/projects/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/projects/projects/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getProjectsProjectsDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -713,7 +720,6 @@ export const getProjectsProjectsDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsDestroy>>,
   TError,
@@ -721,13 +727,13 @@ export const getProjectsProjectsDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsDestroy>>,
@@ -735,7 +741,7 @@ export const getProjectsProjectsDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return projectsProjectsDestroy(id, axiosOptions);
+    return projectsProjectsDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -745,13 +751,13 @@ export type ProjectsProjectsDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsDestroy>>
 >;
 
-export type ProjectsProjectsDestroyMutationError = AxiosError<unknown>;
+export type ProjectsProjectsDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir projeto
  */
 export const useProjectsProjectsDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -761,7 +767,6 @@ export const useProjectsProjectsDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -781,20 +786,22 @@ export const useProjectsProjectsDestroy = <
 export const projectsProjectsAdicionarMembroCreate = (
   id: MaybeRef<number>,
   membroProjetoRequest: MaybeRef<MembroProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<MembroProjeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   membroProjetoRequest = unref(membroProjetoRequest);
 
-  return axios.post(
-    `/api/projects/projects/${id}/adicionar_membro/`,
-    membroProjetoRequest,
-    options,
-  );
+  return customMutator<MembroProjeto>({
+    url: `/api/projects/projects/${id}/adicionar_membro/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: membroProjetoRequest,
+    signal,
+  });
 };
 
 export const getProjectsProjectsAdicionarMembroCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -803,7 +810,6 @@ export const getProjectsProjectsAdicionarMembroCreateMutationOptions = <
     { id: number; data: MembroProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsAdicionarMembroCreate>>,
   TError,
@@ -811,13 +817,13 @@ export const getProjectsProjectsAdicionarMembroCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsAdicionarMembroCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsAdicionarMembroCreate>>,
@@ -825,7 +831,7 @@ export const getProjectsProjectsAdicionarMembroCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsProjectsAdicionarMembroCreate(id, data, axiosOptions);
+    return projectsProjectsAdicionarMembroCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -837,13 +843,13 @@ export type ProjectsProjectsAdicionarMembroCreateMutationResult = NonNullable<
 export type ProjectsProjectsAdicionarMembroCreateMutationBody =
   MembroProjetoRequest;
 export type ProjectsProjectsAdicionarMembroCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Adicionar membro ao projeto
  */
 export const useProjectsProjectsAdicionarMembroCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -853,7 +859,6 @@ export const useProjectsProjectsAdicionarMembroCreate = <
       { id: number; data: MembroProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -874,20 +879,22 @@ export const useProjectsProjectsAdicionarMembroCreate = <
 export const projectsProjectsArchiveCreate = (
   id: MaybeRef<number>,
   projetoRequest: MaybeRef<ProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<ProjectsProjectsArchiveCreate200>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   projetoRequest = unref(projetoRequest);
 
-  return axios.post(
-    `/api/projects/projects/${id}/archive/`,
-    projetoRequest,
-    options,
-  );
+  return customMutator<ProjectsProjectsArchiveCreate200>({
+    url: `/api/projects/projects/${id}/archive/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: projetoRequest,
+    signal,
+  });
 };
 
 export const getProjectsProjectsArchiveCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -896,7 +903,6 @@ export const getProjectsProjectsArchiveCreateMutationOptions = <
     { id: number; data: ProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsArchiveCreate>>,
   TError,
@@ -904,13 +910,13 @@ export const getProjectsProjectsArchiveCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsArchiveCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsArchiveCreate>>,
@@ -918,7 +924,7 @@ export const getProjectsProjectsArchiveCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsProjectsArchiveCreate(id, data, axiosOptions);
+    return projectsProjectsArchiveCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -928,13 +934,13 @@ export type ProjectsProjectsArchiveCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsArchiveCreate>>
 >;
 export type ProjectsProjectsArchiveCreateMutationBody = ProjetoRequest;
-export type ProjectsProjectsArchiveCreateMutationError = AxiosError<unknown>;
+export type ProjectsProjectsArchiveCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Arquivar projeto
  */
 export const useProjectsProjectsArchiveCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -944,7 +950,6 @@ export const useProjectsProjectsArchiveCreate = <
       { id: number; data: ProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -965,20 +970,22 @@ export const useProjectsProjectsArchiveCreate = <
 export const projectsProjectsCriarSprintCreate = (
   id: MaybeRef<number>,
   projetoRequest: MaybeRef<ProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   projetoRequest = unref(projetoRequest);
 
-  return axios.post(
-    `/api/projects/projects/${id}/criar_sprint/`,
-    projetoRequest,
-    options,
-  );
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/criar_sprint/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: projetoRequest,
+    signal,
+  });
 };
 
 export const getProjectsProjectsCriarSprintCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -987,7 +994,6 @@ export const getProjectsProjectsCriarSprintCreateMutationOptions = <
     { id: number; data: ProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsCriarSprintCreate>>,
   TError,
@@ -995,13 +1001,13 @@ export const getProjectsProjectsCriarSprintCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsCriarSprintCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsCriarSprintCreate>>,
@@ -1009,7 +1015,7 @@ export const getProjectsProjectsCriarSprintCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsProjectsCriarSprintCreate(id, data, axiosOptions);
+    return projectsProjectsCriarSprintCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1019,14 +1025,13 @@ export type ProjectsProjectsCriarSprintCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsCriarSprintCreate>>
 >;
 export type ProjectsProjectsCriarSprintCreateMutationBody = ProjetoRequest;
-export type ProjectsProjectsCriarSprintCreateMutationError =
-  AxiosError<unknown>;
+export type ProjectsProjectsCriarSprintCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar Sprint no projeto
  */
 export const useProjectsProjectsCriarSprintCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1036,7 +1041,6 @@ export const useProjectsProjectsCriarSprintCreate = <
       { id: number; data: ProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1056,11 +1060,15 @@ export const useProjectsProjectsCriarSprintCreate = <
  */
 export const projectsProjectsExportProjectRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/projects/${id}/export_project/`, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/export_project/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsProjectsExportProjectRetrieveQueryKey = (
@@ -1071,7 +1079,7 @@ export const getProjectsProjectsExportProjectRetrieveQueryKey = (
 
 export const getProjectsProjectsExportProjectRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsExportProjectRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1082,17 +1090,15 @@ export const getProjectsProjectsExportProjectRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsExportProjectRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsExportProjectRetrieve>>
-  > = ({ signal }) =>
-    projectsProjectsExportProjectRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsExportProjectRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1110,7 +1116,7 @@ export type ProjectsProjectsExportProjectRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsExportProjectRetrieve>>
 >;
 export type ProjectsProjectsExportProjectRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Exportar dados do projeto
@@ -1118,7 +1124,7 @@ export type ProjectsProjectsExportProjectRetrieveQueryError =
 
 export function useProjectsProjectsExportProjectRetrieve<
   TData = Awaited<ReturnType<typeof projectsProjectsExportProjectRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1129,7 +1135,6 @@ export function useProjectsProjectsExportProjectRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1160,11 +1165,15 @@ export function useProjectsProjectsExportProjectRetrieve<
  */
 export const projectsProjectsHistoricoStatusRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/projects/${id}/historico_status/`, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/historico_status/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsProjectsHistoricoStatusRetrieveQueryKey = (
@@ -1175,7 +1184,7 @@ export const getProjectsProjectsHistoricoStatusRetrieveQueryKey = (
 
 export const getProjectsProjectsHistoricoStatusRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsHistoricoStatusRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1186,17 +1195,15 @@ export const getProjectsProjectsHistoricoStatusRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsHistoricoStatusRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsHistoricoStatusRetrieve>>
-  > = ({ signal }) =>
-    projectsProjectsHistoricoStatusRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsHistoricoStatusRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1214,7 +1221,7 @@ export type ProjectsProjectsHistoricoStatusRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsHistoricoStatusRetrieve>>
 >;
 export type ProjectsProjectsHistoricoStatusRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Histórico de status do projeto
@@ -1222,7 +1229,7 @@ export type ProjectsProjectsHistoricoStatusRetrieveQueryError =
 
 export function useProjectsProjectsHistoricoStatusRetrieve<
   TData = Awaited<ReturnType<typeof projectsProjectsHistoricoStatusRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1233,7 +1240,6 @@ export function useProjectsProjectsHistoricoStatusRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1265,14 +1271,16 @@ export function useProjectsProjectsHistoricoStatusRetrieve<
 export const projectsProjectsListarMembrosList = (
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsProjectsListarMembrosListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedMembroProjetoList>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   params = unref(params);
 
-  return axios.get(`/api/projects/projects/${id}/listar_membros/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedMembroProjetoList>({
+    url: `/api/projects/projects/${id}/listar_membros/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1292,7 +1300,7 @@ export const getProjectsProjectsListarMembrosListQueryKey = (
 
 export const getProjectsProjectsListarMembrosListQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsListarMembrosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsProjectsListarMembrosListParams>,
@@ -1304,17 +1312,15 @@ export const getProjectsProjectsListarMembrosListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsListarMembrosListQueryKey(id, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsListarMembrosList>>
-  > = ({ signal }) =>
-    projectsProjectsListarMembrosList(id, params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsListarMembrosList(id, params, signal);
 
   return {
     queryKey,
@@ -1331,7 +1337,7 @@ export const getProjectsProjectsListarMembrosListQueryOptions = <
 export type ProjectsProjectsListarMembrosListQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsListarMembrosList>>
 >;
-export type ProjectsProjectsListarMembrosListQueryError = AxiosError<unknown>;
+export type ProjectsProjectsListarMembrosListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar membros do projeto
@@ -1339,7 +1345,7 @@ export type ProjectsProjectsListarMembrosListQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsListarMembrosList<
   TData = Awaited<ReturnType<typeof projectsProjectsListarMembrosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsProjectsListarMembrosListParams>,
@@ -1351,7 +1357,6 @@ export function useProjectsProjectsListarMembrosList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1383,11 +1388,15 @@ export function useProjectsProjectsListarMembrosList<
  */
 export const projectsProjectsMetricsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<ProjectsProjectsMetricsRetrieve200>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/projects/${id}/metrics/`, options);
+  return customMutator<ProjectsProjectsMetricsRetrieve200>({
+    url: `/api/projects/projects/${id}/metrics/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsProjectsMetricsRetrieveQueryKey = (
@@ -1398,7 +1407,7 @@ export const getProjectsProjectsMetricsRetrieveQueryKey = (
 
 export const getProjectsProjectsMetricsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsMetricsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1409,17 +1418,15 @@ export const getProjectsProjectsMetricsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsMetricsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsMetricsRetrieve>>
-  > = ({ signal }) =>
-    projectsProjectsMetricsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsMetricsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1436,7 +1443,7 @@ export const getProjectsProjectsMetricsRetrieveQueryOptions = <
 export type ProjectsProjectsMetricsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsMetricsRetrieve>>
 >;
-export type ProjectsProjectsMetricsRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsProjectsMetricsRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Métricas Detalhadas do Projeto
@@ -1444,7 +1451,7 @@ export type ProjectsProjectsMetricsRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsMetricsRetrieve<
   TData = Awaited<ReturnType<typeof projectsProjectsMetricsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1455,7 +1462,6 @@ export function useProjectsProjectsMetricsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1487,19 +1493,19 @@ export function useProjectsProjectsMetricsRetrieve<
 export const projectsProjectsRemoverMembroDestroy = (
   id: MaybeRef<number>,
   params: MaybeRef<ProjectsProjectsRemoverMembroDestroyParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+) => {
   id = unref(id);
   params = unref(params);
 
-  return axios.delete(`/api/projects/projects/${id}/remover_membro/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<void>({
+    url: `/api/projects/projects/${id}/remover_membro/`,
+    method: "DELETE",
+    params: unref(params),
   });
 };
 
 export const getProjectsProjectsRemoverMembroDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1508,7 +1514,6 @@ export const getProjectsProjectsRemoverMembroDestroyMutationOptions = <
     { id: number; params: ProjectsProjectsRemoverMembroDestroyParams },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsProjectsRemoverMembroDestroy>>,
   TError,
@@ -1516,13 +1521,13 @@ export const getProjectsProjectsRemoverMembroDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsProjectsRemoverMembroDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsProjectsRemoverMembroDestroy>>,
@@ -1530,7 +1535,7 @@ export const getProjectsProjectsRemoverMembroDestroyMutationOptions = <
   > = (props) => {
     const { id, params } = props ?? {};
 
-    return projectsProjectsRemoverMembroDestroy(id, params, axiosOptions);
+    return projectsProjectsRemoverMembroDestroy(id, params);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1541,13 +1546,13 @@ export type ProjectsProjectsRemoverMembroDestroyMutationResult = NonNullable<
 >;
 
 export type ProjectsProjectsRemoverMembroDestroyMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Remover membro do projeto
  */
 export const useProjectsProjectsRemoverMembroDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1557,7 +1562,6 @@ export const useProjectsProjectsRemoverMembroDestroy = <
       { id: number; params: ProjectsProjectsRemoverMembroDestroyParams },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1577,11 +1581,15 @@ export const useProjectsProjectsRemoverMembroDestroy = <
  */
 export const projectsProjectsSprintsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Projeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/projects/${id}/sprints/`, options);
+  return customMutator<Projeto>({
+    url: `/api/projects/projects/${id}/sprints/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsProjectsSprintsRetrieveQueryKey = (
@@ -1592,7 +1600,7 @@ export const getProjectsProjectsSprintsRetrieveQueryKey = (
 
 export const getProjectsProjectsSprintsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsSprintsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1603,17 +1611,15 @@ export const getProjectsProjectsSprintsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsSprintsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsSprintsRetrieve>>
-  > = ({ signal }) =>
-    projectsProjectsSprintsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsSprintsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1630,7 +1636,7 @@ export const getProjectsProjectsSprintsRetrieveQueryOptions = <
 export type ProjectsProjectsSprintsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsSprintsRetrieve>>
 >;
-export type ProjectsProjectsSprintsRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsProjectsSprintsRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Sprints do projeto
@@ -1638,7 +1644,7 @@ export type ProjectsProjectsSprintsRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsSprintsRetrieve<
   TData = Awaited<ReturnType<typeof projectsProjectsSprintsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1649,7 +1655,6 @@ export function useProjectsProjectsSprintsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1680,13 +1685,15 @@ export function useProjectsProjectsSprintsRetrieve<
  */
 export const projectsProjectsMyProjectsList = (
   params?: MaybeRef<ProjectsProjectsMyProjectsListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedProjetoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/projects/projects/my_projects/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedProjetoList>({
+    url: `/api/projects/projects/my_projects/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1704,7 +1711,7 @@ export const getProjectsProjectsMyProjectsListQueryKey = (
 
 export const getProjectsProjectsMyProjectsListQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsProjectsMyProjectsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsProjectsMyProjectsListParams>,
   options?: {
@@ -1715,17 +1722,15 @@ export const getProjectsProjectsMyProjectsListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsProjectsMyProjectsListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsProjectsMyProjectsList>>
-  > = ({ signal }) =>
-    projectsProjectsMyProjectsList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsProjectsMyProjectsList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof projectsProjectsMyProjectsList>>,
@@ -1737,7 +1742,7 @@ export const getProjectsProjectsMyProjectsListQueryOptions = <
 export type ProjectsProjectsMyProjectsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsProjectsMyProjectsList>>
 >;
-export type ProjectsProjectsMyProjectsListQueryError = AxiosError<unknown>;
+export type ProjectsProjectsMyProjectsListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar meus projetos
@@ -1745,7 +1750,7 @@ export type ProjectsProjectsMyProjectsListQueryError = AxiosError<unknown>;
 
 export function useProjectsProjectsMyProjectsList<
   TData = Awaited<ReturnType<typeof projectsProjectsMyProjectsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsProjectsMyProjectsListParams>,
   options?: {
@@ -1756,7 +1761,6 @@ export function useProjectsProjectsMyProjectsList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1787,13 +1791,15 @@ export function useProjectsProjectsMyProjectsList<
  */
 export const projectsSprintsList = (
   params?: MaybeRef<ProjectsSprintsListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedSprintList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/projects/sprints/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedSprintList>({
+    url: `/api/projects/sprints/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1805,7 +1811,7 @@ export const getProjectsSprintsListQueryKey = (
 
 export const getProjectsSprintsListQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsSprintsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsSprintsListParams>,
   options?: {
@@ -1816,16 +1822,15 @@ export const getProjectsSprintsListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsSprintsListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsSprintsList>>
-  > = ({ signal }) => projectsSprintsList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsSprintsList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof projectsSprintsList>>,
@@ -1837,7 +1842,7 @@ export const getProjectsSprintsListQueryOptions = <
 export type ProjectsSprintsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsList>>
 >;
-export type ProjectsSprintsListQueryError = AxiosError<unknown>;
+export type ProjectsSprintsListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar sprints
@@ -1845,7 +1850,7 @@ export type ProjectsSprintsListQueryError = AxiosError<unknown>;
 
 export function useProjectsSprintsList<
   TData = Awaited<ReturnType<typeof projectsSprintsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<ProjectsSprintsListParams>,
   options?: {
@@ -1856,7 +1861,6 @@ export function useProjectsSprintsList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1884,15 +1888,21 @@ export function useProjectsSprintsList<
  */
 export const projectsSprintsCreate = (
   sprintRequest: MaybeRef<SprintRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+  signal?: AbortSignal,
+) => {
   sprintRequest = unref(sprintRequest);
 
-  return axios.post(`/api/projects/sprints/`, sprintRequest, options);
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: sprintRequest,
+    signal,
+  });
 };
 
 export const getProjectsSprintsCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1901,7 +1911,6 @@ export const getProjectsSprintsCreateMutationOptions = <
     { data: SprintRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsSprintsCreate>>,
   TError,
@@ -1909,13 +1918,13 @@ export const getProjectsSprintsCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsSprintsCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsSprintsCreate>>,
@@ -1923,7 +1932,7 @@ export const getProjectsSprintsCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return projectsSprintsCreate(data, axiosOptions);
+    return projectsSprintsCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1933,13 +1942,13 @@ export type ProjectsSprintsCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsCreate>>
 >;
 export type ProjectsSprintsCreateMutationBody = SprintRequest;
-export type ProjectsSprintsCreateMutationError = AxiosError<unknown>;
+export type ProjectsSprintsCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar nova sprint
  */
 export const useProjectsSprintsCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1949,7 +1958,6 @@ export const useProjectsSprintsCreate = <
       { data: SprintRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1968,11 +1976,15 @@ export const useProjectsSprintsCreate = <
  */
 export const projectsSprintsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/sprints/${id}/`, options);
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsSprintsRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -1981,7 +1993,7 @@ export const getProjectsSprintsRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getProjectsSprintsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsSprintsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1992,16 +2004,15 @@ export const getProjectsSprintsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsSprintsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsSprintsRetrieve>>
-  > = ({ signal }) => projectsSprintsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsSprintsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -2018,7 +2029,7 @@ export const getProjectsSprintsRetrieveQueryOptions = <
 export type ProjectsSprintsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsRetrieve>>
 >;
-export type ProjectsSprintsRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsSprintsRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da sprint
@@ -2026,7 +2037,7 @@ export type ProjectsSprintsRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsSprintsRetrieve<
   TData = Awaited<ReturnType<typeof projectsSprintsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -2037,7 +2048,6 @@ export function useProjectsSprintsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2066,16 +2076,20 @@ export function useProjectsSprintsRetrieve<
 export const projectsSprintsUpdate = (
   id: MaybeRef<number>,
   sprintRequest: MaybeRef<SprintRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+) => {
   id = unref(id);
   sprintRequest = unref(sprintRequest);
 
-  return axios.put(`/api/projects/sprints/${id}/`, sprintRequest, options);
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: sprintRequest,
+  });
 };
 
 export const getProjectsSprintsUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2084,7 +2098,6 @@ export const getProjectsSprintsUpdateMutationOptions = <
     { id: number; data: SprintRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsSprintsUpdate>>,
   TError,
@@ -2092,13 +2105,13 @@ export const getProjectsSprintsUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsSprintsUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsSprintsUpdate>>,
@@ -2106,7 +2119,7 @@ export const getProjectsSprintsUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsSprintsUpdate(id, data, axiosOptions);
+    return projectsSprintsUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2116,13 +2129,13 @@ export type ProjectsSprintsUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsUpdate>>
 >;
 export type ProjectsSprintsUpdateMutationBody = SprintRequest;
-export type ProjectsSprintsUpdateMutationError = AxiosError<unknown>;
+export type ProjectsSprintsUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar sprint
  */
 export const useProjectsSprintsUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2132,7 +2145,6 @@ export const useProjectsSprintsUpdate = <
       { id: number; data: SprintRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2152,20 +2164,20 @@ export const useProjectsSprintsUpdate = <
 export const projectsSprintsPartialUpdate = (
   id: MaybeRef<number>,
   patchedSprintRequest: MaybeRef<PatchedSprintRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+) => {
   id = unref(id);
   patchedSprintRequest = unref(patchedSprintRequest);
 
-  return axios.patch(
-    `/api/projects/sprints/${id}/`,
-    patchedSprintRequest,
-    options,
-  );
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedSprintRequest,
+  });
 };
 
 export const getProjectsSprintsPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2174,7 +2186,6 @@ export const getProjectsSprintsPartialUpdateMutationOptions = <
     { id: number; data: PatchedSprintRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsSprintsPartialUpdate>>,
   TError,
@@ -2182,13 +2193,13 @@ export const getProjectsSprintsPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsSprintsPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsSprintsPartialUpdate>>,
@@ -2196,7 +2207,7 @@ export const getProjectsSprintsPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return projectsSprintsPartialUpdate(id, data, axiosOptions);
+    return projectsSprintsPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2206,13 +2217,13 @@ export type ProjectsSprintsPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsPartialUpdate>>
 >;
 export type ProjectsSprintsPartialUpdateMutationBody = PatchedSprintRequest;
-export type ProjectsSprintsPartialUpdateMutationError = AxiosError<unknown>;
+export type ProjectsSprintsPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar sprint parcialmente
  */
 export const useProjectsSprintsPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2222,7 +2233,6 @@ export const useProjectsSprintsPartialUpdate = <
       { id: number; data: PatchedSprintRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2240,17 +2250,17 @@ export const useProjectsSprintsPartialUpdate = <
  * Remove permanentemente uma sprint.
  * @summary Excluir sprint
  */
-export const projectsSprintsDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const projectsSprintsDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/projects/sprints/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/projects/sprints/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getProjectsSprintsDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2259,7 +2269,6 @@ export const getProjectsSprintsDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof projectsSprintsDestroy>>,
   TError,
@@ -2267,13 +2276,13 @@ export const getProjectsSprintsDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["projectsSprintsDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof projectsSprintsDestroy>>,
@@ -2281,7 +2290,7 @@ export const getProjectsSprintsDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return projectsSprintsDestroy(id, axiosOptions);
+    return projectsSprintsDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2291,13 +2300,13 @@ export type ProjectsSprintsDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsDestroy>>
 >;
 
-export type ProjectsSprintsDestroyMutationError = AxiosError<unknown>;
+export type ProjectsSprintsDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir sprint
  */
 export const useProjectsSprintsDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2307,7 +2316,6 @@ export const useProjectsSprintsDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2326,11 +2334,15 @@ export const useProjectsSprintsDestroy = <
  */
 export const projectsSprintsResumoRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/sprints/${id}/resumo/`, options);
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/${id}/resumo/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsSprintsResumoRetrieveQueryKey = (
@@ -2341,7 +2353,7 @@ export const getProjectsSprintsResumoRetrieveQueryKey = (
 
 export const getProjectsSprintsResumoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsSprintsResumoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -2352,17 +2364,15 @@ export const getProjectsSprintsResumoRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsSprintsResumoRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsSprintsResumoRetrieve>>
-  > = ({ signal }) =>
-    projectsSprintsResumoRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsSprintsResumoRetrieve(id, signal);
 
   return {
     queryKey,
@@ -2379,7 +2389,7 @@ export const getProjectsSprintsResumoRetrieveQueryOptions = <
 export type ProjectsSprintsResumoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsResumoRetrieve>>
 >;
-export type ProjectsSprintsResumoRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsSprintsResumoRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Resumo da sprint
@@ -2387,7 +2397,7 @@ export type ProjectsSprintsResumoRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsSprintsResumoRetrieve<
   TData = Awaited<ReturnType<typeof projectsSprintsResumoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -2398,7 +2408,6 @@ export function useProjectsSprintsResumoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2430,14 +2439,16 @@ export function useProjectsSprintsResumoRetrieve<
 export const projectsSprintsTarefasRetrieve = (
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsSprintsTarefasRetrieveParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Sprint>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   params = unref(params);
 
-  return axios.get(`/api/projects/sprints/${id}/tarefas/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<Sprint>({
+    url: `/api/projects/sprints/${id}/tarefas/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -2457,7 +2468,7 @@ export const getProjectsSprintsTarefasRetrieveQueryKey = (
 
 export const getProjectsSprintsTarefasRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsSprintsTarefasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsSprintsTarefasRetrieveParams>,
@@ -2469,17 +2480,15 @@ export const getProjectsSprintsTarefasRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsSprintsTarefasRetrieveQueryKey(id, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsSprintsTarefasRetrieve>>
-  > = ({ signal }) =>
-    projectsSprintsTarefasRetrieve(id, params, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsSprintsTarefasRetrieve(id, params, signal);
 
   return {
     queryKey,
@@ -2496,7 +2505,7 @@ export const getProjectsSprintsTarefasRetrieveQueryOptions = <
 export type ProjectsSprintsTarefasRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsSprintsTarefasRetrieve>>
 >;
-export type ProjectsSprintsTarefasRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsSprintsTarefasRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar tarefas da sprint
@@ -2504,7 +2513,7 @@ export type ProjectsSprintsTarefasRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsSprintsTarefasRetrieve<
   TData = Awaited<ReturnType<typeof projectsSprintsTarefasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<ProjectsSprintsTarefasRetrieveParams>,
@@ -2516,7 +2525,6 @@ export function useProjectsSprintsTarefasRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {

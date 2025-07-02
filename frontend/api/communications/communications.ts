@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -31,6 +28,9 @@ import type {
   PaginatedComunicacaoList,
   PatchedComunicacaoRequest,
 } from ".././schemas";
+
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
 
 /**
  * ViewSet para gerenciamento de comunicações formais.
@@ -47,13 +47,15 @@ Endpoints:
  */
 export const communicationsList = (
   params?: MaybeRef<CommunicationsListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedComunicacaoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/communications/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedComunicacaoList>({
+    url: `/api/communications/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -65,7 +67,7 @@ export const getCommunicationsListQueryKey = (
 
 export const getCommunicationsListQueryOptions = <
   TData = Awaited<ReturnType<typeof communicationsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CommunicationsListParams>,
   options?: {
@@ -76,16 +78,15 @@ export const getCommunicationsListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCommunicationsListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof communicationsList>>
-  > = ({ signal }) => communicationsList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => communicationsList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof communicationsList>>,
@@ -97,11 +98,11 @@ export const getCommunicationsListQueryOptions = <
 export type CommunicationsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof communicationsList>>
 >;
-export type CommunicationsListQueryError = AxiosError<unknown>;
+export type CommunicationsListQueryError = ErrorType<unknown>;
 
 export function useCommunicationsList<
   TData = Awaited<ReturnType<typeof communicationsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CommunicationsListParams>,
   options?: {
@@ -112,7 +113,6 @@ export function useCommunicationsList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -149,15 +149,21 @@ Endpoints:
  */
 export const communicationsCreate = (
   comunicacaoRequest: MaybeRef<ComunicacaoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comunicacao>> => {
+  signal?: AbortSignal,
+) => {
   comunicacaoRequest = unref(comunicacaoRequest);
 
-  return axios.post(`/api/communications/`, comunicacaoRequest, options);
+  return customMutator<Comunicacao>({
+    url: `/api/communications/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: comunicacaoRequest,
+    signal,
+  });
 };
 
 export const getCommunicationsCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -166,7 +172,6 @@ export const getCommunicationsCreateMutationOptions = <
     { data: ComunicacaoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof communicationsCreate>>,
   TError,
@@ -174,13 +179,13 @@ export const getCommunicationsCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["communicationsCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof communicationsCreate>>,
@@ -188,7 +193,7 @@ export const getCommunicationsCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return communicationsCreate(data, axiosOptions);
+    return communicationsCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -198,10 +203,10 @@ export type CommunicationsCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof communicationsCreate>>
 >;
 export type CommunicationsCreateMutationBody = ComunicacaoRequest;
-export type CommunicationsCreateMutationError = AxiosError<unknown>;
+export type CommunicationsCreateMutationError = ErrorType<unknown>;
 
 export const useCommunicationsCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -211,7 +216,6 @@ export const useCommunicationsCreate = <
       { data: ComunicacaoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -239,11 +243,15 @@ Endpoints:
  */
 export const communicationsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comunicacao>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/communications/${id}/`, options);
+  return customMutator<Comunicacao>({
+    url: `/api/communications/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCommunicationsRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -252,7 +260,7 @@ export const getCommunicationsRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getCommunicationsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof communicationsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -263,16 +271,15 @@ export const getCommunicationsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCommunicationsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof communicationsRetrieve>>
-  > = ({ signal }) => communicationsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => communicationsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -289,11 +296,11 @@ export const getCommunicationsRetrieveQueryOptions = <
 export type CommunicationsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof communicationsRetrieve>>
 >;
-export type CommunicationsRetrieveQueryError = AxiosError<unknown>;
+export type CommunicationsRetrieveQueryError = ErrorType<unknown>;
 
 export function useCommunicationsRetrieve<
   TData = Awaited<ReturnType<typeof communicationsRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -304,7 +311,6 @@ export function useCommunicationsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -340,16 +346,20 @@ Returns:
 export const communicationsUpdate = (
   id: MaybeRef<number>,
   comunicacaoRequest: MaybeRef<ComunicacaoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comunicacao>> => {
+) => {
   id = unref(id);
   comunicacaoRequest = unref(comunicacaoRequest);
 
-  return axios.put(`/api/communications/${id}/`, comunicacaoRequest, options);
+  return customMutator<Comunicacao>({
+    url: `/api/communications/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: comunicacaoRequest,
+  });
 };
 
 export const getCommunicationsUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -358,7 +368,6 @@ export const getCommunicationsUpdateMutationOptions = <
     { id: number; data: ComunicacaoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof communicationsUpdate>>,
   TError,
@@ -366,13 +375,13 @@ export const getCommunicationsUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["communicationsUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof communicationsUpdate>>,
@@ -380,7 +389,7 @@ export const getCommunicationsUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return communicationsUpdate(id, data, axiosOptions);
+    return communicationsUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -390,10 +399,10 @@ export type CommunicationsUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof communicationsUpdate>>
 >;
 export type CommunicationsUpdateMutationBody = ComunicacaoRequest;
-export type CommunicationsUpdateMutationError = AxiosError<unknown>;
+export type CommunicationsUpdateMutationError = ErrorType<unknown>;
 
 export const useCommunicationsUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -403,7 +412,6 @@ export const useCommunicationsUpdate = <
       { id: number; data: ComunicacaoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -432,20 +440,20 @@ Endpoints:
 export const communicationsPartialUpdate = (
   id: MaybeRef<number>,
   patchedComunicacaoRequest: MaybeRef<PatchedComunicacaoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comunicacao>> => {
+) => {
   id = unref(id);
   patchedComunicacaoRequest = unref(patchedComunicacaoRequest);
 
-  return axios.patch(
-    `/api/communications/${id}/`,
-    patchedComunicacaoRequest,
-    options,
-  );
+  return customMutator<Comunicacao>({
+    url: `/api/communications/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedComunicacaoRequest,
+  });
 };
 
 export const getCommunicationsPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -454,7 +462,6 @@ export const getCommunicationsPartialUpdateMutationOptions = <
     { id: number; data: PatchedComunicacaoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof communicationsPartialUpdate>>,
   TError,
@@ -462,13 +469,13 @@ export const getCommunicationsPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["communicationsPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof communicationsPartialUpdate>>,
@@ -476,7 +483,7 @@ export const getCommunicationsPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return communicationsPartialUpdate(id, data, axiosOptions);
+    return communicationsPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -486,10 +493,10 @@ export type CommunicationsPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof communicationsPartialUpdate>>
 >;
 export type CommunicationsPartialUpdateMutationBody = PatchedComunicacaoRequest;
-export type CommunicationsPartialUpdateMutationError = AxiosError<unknown>;
+export type CommunicationsPartialUpdateMutationError = ErrorType<unknown>;
 
 export const useCommunicationsPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -499,7 +506,6 @@ export const useCommunicationsPartialUpdate = <
       { id: number; data: PatchedComunicacaoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -526,17 +532,17 @@ Endpoints:
 - PUT/PATCH /comunicacoes/{id}/ - Atualiza uma comunicação
 - DELETE /comunicacoes/{id}/ - Remove uma comunicação
  */
-export const communicationsDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const communicationsDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/communications/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/communications/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCommunicationsDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -545,7 +551,6 @@ export const getCommunicationsDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof communicationsDestroy>>,
   TError,
@@ -553,13 +558,13 @@ export const getCommunicationsDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["communicationsDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof communicationsDestroy>>,
@@ -567,7 +572,7 @@ export const getCommunicationsDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return communicationsDestroy(id, axiosOptions);
+    return communicationsDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -577,10 +582,10 @@ export type CommunicationsDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof communicationsDestroy>>
 >;
 
-export type CommunicationsDestroyMutationError = AxiosError<unknown>;
+export type CommunicationsDestroyMutationError = ErrorType<unknown>;
 
 export const useCommunicationsDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -590,7 +595,6 @@ export const useCommunicationsDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

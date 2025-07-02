@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -38,19 +35,24 @@ import type {
   TeamsEquipesUsuariosDisponiveisListParams,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de equipes.
  * @summary Listar equipes
  */
 export const teamsEquipesList = (
   params?: MaybeRef<TeamsEquipesListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedEquipeListList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/teams/equipes/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedEquipeListList>({
+    url: `/api/teams/equipes/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -62,7 +64,7 @@ export const getTeamsEquipesListQueryKey = (
 
 export const getTeamsEquipesListQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsEquipesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsEquipesListParams>,
   options?: {
@@ -73,16 +75,15 @@ export const getTeamsEquipesListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsEquipesListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsEquipesList>>
-  > = ({ signal }) => teamsEquipesList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsEquipesList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof teamsEquipesList>>,
@@ -94,7 +95,7 @@ export const getTeamsEquipesListQueryOptions = <
 export type TeamsEquipesListQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesList>>
 >;
-export type TeamsEquipesListQueryError = AxiosError<unknown>;
+export type TeamsEquipesListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar equipes
@@ -102,7 +103,7 @@ export type TeamsEquipesListQueryError = AxiosError<unknown>;
 
 export function useTeamsEquipesList<
   TData = Awaited<ReturnType<typeof teamsEquipesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsEquipesListParams>,
   options?: {
@@ -113,7 +114,6 @@ export function useTeamsEquipesList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -141,15 +141,21 @@ export function useTeamsEquipesList<
  */
 export const teamsEquipesCreate = (
   equipeRequest: MaybeRef<EquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Equipe>> => {
+  signal?: AbortSignal,
+) => {
   equipeRequest = unref(equipeRequest);
 
-  return axios.post(`/api/teams/equipes/`, equipeRequest, options);
+  return customMutator<Equipe>({
+    url: `/api/teams/equipes/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: equipeRequest,
+    signal,
+  });
 };
 
 export const getTeamsEquipesCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -158,7 +164,6 @@ export const getTeamsEquipesCreateMutationOptions = <
     { data: EquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesCreate>>,
   TError,
@@ -166,13 +171,13 @@ export const getTeamsEquipesCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesCreate>>,
@@ -180,7 +185,7 @@ export const getTeamsEquipesCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return teamsEquipesCreate(data, axiosOptions);
+    return teamsEquipesCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -190,13 +195,13 @@ export type TeamsEquipesCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesCreate>>
 >;
 export type TeamsEquipesCreateMutationBody = EquipeRequest;
-export type TeamsEquipesCreateMutationError = AxiosError<unknown>;
+export type TeamsEquipesCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar nova equipe
  */
 export const useTeamsEquipesCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -206,7 +211,6 @@ export const useTeamsEquipesCreate = <
       { data: EquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -225,11 +229,15 @@ export const useTeamsEquipesCreate = <
  */
 export const teamsEquipesRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Equipe>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/teams/equipes/${id}/`, options);
+  return customMutator<Equipe>({
+    url: `/api/teams/equipes/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getTeamsEquipesRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -238,7 +246,7 @@ export const getTeamsEquipesRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getTeamsEquipesRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsEquipesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -249,16 +257,15 @@ export const getTeamsEquipesRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsEquipesRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsEquipesRetrieve>>
-  > = ({ signal }) => teamsEquipesRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsEquipesRetrieve(id, signal);
 
   return {
     queryKey,
@@ -275,7 +282,7 @@ export const getTeamsEquipesRetrieveQueryOptions = <
 export type TeamsEquipesRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesRetrieve>>
 >;
-export type TeamsEquipesRetrieveQueryError = AxiosError<unknown>;
+export type TeamsEquipesRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da equipe
@@ -283,7 +290,7 @@ export type TeamsEquipesRetrieveQueryError = AxiosError<unknown>;
 
 export function useTeamsEquipesRetrieve<
   TData = Awaited<ReturnType<typeof teamsEquipesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -294,7 +301,6 @@ export function useTeamsEquipesRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -323,16 +329,20 @@ export function useTeamsEquipesRetrieve<
 export const teamsEquipesUpdate = (
   id: MaybeRef<number>,
   equipeRequest: MaybeRef<EquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Equipe>> => {
+) => {
   id = unref(id);
   equipeRequest = unref(equipeRequest);
 
-  return axios.put(`/api/teams/equipes/${id}/`, equipeRequest, options);
+  return customMutator<Equipe>({
+    url: `/api/teams/equipes/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: equipeRequest,
+  });
 };
 
 export const getTeamsEquipesUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -341,7 +351,6 @@ export const getTeamsEquipesUpdateMutationOptions = <
     { id: number; data: EquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesUpdate>>,
   TError,
@@ -349,13 +358,13 @@ export const getTeamsEquipesUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesUpdate>>,
@@ -363,7 +372,7 @@ export const getTeamsEquipesUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsEquipesUpdate(id, data, axiosOptions);
+    return teamsEquipesUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -373,13 +382,13 @@ export type TeamsEquipesUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesUpdate>>
 >;
 export type TeamsEquipesUpdateMutationBody = EquipeRequest;
-export type TeamsEquipesUpdateMutationError = AxiosError<unknown>;
+export type TeamsEquipesUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar equipe
  */
 export const useTeamsEquipesUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -389,7 +398,6 @@ export const useTeamsEquipesUpdate = <
       { id: number; data: EquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -409,20 +417,20 @@ export const useTeamsEquipesUpdate = <
 export const teamsEquipesPartialUpdate = (
   id: MaybeRef<number>,
   patchedEquipeRequest: MaybeRef<PatchedEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Equipe>> => {
+) => {
   id = unref(id);
   patchedEquipeRequest = unref(patchedEquipeRequest);
 
-  return axios.patch(
-    `/api/teams/equipes/${id}/`,
-    patchedEquipeRequest,
-    options,
-  );
+  return customMutator<Equipe>({
+    url: `/api/teams/equipes/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedEquipeRequest,
+  });
 };
 
 export const getTeamsEquipesPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -431,7 +439,6 @@ export const getTeamsEquipesPartialUpdateMutationOptions = <
     { id: number; data: PatchedEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesPartialUpdate>>,
   TError,
@@ -439,13 +446,13 @@ export const getTeamsEquipesPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesPartialUpdate>>,
@@ -453,7 +460,7 @@ export const getTeamsEquipesPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsEquipesPartialUpdate(id, data, axiosOptions);
+    return teamsEquipesPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -463,13 +470,13 @@ export type TeamsEquipesPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesPartialUpdate>>
 >;
 export type TeamsEquipesPartialUpdateMutationBody = PatchedEquipeRequest;
-export type TeamsEquipesPartialUpdateMutationError = AxiosError<unknown>;
+export type TeamsEquipesPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar equipe parcialmente
  */
 export const useTeamsEquipesPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -479,7 +486,6 @@ export const useTeamsEquipesPartialUpdate = <
       { id: number; data: PatchedEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -496,17 +502,17 @@ export const useTeamsEquipesPartialUpdate = <
  * Remove uma equipe existente.
  * @summary Excluir equipe
  */
-export const teamsEquipesDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const teamsEquipesDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/teams/equipes/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/teams/equipes/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getTeamsEquipesDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -515,7 +521,6 @@ export const getTeamsEquipesDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesDestroy>>,
   TError,
@@ -523,13 +528,13 @@ export const getTeamsEquipesDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesDestroy>>,
@@ -537,7 +542,7 @@ export const getTeamsEquipesDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return teamsEquipesDestroy(id, axiosOptions);
+    return teamsEquipesDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -547,13 +552,13 @@ export type TeamsEquipesDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesDestroy>>
 >;
 
-export type TeamsEquipesDestroyMutationError = AxiosError<unknown>;
+export type TeamsEquipesDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir equipe
  */
 export const useTeamsEquipesDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -563,7 +568,6 @@ export const useTeamsEquipesDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -583,20 +587,22 @@ export const useTeamsEquipesDestroy = <
 export const teamsEquipesAdicionarMembroCreate = (
   id: MaybeRef<number>,
   membroEquipeRequest: MaybeRef<MembroEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<MembroEquipe>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   membroEquipeRequest = unref(membroEquipeRequest);
 
-  return axios.post(
-    `/api/teams/equipes/${id}/adicionar_membro/`,
-    membroEquipeRequest,
-    options,
-  );
+  return customMutator<MembroEquipe>({
+    url: `/api/teams/equipes/${id}/adicionar_membro/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: membroEquipeRequest,
+    signal,
+  });
 };
 
 export const getTeamsEquipesAdicionarMembroCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -605,7 +611,6 @@ export const getTeamsEquipesAdicionarMembroCreateMutationOptions = <
     { id: number; data: MembroEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesAdicionarMembroCreate>>,
   TError,
@@ -613,13 +618,13 @@ export const getTeamsEquipesAdicionarMembroCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesAdicionarMembroCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesAdicionarMembroCreate>>,
@@ -627,7 +632,7 @@ export const getTeamsEquipesAdicionarMembroCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsEquipesAdicionarMembroCreate(id, data, axiosOptions);
+    return teamsEquipesAdicionarMembroCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -637,14 +642,13 @@ export type TeamsEquipesAdicionarMembroCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesAdicionarMembroCreate>>
 >;
 export type TeamsEquipesAdicionarMembroCreateMutationBody = MembroEquipeRequest;
-export type TeamsEquipesAdicionarMembroCreateMutationError =
-  AxiosError<unknown>;
+export type TeamsEquipesAdicionarMembroCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Adicionar membro à equipe
  */
 export const useTeamsEquipesAdicionarMembroCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -654,7 +658,6 @@ export const useTeamsEquipesAdicionarMembroCreate = <
       { id: number; data: MembroEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -675,20 +678,22 @@ export const useTeamsEquipesAdicionarMembroCreate = <
 export const teamsEquipesAtualizarPapelMembroCreate = (
   id: MaybeRef<number>,
   membroEquipeRequest: MaybeRef<MembroEquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<MembroEquipe>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   membroEquipeRequest = unref(membroEquipeRequest);
 
-  return axios.post(
-    `/api/teams/equipes/${id}/atualizar_papel_membro/`,
-    membroEquipeRequest,
-    options,
-  );
+  return customMutator<MembroEquipe>({
+    url: `/api/teams/equipes/${id}/atualizar_papel_membro/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: membroEquipeRequest,
+    signal,
+  });
 };
 
 export const getTeamsEquipesAtualizarPapelMembroCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -697,7 +702,6 @@ export const getTeamsEquipesAtualizarPapelMembroCreateMutationOptions = <
     { id: number; data: MembroEquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesAtualizarPapelMembroCreate>>,
   TError,
@@ -705,13 +709,13 @@ export const getTeamsEquipesAtualizarPapelMembroCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesAtualizarPapelMembroCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesAtualizarPapelMembroCreate>>,
@@ -719,7 +723,7 @@ export const getTeamsEquipesAtualizarPapelMembroCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsEquipesAtualizarPapelMembroCreate(id, data, axiosOptions);
+    return teamsEquipesAtualizarPapelMembroCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -731,13 +735,13 @@ export type TeamsEquipesAtualizarPapelMembroCreateMutationResult = NonNullable<
 export type TeamsEquipesAtualizarPapelMembroCreateMutationBody =
   MembroEquipeRequest;
 export type TeamsEquipesAtualizarPapelMembroCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Atualizar papel do membro
  */
 export const useTeamsEquipesAtualizarPapelMembroCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -747,7 +751,6 @@ export const useTeamsEquipesAtualizarPapelMembroCreate = <
       { id: number; data: MembroEquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -768,14 +771,16 @@ export const useTeamsEquipesAtualizarPapelMembroCreate = <
 export const teamsEquipesMembrosList = (
   id: MaybeRef<number>,
   params?: MaybeRef<TeamsEquipesMembrosListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedMembroEquipeList>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   params = unref(params);
 
-  return axios.get(`/api/teams/equipes/${id}/membros/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedMembroEquipeList>({
+    url: `/api/teams/equipes/${id}/membros/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -795,7 +800,7 @@ export const getTeamsEquipesMembrosListQueryKey = (
 
 export const getTeamsEquipesMembrosListQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsEquipesMembrosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<TeamsEquipesMembrosListParams>,
@@ -807,17 +812,15 @@ export const getTeamsEquipesMembrosListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsEquipesMembrosListQueryKey(id, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsEquipesMembrosList>>
-  > = ({ signal }) =>
-    teamsEquipesMembrosList(id, params, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsEquipesMembrosList(id, params, signal);
 
   return {
     queryKey,
@@ -834,7 +837,7 @@ export const getTeamsEquipesMembrosListQueryOptions = <
 export type TeamsEquipesMembrosListQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesMembrosList>>
 >;
-export type TeamsEquipesMembrosListQueryError = AxiosError<unknown>;
+export type TeamsEquipesMembrosListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar membros da equipe
@@ -842,7 +845,7 @@ export type TeamsEquipesMembrosListQueryError = AxiosError<unknown>;
 
 export function useTeamsEquipesMembrosList<
   TData = Awaited<ReturnType<typeof teamsEquipesMembrosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<TeamsEquipesMembrosListParams>,
@@ -854,7 +857,6 @@ export function useTeamsEquipesMembrosList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -887,20 +889,22 @@ export function useTeamsEquipesMembrosList<
 export const teamsEquipesRemoverMembroCreate = (
   id: MaybeRef<number>,
   equipeRequest: MaybeRef<EquipeRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   equipeRequest = unref(equipeRequest);
 
-  return axios.post(
-    `/api/teams/equipes/${id}/remover_membro/`,
-    equipeRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/teams/equipes/${id}/remover_membro/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: equipeRequest,
+    signal,
+  });
 };
 
 export const getTeamsEquipesRemoverMembroCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -909,7 +913,6 @@ export const getTeamsEquipesRemoverMembroCreateMutationOptions = <
     { id: number; data: EquipeRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof teamsEquipesRemoverMembroCreate>>,
   TError,
@@ -917,13 +920,13 @@ export const getTeamsEquipesRemoverMembroCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["teamsEquipesRemoverMembroCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof teamsEquipesRemoverMembroCreate>>,
@@ -931,7 +934,7 @@ export const getTeamsEquipesRemoverMembroCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return teamsEquipesRemoverMembroCreate(id, data, axiosOptions);
+    return teamsEquipesRemoverMembroCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -941,13 +944,13 @@ export type TeamsEquipesRemoverMembroCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesRemoverMembroCreate>>
 >;
 export type TeamsEquipesRemoverMembroCreateMutationBody = EquipeRequest;
-export type TeamsEquipesRemoverMembroCreateMutationError = AxiosError<unknown>;
+export type TeamsEquipesRemoverMembroCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Remover membro da equipe
  */
 export const useTeamsEquipesRemoverMembroCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -957,7 +960,6 @@ export const useTeamsEquipesRemoverMembroCreate = <
       { id: number; data: EquipeRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -977,13 +979,15 @@ export const useTeamsEquipesRemoverMembroCreate = <
  */
 export const teamsEquipesUsuariosDisponiveisList = (
   params?: MaybeRef<TeamsEquipesUsuariosDisponiveisListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedUserMinimalList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/teams/equipes/usuarios_disponiveis/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedUserMinimalList>({
+    url: `/api/teams/equipes/usuarios_disponiveis/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1001,7 +1005,7 @@ export const getTeamsEquipesUsuariosDisponiveisListQueryKey = (
 
 export const getTeamsEquipesUsuariosDisponiveisListQueryOptions = <
   TData = Awaited<ReturnType<typeof teamsEquipesUsuariosDisponiveisList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsEquipesUsuariosDisponiveisListParams>,
   options?: {
@@ -1012,17 +1016,15 @@ export const getTeamsEquipesUsuariosDisponiveisListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTeamsEquipesUsuariosDisponiveisListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof teamsEquipesUsuariosDisponiveisList>>
-  > = ({ signal }) =>
-    teamsEquipesUsuariosDisponiveisList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => teamsEquipesUsuariosDisponiveisList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof teamsEquipesUsuariosDisponiveisList>>,
@@ -1034,7 +1036,7 @@ export const getTeamsEquipesUsuariosDisponiveisListQueryOptions = <
 export type TeamsEquipesUsuariosDisponiveisListQueryResult = NonNullable<
   Awaited<ReturnType<typeof teamsEquipesUsuariosDisponiveisList>>
 >;
-export type TeamsEquipesUsuariosDisponiveisListQueryError = AxiosError<unknown>;
+export type TeamsEquipesUsuariosDisponiveisListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Retornar usuários disponíveis à equipe
@@ -1042,7 +1044,7 @@ export type TeamsEquipesUsuariosDisponiveisListQueryError = AxiosError<unknown>;
 
 export function useTeamsEquipesUsuariosDisponiveisList<
   TData = Awaited<ReturnType<typeof teamsEquipesUsuariosDisponiveisList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TeamsEquipesUsuariosDisponiveisListParams>,
   options?: {
@@ -1053,7 +1055,6 @@ export function useTeamsEquipesUsuariosDisponiveisList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {

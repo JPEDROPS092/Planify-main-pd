@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axiosInstance from "../axios-instance";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -51,25 +48,30 @@ import type {
   UsernameResetConfirmRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Takes a set of user credentials and returns an access and refresh JSON web
 token pair to prove the authentication of those credentials.
  */
 export const authJwtCreateCreate = (
   tokenObtainPairRequest: MaybeRef<TokenObtainPairRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<TokenObtainPair>> => {
+  signal?: AbortSignal,
+) => {
   tokenObtainPairRequest = unref(tokenObtainPairRequest);
 
-  return axiosInstance.post(
-    `/api/auth/jwt/create/`,
-    tokenObtainPairRequest,
-    options
-  );
+  return customMutator<TokenObtainPair>({
+    url: `/api/auth/jwt/create/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tokenObtainPairRequest,
+    signal,
+  });
 };
 
 export const getAuthJwtCreateCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -78,7 +80,6 @@ export const getAuthJwtCreateCreateMutationOptions = <
     { data: TokenObtainPairRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authJwtCreateCreate>>,
   TError,
@@ -86,13 +87,13 @@ export const getAuthJwtCreateCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authJwtCreateCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authJwtCreateCreate>>,
@@ -100,7 +101,7 @@ export const getAuthJwtCreateCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authJwtCreateCreate(data, axiosOptions);
+    return authJwtCreateCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -110,10 +111,10 @@ export type AuthJwtCreateCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authJwtCreateCreate>>
 >;
 export type AuthJwtCreateCreateMutationBody = TokenObtainPairRequest;
-export type AuthJwtCreateCreateMutationError = AxiosError<unknown>;
+export type AuthJwtCreateCreateMutationError = ErrorType<unknown>;
 
 export const useAuthJwtCreateCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -123,9 +124,8 @@ export const useAuthJwtCreateCreate = <
       { data: TokenObtainPairRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtCreateCreate>>,
   TError,
@@ -142,19 +142,21 @@ token if the refresh token is valid.
  */
 export const authJwtRefreshCreate = (
   tokenRefreshRequest: MaybeRef<TokenRefreshRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<TokenRefresh>> => {
+  signal?: AbortSignal,
+) => {
   tokenRefreshRequest = unref(tokenRefreshRequest);
 
-  return axiosInstance.post(
-    `/api/auth/jwt/refresh/`,
-    tokenRefreshRequest,
-    options
-  );
+  return customMutator<TokenRefresh>({
+    url: `/api/auth/jwt/refresh/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tokenRefreshRequest,
+    signal,
+  });
 };
 
 export const getAuthJwtRefreshCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -163,7 +165,6 @@ export const getAuthJwtRefreshCreateMutationOptions = <
     { data: TokenRefreshRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authJwtRefreshCreate>>,
   TError,
@@ -171,13 +172,13 @@ export const getAuthJwtRefreshCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authJwtRefreshCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authJwtRefreshCreate>>,
@@ -185,7 +186,7 @@ export const getAuthJwtRefreshCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authJwtRefreshCreate(data, axiosOptions);
+    return authJwtRefreshCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -195,10 +196,10 @@ export type AuthJwtRefreshCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authJwtRefreshCreate>>
 >;
 export type AuthJwtRefreshCreateMutationBody = TokenRefreshRequest;
-export type AuthJwtRefreshCreateMutationError = AxiosError<unknown>;
+export type AuthJwtRefreshCreateMutationError = ErrorType<unknown>;
 
 export const useAuthJwtRefreshCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -208,9 +209,8 @@ export const useAuthJwtRefreshCreate = <
       { data: TokenRefreshRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtRefreshCreate>>,
   TError,
@@ -227,19 +227,21 @@ information about a token's fitness for a particular use.
  */
 export const authJwtVerifyCreate = (
   tokenVerifyRequest: MaybeRef<TokenVerifyRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   tokenVerifyRequest = unref(tokenVerifyRequest);
 
-  return axiosInstance.post(
-    `/api/auth/jwt/verify/`,
-    tokenVerifyRequest,
-    options
-  );
+  return customMutator<void>({
+    url: `/api/auth/jwt/verify/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tokenVerifyRequest,
+    signal,
+  });
 };
 
 export const getAuthJwtVerifyCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -248,7 +250,6 @@ export const getAuthJwtVerifyCreateMutationOptions = <
     { data: TokenVerifyRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authJwtVerifyCreate>>,
   TError,
@@ -256,13 +257,13 @@ export const getAuthJwtVerifyCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authJwtVerifyCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authJwtVerifyCreate>>,
@@ -270,7 +271,7 @@ export const getAuthJwtVerifyCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authJwtVerifyCreate(data, axiosOptions);
+    return authJwtVerifyCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -280,10 +281,10 @@ export type AuthJwtVerifyCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authJwtVerifyCreate>>
 >;
 export type AuthJwtVerifyCreateMutationBody = TokenVerifyRequest;
-export type AuthJwtVerifyCreateMutationError = AxiosError<unknown>;
+export type AuthJwtVerifyCreateMutationError = ErrorType<unknown>;
 
 export const useAuthJwtVerifyCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -293,9 +294,8 @@ export const useAuthJwtVerifyCreate = <
       { data: TokenVerifyRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authJwtVerifyCreate>>,
   TError,
@@ -308,41 +308,42 @@ export const useAuthJwtVerifyCreate = <
 };
 export const authUsersList = (
   params?: MaybeRef<AuthUsersListParams>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<PaginatedUserList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axiosInstance.get(`/api/auth/users/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedUserList>({
+    url: `/api/auth/users/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
 export const getAuthUsersListQueryKey = (
-  params?: MaybeRef<AuthUsersListParams>
+  params?: MaybeRef<AuthUsersListParams>,
 ) => {
   return ["api", "auth", "users", ...(params ? [params] : [])] as const;
 };
 
 export const getAuthUsersListQueryOptions = <
   TData = Awaited<ReturnType<typeof authUsersList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<AuthUsersListParams>,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof authUsersList>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
-  }
+  },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getAuthUsersListQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof authUsersList>>> = ({
     signal,
-  }) => authUsersList(params, { signal, ...axiosOptions });
+  }) => authUsersList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof authUsersList>>,
@@ -354,20 +355,19 @@ export const getAuthUsersListQueryOptions = <
 export type AuthUsersListQueryResult = NonNullable<
   Awaited<ReturnType<typeof authUsersList>>
 >;
-export type AuthUsersListQueryError = AxiosError<unknown>;
+export type AuthUsersListQueryError = ErrorType<unknown>;
 
 export function useAuthUsersList<
   TData = Awaited<ReturnType<typeof authUsersList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<AuthUsersListParams>,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof authUsersList>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -389,15 +389,21 @@ export function useAuthUsersList<
 
 export const authUsersCreate = (
   userCreateRequest: MaybeRef<UserCreateRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<UserCreate>> => {
+  signal?: AbortSignal,
+) => {
   userCreateRequest = unref(userCreateRequest);
 
-  return axiosInstance.post(`/api/auth/users/`, userCreateRequest, options);
+  return customMutator<UserCreate>({
+    url: `/api/auth/users/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: userCreateRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -406,7 +412,6 @@ export const getAuthUsersCreateMutationOptions = <
     { data: UserCreateRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersCreate>>,
   TError,
@@ -414,13 +419,13 @@ export const getAuthUsersCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersCreate>>,
@@ -428,7 +433,7 @@ export const getAuthUsersCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersCreate(data, axiosOptions);
+    return authUsersCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -438,10 +443,10 @@ export type AuthUsersCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersCreate>>
 >;
 export type AuthUsersCreateMutationBody = UserCreateRequest;
-export type AuthUsersCreateMutationError = AxiosError<unknown>;
+export type AuthUsersCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -451,9 +456,8 @@ export const useAuthUsersCreate = <
       { data: UserCreateRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersCreate>>,
   TError,
@@ -466,11 +470,15 @@ export const useAuthUsersCreate = <
 };
 export const authUsersRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axiosInstance.get(`/api/auth/users/${id}/`, options);
+  return customMutator<User>({
+    url: `/api/auth/users/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getAuthUsersRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -479,7 +487,7 @@ export const getAuthUsersRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getAuthUsersRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof authUsersRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -490,16 +498,15 @@ export const getAuthUsersRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
-  }
+  },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getAuthUsersRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof authUsersRetrieve>>
-  > = ({ signal }) => authUsersRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => authUsersRetrieve(id, signal);
 
   return {
     queryKey,
@@ -516,11 +523,11 @@ export const getAuthUsersRetrieveQueryOptions = <
 export type AuthUsersRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof authUsersRetrieve>>
 >;
-export type AuthUsersRetrieveQueryError = AxiosError<unknown>;
+export type AuthUsersRetrieveQueryError = ErrorType<unknown>;
 
 export function useAuthUsersRetrieve<
   TData = Awaited<ReturnType<typeof authUsersRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -531,9 +538,8 @@ export function useAuthUsersRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -556,16 +562,20 @@ export function useAuthUsersRetrieve<
 export const authUsersUpdate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
+) => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axiosInstance.put(`/api/auth/users/${id}/`, userRequest, options);
+  return customMutator<User>({
+    url: `/api/auth/users/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+  });
 };
 
 export const getAuthUsersUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -574,7 +584,6 @@ export const getAuthUsersUpdateMutationOptions = <
     { id: number; data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersUpdate>>,
   TError,
@@ -582,13 +591,13 @@ export const getAuthUsersUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersUpdate>>,
@@ -596,7 +605,7 @@ export const getAuthUsersUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return authUsersUpdate(id, data, axiosOptions);
+    return authUsersUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -606,10 +615,10 @@ export type AuthUsersUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersUpdate>>
 >;
 export type AuthUsersUpdateMutationBody = UserRequest;
-export type AuthUsersUpdateMutationError = AxiosError<unknown>;
+export type AuthUsersUpdateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -619,9 +628,8 @@ export const useAuthUsersUpdate = <
       { id: number; data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersUpdate>>,
   TError,
@@ -635,20 +643,20 @@ export const useAuthUsersUpdate = <
 export const authUsersPartialUpdate = (
   id: MaybeRef<number>,
   patchedUserRequest: MaybeRef<PatchedUserRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
+) => {
   id = unref(id);
   patchedUserRequest = unref(patchedUserRequest);
 
-  return axiosInstance.patch(
-    `/api/auth/users/${id}/`,
-    patchedUserRequest,
-    options
-  );
+  return customMutator<User>({
+    url: `/api/auth/users/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedUserRequest,
+  });
 };
 
 export const getAuthUsersPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -657,7 +665,6 @@ export const getAuthUsersPartialUpdateMutationOptions = <
     { id: number; data: PatchedUserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersPartialUpdate>>,
   TError,
@@ -665,13 +672,13 @@ export const getAuthUsersPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersPartialUpdate>>,
@@ -679,7 +686,7 @@ export const getAuthUsersPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return authUsersPartialUpdate(id, data, axiosOptions);
+    return authUsersPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -689,10 +696,10 @@ export type AuthUsersPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersPartialUpdate>>
 >;
 export type AuthUsersPartialUpdateMutationBody = PatchedUserRequest;
-export type AuthUsersPartialUpdateMutationError = AxiosError<unknown>;
+export type AuthUsersPartialUpdateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -702,9 +709,8 @@ export const useAuthUsersPartialUpdate = <
       { id: number; data: PatchedUserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersPartialUpdate>>,
   TError,
@@ -715,17 +721,17 @@ export const useAuthUsersPartialUpdate = <
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authUsersDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<void>> => {
+export const authUsersDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axiosInstance.delete(`/api/auth/users/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/auth/users/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getAuthUsersDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -734,7 +740,6 @@ export const getAuthUsersDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersDestroy>>,
   TError,
@@ -742,13 +747,13 @@ export const getAuthUsersDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersDestroy>>,
@@ -756,7 +761,7 @@ export const getAuthUsersDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return authUsersDestroy(id, axiosOptions);
+    return authUsersDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -766,10 +771,10 @@ export type AuthUsersDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersDestroy>>
 >;
 
-export type AuthUsersDestroyMutationError = AxiosError<unknown>;
+export type AuthUsersDestroyMutationError = ErrorType<unknown>;
 
 export const useAuthUsersDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -779,9 +784,8 @@ export const useAuthUsersDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersDestroy>>,
   TError,
@@ -794,19 +798,21 @@ export const useAuthUsersDestroy = <
 };
 export const authUsersActivationCreate = (
   activationRequest: MaybeRef<ActivationRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<Activation>> => {
+  signal?: AbortSignal,
+) => {
   activationRequest = unref(activationRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/activation/`,
-    activationRequest,
-    options
-  );
+  return customMutator<Activation>({
+    url: `/api/auth/users/activation/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: activationRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersActivationCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -815,7 +821,6 @@ export const getAuthUsersActivationCreateMutationOptions = <
     { data: ActivationRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersActivationCreate>>,
   TError,
@@ -823,13 +828,13 @@ export const getAuthUsersActivationCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersActivationCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersActivationCreate>>,
@@ -837,7 +842,7 @@ export const getAuthUsersActivationCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersActivationCreate(data, axiosOptions);
+    return authUsersActivationCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -847,10 +852,10 @@ export type AuthUsersActivationCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersActivationCreate>>
 >;
 export type AuthUsersActivationCreateMutationBody = ActivationRequest;
-export type AuthUsersActivationCreateMutationError = AxiosError<unknown>;
+export type AuthUsersActivationCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersActivationCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -860,9 +865,8 @@ export const useAuthUsersActivationCreate = <
       { data: ActivationRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersActivationCreate>>,
   TError,
@@ -873,10 +877,12 @@ export const useAuthUsersActivationCreate = <
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authUsersMeRetrieve = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
-  return axiosInstance.get(`/api/auth/users/me/`, options);
+export const authUsersMeRetrieve = (signal?: AbortSignal) => {
+  return customMutator<User>({
+    url: `/api/auth/users/me/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getAuthUsersMeRetrieveQueryKey = () => {
@@ -885,7 +891,7 @@ export const getAuthUsersMeRetrieveQueryKey = () => {
 
 export const getAuthUsersMeRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof authUsersMeRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -894,15 +900,14 @@ export const getAuthUsersMeRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getAuthUsersMeRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof authUsersMeRetrieve>>
-  > = ({ signal }) => authUsersMeRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => authUsersMeRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof authUsersMeRetrieve>>,
@@ -914,11 +919,11 @@ export const getAuthUsersMeRetrieveQueryOptions = <
 export type AuthUsersMeRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof authUsersMeRetrieve>>
 >;
-export type AuthUsersMeRetrieveQueryError = AxiosError<unknown>;
+export type AuthUsersMeRetrieveQueryError = ErrorType<unknown>;
 
 export function useAuthUsersMeRetrieve<
   TData = Awaited<ReturnType<typeof authUsersMeRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -928,9 +933,8 @@ export function useAuthUsersMeRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -950,17 +954,19 @@ export function useAuthUsersMeRetrieve<
   return query;
 }
 
-export const authUsersMeUpdate = (
-  userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
+export const authUsersMeUpdate = (userRequest: MaybeRef<UserRequest>) => {
   userRequest = unref(userRequest);
 
-  return axiosInstance.put(`/api/auth/users/me/`, userRequest, options);
+  return customMutator<User>({
+    url: `/api/auth/users/me/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+  });
 };
 
 export const getAuthUsersMeUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -969,7 +975,6 @@ export const getAuthUsersMeUpdateMutationOptions = <
     { data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersMeUpdate>>,
   TError,
@@ -977,13 +982,13 @@ export const getAuthUsersMeUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersMeUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersMeUpdate>>,
@@ -991,7 +996,7 @@ export const getAuthUsersMeUpdateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersMeUpdate(data, axiosOptions);
+    return authUsersMeUpdate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1001,10 +1006,10 @@ export type AuthUsersMeUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersMeUpdate>>
 >;
 export type AuthUsersMeUpdateMutationBody = UserRequest;
-export type AuthUsersMeUpdateMutationError = AxiosError<unknown>;
+export type AuthUsersMeUpdateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersMeUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1014,9 +1019,8 @@ export const useAuthUsersMeUpdate = <
       { data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMeUpdate>>,
   TError,
@@ -1029,19 +1033,19 @@ export const useAuthUsersMeUpdate = <
 };
 export const authUsersMePartialUpdate = (
   patchedUserRequest: MaybeRef<PatchedUserRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<User>> => {
+) => {
   patchedUserRequest = unref(patchedUserRequest);
 
-  return axiosInstance.patch(
-    `/api/auth/users/me/`,
-    patchedUserRequest,
-    options
-  );
+  return customMutator<User>({
+    url: `/api/auth/users/me/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedUserRequest,
+  });
 };
 
 export const getAuthUsersMePartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1050,7 +1054,6 @@ export const getAuthUsersMePartialUpdateMutationOptions = <
     { data: PatchedUserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersMePartialUpdate>>,
   TError,
@@ -1058,13 +1061,13 @@ export const getAuthUsersMePartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersMePartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersMePartialUpdate>>,
@@ -1072,7 +1075,7 @@ export const getAuthUsersMePartialUpdateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersMePartialUpdate(data, axiosOptions);
+    return authUsersMePartialUpdate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1082,10 +1085,10 @@ export type AuthUsersMePartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersMePartialUpdate>>
 >;
 export type AuthUsersMePartialUpdateMutationBody = PatchedUserRequest;
-export type AuthUsersMePartialUpdateMutationError = AxiosError<unknown>;
+export type AuthUsersMePartialUpdateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersMePartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1095,9 +1098,8 @@ export const useAuthUsersMePartialUpdate = <
       { data: PatchedUserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMePartialUpdate>>,
   TError,
@@ -1108,14 +1110,12 @@ export const useAuthUsersMePartialUpdate = <
 
   return useMutation(mutationOptions, queryClient);
 };
-export const authUsersMeDestroy = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<void>> => {
-  return axiosInstance.delete(`/api/auth/users/me/`, options);
+export const authUsersMeDestroy = () => {
+  return customMutator<void>({ url: `/api/auth/users/me/`, method: "DELETE" });
 };
 
 export const getAuthUsersMeDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1124,7 +1124,6 @@ export const getAuthUsersMeDestroyMutationOptions = <
     void,
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersMeDestroy>>,
   TError,
@@ -1132,19 +1131,19 @@ export const getAuthUsersMeDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersMeDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersMeDestroy>>,
     void
   > = () => {
-    return authUsersMeDestroy(axiosOptions);
+    return authUsersMeDestroy();
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1154,10 +1153,10 @@ export type AuthUsersMeDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersMeDestroy>>
 >;
 
-export type AuthUsersMeDestroyMutationError = AxiosError<unknown>;
+export type AuthUsersMeDestroyMutationError = ErrorType<unknown>;
 
 export const useAuthUsersMeDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1167,9 +1166,8 @@ export const useAuthUsersMeDestroy = <
       void,
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersMeDestroy>>,
   TError,
@@ -1182,19 +1180,21 @@ export const useAuthUsersMeDestroy = <
 };
 export const authUsersResendActivationCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<SendEmailReset>> => {
+  signal?: AbortSignal,
+) => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/resend_activation/`,
-    sendEmailResetRequest,
-    options
-  );
+  return customMutator<SendEmailReset>({
+    url: `/api/auth/users/resend_activation/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: sendEmailResetRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersResendActivationCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1203,7 +1203,6 @@ export const getAuthUsersResendActivationCreateMutationOptions = <
     { data: SendEmailResetRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersResendActivationCreate>>,
   TError,
@@ -1211,13 +1210,13 @@ export const getAuthUsersResendActivationCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersResendActivationCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersResendActivationCreate>>,
@@ -1225,7 +1224,7 @@ export const getAuthUsersResendActivationCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersResendActivationCreate(data, axiosOptions);
+    return authUsersResendActivationCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1235,10 +1234,10 @@ export type AuthUsersResendActivationCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersResendActivationCreate>>
 >;
 export type AuthUsersResendActivationCreateMutationBody = SendEmailResetRequest;
-export type AuthUsersResendActivationCreateMutationError = AxiosError<unknown>;
+export type AuthUsersResendActivationCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersResendActivationCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1248,9 +1247,8 @@ export const useAuthUsersResendActivationCreate = <
       { data: SendEmailResetRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResendActivationCreate>>,
   TError,
@@ -1264,19 +1262,21 @@ export const useAuthUsersResendActivationCreate = <
 };
 export const authUsersResetPasswordCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<SendEmailReset>> => {
+  signal?: AbortSignal,
+) => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/reset_password/`,
-    sendEmailResetRequest,
-    options
-  );
+  return customMutator<SendEmailReset>({
+    url: `/api/auth/users/reset_password/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: sendEmailResetRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersResetPasswordCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1285,7 +1285,6 @@ export const getAuthUsersResetPasswordCreateMutationOptions = <
     { data: SendEmailResetRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersResetPasswordCreate>>,
   TError,
@@ -1293,13 +1292,13 @@ export const getAuthUsersResetPasswordCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersResetPasswordCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersResetPasswordCreate>>,
@@ -1307,7 +1306,7 @@ export const getAuthUsersResetPasswordCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersResetPasswordCreate(data, axiosOptions);
+    return authUsersResetPasswordCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1317,10 +1316,10 @@ export type AuthUsersResetPasswordCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersResetPasswordCreate>>
 >;
 export type AuthUsersResetPasswordCreateMutationBody = SendEmailResetRequest;
-export type AuthUsersResetPasswordCreateMutationError = AxiosError<unknown>;
+export type AuthUsersResetPasswordCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersResetPasswordCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1330,9 +1329,8 @@ export const useAuthUsersResetPasswordCreate = <
       { data: SendEmailResetRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetPasswordCreate>>,
   TError,
@@ -1346,19 +1344,21 @@ export const useAuthUsersResetPasswordCreate = <
 };
 export const authUsersResetPasswordConfirmCreate = (
   passwordResetConfirmRequest: MaybeRef<PasswordResetConfirmRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<PasswordResetConfirm>> => {
+  signal?: AbortSignal,
+) => {
   passwordResetConfirmRequest = unref(passwordResetConfirmRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/reset_password_confirm/`,
-    passwordResetConfirmRequest,
-    options
-  );
+  return customMutator<PasswordResetConfirm>({
+    url: `/api/auth/users/reset_password_confirm/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: passwordResetConfirmRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersResetPasswordConfirmCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1367,7 +1367,6 @@ export const getAuthUsersResetPasswordConfirmCreateMutationOptions = <
     { data: PasswordResetConfirmRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersResetPasswordConfirmCreate>>,
   TError,
@@ -1375,13 +1374,13 @@ export const getAuthUsersResetPasswordConfirmCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersResetPasswordConfirmCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersResetPasswordConfirmCreate>>,
@@ -1389,7 +1388,7 @@ export const getAuthUsersResetPasswordConfirmCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersResetPasswordConfirmCreate(data, axiosOptions);
+    return authUsersResetPasswordConfirmCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1401,10 +1400,10 @@ export type AuthUsersResetPasswordConfirmCreateMutationResult = NonNullable<
 export type AuthUsersResetPasswordConfirmCreateMutationBody =
   PasswordResetConfirmRequest;
 export type AuthUsersResetPasswordConfirmCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 export const useAuthUsersResetPasswordConfirmCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1414,9 +1413,8 @@ export const useAuthUsersResetPasswordConfirmCreate = <
       { data: PasswordResetConfirmRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetPasswordConfirmCreate>>,
   TError,
@@ -1430,19 +1428,21 @@ export const useAuthUsersResetPasswordConfirmCreate = <
 };
 export const authUsersResetUsernameCreate = (
   sendEmailResetRequest: MaybeRef<SendEmailResetRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<SendEmailReset>> => {
+  signal?: AbortSignal,
+) => {
   sendEmailResetRequest = unref(sendEmailResetRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/reset_username/`,
-    sendEmailResetRequest,
-    options
-  );
+  return customMutator<SendEmailReset>({
+    url: `/api/auth/users/reset_username/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: sendEmailResetRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersResetUsernameCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1451,7 +1451,6 @@ export const getAuthUsersResetUsernameCreateMutationOptions = <
     { data: SendEmailResetRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersResetUsernameCreate>>,
   TError,
@@ -1459,13 +1458,13 @@ export const getAuthUsersResetUsernameCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersResetUsernameCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersResetUsernameCreate>>,
@@ -1473,7 +1472,7 @@ export const getAuthUsersResetUsernameCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersResetUsernameCreate(data, axiosOptions);
+    return authUsersResetUsernameCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1483,10 +1482,10 @@ export type AuthUsersResetUsernameCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersResetUsernameCreate>>
 >;
 export type AuthUsersResetUsernameCreateMutationBody = SendEmailResetRequest;
-export type AuthUsersResetUsernameCreateMutationError = AxiosError<unknown>;
+export type AuthUsersResetUsernameCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersResetUsernameCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1496,9 +1495,8 @@ export const useAuthUsersResetUsernameCreate = <
       { data: SendEmailResetRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetUsernameCreate>>,
   TError,
@@ -1512,19 +1510,21 @@ export const useAuthUsersResetUsernameCreate = <
 };
 export const authUsersResetUsernameConfirmCreate = (
   usernameResetConfirmRequest: MaybeRef<UsernameResetConfirmRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<UsernameResetConfirm>> => {
+  signal?: AbortSignal,
+) => {
   usernameResetConfirmRequest = unref(usernameResetConfirmRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/reset_username_confirm/`,
-    usernameResetConfirmRequest,
-    options
-  );
+  return customMutator<UsernameResetConfirm>({
+    url: `/api/auth/users/reset_username_confirm/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: usernameResetConfirmRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersResetUsernameConfirmCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1533,7 +1533,6 @@ export const getAuthUsersResetUsernameConfirmCreateMutationOptions = <
     { data: UsernameResetConfirmRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersResetUsernameConfirmCreate>>,
   TError,
@@ -1541,13 +1540,13 @@ export const getAuthUsersResetUsernameConfirmCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersResetUsernameConfirmCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersResetUsernameConfirmCreate>>,
@@ -1555,7 +1554,7 @@ export const getAuthUsersResetUsernameConfirmCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersResetUsernameConfirmCreate(data, axiosOptions);
+    return authUsersResetUsernameConfirmCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1567,10 +1566,10 @@ export type AuthUsersResetUsernameConfirmCreateMutationResult = NonNullable<
 export type AuthUsersResetUsernameConfirmCreateMutationBody =
   UsernameResetConfirmRequest;
 export type AuthUsersResetUsernameConfirmCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 export const useAuthUsersResetUsernameConfirmCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1580,9 +1579,8 @@ export const useAuthUsersResetUsernameConfirmCreate = <
       { data: UsernameResetConfirmRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersResetUsernameConfirmCreate>>,
   TError,
@@ -1596,19 +1594,21 @@ export const useAuthUsersResetUsernameConfirmCreate = <
 };
 export const authUsersSetPasswordCreate = (
   setPasswordRequest: MaybeRef<SetPasswordRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<SetPassword>> => {
+  signal?: AbortSignal,
+) => {
   setPasswordRequest = unref(setPasswordRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/set_password/`,
-    setPasswordRequest,
-    options
-  );
+  return customMutator<SetPassword>({
+    url: `/api/auth/users/set_password/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: setPasswordRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersSetPasswordCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1617,7 +1617,6 @@ export const getAuthUsersSetPasswordCreateMutationOptions = <
     { data: SetPasswordRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersSetPasswordCreate>>,
   TError,
@@ -1625,13 +1624,13 @@ export const getAuthUsersSetPasswordCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersSetPasswordCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersSetPasswordCreate>>,
@@ -1639,7 +1638,7 @@ export const getAuthUsersSetPasswordCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersSetPasswordCreate(data, axiosOptions);
+    return authUsersSetPasswordCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1649,10 +1648,10 @@ export type AuthUsersSetPasswordCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersSetPasswordCreate>>
 >;
 export type AuthUsersSetPasswordCreateMutationBody = SetPasswordRequest;
-export type AuthUsersSetPasswordCreateMutationError = AxiosError<unknown>;
+export type AuthUsersSetPasswordCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersSetPasswordCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1662,9 +1661,8 @@ export const useAuthUsersSetPasswordCreate = <
       { data: SetPasswordRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersSetPasswordCreate>>,
   TError,
@@ -1677,19 +1675,21 @@ export const useAuthUsersSetPasswordCreate = <
 };
 export const authUsersSetUsernameCreate = (
   setUsernameRequest: MaybeRef<SetUsernameRequest>,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<SetUsername>> => {
+  signal?: AbortSignal,
+) => {
   setUsernameRequest = unref(setUsernameRequest);
 
-  return axiosInstance.post(
-    `/api/auth/users/set_username/`,
-    setUsernameRequest,
-    options
-  );
+  return customMutator<SetUsername>({
+    url: `/api/auth/users/set_username/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: setUsernameRequest,
+    signal,
+  });
 };
 
 export const getAuthUsersSetUsernameCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1698,7 +1698,6 @@ export const getAuthUsersSetUsernameCreateMutationOptions = <
     { data: SetUsernameRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authUsersSetUsernameCreate>>,
   TError,
@@ -1706,13 +1705,13 @@ export const getAuthUsersSetUsernameCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["authUsersSetUsernameCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authUsersSetUsernameCreate>>,
@@ -1720,7 +1719,7 @@ export const getAuthUsersSetUsernameCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return authUsersSetUsernameCreate(data, axiosOptions);
+    return authUsersSetUsernameCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1730,10 +1729,10 @@ export type AuthUsersSetUsernameCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof authUsersSetUsernameCreate>>
 >;
 export type AuthUsersSetUsernameCreateMutationBody = SetUsernameRequest;
-export type AuthUsersSetUsernameCreateMutationError = AxiosError<unknown>;
+export type AuthUsersSetUsernameCreateMutationError = ErrorType<unknown>;
 
 export const useAuthUsersSetUsernameCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1743,9 +1742,8 @@ export const useAuthUsersSetUsernameCreate = <
       { data: SetUsernameRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof authUsersSetUsernameCreate>>,
   TError,

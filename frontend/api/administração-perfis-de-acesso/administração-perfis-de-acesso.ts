@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -32,19 +29,24 @@ import type {
   PatchedAccessProfileRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de perfis de acesso.
  * @summary Listar perfis de acesso
  */
 export const adminAccessProfilesList = (
   params?: MaybeRef<AdminAccessProfilesListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedAccessProfileList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/users/admin/access-profiles/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedAccessProfileList>({
+    url: `/api/users/admin/access-profiles/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -62,7 +64,7 @@ export const getAdminAccessProfilesListQueryKey = (
 
 export const getAdminAccessProfilesListQueryOptions = <
   TData = Awaited<ReturnType<typeof adminAccessProfilesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<AdminAccessProfilesListParams>,
   options?: {
@@ -73,17 +75,15 @@ export const getAdminAccessProfilesListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getAdminAccessProfilesListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof adminAccessProfilesList>>
-  > = ({ signal }) =>
-    adminAccessProfilesList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => adminAccessProfilesList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof adminAccessProfilesList>>,
@@ -95,7 +95,7 @@ export const getAdminAccessProfilesListQueryOptions = <
 export type AdminAccessProfilesListQueryResult = NonNullable<
   Awaited<ReturnType<typeof adminAccessProfilesList>>
 >;
-export type AdminAccessProfilesListQueryError = AxiosError<unknown>;
+export type AdminAccessProfilesListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar perfis de acesso
@@ -103,7 +103,7 @@ export type AdminAccessProfilesListQueryError = AxiosError<unknown>;
 
 export function useAdminAccessProfilesList<
   TData = Awaited<ReturnType<typeof adminAccessProfilesList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<AdminAccessProfilesListParams>,
   options?: {
@@ -114,7 +114,6 @@ export function useAdminAccessProfilesList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -142,19 +141,21 @@ export function useAdminAccessProfilesList<
  */
 export const adminAccessProfilesCreate = (
   accessProfileRequest: MaybeRef<AccessProfileRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<AccessProfile>> => {
+  signal?: AbortSignal,
+) => {
   accessProfileRequest = unref(accessProfileRequest);
 
-  return axios.post(
-    `/api/users/admin/access-profiles/`,
-    accessProfileRequest,
-    options,
-  );
+  return customMutator<AccessProfile>({
+    url: `/api/users/admin/access-profiles/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: accessProfileRequest,
+    signal,
+  });
 };
 
 export const getAdminAccessProfilesCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -163,7 +164,6 @@ export const getAdminAccessProfilesCreateMutationOptions = <
     { data: AccessProfileRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminAccessProfilesCreate>>,
   TError,
@@ -171,13 +171,13 @@ export const getAdminAccessProfilesCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["adminAccessProfilesCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminAccessProfilesCreate>>,
@@ -185,7 +185,7 @@ export const getAdminAccessProfilesCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return adminAccessProfilesCreate(data, axiosOptions);
+    return adminAccessProfilesCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -195,13 +195,13 @@ export type AdminAccessProfilesCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminAccessProfilesCreate>>
 >;
 export type AdminAccessProfilesCreateMutationBody = AccessProfileRequest;
-export type AdminAccessProfilesCreateMutationError = AxiosError<unknown>;
+export type AdminAccessProfilesCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo perfil de acesso
  */
 export const useAdminAccessProfilesCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -211,7 +211,6 @@ export const useAdminAccessProfilesCreate = <
       { data: AccessProfileRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -230,11 +229,15 @@ export const useAdminAccessProfilesCreate = <
  */
 export const adminAccessProfilesRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<AccessProfile>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/users/admin/access-profiles/${id}/`, options);
+  return customMutator<AccessProfile>({
+    url: `/api/users/admin/access-profiles/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getAdminAccessProfilesRetrieveQueryKey = (
@@ -245,7 +248,7 @@ export const getAdminAccessProfilesRetrieveQueryKey = (
 
 export const getAdminAccessProfilesRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof adminAccessProfilesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -256,17 +259,15 @@ export const getAdminAccessProfilesRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getAdminAccessProfilesRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof adminAccessProfilesRetrieve>>
-  > = ({ signal }) =>
-    adminAccessProfilesRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => adminAccessProfilesRetrieve(id, signal);
 
   return {
     queryKey,
@@ -283,7 +284,7 @@ export const getAdminAccessProfilesRetrieveQueryOptions = <
 export type AdminAccessProfilesRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof adminAccessProfilesRetrieve>>
 >;
-export type AdminAccessProfilesRetrieveQueryError = AxiosError<unknown>;
+export type AdminAccessProfilesRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do perfil de acesso
@@ -291,7 +292,7 @@ export type AdminAccessProfilesRetrieveQueryError = AxiosError<unknown>;
 
 export function useAdminAccessProfilesRetrieve<
   TData = Awaited<ReturnType<typeof adminAccessProfilesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -302,7 +303,6 @@ export function useAdminAccessProfilesRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -331,20 +331,20 @@ export function useAdminAccessProfilesRetrieve<
 export const adminAccessProfilesUpdate = (
   id: MaybeRef<number>,
   accessProfileRequest: MaybeRef<AccessProfileRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<AccessProfile>> => {
+) => {
   id = unref(id);
   accessProfileRequest = unref(accessProfileRequest);
 
-  return axios.put(
-    `/api/users/admin/access-profiles/${id}/`,
-    accessProfileRequest,
-    options,
-  );
+  return customMutator<AccessProfile>({
+    url: `/api/users/admin/access-profiles/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: accessProfileRequest,
+  });
 };
 
 export const getAdminAccessProfilesUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -353,7 +353,6 @@ export const getAdminAccessProfilesUpdateMutationOptions = <
     { id: number; data: AccessProfileRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminAccessProfilesUpdate>>,
   TError,
@@ -361,13 +360,13 @@ export const getAdminAccessProfilesUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["adminAccessProfilesUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminAccessProfilesUpdate>>,
@@ -375,7 +374,7 @@ export const getAdminAccessProfilesUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return adminAccessProfilesUpdate(id, data, axiosOptions);
+    return adminAccessProfilesUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -385,13 +384,13 @@ export type AdminAccessProfilesUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminAccessProfilesUpdate>>
 >;
 export type AdminAccessProfilesUpdateMutationBody = AccessProfileRequest;
-export type AdminAccessProfilesUpdateMutationError = AxiosError<unknown>;
+export type AdminAccessProfilesUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar perfil de acesso
  */
 export const useAdminAccessProfilesUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -401,7 +400,6 @@ export const useAdminAccessProfilesUpdate = <
       { id: number; data: AccessProfileRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -421,20 +419,20 @@ export const useAdminAccessProfilesUpdate = <
 export const adminAccessProfilesPartialUpdate = (
   id: MaybeRef<number>,
   patchedAccessProfileRequest: MaybeRef<PatchedAccessProfileRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<AccessProfile>> => {
+) => {
   id = unref(id);
   patchedAccessProfileRequest = unref(patchedAccessProfileRequest);
 
-  return axios.patch(
-    `/api/users/admin/access-profiles/${id}/`,
-    patchedAccessProfileRequest,
-    options,
-  );
+  return customMutator<AccessProfile>({
+    url: `/api/users/admin/access-profiles/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedAccessProfileRequest,
+  });
 };
 
 export const getAdminAccessProfilesPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -443,7 +441,6 @@ export const getAdminAccessProfilesPartialUpdateMutationOptions = <
     { id: number; data: PatchedAccessProfileRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminAccessProfilesPartialUpdate>>,
   TError,
@@ -451,13 +448,13 @@ export const getAdminAccessProfilesPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["adminAccessProfilesPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminAccessProfilesPartialUpdate>>,
@@ -465,7 +462,7 @@ export const getAdminAccessProfilesPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return adminAccessProfilesPartialUpdate(id, data, axiosOptions);
+    return adminAccessProfilesPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -476,13 +473,13 @@ export type AdminAccessProfilesPartialUpdateMutationResult = NonNullable<
 >;
 export type AdminAccessProfilesPartialUpdateMutationBody =
   PatchedAccessProfileRequest;
-export type AdminAccessProfilesPartialUpdateMutationError = AxiosError<unknown>;
+export type AdminAccessProfilesPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar perfil de acesso parcialmente
  */
 export const useAdminAccessProfilesPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -492,7 +489,6 @@ export const useAdminAccessProfilesPartialUpdate = <
       { id: number; data: PatchedAccessProfileRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -510,17 +506,17 @@ export const useAdminAccessProfilesPartialUpdate = <
  * Remove um perfil de acesso existente.
  * @summary Excluir perfil de acesso
  */
-export const adminAccessProfilesDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const adminAccessProfilesDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/users/admin/access-profiles/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/users/admin/access-profiles/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getAdminAccessProfilesDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -529,7 +525,6 @@ export const getAdminAccessProfilesDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminAccessProfilesDestroy>>,
   TError,
@@ -537,13 +532,13 @@ export const getAdminAccessProfilesDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["adminAccessProfilesDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminAccessProfilesDestroy>>,
@@ -551,7 +546,7 @@ export const getAdminAccessProfilesDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return adminAccessProfilesDestroy(id, axiosOptions);
+    return adminAccessProfilesDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -561,13 +556,13 @@ export type AdminAccessProfilesDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminAccessProfilesDestroy>>
 >;
 
-export type AdminAccessProfilesDestroyMutationError = AxiosError<unknown>;
+export type AdminAccessProfilesDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir perfil de acesso
  */
 export const useAdminAccessProfilesDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -577,7 +572,6 @@ export const useAdminAccessProfilesDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

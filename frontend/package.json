@@ -8,9 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "orval": "orval",
-    "generate-api": "orval --config orval.config.ts",
-    "generate-api-types": "openapi-typescript Planify-API.yaml -o types/api.ts"
+    "orval": "orval --config ./orval.config.ts"
   },
   "dependencies": {
     "@iconify/vue": "^4.1.1",

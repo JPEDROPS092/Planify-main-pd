@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -52,19 +49,24 @@ import type {
   PatchedOrcamentoTarefaRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de alertas.
  * @summary Listar alertas
  */
 export const costsAlertasList = (
   params?: MaybeRef<CostsAlertasListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedAlertaList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/costs/alertas/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedAlertaList>({
+    url: `/api/costs/alertas/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -76,7 +78,7 @@ export const getCostsAlertasListQueryKey = (
 
 export const getCostsAlertasListQueryOptions = <
   TData = Awaited<ReturnType<typeof costsAlertasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsAlertasListParams>,
   options?: {
@@ -87,16 +89,15 @@ export const getCostsAlertasListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsAlertasListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsAlertasList>>
-  > = ({ signal }) => costsAlertasList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => costsAlertasList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsAlertasList>>,
@@ -108,7 +109,7 @@ export const getCostsAlertasListQueryOptions = <
 export type CostsAlertasListQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasList>>
 >;
-export type CostsAlertasListQueryError = AxiosError<unknown>;
+export type CostsAlertasListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar alertas
@@ -116,7 +117,7 @@ export type CostsAlertasListQueryError = AxiosError<unknown>;
 
 export function useCostsAlertasList<
   TData = Awaited<ReturnType<typeof costsAlertasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsAlertasListParams>,
   options?: {
@@ -127,7 +128,6 @@ export function useCostsAlertasList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -155,15 +155,21 @@ export function useCostsAlertasList<
  */
 export const costsAlertasCreate = (
   alertaRequest: MaybeRef<AlertaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Alerta>> => {
+  signal?: AbortSignal,
+) => {
   alertaRequest = unref(alertaRequest);
 
-  return axios.post(`/api/costs/alertas/`, alertaRequest, options);
+  return customMutator<Alerta>({
+    url: `/api/costs/alertas/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: alertaRequest,
+    signal,
+  });
 };
 
 export const getCostsAlertasCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -172,7 +178,6 @@ export const getCostsAlertasCreateMutationOptions = <
     { data: AlertaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasCreate>>,
   TError,
@@ -180,13 +185,13 @@ export const getCostsAlertasCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasCreate>>,
@@ -194,7 +199,7 @@ export const getCostsAlertasCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return costsAlertasCreate(data, axiosOptions);
+    return costsAlertasCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -204,13 +209,13 @@ export type CostsAlertasCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasCreate>>
 >;
 export type CostsAlertasCreateMutationBody = AlertaRequest;
-export type CostsAlertasCreateMutationError = AxiosError<unknown>;
+export type CostsAlertasCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar nova alerta
  */
 export const useCostsAlertasCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -220,7 +225,6 @@ export const useCostsAlertasCreate = <
       { data: AlertaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -239,11 +243,15 @@ export const useCostsAlertasCreate = <
  */
 export const costsAlertasRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Alerta>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/costs/alertas/${id}/`, options);
+  return customMutator<Alerta>({
+    url: `/api/costs/alertas/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsAlertasRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -252,7 +260,7 @@ export const getCostsAlertasRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getCostsAlertasRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsAlertasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -263,16 +271,15 @@ export const getCostsAlertasRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsAlertasRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsAlertasRetrieve>>
-  > = ({ signal }) => costsAlertasRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => costsAlertasRetrieve(id, signal);
 
   return {
     queryKey,
@@ -289,7 +296,7 @@ export const getCostsAlertasRetrieveQueryOptions = <
 export type CostsAlertasRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasRetrieve>>
 >;
-export type CostsAlertasRetrieveQueryError = AxiosError<unknown>;
+export type CostsAlertasRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da alerta
@@ -297,7 +304,7 @@ export type CostsAlertasRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsAlertasRetrieve<
   TData = Awaited<ReturnType<typeof costsAlertasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -308,7 +315,6 @@ export function useCostsAlertasRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -337,16 +343,20 @@ export function useCostsAlertasRetrieve<
 export const costsAlertasUpdate = (
   id: MaybeRef<number>,
   alertaRequest: MaybeRef<AlertaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Alerta>> => {
+) => {
   id = unref(id);
   alertaRequest = unref(alertaRequest);
 
-  return axios.put(`/api/costs/alertas/${id}/`, alertaRequest, options);
+  return customMutator<Alerta>({
+    url: `/api/costs/alertas/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: alertaRequest,
+  });
 };
 
 export const getCostsAlertasUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -355,7 +365,6 @@ export const getCostsAlertasUpdateMutationOptions = <
     { id: number; data: AlertaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasUpdate>>,
   TError,
@@ -363,13 +372,13 @@ export const getCostsAlertasUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasUpdate>>,
@@ -377,7 +386,7 @@ export const getCostsAlertasUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsAlertasUpdate(id, data, axiosOptions);
+    return costsAlertasUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -387,13 +396,13 @@ export type CostsAlertasUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasUpdate>>
 >;
 export type CostsAlertasUpdateMutationBody = AlertaRequest;
-export type CostsAlertasUpdateMutationError = AxiosError<unknown>;
+export type CostsAlertasUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar alerta
  */
 export const useCostsAlertasUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -403,7 +412,6 @@ export const useCostsAlertasUpdate = <
       { id: number; data: AlertaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -423,20 +431,20 @@ export const useCostsAlertasUpdate = <
 export const costsAlertasPartialUpdate = (
   id: MaybeRef<number>,
   patchedAlertaRequest: MaybeRef<PatchedAlertaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Alerta>> => {
+) => {
   id = unref(id);
   patchedAlertaRequest = unref(patchedAlertaRequest);
 
-  return axios.patch(
-    `/api/costs/alertas/${id}/`,
-    patchedAlertaRequest,
-    options,
-  );
+  return customMutator<Alerta>({
+    url: `/api/costs/alertas/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedAlertaRequest,
+  });
 };
 
 export const getCostsAlertasPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -445,7 +453,6 @@ export const getCostsAlertasPartialUpdateMutationOptions = <
     { id: number; data: PatchedAlertaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasPartialUpdate>>,
   TError,
@@ -453,13 +460,13 @@ export const getCostsAlertasPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasPartialUpdate>>,
@@ -467,7 +474,7 @@ export const getCostsAlertasPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsAlertasPartialUpdate(id, data, axiosOptions);
+    return costsAlertasPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -477,13 +484,13 @@ export type CostsAlertasPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasPartialUpdate>>
 >;
 export type CostsAlertasPartialUpdateMutationBody = PatchedAlertaRequest;
-export type CostsAlertasPartialUpdateMutationError = AxiosError<unknown>;
+export type CostsAlertasPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar alerta parcialmente
  */
 export const useCostsAlertasPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -493,7 +500,6 @@ export const useCostsAlertasPartialUpdate = <
       { id: number; data: PatchedAlertaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -510,17 +516,17 @@ export const useCostsAlertasPartialUpdate = <
  * Remove uma alerta existente.
  * @summary Excluir alerta
  */
-export const costsAlertasDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const costsAlertasDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/costs/alertas/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/costs/alertas/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCostsAlertasDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -529,7 +535,6 @@ export const getCostsAlertasDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasDestroy>>,
   TError,
@@ -537,13 +542,13 @@ export const getCostsAlertasDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasDestroy>>,
@@ -551,7 +556,7 @@ export const getCostsAlertasDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return costsAlertasDestroy(id, axiosOptions);
+    return costsAlertasDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -561,13 +566,13 @@ export type CostsAlertasDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasDestroy>>
 >;
 
-export type CostsAlertasDestroyMutationError = AxiosError<unknown>;
+export type CostsAlertasDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir alerta
  */
 export const useCostsAlertasDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -577,7 +582,6 @@ export const useCostsAlertasDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -598,20 +602,22 @@ Opcionalmente, pode incluir uma justificativa para ignorar o alerta.
 export const costsAlertasIgnorarCreate = (
   id: MaybeRef<number>,
   alertaRequest: MaybeRef<AlertaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   alertaRequest = unref(alertaRequest);
 
-  return axios.post(
-    `/api/costs/alertas/${id}/ignorar/`,
-    alertaRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/costs/alertas/${id}/ignorar/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: alertaRequest,
+    signal,
+  });
 };
 
 export const getCostsAlertasIgnorarCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -620,7 +626,6 @@ export const getCostsAlertasIgnorarCreateMutationOptions = <
     { id: number; data: AlertaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasIgnorarCreate>>,
   TError,
@@ -628,13 +633,13 @@ export const getCostsAlertasIgnorarCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasIgnorarCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasIgnorarCreate>>,
@@ -642,7 +647,7 @@ export const getCostsAlertasIgnorarCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsAlertasIgnorarCreate(id, data, axiosOptions);
+    return costsAlertasIgnorarCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -652,13 +657,13 @@ export type CostsAlertasIgnorarCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasIgnorarCreate>>
 >;
 export type CostsAlertasIgnorarCreateMutationBody = AlertaRequest;
-export type CostsAlertasIgnorarCreateMutationError = AxiosError<unknown>;
+export type CostsAlertasIgnorarCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Marcar alertas como ignorado
  */
 export const useCostsAlertasIgnorarCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -668,7 +673,6 @@ export const useCostsAlertasIgnorarCreate = <
       { id: number; data: AlertaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -689,20 +693,22 @@ Opcionalmente, pode incluir uma observação sobre a resolução.
 export const costsAlertasResolverCreate = (
   id: MaybeRef<number>,
   alertaRequest: MaybeRef<AlertaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   alertaRequest = unref(alertaRequest);
 
-  return axios.post(
-    `/api/costs/alertas/${id}/resolver/`,
-    alertaRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/costs/alertas/${id}/resolver/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: alertaRequest,
+    signal,
+  });
 };
 
 export const getCostsAlertasResolverCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -711,7 +717,6 @@ export const getCostsAlertasResolverCreateMutationOptions = <
     { id: number; data: AlertaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsAlertasResolverCreate>>,
   TError,
@@ -719,13 +724,13 @@ export const getCostsAlertasResolverCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsAlertasResolverCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsAlertasResolverCreate>>,
@@ -733,7 +738,7 @@ export const getCostsAlertasResolverCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsAlertasResolverCreate(id, data, axiosOptions);
+    return costsAlertasResolverCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -743,13 +748,13 @@ export type CostsAlertasResolverCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasResolverCreate>>
 >;
 export type CostsAlertasResolverCreateMutationBody = AlertaRequest;
-export type CostsAlertasResolverCreateMutationError = AxiosError<unknown>;
+export type CostsAlertasResolverCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Marcar alertas como resolvido
  */
 export const useCostsAlertasResolverCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -759,7 +764,6 @@ export const useCostsAlertasResolverCreate = <
       { id: number; data: AlertaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -777,10 +781,12 @@ export const useCostsAlertasResolverCreate = <
 Permite filtrar por projeto, tarefa e tipo.
  * @summary Listar alertas com status ATIVO
  */
-export const costsAlertasPendentesRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/costs/alertas/pendentes/`, options);
+export const costsAlertasPendentesRetrieve = (signal?: AbortSignal) => {
+  return customMutator<void>({
+    url: `/api/costs/alertas/pendentes/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsAlertasPendentesRetrieveQueryKey = () => {
@@ -789,7 +795,7 @@ export const getCostsAlertasPendentesRetrieveQueryKey = () => {
 
 export const getCostsAlertasPendentesRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsAlertasPendentesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -798,16 +804,14 @@ export const getCostsAlertasPendentesRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsAlertasPendentesRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsAlertasPendentesRetrieve>>
-  > = ({ signal }) =>
-    costsAlertasPendentesRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => costsAlertasPendentesRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsAlertasPendentesRetrieve>>,
@@ -819,7 +823,7 @@ export const getCostsAlertasPendentesRetrieveQueryOptions = <
 export type CostsAlertasPendentesRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsAlertasPendentesRetrieve>>
 >;
-export type CostsAlertasPendentesRetrieveQueryError = AxiosError<unknown>;
+export type CostsAlertasPendentesRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar alertas com status ATIVO
@@ -827,7 +831,7 @@ export type CostsAlertasPendentesRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsAlertasPendentesRetrieve<
   TData = Awaited<ReturnType<typeof costsAlertasPendentesRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -837,7 +841,6 @@ export function useCostsAlertasPendentesRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -865,13 +868,15 @@ export function useCostsAlertasPendentesRetrieve<
  */
 export const costsCategoriasList = (
   params?: MaybeRef<CostsCategoriasListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedCategoriaList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/costs/categorias/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedCategoriaList>({
+    url: `/api/costs/categorias/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -883,7 +888,7 @@ export const getCostsCategoriasListQueryKey = (
 
 export const getCostsCategoriasListQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCategoriasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsCategoriasListParams>,
   options?: {
@@ -894,16 +899,15 @@ export const getCostsCategoriasListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCategoriasListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCategoriasList>>
-  > = ({ signal }) => costsCategoriasList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => costsCategoriasList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCategoriasList>>,
@@ -915,7 +919,7 @@ export const getCostsCategoriasListQueryOptions = <
 export type CostsCategoriasListQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasList>>
 >;
-export type CostsCategoriasListQueryError = AxiosError<unknown>;
+export type CostsCategoriasListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar categorias
@@ -923,7 +927,7 @@ export type CostsCategoriasListQueryError = AxiosError<unknown>;
 
 export function useCostsCategoriasList<
   TData = Awaited<ReturnType<typeof costsCategoriasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsCategoriasListParams>,
   options?: {
@@ -934,7 +938,6 @@ export function useCostsCategoriasList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -962,15 +965,21 @@ export function useCostsCategoriasList<
  */
 export const costsCategoriasCreate = (
   categoriaRequest: MaybeRef<CategoriaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Categoria>> => {
+  signal?: AbortSignal,
+) => {
   categoriaRequest = unref(categoriaRequest);
 
-  return axios.post(`/api/costs/categorias/`, categoriaRequest, options);
+  return customMutator<Categoria>({
+    url: `/api/costs/categorias/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: categoriaRequest,
+    signal,
+  });
 };
 
 export const getCostsCategoriasCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -979,7 +988,6 @@ export const getCostsCategoriasCreateMutationOptions = <
     { data: CategoriaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCategoriasCreate>>,
   TError,
@@ -987,13 +995,13 @@ export const getCostsCategoriasCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCategoriasCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCategoriasCreate>>,
@@ -1001,7 +1009,7 @@ export const getCostsCategoriasCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return costsCategoriasCreate(data, axiosOptions);
+    return costsCategoriasCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1011,13 +1019,13 @@ export type CostsCategoriasCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasCreate>>
 >;
 export type CostsCategoriasCreateMutationBody = CategoriaRequest;
-export type CostsCategoriasCreateMutationError = AxiosError<unknown>;
+export type CostsCategoriasCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar nova categoria
  */
 export const useCostsCategoriasCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1027,7 +1035,6 @@ export const useCostsCategoriasCreate = <
       { data: CategoriaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1046,11 +1053,15 @@ export const useCostsCategoriasCreate = <
  */
 export const costsCategoriasRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Categoria>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/costs/categorias/${id}/`, options);
+  return customMutator<Categoria>({
+    url: `/api/costs/categorias/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCategoriasRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -1059,7 +1070,7 @@ export const getCostsCategoriasRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getCostsCategoriasRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCategoriasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1070,16 +1081,15 @@ export const getCostsCategoriasRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCategoriasRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCategoriasRetrieve>>
-  > = ({ signal }) => costsCategoriasRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => costsCategoriasRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1096,7 +1106,7 @@ export const getCostsCategoriasRetrieveQueryOptions = <
 export type CostsCategoriasRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasRetrieve>>
 >;
-export type CostsCategoriasRetrieveQueryError = AxiosError<unknown>;
+export type CostsCategoriasRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da categoria
@@ -1104,7 +1114,7 @@ export type CostsCategoriasRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsCategoriasRetrieve<
   TData = Awaited<ReturnType<typeof costsCategoriasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1115,7 +1125,6 @@ export function useCostsCategoriasRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1144,16 +1153,20 @@ export function useCostsCategoriasRetrieve<
 export const costsCategoriasUpdate = (
   id: MaybeRef<number>,
   categoriaRequest: MaybeRef<CategoriaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Categoria>> => {
+) => {
   id = unref(id);
   categoriaRequest = unref(categoriaRequest);
 
-  return axios.put(`/api/costs/categorias/${id}/`, categoriaRequest, options);
+  return customMutator<Categoria>({
+    url: `/api/costs/categorias/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: categoriaRequest,
+  });
 };
 
 export const getCostsCategoriasUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1162,7 +1175,6 @@ export const getCostsCategoriasUpdateMutationOptions = <
     { id: number; data: CategoriaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCategoriasUpdate>>,
   TError,
@@ -1170,13 +1182,13 @@ export const getCostsCategoriasUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCategoriasUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCategoriasUpdate>>,
@@ -1184,7 +1196,7 @@ export const getCostsCategoriasUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsCategoriasUpdate(id, data, axiosOptions);
+    return costsCategoriasUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1194,13 +1206,13 @@ export type CostsCategoriasUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasUpdate>>
 >;
 export type CostsCategoriasUpdateMutationBody = CategoriaRequest;
-export type CostsCategoriasUpdateMutationError = AxiosError<unknown>;
+export type CostsCategoriasUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar categoria
  */
 export const useCostsCategoriasUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1210,7 +1222,6 @@ export const useCostsCategoriasUpdate = <
       { id: number; data: CategoriaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1230,20 +1241,20 @@ export const useCostsCategoriasUpdate = <
 export const costsCategoriasPartialUpdate = (
   id: MaybeRef<number>,
   patchedCategoriaRequest: MaybeRef<PatchedCategoriaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Categoria>> => {
+) => {
   id = unref(id);
   patchedCategoriaRequest = unref(patchedCategoriaRequest);
 
-  return axios.patch(
-    `/api/costs/categorias/${id}/`,
-    patchedCategoriaRequest,
-    options,
-  );
+  return customMutator<Categoria>({
+    url: `/api/costs/categorias/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedCategoriaRequest,
+  });
 };
 
 export const getCostsCategoriasPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1252,7 +1263,6 @@ export const getCostsCategoriasPartialUpdateMutationOptions = <
     { id: number; data: PatchedCategoriaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCategoriasPartialUpdate>>,
   TError,
@@ -1260,13 +1270,13 @@ export const getCostsCategoriasPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCategoriasPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCategoriasPartialUpdate>>,
@@ -1274,7 +1284,7 @@ export const getCostsCategoriasPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsCategoriasPartialUpdate(id, data, axiosOptions);
+    return costsCategoriasPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1284,13 +1294,13 @@ export type CostsCategoriasPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasPartialUpdate>>
 >;
 export type CostsCategoriasPartialUpdateMutationBody = PatchedCategoriaRequest;
-export type CostsCategoriasPartialUpdateMutationError = AxiosError<unknown>;
+export type CostsCategoriasPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar categoria parcialmente
  */
 export const useCostsCategoriasPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1300,7 +1310,6 @@ export const useCostsCategoriasPartialUpdate = <
       { id: number; data: PatchedCategoriaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1318,17 +1327,17 @@ export const useCostsCategoriasPartialUpdate = <
  * Remove uma categoria existente.
  * @summary Excluir categoria
  */
-export const costsCategoriasDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const costsCategoriasDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/costs/categorias/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/costs/categorias/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCostsCategoriasDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1337,7 +1346,6 @@ export const getCostsCategoriasDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCategoriasDestroy>>,
   TError,
@@ -1345,13 +1353,13 @@ export const getCostsCategoriasDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCategoriasDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCategoriasDestroy>>,
@@ -1359,7 +1367,7 @@ export const getCostsCategoriasDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return costsCategoriasDestroy(id, axiosOptions);
+    return costsCategoriasDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1369,13 +1377,13 @@ export type CostsCategoriasDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCategoriasDestroy>>
 >;
 
-export type CostsCategoriasDestroyMutationError = AxiosError<unknown>;
+export type CostsCategoriasDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir categoria
  */
 export const useCostsCategoriasDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1385,7 +1393,6 @@ export const useCostsCategoriasDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1404,13 +1411,15 @@ export const useCostsCategoriasDestroy = <
  */
 export const costsCustosList = (
   params?: MaybeRef<CostsCustosListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedCustoListList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/costs/custos/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedCustoListList>({
+    url: `/api/costs/custos/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1422,7 +1431,7 @@ export const getCostsCustosListQueryKey = (
 
 export const getCostsCustosListQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsCustosListParams>,
   options?: {
@@ -1433,16 +1442,15 @@ export const getCostsCustosListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosListQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof costsCustosList>>> = ({
     signal,
-  }) => costsCustosList(params, { signal, ...axiosOptions });
+  }) => costsCustosList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCustosList>>,
@@ -1454,7 +1462,7 @@ export const getCostsCustosListQueryOptions = <
 export type CostsCustosListQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosList>>
 >;
-export type CostsCustosListQueryError = AxiosError<unknown>;
+export type CostsCustosListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar custos
@@ -1462,7 +1470,7 @@ export type CostsCustosListQueryError = AxiosError<unknown>;
 
 export function useCostsCustosList<
   TData = Awaited<ReturnType<typeof costsCustosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsCustosListParams>,
   options?: {
@@ -1473,7 +1481,6 @@ export function useCostsCustosList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1501,15 +1508,21 @@ export function useCostsCustosList<
  */
 export const costsCustosCreate = (
   custoRequest: MaybeRef<CustoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Custo>> => {
+  signal?: AbortSignal,
+) => {
   custoRequest = unref(custoRequest);
 
-  return axios.post(`/api/costs/custos/`, custoRequest, options);
+  return customMutator<Custo>({
+    url: `/api/costs/custos/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: custoRequest,
+    signal,
+  });
 };
 
 export const getCostsCustosCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1518,7 +1531,6 @@ export const getCostsCustosCreateMutationOptions = <
     { data: CustoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCustosCreate>>,
   TError,
@@ -1526,13 +1538,13 @@ export const getCostsCustosCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCustosCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCustosCreate>>,
@@ -1540,7 +1552,7 @@ export const getCostsCustosCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return costsCustosCreate(data, axiosOptions);
+    return costsCustosCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1550,13 +1562,13 @@ export type CostsCustosCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosCreate>>
 >;
 export type CostsCustosCreateMutationBody = CustoRequest;
-export type CostsCustosCreateMutationError = AxiosError<unknown>;
+export type CostsCustosCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo custo
  */
 export const useCostsCustosCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1566,7 +1578,6 @@ export const useCostsCustosCreate = <
       { data: CustoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1585,11 +1596,15 @@ export const useCostsCustosCreate = <
  */
 export const costsCustosRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Custo>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/costs/custos/${id}/`, options);
+  return customMutator<Custo>({
+    url: `/api/costs/custos/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCustosRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -1598,7 +1613,7 @@ export const getCostsCustosRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getCostsCustosRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1609,16 +1624,15 @@ export const getCostsCustosRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCustosRetrieve>>
-  > = ({ signal }) => costsCustosRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => costsCustosRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1635,7 +1649,7 @@ export const getCostsCustosRetrieveQueryOptions = <
 export type CostsCustosRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosRetrieve>>
 >;
-export type CostsCustosRetrieveQueryError = AxiosError<unknown>;
+export type CostsCustosRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do custo
@@ -1643,7 +1657,7 @@ export type CostsCustosRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsCustosRetrieve<
   TData = Awaited<ReturnType<typeof costsCustosRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1654,7 +1668,6 @@ export function useCostsCustosRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1683,16 +1696,20 @@ export function useCostsCustosRetrieve<
 export const costsCustosUpdate = (
   id: MaybeRef<number>,
   custoRequest: MaybeRef<CustoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Custo>> => {
+) => {
   id = unref(id);
   custoRequest = unref(custoRequest);
 
-  return axios.put(`/api/costs/custos/${id}/`, custoRequest, options);
+  return customMutator<Custo>({
+    url: `/api/costs/custos/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: custoRequest,
+  });
 };
 
 export const getCostsCustosUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1701,7 +1718,6 @@ export const getCostsCustosUpdateMutationOptions = <
     { id: number; data: CustoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCustosUpdate>>,
   TError,
@@ -1709,13 +1725,13 @@ export const getCostsCustosUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCustosUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCustosUpdate>>,
@@ -1723,7 +1739,7 @@ export const getCostsCustosUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsCustosUpdate(id, data, axiosOptions);
+    return costsCustosUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1733,13 +1749,13 @@ export type CostsCustosUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosUpdate>>
 >;
 export type CostsCustosUpdateMutationBody = CustoRequest;
-export type CostsCustosUpdateMutationError = AxiosError<unknown>;
+export type CostsCustosUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar custo
  */
 export const useCostsCustosUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1749,7 +1765,6 @@ export const useCostsCustosUpdate = <
       { id: number; data: CustoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1769,16 +1784,20 @@ export const useCostsCustosUpdate = <
 export const costsCustosPartialUpdate = (
   id: MaybeRef<number>,
   patchedCustoRequest: MaybeRef<PatchedCustoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Custo>> => {
+) => {
   id = unref(id);
   patchedCustoRequest = unref(patchedCustoRequest);
 
-  return axios.patch(`/api/costs/custos/${id}/`, patchedCustoRequest, options);
+  return customMutator<Custo>({
+    url: `/api/costs/custos/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedCustoRequest,
+  });
 };
 
 export const getCostsCustosPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1787,7 +1806,6 @@ export const getCostsCustosPartialUpdateMutationOptions = <
     { id: number; data: PatchedCustoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCustosPartialUpdate>>,
   TError,
@@ -1795,13 +1813,13 @@ export const getCostsCustosPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCustosPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCustosPartialUpdate>>,
@@ -1809,7 +1827,7 @@ export const getCostsCustosPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsCustosPartialUpdate(id, data, axiosOptions);
+    return costsCustosPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1819,13 +1837,13 @@ export type CostsCustosPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosPartialUpdate>>
 >;
 export type CostsCustosPartialUpdateMutationBody = PatchedCustoRequest;
-export type CostsCustosPartialUpdateMutationError = AxiosError<unknown>;
+export type CostsCustosPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar custo parcialmente
  */
 export const useCostsCustosPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1835,7 +1853,6 @@ export const useCostsCustosPartialUpdate = <
       { id: number; data: PatchedCustoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1852,17 +1869,17 @@ export const useCostsCustosPartialUpdate = <
  * Remove um custo existente.
  * @summary Excluir custo
  */
-export const costsCustosDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const costsCustosDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/costs/custos/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/costs/custos/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCostsCustosDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1871,7 +1888,6 @@ export const getCostsCustosDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsCustosDestroy>>,
   TError,
@@ -1879,13 +1895,13 @@ export const getCostsCustosDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsCustosDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsCustosDestroy>>,
@@ -1893,7 +1909,7 @@ export const getCostsCustosDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return costsCustosDestroy(id, axiosOptions);
+    return costsCustosDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1903,13 +1919,13 @@ export type CostsCustosDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosDestroy>>
 >;
 
-export type CostsCustosDestroyMutationError = AxiosError<unknown>;
+export type CostsCustosDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir custo
  */
 export const useCostsCustosDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1919,7 +1935,6 @@ export const useCostsCustosDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1937,10 +1952,12 @@ export const useCostsCustosDestroy = <
 Inclui total gasto, gasto mensal, top categorias e alertas recentes.
  * @summary Dashboard financeiro
  */
-export const costsCustosDashboardRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/costs/custos/dashboard/`, options);
+export const costsCustosDashboardRetrieve = (signal?: AbortSignal) => {
+  return customMutator<void>({
+    url: `/api/costs/custos/dashboard/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCustosDashboardRetrieveQueryKey = () => {
@@ -1949,7 +1966,7 @@ export const getCostsCustosDashboardRetrieveQueryKey = () => {
 
 export const getCostsCustosDashboardRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosDashboardRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -1958,15 +1975,14 @@ export const getCostsCustosDashboardRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosDashboardRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCustosDashboardRetrieve>>
-  > = ({ signal }) => costsCustosDashboardRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => costsCustosDashboardRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCustosDashboardRetrieve>>,
@@ -1978,7 +1994,7 @@ export const getCostsCustosDashboardRetrieveQueryOptions = <
 export type CostsCustosDashboardRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosDashboardRetrieve>>
 >;
-export type CostsCustosDashboardRetrieveQueryError = AxiosError<unknown>;
+export type CostsCustosDashboardRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Dashboard financeiro
@@ -1986,7 +2002,7 @@ export type CostsCustosDashboardRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsCustosDashboardRetrieve<
   TData = Awaited<ReturnType<typeof costsCustosDashboardRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -1996,7 +2012,6 @@ export function useCostsCustosDashboardRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2023,10 +2038,12 @@ export function useCostsCustosDashboardRetrieve<
 Agrupa os custos por mês e retorna série temporal.
  * @summary Relatório de gastos mensais
  */
-export const costsCustosRelatorioMensalRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/costs/custos/relatorio_mensal/`, options);
+export const costsCustosRelatorioMensalRetrieve = (signal?: AbortSignal) => {
+  return customMutator<void>({
+    url: `/api/costs/custos/relatorio_mensal/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCustosRelatorioMensalRetrieveQueryKey = () => {
@@ -2035,7 +2052,7 @@ export const getCostsCustosRelatorioMensalRetrieveQueryKey = () => {
 
 export const getCostsCustosRelatorioMensalRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosRelatorioMensalRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -2044,16 +2061,14 @@ export const getCostsCustosRelatorioMensalRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosRelatorioMensalRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCustosRelatorioMensalRetrieve>>
-  > = ({ signal }) =>
-    costsCustosRelatorioMensalRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => costsCustosRelatorioMensalRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCustosRelatorioMensalRetrieve>>,
@@ -2065,7 +2080,7 @@ export const getCostsCustosRelatorioMensalRetrieveQueryOptions = <
 export type CostsCustosRelatorioMensalRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosRelatorioMensalRetrieve>>
 >;
-export type CostsCustosRelatorioMensalRetrieveQueryError = AxiosError<unknown>;
+export type CostsCustosRelatorioMensalRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Relatório de gastos mensais
@@ -2073,7 +2088,7 @@ export type CostsCustosRelatorioMensalRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsCustosRelatorioMensalRetrieve<
   TData = Awaited<ReturnType<typeof costsCustosRelatorioMensalRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -2083,7 +2098,6 @@ export function useCostsCustosRelatorioMensalRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2112,9 +2126,13 @@ Utiliza anotações para calcular percentuais diretamente no banco de dados.
  * @summary Relatório de gastos por categoria
  */
 export const costsCustosRelatorioPorCategoriaRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/costs/custos/relatorio_por_categoria/`, options);
+  signal?: AbortSignal,
+) => {
+  return customMutator<void>({
+    url: `/api/costs/custos/relatorio_por_categoria/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCustosRelatorioPorCategoriaRetrieveQueryKey = () => {
@@ -2123,7 +2141,7 @@ export const getCostsCustosRelatorioPorCategoriaRetrieveQueryKey = () => {
 
 export const getCostsCustosRelatorioPorCategoriaRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosRelatorioPorCategoriaRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -2132,16 +2150,14 @@ export const getCostsCustosRelatorioPorCategoriaRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosRelatorioPorCategoriaRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCustosRelatorioPorCategoriaRetrieve>>
-  > = ({ signal }) =>
-    costsCustosRelatorioPorCategoriaRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => costsCustosRelatorioPorCategoriaRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCustosRelatorioPorCategoriaRetrieve>>,
@@ -2154,7 +2170,7 @@ export type CostsCustosRelatorioPorCategoriaRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosRelatorioPorCategoriaRetrieve>>
 >;
 export type CostsCustosRelatorioPorCategoriaRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Relatório de gastos por categoria
@@ -2162,7 +2178,7 @@ export type CostsCustosRelatorioPorCategoriaRetrieveQueryError =
 
 export function useCostsCustosRelatorioPorCategoriaRetrieve<
   TData = Awaited<ReturnType<typeof costsCustosRelatorioPorCategoriaRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -2172,7 +2188,6 @@ export function useCostsCustosRelatorioPorCategoriaRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2200,9 +2215,13 @@ export function useCostsCustosRelatorioPorCategoriaRetrieve<
  * @summary Relatório de gastos por projeto
  */
 export const costsCustosRelatorioPorProjetoRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/costs/custos/relatorio_por_projeto/`, options);
+  signal?: AbortSignal,
+) => {
+  return customMutator<void>({
+    url: `/api/costs/custos/relatorio_por_projeto/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsCustosRelatorioPorProjetoRetrieveQueryKey = () => {
@@ -2211,7 +2230,7 @@ export const getCostsCustosRelatorioPorProjetoRetrieveQueryKey = () => {
 
 export const getCostsCustosRelatorioPorProjetoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsCustosRelatorioPorProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -2220,16 +2239,14 @@ export const getCostsCustosRelatorioPorProjetoRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsCustosRelatorioPorProjetoRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsCustosRelatorioPorProjetoRetrieve>>
-  > = ({ signal }) =>
-    costsCustosRelatorioPorProjetoRetrieve({ signal, ...axiosOptions });
+  > = ({ signal }) => costsCustosRelatorioPorProjetoRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsCustosRelatorioPorProjetoRetrieve>>,
@@ -2242,7 +2259,7 @@ export type CostsCustosRelatorioPorProjetoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsCustosRelatorioPorProjetoRetrieve>>
 >;
 export type CostsCustosRelatorioPorProjetoRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Relatório de gastos por projeto
@@ -2250,7 +2267,7 @@ export type CostsCustosRelatorioPorProjetoRetrieveQueryError =
 
 export function useCostsCustosRelatorioPorProjetoRetrieve<
   TData = Awaited<ReturnType<typeof costsCustosRelatorioPorProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -2260,7 +2277,6 @@ export function useCostsCustosRelatorioPorProjetoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2289,13 +2305,15 @@ export function useCostsCustosRelatorioPorProjetoRetrieve<
  */
 export const costsOrcamentosProjetoList = (
   params?: MaybeRef<CostsOrcamentosProjetoListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedOrcamentoProjetoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/costs/orcamentos-projeto/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedOrcamentoProjetoList>({
+    url: `/api/costs/orcamentos-projeto/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -2312,7 +2330,7 @@ export const getCostsOrcamentosProjetoListQueryKey = (
 
 export const getCostsOrcamentosProjetoListQueryOptions = <
   TData = Awaited<ReturnType<typeof costsOrcamentosProjetoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsOrcamentosProjetoListParams>,
   options?: {
@@ -2323,17 +2341,15 @@ export const getCostsOrcamentosProjetoListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsOrcamentosProjetoListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoList>>
-  > = ({ signal }) =>
-    costsOrcamentosProjetoList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => costsOrcamentosProjetoList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsOrcamentosProjetoList>>,
@@ -2345,7 +2361,7 @@ export const getCostsOrcamentosProjetoListQueryOptions = <
 export type CostsOrcamentosProjetoListQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosProjetoList>>
 >;
-export type CostsOrcamentosProjetoListQueryError = AxiosError<unknown>;
+export type CostsOrcamentosProjetoListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar custos
@@ -2353,7 +2369,7 @@ export type CostsOrcamentosProjetoListQueryError = AxiosError<unknown>;
 
 export function useCostsOrcamentosProjetoList<
   TData = Awaited<ReturnType<typeof costsOrcamentosProjetoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsOrcamentosProjetoListParams>,
   options?: {
@@ -2364,7 +2380,6 @@ export function useCostsOrcamentosProjetoList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2395,19 +2410,21 @@ export function useCostsOrcamentosProjetoList<
  */
 export const costsOrcamentosProjetoCreate = (
   orcamentoProjetoRequest: MaybeRef<OrcamentoProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoProjeto>> => {
+  signal?: AbortSignal,
+) => {
   orcamentoProjetoRequest = unref(orcamentoProjetoRequest);
 
-  return axios.post(
-    `/api/costs/orcamentos-projeto/`,
-    orcamentoProjetoRequest,
-    options,
-  );
+  return customMutator<OrcamentoProjeto>({
+    url: `/api/costs/orcamentos-projeto/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoProjetoRequest,
+    signal,
+  });
 };
 
 export const getCostsOrcamentosProjetoCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2416,7 +2433,6 @@ export const getCostsOrcamentosProjetoCreateMutationOptions = <
     { data: OrcamentoProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosProjetoCreate>>,
   TError,
@@ -2424,13 +2440,13 @@ export const getCostsOrcamentosProjetoCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosProjetoCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoCreate>>,
@@ -2438,7 +2454,7 @@ export const getCostsOrcamentosProjetoCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return costsOrcamentosProjetoCreate(data, axiosOptions);
+    return costsOrcamentosProjetoCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2448,13 +2464,13 @@ export type CostsOrcamentosProjetoCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosProjetoCreate>>
 >;
 export type CostsOrcamentosProjetoCreateMutationBody = OrcamentoProjetoRequest;
-export type CostsOrcamentosProjetoCreateMutationError = AxiosError<unknown>;
+export type CostsOrcamentosProjetoCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo custo
  */
 export const useCostsOrcamentosProjetoCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2464,7 +2480,6 @@ export const useCostsOrcamentosProjetoCreate = <
       { data: OrcamentoProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2484,11 +2499,15 @@ export const useCostsOrcamentosProjetoCreate = <
  */
 export const costsOrcamentosProjetoRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoProjeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/costs/orcamentos-projeto/${id}/`, options);
+  return customMutator<OrcamentoProjeto>({
+    url: `/api/costs/orcamentos-projeto/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsOrcamentosProjetoRetrieveQueryKey = (
@@ -2499,7 +2518,7 @@ export const getCostsOrcamentosProjetoRetrieveQueryKey = (
 
 export const getCostsOrcamentosProjetoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsOrcamentosProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -2510,17 +2529,15 @@ export const getCostsOrcamentosProjetoRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsOrcamentosProjetoRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoRetrieve>>
-  > = ({ signal }) =>
-    costsOrcamentosProjetoRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => costsOrcamentosProjetoRetrieve(id, signal);
 
   return {
     queryKey,
@@ -2537,7 +2554,7 @@ export const getCostsOrcamentosProjetoRetrieveQueryOptions = <
 export type CostsOrcamentosProjetoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosProjetoRetrieve>>
 >;
-export type CostsOrcamentosProjetoRetrieveQueryError = AxiosError<unknown>;
+export type CostsOrcamentosProjetoRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do custo
@@ -2545,7 +2562,7 @@ export type CostsOrcamentosProjetoRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsOrcamentosProjetoRetrieve<
   TData = Awaited<ReturnType<typeof costsOrcamentosProjetoRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -2556,7 +2573,6 @@ export function useCostsOrcamentosProjetoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -2588,20 +2604,20 @@ export function useCostsOrcamentosProjetoRetrieve<
 export const costsOrcamentosProjetoUpdate = (
   id: MaybeRef<number>,
   orcamentoProjetoRequest: MaybeRef<OrcamentoProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoProjeto>> => {
+) => {
   id = unref(id);
   orcamentoProjetoRequest = unref(orcamentoProjetoRequest);
 
-  return axios.put(
-    `/api/costs/orcamentos-projeto/${id}/`,
-    orcamentoProjetoRequest,
-    options,
-  );
+  return customMutator<OrcamentoProjeto>({
+    url: `/api/costs/orcamentos-projeto/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoProjetoRequest,
+  });
 };
 
 export const getCostsOrcamentosProjetoUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2610,7 +2626,6 @@ export const getCostsOrcamentosProjetoUpdateMutationOptions = <
     { id: number; data: OrcamentoProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosProjetoUpdate>>,
   TError,
@@ -2618,13 +2633,13 @@ export const getCostsOrcamentosProjetoUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosProjetoUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoUpdate>>,
@@ -2632,7 +2647,7 @@ export const getCostsOrcamentosProjetoUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosProjetoUpdate(id, data, axiosOptions);
+    return costsOrcamentosProjetoUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2642,13 +2657,13 @@ export type CostsOrcamentosProjetoUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosProjetoUpdate>>
 >;
 export type CostsOrcamentosProjetoUpdateMutationBody = OrcamentoProjetoRequest;
-export type CostsOrcamentosProjetoUpdateMutationError = AxiosError<unknown>;
+export type CostsOrcamentosProjetoUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar custo
  */
 export const useCostsOrcamentosProjetoUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2658,7 +2673,6 @@ export const useCostsOrcamentosProjetoUpdate = <
       { id: number; data: OrcamentoProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2679,20 +2693,20 @@ export const useCostsOrcamentosProjetoUpdate = <
 export const costsOrcamentosProjetoPartialUpdate = (
   id: MaybeRef<number>,
   patchedOrcamentoProjetoRequest: MaybeRef<PatchedOrcamentoProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoProjeto>> => {
+) => {
   id = unref(id);
   patchedOrcamentoProjetoRequest = unref(patchedOrcamentoProjetoRequest);
 
-  return axios.patch(
-    `/api/costs/orcamentos-projeto/${id}/`,
-    patchedOrcamentoProjetoRequest,
-    options,
-  );
+  return customMutator<OrcamentoProjeto>({
+    url: `/api/costs/orcamentos-projeto/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedOrcamentoProjetoRequest,
+  });
 };
 
 export const getCostsOrcamentosProjetoPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2701,7 +2715,6 @@ export const getCostsOrcamentosProjetoPartialUpdateMutationOptions = <
     { id: number; data: PatchedOrcamentoProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosProjetoPartialUpdate>>,
   TError,
@@ -2709,13 +2722,13 @@ export const getCostsOrcamentosProjetoPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosProjetoPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoPartialUpdate>>,
@@ -2723,7 +2736,7 @@ export const getCostsOrcamentosProjetoPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosProjetoPartialUpdate(id, data, axiosOptions);
+    return costsOrcamentosProjetoPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2735,13 +2748,13 @@ export type CostsOrcamentosProjetoPartialUpdateMutationResult = NonNullable<
 export type CostsOrcamentosProjetoPartialUpdateMutationBody =
   PatchedOrcamentoProjetoRequest;
 export type CostsOrcamentosProjetoPartialUpdateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Atualizar custo parcialmente
  */
 export const useCostsOrcamentosProjetoPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2751,7 +2764,6 @@ export const useCostsOrcamentosProjetoPartialUpdate = <
       { id: number; data: PatchedOrcamentoProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2769,17 +2781,17 @@ export const useCostsOrcamentosProjetoPartialUpdate = <
  * Remove um custo existente.
  * @summary Excluir custo
  */
-export const costsOrcamentosProjetoDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const costsOrcamentosProjetoDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/costs/orcamentos-projeto/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-projeto/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCostsOrcamentosProjetoDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2788,7 +2800,6 @@ export const getCostsOrcamentosProjetoDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosProjetoDestroy>>,
   TError,
@@ -2796,13 +2807,13 @@ export const getCostsOrcamentosProjetoDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosProjetoDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoDestroy>>,
@@ -2810,7 +2821,7 @@ export const getCostsOrcamentosProjetoDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return costsOrcamentosProjetoDestroy(id, axiosOptions);
+    return costsOrcamentosProjetoDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2820,13 +2831,13 @@ export type CostsOrcamentosProjetoDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosProjetoDestroy>>
 >;
 
-export type CostsOrcamentosProjetoDestroyMutationError = AxiosError<unknown>;
+export type CostsOrcamentosProjetoDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir custo
  */
 export const useCostsOrcamentosProjetoDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2836,7 +2847,6 @@ export const useCostsOrcamentosProjetoDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2858,20 +2868,22 @@ Mantém histórico da alteração no campo de observações.
 export const costsOrcamentosProjetoAjustarOrcamentoCreate = (
   id: MaybeRef<number>,
   orcamentoProjetoRequest: MaybeRef<OrcamentoProjetoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   orcamentoProjetoRequest = unref(orcamentoProjetoRequest);
 
-  return axios.post(
-    `/api/costs/orcamentos-projeto/${id}/ajustar_orcamento/`,
-    orcamentoProjetoRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-projeto/${id}/ajustar_orcamento/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoProjetoRequest,
+    signal,
+  });
 };
 
 export const getCostsOrcamentosProjetoAjustarOrcamentoCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2880,7 +2892,6 @@ export const getCostsOrcamentosProjetoAjustarOrcamentoCreateMutationOptions = <
     { id: number; data: OrcamentoProjetoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosProjetoAjustarOrcamentoCreate>>,
   TError,
@@ -2888,13 +2899,13 @@ export const getCostsOrcamentosProjetoAjustarOrcamentoCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosProjetoAjustarOrcamentoCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosProjetoAjustarOrcamentoCreate>>,
@@ -2902,7 +2913,7 @@ export const getCostsOrcamentosProjetoAjustarOrcamentoCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosProjetoAjustarOrcamentoCreate(id, data, axiosOptions);
+    return costsOrcamentosProjetoAjustarOrcamentoCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -2915,13 +2926,13 @@ export type CostsOrcamentosProjetoAjustarOrcamentoCreateMutationResult =
 export type CostsOrcamentosProjetoAjustarOrcamentoCreateMutationBody =
   OrcamentoProjetoRequest;
 export type CostsOrcamentosProjetoAjustarOrcamentoCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Ajustar orçamento de um projeto
  */
 export const useCostsOrcamentosProjetoAjustarOrcamentoCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -2931,7 +2942,6 @@ export const useCostsOrcamentosProjetoAjustarOrcamentoCreate = <
       { id: number; data: OrcamentoProjetoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -2950,12 +2960,13 @@ export const useCostsOrcamentosProjetoAjustarOrcamentoCreate = <
  * @summary Listar projetos sem orçamento definido
  */
 export const costsOrcamentosProjetoProjetosSemOrcamentoRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(
-    `/api/costs/orcamentos-projeto/projetos_sem_orcamento/`,
-    options,
-  );
+  signal?: AbortSignal,
+) => {
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-projeto/projetos_sem_orcamento/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryKey =
@@ -2973,7 +2984,7 @@ export const getCostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryOptions =
     TData = Awaited<
       ReturnType<typeof costsOrcamentosProjetoProjetosSemOrcamentoRetrieve>
     >,
-    TError = AxiosError<unknown>,
+    TError = ErrorType<unknown>,
   >(options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2984,9 +2995,8 @@ export const getCostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryOptions =
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   }) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions } = options ?? {};
 
     const queryKey =
       getCostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryKey();
@@ -2996,10 +3006,7 @@ export const getCostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryOptions =
         ReturnType<typeof costsOrcamentosProjetoProjetosSemOrcamentoRetrieve>
       >
     > = ({ signal }) =>
-      costsOrcamentosProjetoProjetosSemOrcamentoRetrieve({
-        signal,
-        ...axiosOptions,
-      });
+      costsOrcamentosProjetoProjetosSemOrcamentoRetrieve(signal);
 
     return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
       Awaited<
@@ -3017,7 +3024,7 @@ export type CostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryResult =
     >
   >;
 export type CostsOrcamentosProjetoProjetosSemOrcamentoRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Listar projetos sem orçamento definido
@@ -3027,7 +3034,7 @@ export function useCostsOrcamentosProjetoProjetosSemOrcamentoRetrieve<
   TData = Awaited<
     ReturnType<typeof costsOrcamentosProjetoProjetosSemOrcamentoRetrieve>
   >,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -3039,7 +3046,6 @@ export function useCostsOrcamentosProjetoProjetosSemOrcamentoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -3068,13 +3074,15 @@ export function useCostsOrcamentosProjetoProjetosSemOrcamentoRetrieve<
  */
 export const costsOrcamentosTarefaList = (
   params?: MaybeRef<CostsOrcamentosTarefaListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedOrcamentoTarefaList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/costs/orcamentos-tarefa/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedOrcamentoTarefaList>({
+    url: `/api/costs/orcamentos-tarefa/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -3091,7 +3099,7 @@ export const getCostsOrcamentosTarefaListQueryKey = (
 
 export const getCostsOrcamentosTarefaListQueryOptions = <
   TData = Awaited<ReturnType<typeof costsOrcamentosTarefaList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsOrcamentosTarefaListParams>,
   options?: {
@@ -3102,17 +3110,15 @@ export const getCostsOrcamentosTarefaListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsOrcamentosTarefaListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaList>>
-  > = ({ signal }) =>
-    costsOrcamentosTarefaList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => costsOrcamentosTarefaList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof costsOrcamentosTarefaList>>,
@@ -3124,7 +3130,7 @@ export const getCostsOrcamentosTarefaListQueryOptions = <
 export type CostsOrcamentosTarefaListQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosTarefaList>>
 >;
-export type CostsOrcamentosTarefaListQueryError = AxiosError<unknown>;
+export type CostsOrcamentosTarefaListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar tarefas
@@ -3132,7 +3138,7 @@ export type CostsOrcamentosTarefaListQueryError = AxiosError<unknown>;
 
 export function useCostsOrcamentosTarefaList<
   TData = Awaited<ReturnType<typeof costsOrcamentosTarefaList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<CostsOrcamentosTarefaListParams>,
   options?: {
@@ -3143,7 +3149,6 @@ export function useCostsOrcamentosTarefaList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -3174,19 +3179,21 @@ export function useCostsOrcamentosTarefaList<
  */
 export const costsOrcamentosTarefaCreate = (
   orcamentoTarefaRequest: MaybeRef<OrcamentoTarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoTarefa>> => {
+  signal?: AbortSignal,
+) => {
   orcamentoTarefaRequest = unref(orcamentoTarefaRequest);
 
-  return axios.post(
-    `/api/costs/orcamentos-tarefa/`,
-    orcamentoTarefaRequest,
-    options,
-  );
+  return customMutator<OrcamentoTarefa>({
+    url: `/api/costs/orcamentos-tarefa/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoTarefaRequest,
+    signal,
+  });
 };
 
 export const getCostsOrcamentosTarefaCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -3195,7 +3202,6 @@ export const getCostsOrcamentosTarefaCreateMutationOptions = <
     { data: OrcamentoTarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosTarefaCreate>>,
   TError,
@@ -3203,13 +3209,13 @@ export const getCostsOrcamentosTarefaCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosTarefaCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaCreate>>,
@@ -3217,7 +3223,7 @@ export const getCostsOrcamentosTarefaCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return costsOrcamentosTarefaCreate(data, axiosOptions);
+    return costsOrcamentosTarefaCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3227,13 +3233,13 @@ export type CostsOrcamentosTarefaCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosTarefaCreate>>
 >;
 export type CostsOrcamentosTarefaCreateMutationBody = OrcamentoTarefaRequest;
-export type CostsOrcamentosTarefaCreateMutationError = AxiosError<unknown>;
+export type CostsOrcamentosTarefaCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar nova tarefa
  */
 export const useCostsOrcamentosTarefaCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -3243,7 +3249,6 @@ export const useCostsOrcamentosTarefaCreate = <
       { data: OrcamentoTarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -3263,11 +3268,15 @@ export const useCostsOrcamentosTarefaCreate = <
  */
 export const costsOrcamentosTarefaRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoTarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/costs/orcamentos-tarefa/${id}/`, options);
+  return customMutator<OrcamentoTarefa>({
+    url: `/api/costs/orcamentos-tarefa/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsOrcamentosTarefaRetrieveQueryKey = (
@@ -3278,7 +3287,7 @@ export const getCostsOrcamentosTarefaRetrieveQueryKey = (
 
 export const getCostsOrcamentosTarefaRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof costsOrcamentosTarefaRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -3289,17 +3298,15 @@ export const getCostsOrcamentosTarefaRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getCostsOrcamentosTarefaRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaRetrieve>>
-  > = ({ signal }) =>
-    costsOrcamentosTarefaRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => costsOrcamentosTarefaRetrieve(id, signal);
 
   return {
     queryKey,
@@ -3316,7 +3323,7 @@ export const getCostsOrcamentosTarefaRetrieveQueryOptions = <
 export type CostsOrcamentosTarefaRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosTarefaRetrieve>>
 >;
-export type CostsOrcamentosTarefaRetrieveQueryError = AxiosError<unknown>;
+export type CostsOrcamentosTarefaRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes da tarefa
@@ -3324,7 +3331,7 @@ export type CostsOrcamentosTarefaRetrieveQueryError = AxiosError<unknown>;
 
 export function useCostsOrcamentosTarefaRetrieve<
   TData = Awaited<ReturnType<typeof costsOrcamentosTarefaRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -3335,7 +3342,6 @@ export function useCostsOrcamentosTarefaRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -3367,20 +3373,20 @@ export function useCostsOrcamentosTarefaRetrieve<
 export const costsOrcamentosTarefaUpdate = (
   id: MaybeRef<number>,
   orcamentoTarefaRequest: MaybeRef<OrcamentoTarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoTarefa>> => {
+) => {
   id = unref(id);
   orcamentoTarefaRequest = unref(orcamentoTarefaRequest);
 
-  return axios.put(
-    `/api/costs/orcamentos-tarefa/${id}/`,
-    orcamentoTarefaRequest,
-    options,
-  );
+  return customMutator<OrcamentoTarefa>({
+    url: `/api/costs/orcamentos-tarefa/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoTarefaRequest,
+  });
 };
 
 export const getCostsOrcamentosTarefaUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -3389,7 +3395,6 @@ export const getCostsOrcamentosTarefaUpdateMutationOptions = <
     { id: number; data: OrcamentoTarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosTarefaUpdate>>,
   TError,
@@ -3397,13 +3402,13 @@ export const getCostsOrcamentosTarefaUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosTarefaUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaUpdate>>,
@@ -3411,7 +3416,7 @@ export const getCostsOrcamentosTarefaUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosTarefaUpdate(id, data, axiosOptions);
+    return costsOrcamentosTarefaUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3421,13 +3426,13 @@ export type CostsOrcamentosTarefaUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosTarefaUpdate>>
 >;
 export type CostsOrcamentosTarefaUpdateMutationBody = OrcamentoTarefaRequest;
-export type CostsOrcamentosTarefaUpdateMutationError = AxiosError<unknown>;
+export type CostsOrcamentosTarefaUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar tarefa
  */
 export const useCostsOrcamentosTarefaUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -3437,7 +3442,6 @@ export const useCostsOrcamentosTarefaUpdate = <
       { id: number; data: OrcamentoTarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -3458,20 +3462,20 @@ export const useCostsOrcamentosTarefaUpdate = <
 export const costsOrcamentosTarefaPartialUpdate = (
   id: MaybeRef<number>,
   patchedOrcamentoTarefaRequest: MaybeRef<PatchedOrcamentoTarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<OrcamentoTarefa>> => {
+) => {
   id = unref(id);
   patchedOrcamentoTarefaRequest = unref(patchedOrcamentoTarefaRequest);
 
-  return axios.patch(
-    `/api/costs/orcamentos-tarefa/${id}/`,
-    patchedOrcamentoTarefaRequest,
-    options,
-  );
+  return customMutator<OrcamentoTarefa>({
+    url: `/api/costs/orcamentos-tarefa/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedOrcamentoTarefaRequest,
+  });
 };
 
 export const getCostsOrcamentosTarefaPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -3480,7 +3484,6 @@ export const getCostsOrcamentosTarefaPartialUpdateMutationOptions = <
     { id: number; data: PatchedOrcamentoTarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosTarefaPartialUpdate>>,
   TError,
@@ -3488,13 +3491,13 @@ export const getCostsOrcamentosTarefaPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosTarefaPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaPartialUpdate>>,
@@ -3502,7 +3505,7 @@ export const getCostsOrcamentosTarefaPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosTarefaPartialUpdate(id, data, axiosOptions);
+    return costsOrcamentosTarefaPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3514,13 +3517,13 @@ export type CostsOrcamentosTarefaPartialUpdateMutationResult = NonNullable<
 export type CostsOrcamentosTarefaPartialUpdateMutationBody =
   PatchedOrcamentoTarefaRequest;
 export type CostsOrcamentosTarefaPartialUpdateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Atualizar tarefa parcialmente
  */
 export const useCostsOrcamentosTarefaPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -3530,7 +3533,6 @@ export const useCostsOrcamentosTarefaPartialUpdate = <
       { id: number; data: PatchedOrcamentoTarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -3548,17 +3550,17 @@ export const useCostsOrcamentosTarefaPartialUpdate = <
  * Remove uma tarefa existente.
  * @summary Excluir tarefa
  */
-export const costsOrcamentosTarefaDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const costsOrcamentosTarefaDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/costs/orcamentos-tarefa/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-tarefa/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getCostsOrcamentosTarefaDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -3567,7 +3569,6 @@ export const getCostsOrcamentosTarefaDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosTarefaDestroy>>,
   TError,
@@ -3575,13 +3576,13 @@ export const getCostsOrcamentosTarefaDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosTarefaDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaDestroy>>,
@@ -3589,7 +3590,7 @@ export const getCostsOrcamentosTarefaDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return costsOrcamentosTarefaDestroy(id, axiosOptions);
+    return costsOrcamentosTarefaDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3599,13 +3600,13 @@ export type CostsOrcamentosTarefaDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof costsOrcamentosTarefaDestroy>>
 >;
 
-export type CostsOrcamentosTarefaDestroyMutationError = AxiosError<unknown>;
+export type CostsOrcamentosTarefaDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir tarefa
  */
 export const useCostsOrcamentosTarefaDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -3615,7 +3616,6 @@ export const useCostsOrcamentosTarefaDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -3637,20 +3637,22 @@ Mantém histórico da alteração no campo de observações.
 export const costsOrcamentosTarefaAjustarOrcamentoCreate = (
   id: MaybeRef<number>,
   orcamentoTarefaRequest: MaybeRef<OrcamentoTarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   orcamentoTarefaRequest = unref(orcamentoTarefaRequest);
 
-  return axios.post(
-    `/api/costs/orcamentos-tarefa/${id}/ajustar_orcamento/`,
-    orcamentoTarefaRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-tarefa/${id}/ajustar_orcamento/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: orcamentoTarefaRequest,
+    signal,
+  });
 };
 
 export const getCostsOrcamentosTarefaAjustarOrcamentoCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -3659,7 +3661,6 @@ export const getCostsOrcamentosTarefaAjustarOrcamentoCreateMutationOptions = <
     { id: number; data: OrcamentoTarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof costsOrcamentosTarefaAjustarOrcamentoCreate>>,
   TError,
@@ -3667,13 +3668,13 @@ export const getCostsOrcamentosTarefaAjustarOrcamentoCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["costsOrcamentosTarefaAjustarOrcamentoCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaAjustarOrcamentoCreate>>,
@@ -3681,7 +3682,7 @@ export const getCostsOrcamentosTarefaAjustarOrcamentoCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return costsOrcamentosTarefaAjustarOrcamentoCreate(id, data, axiosOptions);
+    return costsOrcamentosTarefaAjustarOrcamentoCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3694,13 +3695,13 @@ export type CostsOrcamentosTarefaAjustarOrcamentoCreateMutationResult =
 export type CostsOrcamentosTarefaAjustarOrcamentoCreateMutationBody =
   OrcamentoTarefaRequest;
 export type CostsOrcamentosTarefaAjustarOrcamentoCreateMutationError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Ajustar orçamento de uma tarefas
  */
 export const useCostsOrcamentosTarefaAjustarOrcamentoCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -3710,7 +3711,6 @@ export const useCostsOrcamentosTarefaAjustarOrcamentoCreate = <
       { id: number; data: OrcamentoTarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -3729,12 +3729,13 @@ export const useCostsOrcamentosTarefaAjustarOrcamentoCreate = <
  * @summary Listar tarefas sem orçamento
  */
 export const costsOrcamentosTarefaTarefasSemOrcamentoRetrieve = (
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-  return axios.get(
-    `/api/costs/orcamentos-tarefa/tarefas_sem_orcamento/`,
-    options,
-  );
+  signal?: AbortSignal,
+) => {
+  return customMutator<void>({
+    url: `/api/costs/orcamentos-tarefa/tarefas_sem_orcamento/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getCostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryKey =
@@ -3751,7 +3752,7 @@ export const getCostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryOptions = <
   TData = Awaited<
     ReturnType<typeof costsOrcamentosTarefaTarefasSemOrcamentoRetrieve>
   >,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -3762,20 +3763,15 @@ export const getCostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey =
     getCostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof costsOrcamentosTarefaTarefasSemOrcamentoRetrieve>>
-  > = ({ signal }) =>
-    costsOrcamentosTarefaTarefasSemOrcamentoRetrieve({
-      signal,
-      ...axiosOptions,
-    });
+  > = ({ signal }) => costsOrcamentosTarefaTarefasSemOrcamentoRetrieve(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<
@@ -3791,7 +3787,7 @@ export type CostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryResult =
     Awaited<ReturnType<typeof costsOrcamentosTarefaTarefasSemOrcamentoRetrieve>>
   >;
 export type CostsOrcamentosTarefaTarefasSemOrcamentoRetrieveQueryError =
-  AxiosError<unknown>;
+  ErrorType<unknown>;
 
 /**
  * @summary Listar tarefas sem orçamento
@@ -3801,7 +3797,7 @@ export function useCostsOrcamentosTarefaTarefasSemOrcamentoRetrieve<
   TData = Awaited<
     ReturnType<typeof costsOrcamentosTarefaTarefasSemOrcamentoRetrieve>
   >,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -3813,7 +3809,6 @@ export function useCostsOrcamentosTarefaTarefasSemOrcamentoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {

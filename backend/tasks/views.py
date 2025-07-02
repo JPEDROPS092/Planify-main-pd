@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
 
 # Importações de modelos e lógicas de negócio
@@ -123,7 +123,11 @@ class TarefaViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Remover responsável",
         request=AssignUserSerializer,
-        responses={204: OpenApiTypes.NONE},
+        responses={
+            204: OpenApiResponse(description="Responsável removido com sucesso."),
+            401: OpenApiResponse(description="Não autorizado."),
+            404: OpenApiResponse(description="Atribuição não encontrada."),
+        },
         tags=["Tasks"],
     )
     @action(

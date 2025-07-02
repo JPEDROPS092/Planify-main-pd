@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -40,6 +37,9 @@ import type {
   TasksUpdateStatusRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Endpoint para gerenciar Tarefas, suas atribuições, comentários e status.
 Fornece filtragem avançada através de parâmetros de query.
@@ -47,13 +47,15 @@ Fornece filtragem avançada através de parâmetros de query.
  */
 export const tasksTarefasList = (
   params?: MaybeRef<TasksTarefasListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedTarefaListList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/tasks/tarefas/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedTarefaListList>({
+    url: `/api/tasks/tarefas/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -65,7 +67,7 @@ export const getTasksTarefasListQueryKey = (
 
 export const getTasksTarefasListQueryOptions = <
   TData = Awaited<ReturnType<typeof tasksTarefasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TasksTarefasListParams>,
   options?: {
@@ -76,16 +78,15 @@ export const getTasksTarefasListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTasksTarefasListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof tasksTarefasList>>
-  > = ({ signal }) => tasksTarefasList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => tasksTarefasList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof tasksTarefasList>>,
@@ -97,7 +98,7 @@ export const getTasksTarefasListQueryOptions = <
 export type TasksTarefasListQueryResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasList>>
 >;
-export type TasksTarefasListQueryError = AxiosError<unknown>;
+export type TasksTarefasListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar Tarefas
@@ -105,7 +106,7 @@ export type TasksTarefasListQueryError = AxiosError<unknown>;
 
 export function useTasksTarefasList<
   TData = Awaited<ReturnType<typeof tasksTarefasList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<TasksTarefasListParams>,
   options?: {
@@ -116,7 +117,6 @@ export function useTasksTarefasList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -145,15 +145,21 @@ Fornece filtragem avançada através de parâmetros de query.
  */
 export const tasksTarefasCreate = (
   tarefaRequest: MaybeRef<TarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+  signal?: AbortSignal,
+) => {
   tarefaRequest = unref(tarefaRequest);
 
-  return axios.post(`/api/tasks/tarefas/`, tarefaRequest, options);
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tarefaRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -162,7 +168,6 @@ export const getTasksTarefasCreateMutationOptions = <
     { data: TarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasCreate>>,
   TError,
@@ -170,13 +175,13 @@ export const getTasksTarefasCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasCreate>>,
@@ -184,7 +189,7 @@ export const getTasksTarefasCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return tasksTarefasCreate(data, axiosOptions);
+    return tasksTarefasCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -194,13 +199,13 @@ export type TasksTarefasCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasCreate>>
 >;
 export type TasksTarefasCreateMutationBody = TarefaRequest;
-export type TasksTarefasCreateMutationError = AxiosError<unknown>;
+export type TasksTarefasCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar Tarefa
  */
 export const useTasksTarefasCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -210,7 +215,6 @@ export const useTasksTarefasCreate = <
       { data: TarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -230,11 +234,15 @@ Fornece filtragem avançada através de parâmetros de query.
  */
 export const tasksTarefasRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/tasks/tarefas/${id}/`, options);
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getTasksTarefasRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -243,7 +251,7 @@ export const getTasksTarefasRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getTasksTarefasRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof tasksTarefasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -254,16 +262,15 @@ export const getTasksTarefasRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTasksTarefasRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof tasksTarefasRetrieve>>
-  > = ({ signal }) => tasksTarefasRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => tasksTarefasRetrieve(id, signal);
 
   return {
     queryKey,
@@ -280,7 +287,7 @@ export const getTasksTarefasRetrieveQueryOptions = <
 export type TasksTarefasRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasRetrieve>>
 >;
-export type TasksTarefasRetrieveQueryError = AxiosError<unknown>;
+export type TasksTarefasRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter Tarefa
@@ -288,7 +295,7 @@ export type TasksTarefasRetrieveQueryError = AxiosError<unknown>;
 
 export function useTasksTarefasRetrieve<
   TData = Awaited<ReturnType<typeof tasksTarefasRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -299,7 +306,6 @@ export function useTasksTarefasRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -329,16 +335,20 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasUpdate = (
   id: MaybeRef<number>,
   tarefaRequest: MaybeRef<TarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+) => {
   id = unref(id);
   tarefaRequest = unref(tarefaRequest);
 
-  return axios.put(`/api/tasks/tarefas/${id}/`, tarefaRequest, options);
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: tarefaRequest,
+  });
 };
 
 export const getTasksTarefasUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -347,7 +357,6 @@ export const getTasksTarefasUpdateMutationOptions = <
     { id: number; data: TarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasUpdate>>,
   TError,
@@ -355,13 +364,13 @@ export const getTasksTarefasUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasUpdate>>,
@@ -369,7 +378,7 @@ export const getTasksTarefasUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasUpdate(id, data, axiosOptions);
+    return tasksTarefasUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -379,13 +388,13 @@ export type TasksTarefasUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasUpdate>>
 >;
 export type TasksTarefasUpdateMutationBody = TarefaRequest;
-export type TasksTarefasUpdateMutationError = AxiosError<unknown>;
+export type TasksTarefasUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar Tarefa (Completo)
  */
 export const useTasksTarefasUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -395,7 +404,6 @@ export const useTasksTarefasUpdate = <
       { id: number; data: TarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -416,20 +424,20 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasPartialUpdate = (
   id: MaybeRef<number>,
   patchedTarefaRequest: MaybeRef<PatchedTarefaRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+) => {
   id = unref(id);
   patchedTarefaRequest = unref(patchedTarefaRequest);
 
-  return axios.patch(
-    `/api/tasks/tarefas/${id}/`,
-    patchedTarefaRequest,
-    options,
-  );
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedTarefaRequest,
+  });
 };
 
 export const getTasksTarefasPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -438,7 +446,6 @@ export const getTasksTarefasPartialUpdateMutationOptions = <
     { id: number; data: PatchedTarefaRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasPartialUpdate>>,
   TError,
@@ -446,13 +453,13 @@ export const getTasksTarefasPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasPartialUpdate>>,
@@ -460,7 +467,7 @@ export const getTasksTarefasPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasPartialUpdate(id, data, axiosOptions);
+    return tasksTarefasPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -470,13 +477,13 @@ export type TasksTarefasPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasPartialUpdate>>
 >;
 export type TasksTarefasPartialUpdateMutationBody = PatchedTarefaRequest;
-export type TasksTarefasPartialUpdateMutationError = AxiosError<unknown>;
+export type TasksTarefasPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar Tarefa (Parcial)
  */
 export const useTasksTarefasPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -486,7 +493,6 @@ export const useTasksTarefasPartialUpdate = <
       { id: number; data: PatchedTarefaRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -504,17 +510,17 @@ export const useTasksTarefasPartialUpdate = <
 Fornece filtragem avançada através de parâmetros de query.
  * @summary Excluir Tarefa
  */
-export const tasksTarefasDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const tasksTarefasDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/tasks/tarefas/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/tasks/tarefas/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getTasksTarefasDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -523,7 +529,6 @@ export const getTasksTarefasDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasDestroy>>,
   TError,
@@ -531,13 +536,13 @@ export const getTasksTarefasDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasDestroy>>,
@@ -545,7 +550,7 @@ export const getTasksTarefasDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return tasksTarefasDestroy(id, axiosOptions);
+    return tasksTarefasDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -555,13 +560,13 @@ export type TasksTarefasDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasDestroy>>
 >;
 
-export type TasksTarefasDestroyMutationError = AxiosError<unknown>;
+export type TasksTarefasDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir Tarefa
  */
 export const useTasksTarefasDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -571,7 +576,6 @@ export const useTasksTarefasDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -592,20 +596,22 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasAddCommentCreate = (
   id: MaybeRef<number>,
   tasksAddCommentRequest: MaybeRef<TasksAddCommentRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<ComentarioTarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   tasksAddCommentRequest = unref(tasksAddCommentRequest);
 
-  return axios.post(
-    `/api/tasks/tarefas/${id}/add-comment/`,
-    tasksAddCommentRequest,
-    options,
-  );
+  return customMutator<ComentarioTarefa>({
+    url: `/api/tasks/tarefas/${id}/add-comment/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tasksAddCommentRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasAddCommentCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -614,7 +620,6 @@ export const getTasksTarefasAddCommentCreateMutationOptions = <
     { id: number; data: TasksAddCommentRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasAddCommentCreate>>,
   TError,
@@ -622,13 +627,13 @@ export const getTasksTarefasAddCommentCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasAddCommentCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasAddCommentCreate>>,
@@ -636,7 +641,7 @@ export const getTasksTarefasAddCommentCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasAddCommentCreate(id, data, axiosOptions);
+    return tasksTarefasAddCommentCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -646,13 +651,13 @@ export type TasksTarefasAddCommentCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasAddCommentCreate>>
 >;
 export type TasksTarefasAddCommentCreateMutationBody = TasksAddCommentRequest;
-export type TasksTarefasAddCommentCreateMutationError = AxiosError<unknown>;
+export type TasksTarefasAddCommentCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Adicionar comentário
  */
 export const useTasksTarefasAddCommentCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -662,7 +667,6 @@ export const useTasksTarefasAddCommentCreate = <
       { id: number; data: TasksAddCommentRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -684,20 +688,22 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasAssignUserCreate = (
   id: MaybeRef<number>,
   tasksAssignUserRequest: MaybeRef<TasksAssignUserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<AtribuicaoTarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   tasksAssignUserRequest = unref(tasksAssignUserRequest);
 
-  return axios.post(
-    `/api/tasks/tarefas/${id}/assign-user/`,
-    tasksAssignUserRequest,
-    options,
-  );
+  return customMutator<AtribuicaoTarefa>({
+    url: `/api/tasks/tarefas/${id}/assign-user/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tasksAssignUserRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasAssignUserCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -706,7 +712,6 @@ export const getTasksTarefasAssignUserCreateMutationOptions = <
     { id: number; data: TasksAssignUserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasAssignUserCreate>>,
   TError,
@@ -714,13 +719,13 @@ export const getTasksTarefasAssignUserCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasAssignUserCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasAssignUserCreate>>,
@@ -728,7 +733,7 @@ export const getTasksTarefasAssignUserCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasAssignUserCreate(id, data, axiosOptions);
+    return tasksTarefasAssignUserCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -738,13 +743,13 @@ export type TasksTarefasAssignUserCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasAssignUserCreate>>
 >;
 export type TasksTarefasAssignUserCreateMutationBody = TasksAssignUserRequest;
-export type TasksTarefasAssignUserCreateMutationError = AxiosError<unknown>;
+export type TasksTarefasAssignUserCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atribuir responsável
  */
 export const useTasksTarefasAssignUserCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -754,7 +759,6 @@ export const useTasksTarefasAssignUserCreate = <
       { id: number; data: TasksAssignUserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -776,20 +780,22 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasAssociateSprintCreate = (
   id: MaybeRef<number>,
   tasksAssociarSprintRequest: MaybeRef<TasksAssociarSprintRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   tasksAssociarSprintRequest = unref(tasksAssociarSprintRequest);
 
-  return axios.post(
-    `/api/tasks/tarefas/${id}/associate-sprint/`,
-    tasksAssociarSprintRequest,
-    options,
-  );
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/${id}/associate-sprint/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tasksAssociarSprintRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasAssociateSprintCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -798,7 +804,6 @@ export const getTasksTarefasAssociateSprintCreateMutationOptions = <
     { id: number; data: TasksAssociarSprintRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasAssociateSprintCreate>>,
   TError,
@@ -806,13 +811,13 @@ export const getTasksTarefasAssociateSprintCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasAssociateSprintCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasAssociateSprintCreate>>,
@@ -820,7 +825,7 @@ export const getTasksTarefasAssociateSprintCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasAssociateSprintCreate(id, data, axiosOptions);
+    return tasksTarefasAssociateSprintCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -831,14 +836,13 @@ export type TasksTarefasAssociateSprintCreateMutationResult = NonNullable<
 >;
 export type TasksTarefasAssociateSprintCreateMutationBody =
   TasksAssociarSprintRequest;
-export type TasksTarefasAssociateSprintCreateMutationError =
-  AxiosError<unknown>;
+export type TasksTarefasAssociateSprintCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Associar a uma sprint
  */
 export const useTasksTarefasAssociateSprintCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -848,7 +852,6 @@ export const useTasksTarefasAssociateSprintCreate = <
       { id: number; data: TasksAssociarSprintRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -870,14 +873,16 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasStatusHistoryList = (
   id: MaybeRef<number>,
   params?: MaybeRef<TasksTarefasStatusHistoryListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedHistoricoStatusTarefaList>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   params = unref(params);
 
-  return axios.get(`/api/tasks/tarefas/${id}/status-history/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedHistoricoStatusTarefaList>({
+    url: `/api/tasks/tarefas/${id}/status-history/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -897,7 +902,7 @@ export const getTasksTarefasStatusHistoryListQueryKey = (
 
 export const getTasksTarefasStatusHistoryListQueryOptions = <
   TData = Awaited<ReturnType<typeof tasksTarefasStatusHistoryList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<TasksTarefasStatusHistoryListParams>,
@@ -909,17 +914,15 @@ export const getTasksTarefasStatusHistoryListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getTasksTarefasStatusHistoryListQueryKey(id, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof tasksTarefasStatusHistoryList>>
-  > = ({ signal }) =>
-    tasksTarefasStatusHistoryList(id, params, { signal, ...axiosOptions });
+  > = ({ signal }) => tasksTarefasStatusHistoryList(id, params, signal);
 
   return {
     queryKey,
@@ -936,7 +939,7 @@ export const getTasksTarefasStatusHistoryListQueryOptions = <
 export type TasksTarefasStatusHistoryListQueryResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasStatusHistoryList>>
 >;
-export type TasksTarefasStatusHistoryListQueryError = AxiosError<unknown>;
+export type TasksTarefasStatusHistoryListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter histórico de status
@@ -944,7 +947,7 @@ export type TasksTarefasStatusHistoryListQueryError = AxiosError<unknown>;
 
 export function useTasksTarefasStatusHistoryList<
   TData = Awaited<ReturnType<typeof tasksTarefasStatusHistoryList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   params?: MaybeRef<TasksTarefasStatusHistoryListParams>,
@@ -956,7 +959,6 @@ export function useTasksTarefasStatusHistoryList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -990,20 +992,22 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasUnassignUserCreate = (
   id: MaybeRef<number>,
   tasksAssignUserRequest: MaybeRef<TasksAssignUserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<unknown>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   tasksAssignUserRequest = unref(tasksAssignUserRequest);
 
-  return axios.post(
-    `/api/tasks/tarefas/${id}/unassign-user/`,
-    tasksAssignUserRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/tasks/tarefas/${id}/unassign-user/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tasksAssignUserRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasUnassignUserCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1012,7 +1016,6 @@ export const getTasksTarefasUnassignUserCreateMutationOptions = <
     { id: number; data: TasksAssignUserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasUnassignUserCreate>>,
   TError,
@@ -1020,13 +1023,13 @@ export const getTasksTarefasUnassignUserCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasUnassignUserCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasUnassignUserCreate>>,
@@ -1034,7 +1037,7 @@ export const getTasksTarefasUnassignUserCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasUnassignUserCreate(id, data, axiosOptions);
+    return tasksTarefasUnassignUserCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1044,13 +1047,13 @@ export type TasksTarefasUnassignUserCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof tasksTarefasUnassignUserCreate>>
 >;
 export type TasksTarefasUnassignUserCreateMutationBody = TasksAssignUserRequest;
-export type TasksTarefasUnassignUserCreateMutationError = AxiosError<unknown>;
+export type TasksTarefasUnassignUserCreateMutationError = ErrorType<void>;
 
 /**
  * @summary Remover responsável
  */
 export const useTasksTarefasUnassignUserCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -1060,7 +1063,6 @@ export const useTasksTarefasUnassignUserCreate = <
       { id: number; data: TasksAssignUserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1082,20 +1084,22 @@ Fornece filtragem avançada através de parâmetros de query.
 export const tasksTarefasUpdateStatusCreate = (
   id: MaybeRef<number>,
   tasksUpdateStatusRequest: MaybeRef<TasksUpdateStatusRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Tarefa>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   tasksUpdateStatusRequest = unref(tasksUpdateStatusRequest);
 
-  return axios.post(
-    `/api/tasks/tarefas/${id}/update-status/`,
-    tasksUpdateStatusRequest,
-    options,
-  );
+  return customMutator<Tarefa>({
+    url: `/api/tasks/tarefas/${id}/update-status/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: tasksUpdateStatusRequest,
+    signal,
+  });
 };
 
 export const getTasksTarefasUpdateStatusCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1104,7 +1108,6 @@ export const getTasksTarefasUpdateStatusCreateMutationOptions = <
     { id: number; data: TasksUpdateStatusRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof tasksTarefasUpdateStatusCreate>>,
   TError,
@@ -1112,13 +1115,13 @@ export const getTasksTarefasUpdateStatusCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["tasksTarefasUpdateStatusCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof tasksTarefasUpdateStatusCreate>>,
@@ -1126,7 +1129,7 @@ export const getTasksTarefasUpdateStatusCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return tasksTarefasUpdateStatusCreate(id, data, axiosOptions);
+    return tasksTarefasUpdateStatusCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1137,13 +1140,13 @@ export type TasksTarefasUpdateStatusCreateMutationResult = NonNullable<
 >;
 export type TasksTarefasUpdateStatusCreateMutationBody =
   TasksUpdateStatusRequest;
-export type TasksTarefasUpdateStatusCreateMutationError = AxiosError<unknown>;
+export type TasksTarefasUpdateStatusCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar status
  */
 export const useTasksTarefasUpdateStatusCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -1153,7 +1156,6 @@ export const useTasksTarefasUpdateStatusCreate = <
       { id: number; data: TasksUpdateStatusRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

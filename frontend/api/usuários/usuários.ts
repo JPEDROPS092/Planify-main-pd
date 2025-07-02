@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -33,19 +30,24 @@ import type {
   UsersAdminUsersListParams,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna uma lista paginada de usuários.
  * @summary Listar usuários
  */
 export const usersAdminUsersList = (
   params?: MaybeRef<UsersAdminUsersListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedUserList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/users/admin/users/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedUserList>({
+    url: `/api/users/admin/users/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -63,7 +65,7 @@ export const getUsersAdminUsersListQueryKey = (
 
 export const getUsersAdminUsersListQueryOptions = <
   TData = Awaited<ReturnType<typeof usersAdminUsersList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<UsersAdminUsersListParams>,
   options?: {
@@ -74,16 +76,15 @@ export const getUsersAdminUsersListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getUsersAdminUsersListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof usersAdminUsersList>>
-  > = ({ signal }) => usersAdminUsersList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => usersAdminUsersList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof usersAdminUsersList>>,
@@ -95,7 +96,7 @@ export const getUsersAdminUsersListQueryOptions = <
 export type UsersAdminUsersListQueryResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersList>>
 >;
-export type UsersAdminUsersListQueryError = AxiosError<unknown>;
+export type UsersAdminUsersListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar usuários
@@ -103,7 +104,7 @@ export type UsersAdminUsersListQueryError = AxiosError<unknown>;
 
 export function useUsersAdminUsersList<
   TData = Awaited<ReturnType<typeof usersAdminUsersList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<UsersAdminUsersListParams>,
   options?: {
@@ -114,7 +115,6 @@ export function useUsersAdminUsersList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -142,15 +142,21 @@ export function useUsersAdminUsersList<
  */
 export const usersAdminUsersCreate = (
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<UserCreate>> => {
+  signal?: AbortSignal,
+) => {
   userRequest = unref(userRequest);
 
-  return axios.post(`/api/users/admin/users/`, userRequest, options);
+  return customMutator<UserCreate>({
+    url: `/api/users/admin/users/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+    signal,
+  });
 };
 
 export const getUsersAdminUsersCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -159,7 +165,6 @@ export const getUsersAdminUsersCreateMutationOptions = <
     { data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersCreate>>,
   TError,
@@ -167,13 +172,13 @@ export const getUsersAdminUsersCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersCreate>>,
@@ -181,7 +186,7 @@ export const getUsersAdminUsersCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return usersAdminUsersCreate(data, axiosOptions);
+    return usersAdminUsersCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -191,13 +196,13 @@ export type UsersAdminUsersCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersCreate>>
 >;
 export type UsersAdminUsersCreateMutationBody = UserRequest;
-export type UsersAdminUsersCreateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Criar novo usuário
  */
 export const useUsersAdminUsersCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -207,7 +212,6 @@ export const useUsersAdminUsersCreate = <
       { data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -226,11 +230,15 @@ export const useUsersAdminUsersCreate = <
  */
 export const usersAdminUsersRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<User>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/users/admin/users/${id}/`, options);
+  return customMutator<User>({
+    url: `/api/users/admin/users/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getUsersAdminUsersRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -239,7 +247,7 @@ export const getUsersAdminUsersRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getUsersAdminUsersRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof usersAdminUsersRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -250,16 +258,15 @@ export const getUsersAdminUsersRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getUsersAdminUsersRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof usersAdminUsersRetrieve>>
-  > = ({ signal }) => usersAdminUsersRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => usersAdminUsersRetrieve(id, signal);
 
   return {
     queryKey,
@@ -276,7 +283,7 @@ export const getUsersAdminUsersRetrieveQueryOptions = <
 export type UsersAdminUsersRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersRetrieve>>
 >;
-export type UsersAdminUsersRetrieveQueryError = AxiosError<unknown>;
+export type UsersAdminUsersRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhes do usuário
@@ -284,7 +291,7 @@ export type UsersAdminUsersRetrieveQueryError = AxiosError<unknown>;
 
 export function useUsersAdminUsersRetrieve<
   TData = Awaited<ReturnType<typeof usersAdminUsersRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -295,7 +302,6 @@ export function useUsersAdminUsersRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -324,16 +330,20 @@ export function useUsersAdminUsersRetrieve<
 export const usersAdminUsersUpdate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<User>> => {
+) => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axios.put(`/api/users/admin/users/${id}/`, userRequest, options);
+  return customMutator<User>({
+    url: `/api/users/admin/users/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+  });
 };
 
 export const getUsersAdminUsersUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -342,7 +352,6 @@ export const getUsersAdminUsersUpdateMutationOptions = <
     { id: number; data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersUpdate>>,
   TError,
@@ -350,13 +359,13 @@ export const getUsersAdminUsersUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersUpdate>>,
@@ -364,7 +373,7 @@ export const getUsersAdminUsersUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return usersAdminUsersUpdate(id, data, axiosOptions);
+    return usersAdminUsersUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -374,13 +383,13 @@ export type UsersAdminUsersUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersUpdate>>
 >;
 export type UsersAdminUsersUpdateMutationBody = UserRequest;
-export type UsersAdminUsersUpdateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar usuário
  */
 export const useUsersAdminUsersUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -390,7 +399,6 @@ export const useUsersAdminUsersUpdate = <
       { id: number; data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -410,20 +418,20 @@ export const useUsersAdminUsersUpdate = <
 export const usersAdminUsersPartialUpdate = (
   id: MaybeRef<number>,
   patchedUserRequest: MaybeRef<PatchedUserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<User>> => {
+) => {
   id = unref(id);
   patchedUserRequest = unref(patchedUserRequest);
 
-  return axios.patch(
-    `/api/users/admin/users/${id}/`,
-    patchedUserRequest,
-    options,
-  );
+  return customMutator<User>({
+    url: `/api/users/admin/users/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedUserRequest,
+  });
 };
 
 export const getUsersAdminUsersPartialUpdateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -432,7 +440,6 @@ export const getUsersAdminUsersPartialUpdateMutationOptions = <
     { id: number; data: PatchedUserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersPartialUpdate>>,
   TError,
@@ -440,13 +447,13 @@ export const getUsersAdminUsersPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersPartialUpdate>>,
@@ -454,7 +461,7 @@ export const getUsersAdminUsersPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return usersAdminUsersPartialUpdate(id, data, axiosOptions);
+    return usersAdminUsersPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -464,13 +471,13 @@ export type UsersAdminUsersPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersPartialUpdate>>
 >;
 export type UsersAdminUsersPartialUpdateMutationBody = PatchedUserRequest;
-export type UsersAdminUsersPartialUpdateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersPartialUpdateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Atualizar usuário parcialmente
  */
 export const useUsersAdminUsersPartialUpdate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -480,7 +487,6 @@ export const useUsersAdminUsersPartialUpdate = <
       { id: number; data: PatchedUserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -498,17 +504,17 @@ export const useUsersAdminUsersPartialUpdate = <
  * Remove um usuário existente.
  * @summary Excluir usuário
  */
-export const usersAdminUsersDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const usersAdminUsersDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/users/admin/users/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/users/admin/users/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getUsersAdminUsersDestroyMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -517,7 +523,6 @@ export const getUsersAdminUsersDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersDestroy>>,
   TError,
@@ -525,13 +530,13 @@ export const getUsersAdminUsersDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersDestroy>>,
@@ -539,7 +544,7 @@ export const getUsersAdminUsersDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return usersAdminUsersDestroy(id, axiosOptions);
+    return usersAdminUsersDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -549,13 +554,13 @@ export type UsersAdminUsersDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersDestroy>>
 >;
 
-export type UsersAdminUsersDestroyMutationError = AxiosError<unknown>;
+export type UsersAdminUsersDestroyMutationError = ErrorType<unknown>;
 
 /**
  * @summary Excluir usuário
  */
 export const useUsersAdminUsersDestroy = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -565,7 +570,6 @@ export const useUsersAdminUsersDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -585,20 +589,22 @@ export const useUsersAdminUsersDestroy = <
 export const usersAdminUsersActivateCreate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axios.post(
-    `/api/users/admin/users/${id}/activate/`,
-    userRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/users/admin/users/${id}/activate/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+    signal,
+  });
 };
 
 export const getUsersAdminUsersActivateCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -607,7 +613,6 @@ export const getUsersAdminUsersActivateCreateMutationOptions = <
     { id: number; data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersActivateCreate>>,
   TError,
@@ -615,13 +620,13 @@ export const getUsersAdminUsersActivateCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersActivateCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersActivateCreate>>,
@@ -629,7 +634,7 @@ export const getUsersAdminUsersActivateCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return usersAdminUsersActivateCreate(id, data, axiosOptions);
+    return usersAdminUsersActivateCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -639,13 +644,13 @@ export type UsersAdminUsersActivateCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersActivateCreate>>
 >;
 export type UsersAdminUsersActivateCreateMutationBody = UserRequest;
-export type UsersAdminUsersActivateCreateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersActivateCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Ativar usuário
  */
 export const useUsersAdminUsersActivateCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -655,7 +660,6 @@ export const useUsersAdminUsersActivateCreate = <
       { id: number; data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -676,20 +680,22 @@ export const useUsersAdminUsersActivateCreate = <
 export const usersAdminUsersDeactivateCreate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axios.post(
-    `/api/users/admin/users/${id}/deactivate/`,
-    userRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/users/admin/users/${id}/deactivate/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+    signal,
+  });
 };
 
 export const getUsersAdminUsersDeactivateCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -698,7 +704,6 @@ export const getUsersAdminUsersDeactivateCreateMutationOptions = <
     { id: number; data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersDeactivateCreate>>,
   TError,
@@ -706,13 +711,13 @@ export const getUsersAdminUsersDeactivateCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersDeactivateCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersDeactivateCreate>>,
@@ -720,7 +725,7 @@ export const getUsersAdminUsersDeactivateCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return usersAdminUsersDeactivateCreate(id, data, axiosOptions);
+    return usersAdminUsersDeactivateCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -730,13 +735,13 @@ export type UsersAdminUsersDeactivateCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersDeactivateCreate>>
 >;
 export type UsersAdminUsersDeactivateCreateMutationBody = UserRequest;
-export type UsersAdminUsersDeactivateCreateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersDeactivateCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Desativar usuário
  */
 export const useUsersAdminUsersDeactivateCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -746,7 +751,6 @@ export const useUsersAdminUsersDeactivateCreate = <
       { id: number; data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -767,20 +771,22 @@ export const useUsersAdminUsersDeactivateCreate = <
 export const usersAdminUsersUnlockCreate = (
   id: MaybeRef<number>,
   userRequest: MaybeRef<UserRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   userRequest = unref(userRequest);
 
-  return axios.post(
-    `/api/users/admin/users/${id}/unlock/`,
-    userRequest,
-    options,
-  );
+  return customMutator<void>({
+    url: `/api/users/admin/users/${id}/unlock/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: userRequest,
+    signal,
+  });
 };
 
 export const getUsersAdminUsersUnlockCreateMutationOptions = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -789,7 +795,6 @@ export const getUsersAdminUsersUnlockCreateMutationOptions = <
     { id: number; data: UserRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof usersAdminUsersUnlockCreate>>,
   TError,
@@ -797,13 +802,13 @@ export const getUsersAdminUsersUnlockCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["usersAdminUsersUnlockCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof usersAdminUsersUnlockCreate>>,
@@ -811,7 +816,7 @@ export const getUsersAdminUsersUnlockCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return usersAdminUsersUnlockCreate(id, data, axiosOptions);
+    return usersAdminUsersUnlockCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -821,13 +826,13 @@ export type UsersAdminUsersUnlockCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof usersAdminUsersUnlockCreate>>
 >;
 export type UsersAdminUsersUnlockCreateMutationBody = UserRequest;
-export type UsersAdminUsersUnlockCreateMutationError = AxiosError<unknown>;
+export type UsersAdminUsersUnlockCreateMutationError = ErrorType<unknown>;
 
 /**
  * @summary Desbloquear usuário
  */
 export const useUsersAdminUsersUnlockCreate = <
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
   TContext = unknown,
 >(
   options?: {
@@ -837,7 +842,6 @@ export const useUsersAdminUsersUnlockCreate = <
       { id: number; data: UserRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<

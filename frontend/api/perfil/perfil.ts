@@ -15,19 +15,21 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { unref } from "vue";
+
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
 
 /**
  * Retorna as permissões do usuário autenticado.
  * @summary Retornar minhas permissões
  */
-export const usersMyPermissionsList = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<void>> => {
-  return axios.get(`/api/users/admin/users/permissions/`, options);
+export const usersMyPermissionsList = (signal?: AbortSignal) => {
+  return customMutator<void>({
+    url: `/api/users/admin/users/permissions/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getUsersMyPermissionsListQueryKey = () => {
@@ -36,7 +38,7 @@ export const getUsersMyPermissionsListQueryKey = () => {
 
 export const getUsersMyPermissionsListQueryOptions = <
   TData = Awaited<ReturnType<typeof usersMyPermissionsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
@@ -45,15 +47,14 @@ export const getUsersMyPermissionsListQueryOptions = <
       TData
     >
   >;
-  axios?: AxiosRequestConfig;
 }) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getUsersMyPermissionsListQueryKey();
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof usersMyPermissionsList>>
-  > = ({ signal }) => usersMyPermissionsList({ signal, ...axiosOptions });
+  > = ({ signal }) => usersMyPermissionsList(signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof usersMyPermissionsList>>,
@@ -65,7 +66,7 @@ export const getUsersMyPermissionsListQueryOptions = <
 export type UsersMyPermissionsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof usersMyPermissionsList>>
 >;
-export type UsersMyPermissionsListQueryError = AxiosError<unknown>;
+export type UsersMyPermissionsListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Retornar minhas permissões
@@ -73,7 +74,7 @@ export type UsersMyPermissionsListQueryError = AxiosError<unknown>;
 
 export function useUsersMyPermissionsList<
   TData = Awaited<ReturnType<typeof usersMyPermissionsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   options?: {
     query?: Partial<
@@ -83,9 +84,8 @@ export function useUsersMyPermissionsList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient
+  queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {

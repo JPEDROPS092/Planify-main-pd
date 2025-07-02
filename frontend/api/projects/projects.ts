@@ -15,13 +15,13 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
 import type { HistoricoStatusProjeto } from ".././schemas";
+
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
 
 /**
  * Retorna informações detalhadas de uma alteração específica de status.
@@ -29,11 +29,15 @@ import type { HistoricoStatusProjeto } from ".././schemas";
  */
 export const projectsHistoryRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<HistoricoStatusProjeto>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/projects/history/${id}/`, options);
+  return customMutator<HistoricoStatusProjeto>({
+    url: `/api/projects/history/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getProjectsHistoryRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -42,7 +46,7 @@ export const getProjectsHistoryRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getProjectsHistoryRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof projectsHistoryRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -53,16 +57,15 @@ export const getProjectsHistoryRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getProjectsHistoryRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof projectsHistoryRetrieve>>
-  > = ({ signal }) => projectsHistoryRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => projectsHistoryRetrieve(id, signal);
 
   return {
     queryKey,
@@ -79,7 +82,7 @@ export const getProjectsHistoryRetrieveQueryOptions = <
 export type ProjectsHistoryRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof projectsHistoryRetrieve>>
 >;
-export type ProjectsHistoryRetrieveQueryError = AxiosError<unknown>;
+export type ProjectsHistoryRetrieveQueryError = ErrorType<unknown>;
 
 /**
  * @summary Obter detalhe de alteração de status
@@ -87,7 +90,7 @@ export type ProjectsHistoryRetrieveQueryError = AxiosError<unknown>;
 
 export function useProjectsHistoryRetrieve<
   TData = Awaited<ReturnType<typeof projectsHistoryRetrieve>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -98,7 +101,6 @@ export function useProjectsHistoryRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {

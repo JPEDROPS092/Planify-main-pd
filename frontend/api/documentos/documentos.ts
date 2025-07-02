@@ -18,9 +18,6 @@ import type {
   UseQueryReturnType,
 } from "@tanstack/vue-query";
 
-import axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import { computed, unref } from "vue";
 import type { MaybeRef } from "vue";
 
@@ -40,19 +37,24 @@ import type {
   PatchedDocumentoRequest,
 } from ".././schemas";
 
+import { customMutator } from "../../lib/axios-instance";
+import type { ErrorType } from "../../lib/axios-instance";
+
 /**
  * Retorna a lista de todos os documentos com filtros opcionais.
  * @summary Listar documentos
  */
 export const documentsList = (
   params?: MaybeRef<DocumentsListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedDocumentoListList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/documents/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedDocumentoListList>({
+    url: `/api/documents/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -64,23 +66,22 @@ export const getDocumentsListQueryKey = (
 
 export const getDocumentsListQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsListParams>,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof documentsList>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsListQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsList>>> = ({
     signal,
-  }) => documentsList(params, { signal, ...axiosOptions });
+  }) => documentsList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof documentsList>>,
@@ -92,7 +93,7 @@ export const getDocumentsListQueryOptions = <
 export type DocumentsListQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsList>>
 >;
-export type DocumentsListQueryError = AxiosError<unknown>;
+export type DocumentsListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar documentos
@@ -100,14 +101,13 @@ export type DocumentsListQueryError = AxiosError<unknown>;
 
 export function useDocumentsList<
   TData = Awaited<ReturnType<typeof documentsList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsListParams>,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof documentsList>>, TError, TData>
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -135,15 +135,21 @@ export function useDocumentsList<
  */
 export const documentsCreate = (
   documentoRequest: MaybeRef<DocumentoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Documento>> => {
+  signal?: AbortSignal,
+) => {
   documentoRequest = unref(documentoRequest);
 
-  return axios.post(`/api/documents/`, documentoRequest, options);
+  return customMutator<Documento>({
+    url: `/api/documents/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: documentoRequest,
+    signal,
+  });
 };
 
 export const getDocumentsCreateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -152,7 +158,6 @@ export const getDocumentsCreateMutationOptions = <
     { data: DocumentoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsCreate>>,
   TError,
@@ -160,13 +165,13 @@ export const getDocumentsCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsCreate>>,
@@ -174,7 +179,7 @@ export const getDocumentsCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return documentsCreate(data, axiosOptions);
+    return documentsCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -184,13 +189,13 @@ export type DocumentsCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsCreate>>
 >;
 export type DocumentsCreateMutationBody = DocumentoRequest;
-export type DocumentsCreateMutationError = AxiosError<void>;
+export type DocumentsCreateMutationError = ErrorType<void>;
 
 /**
  * @summary Criar documento
  */
 export const useDocumentsCreate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -200,7 +205,6 @@ export const useDocumentsCreate = <
       { data: DocumentoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -219,11 +223,15 @@ export const useDocumentsCreate = <
  */
 export const documentsRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Documento>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/documents/${id}/`, options);
+  return customMutator<Documento>({
+    url: `/api/documents/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocumentsRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -232,7 +240,7 @@ export const getDocumentsRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getDocumentsRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -243,16 +251,15 @@ export const getDocumentsRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsRetrieve>>
-  > = ({ signal }) => documentsRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsRetrieve(id, signal);
 
   return {
     queryKey,
@@ -269,7 +276,7 @@ export const getDocumentsRetrieveQueryOptions = <
 export type DocumentsRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsRetrieve>>
 >;
-export type DocumentsRetrieveQueryError = AxiosError<void>;
+export type DocumentsRetrieveQueryError = ErrorType<void>;
 
 /**
  * @summary Obter documento
@@ -277,7 +284,7 @@ export type DocumentsRetrieveQueryError = AxiosError<void>;
 
 export function useDocumentsRetrieve<
   TData = Awaited<ReturnType<typeof documentsRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -288,7 +295,6 @@ export function useDocumentsRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -317,16 +323,20 @@ export function useDocumentsRetrieve<
 export const documentsUpdate = (
   id: MaybeRef<number>,
   documentoRequest: MaybeRef<DocumentoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Documento>> => {
+) => {
   id = unref(id);
   documentoRequest = unref(documentoRequest);
 
-  return axios.put(`/api/documents/${id}/`, documentoRequest, options);
+  return customMutator<Documento>({
+    url: `/api/documents/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: documentoRequest,
+  });
 };
 
 export const getDocumentsUpdateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -335,7 +345,6 @@ export const getDocumentsUpdateMutationOptions = <
     { id: number; data: DocumentoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsUpdate>>,
   TError,
@@ -343,13 +352,13 @@ export const getDocumentsUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsUpdate>>,
@@ -357,7 +366,7 @@ export const getDocumentsUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsUpdate(id, data, axiosOptions);
+    return documentsUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -367,13 +376,13 @@ export type DocumentsUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsUpdate>>
 >;
 export type DocumentsUpdateMutationBody = DocumentoRequest;
-export type DocumentsUpdateMutationError = AxiosError<void>;
+export type DocumentsUpdateMutationError = ErrorType<void>;
 
 /**
  * @summary Atualizar documento
  */
 export const useDocumentsUpdate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -383,7 +392,6 @@ export const useDocumentsUpdate = <
       { id: number; data: DocumentoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -403,16 +411,20 @@ export const useDocumentsUpdate = <
 export const documentsPartialUpdate = (
   id: MaybeRef<number>,
   patchedDocumentoRequest: MaybeRef<PatchedDocumentoRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Documento>> => {
+) => {
   id = unref(id);
   patchedDocumentoRequest = unref(patchedDocumentoRequest);
 
-  return axios.patch(`/api/documents/${id}/`, patchedDocumentoRequest, options);
+  return customMutator<Documento>({
+    url: `/api/documents/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedDocumentoRequest,
+  });
 };
 
 export const getDocumentsPartialUpdateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -421,7 +433,6 @@ export const getDocumentsPartialUpdateMutationOptions = <
     { id: number; data: PatchedDocumentoRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsPartialUpdate>>,
   TError,
@@ -429,13 +440,13 @@ export const getDocumentsPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsPartialUpdate>>,
@@ -443,7 +454,7 @@ export const getDocumentsPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsPartialUpdate(id, data, axiosOptions);
+    return documentsPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -453,13 +464,13 @@ export type DocumentsPartialUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsPartialUpdate>>
 >;
 export type DocumentsPartialUpdateMutationBody = PatchedDocumentoRequest;
-export type DocumentsPartialUpdateMutationError = AxiosError<void>;
+export type DocumentsPartialUpdateMutationError = ErrorType<void>;
 
 /**
  * @summary Atualizar documento parcialmente
  */
 export const useDocumentsPartialUpdate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -469,7 +480,6 @@ export const useDocumentsPartialUpdate = <
       { id: number; data: PatchedDocumentoRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -486,17 +496,17 @@ export const useDocumentsPartialUpdate = <
  * Remove um documento do sistema.
  * @summary Excluir documento
  */
-export const documentsDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const documentsDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/documents/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/documents/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getDocumentsDestroyMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -505,7 +515,6 @@ export const getDocumentsDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsDestroy>>,
   TError,
@@ -513,13 +522,13 @@ export const getDocumentsDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsDestroy>>,
@@ -527,7 +536,7 @@ export const getDocumentsDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return documentsDestroy(id, axiosOptions);
+    return documentsDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -537,13 +546,13 @@ export type DocumentsDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsDestroy>>
 >;
 
-export type DocumentsDestroyMutationError = AxiosError<void>;
+export type DocumentsDestroyMutationError = ErrorType<void>;
 
 /**
  * @summary Excluir documento
  */
 export const useDocumentsDestroy = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -553,7 +562,6 @@ export const useDocumentsDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -573,22 +581,24 @@ export const useDocumentsDestroy = <
 export const documentsAdicionarComentarioCreate = (
   id: MaybeRef<number>,
   documentsAdicionarComentarioCreateBody: MaybeRef<unknown>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comentario>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   documentsAdicionarComentarioCreateBody = unref(
     documentsAdicionarComentarioCreateBody,
   );
 
-  return axios.post(
-    `/api/documents/${id}/adicionar_comentario/`,
-    documentsAdicionarComentarioCreateBody,
-    options,
-  );
+  return customMutator<Comentario>({
+    url: `/api/documents/${id}/adicionar_comentario/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: documentsAdicionarComentarioCreateBody,
+    signal,
+  });
 };
 
 export const getDocumentsAdicionarComentarioCreateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -597,7 +607,6 @@ export const getDocumentsAdicionarComentarioCreateMutationOptions = <
     { id: number; data: unknown },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsAdicionarComentarioCreate>>,
   TError,
@@ -605,13 +614,13 @@ export const getDocumentsAdicionarComentarioCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsAdicionarComentarioCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsAdicionarComentarioCreate>>,
@@ -619,7 +628,7 @@ export const getDocumentsAdicionarComentarioCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsAdicionarComentarioCreate(id, data, axiosOptions);
+    return documentsAdicionarComentarioCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -629,13 +638,13 @@ export type DocumentsAdicionarComentarioCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsAdicionarComentarioCreate>>
 >;
 export type DocumentsAdicionarComentarioCreateMutationBody = unknown;
-export type DocumentsAdicionarComentarioCreateMutationError = AxiosError<void>;
+export type DocumentsAdicionarComentarioCreateMutationError = ErrorType<void>;
 
 /**
  * @summary Adicionar comentário ao documento
  */
 export const useDocumentsAdicionarComentarioCreate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -645,7 +654,6 @@ export const useDocumentsAdicionarComentarioCreate = <
       { id: number; data: unknown },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -666,20 +674,22 @@ export const useDocumentsAdicionarComentarioCreate = <
 export const documentsAssociarTarefaCreate = (
   id: MaybeRef<number>,
   documentsAssociarTarefaCreateBody: MaybeRef<unknown>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Documento>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
   documentsAssociarTarefaCreateBody = unref(documentsAssociarTarefaCreateBody);
 
-  return axios.post(
-    `/api/documents/${id}/associar_tarefa/`,
-    documentsAssociarTarefaCreateBody,
-    options,
-  );
+  return customMutator<Documento>({
+    url: `/api/documents/${id}/associar_tarefa/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: documentsAssociarTarefaCreateBody,
+    signal,
+  });
 };
 
 export const getDocumentsAssociarTarefaCreateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -688,7 +698,6 @@ export const getDocumentsAssociarTarefaCreateMutationOptions = <
     { id: number; data: unknown },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsAssociarTarefaCreate>>,
   TError,
@@ -696,13 +705,13 @@ export const getDocumentsAssociarTarefaCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsAssociarTarefaCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsAssociarTarefaCreate>>,
@@ -710,7 +719,7 @@ export const getDocumentsAssociarTarefaCreateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsAssociarTarefaCreate(id, data, axiosOptions);
+    return documentsAssociarTarefaCreate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -720,13 +729,13 @@ export type DocumentsAssociarTarefaCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsAssociarTarefaCreate>>
 >;
 export type DocumentsAssociarTarefaCreateMutationBody = unknown;
-export type DocumentsAssociarTarefaCreateMutationError = AxiosError<void>;
+export type DocumentsAssociarTarefaCreateMutationError = ErrorType<void>;
 
 /**
  * @summary Associar documento a uma tarefa
  */
 export const useDocumentsAssociarTarefaCreate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -736,7 +745,6 @@ export const useDocumentsAssociarTarefaCreate = <
       { id: number; data: unknown },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -756,11 +764,15 @@ export const useDocumentsAssociarTarefaCreate = <
  */
 export const documentsDocumentHistoryRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedHistoricoDocumentoList>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/documents/${id}/document_history/`, options);
+  return customMutator<PaginatedHistoricoDocumentoList>({
+    url: `/api/documents/${id}/document_history/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocumentsDocumentHistoryRetrieveQueryKey = (
@@ -771,7 +783,7 @@ export const getDocumentsDocumentHistoryRetrieveQueryKey = (
 
 export const getDocumentsDocumentHistoryRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsDocumentHistoryRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -782,17 +794,15 @@ export const getDocumentsDocumentHistoryRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsDocumentHistoryRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsDocumentHistoryRetrieve>>
-  > = ({ signal }) =>
-    documentsDocumentHistoryRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsDocumentHistoryRetrieve(id, signal);
 
   return {
     queryKey,
@@ -809,7 +819,7 @@ export const getDocumentsDocumentHistoryRetrieveQueryOptions = <
 export type DocumentsDocumentHistoryRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsDocumentHistoryRetrieve>>
 >;
-export type DocumentsDocumentHistoryRetrieveQueryError = AxiosError<void>;
+export type DocumentsDocumentHistoryRetrieveQueryError = ErrorType<void>;
 
 /**
  * @summary Histórico do documento
@@ -817,7 +827,7 @@ export type DocumentsDocumentHistoryRetrieveQueryError = AxiosError<void>;
 
 export function useDocumentsDocumentHistoryRetrieve<
   TData = Awaited<ReturnType<typeof documentsDocumentHistoryRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -828,7 +838,6 @@ export function useDocumentsDocumentHistoryRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -859,13 +868,15 @@ export function useDocumentsDocumentHistoryRetrieve<
  */
 export const documentsComentariosList = (
   params?: MaybeRef<DocumentsComentariosListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedComentarioList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/documents/comentarios/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedComentarioList>({
+    url: `/api/documents/comentarios/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -882,7 +893,7 @@ export const getDocumentsComentariosListQueryKey = (
 
 export const getDocumentsComentariosListQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsComentariosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsComentariosListParams>,
   options?: {
@@ -893,17 +904,15 @@ export const getDocumentsComentariosListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsComentariosListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsComentariosList>>
-  > = ({ signal }) =>
-    documentsComentariosList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsComentariosList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof documentsComentariosList>>,
@@ -915,7 +924,7 @@ export const getDocumentsComentariosListQueryOptions = <
 export type DocumentsComentariosListQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsComentariosList>>
 >;
-export type DocumentsComentariosListQueryError = AxiosError<unknown>;
+export type DocumentsComentariosListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar comentários de documentos
@@ -923,7 +932,7 @@ export type DocumentsComentariosListQueryError = AxiosError<unknown>;
 
 export function useDocumentsComentariosList<
   TData = Awaited<ReturnType<typeof documentsComentariosList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsComentariosListParams>,
   options?: {
@@ -934,7 +943,6 @@ export function useDocumentsComentariosList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -962,15 +970,21 @@ export function useDocumentsComentariosList<
  */
 export const documentsComentariosCreate = (
   comentarioRequest: MaybeRef<ComentarioRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comentario>> => {
+  signal?: AbortSignal,
+) => {
   comentarioRequest = unref(comentarioRequest);
 
-  return axios.post(`/api/documents/comentarios/`, comentarioRequest, options);
+  return customMutator<Comentario>({
+    url: `/api/documents/comentarios/`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: comentarioRequest,
+    signal,
+  });
 };
 
 export const getDocumentsComentariosCreateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -979,7 +993,6 @@ export const getDocumentsComentariosCreateMutationOptions = <
     { data: ComentarioRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsComentariosCreate>>,
   TError,
@@ -987,13 +1000,13 @@ export const getDocumentsComentariosCreateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsComentariosCreate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsComentariosCreate>>,
@@ -1001,7 +1014,7 @@ export const getDocumentsComentariosCreateMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return documentsComentariosCreate(data, axiosOptions);
+    return documentsComentariosCreate(data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1011,13 +1024,13 @@ export type DocumentsComentariosCreateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsComentariosCreate>>
 >;
 export type DocumentsComentariosCreateMutationBody = ComentarioRequest;
-export type DocumentsComentariosCreateMutationError = AxiosError<void>;
+export type DocumentsComentariosCreateMutationError = ErrorType<void>;
 
 /**
  * @summary Criar um novo comentário
  */
 export const useDocumentsComentariosCreate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -1027,7 +1040,6 @@ export const useDocumentsComentariosCreate = <
       { data: ComentarioRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1046,11 +1058,15 @@ export const useDocumentsComentariosCreate = <
  */
 export const documentsComentariosRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comentario>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/documents/comentarios/${id}/`, options);
+  return customMutator<Comentario>({
+    url: `/api/documents/comentarios/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocumentsComentariosRetrieveQueryKey = (
@@ -1061,7 +1077,7 @@ export const getDocumentsComentariosRetrieveQueryKey = (
 
 export const getDocumentsComentariosRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsComentariosRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1072,17 +1088,15 @@ export const getDocumentsComentariosRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsComentariosRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsComentariosRetrieve>>
-  > = ({ signal }) =>
-    documentsComentariosRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsComentariosRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1099,7 +1113,7 @@ export const getDocumentsComentariosRetrieveQueryOptions = <
 export type DocumentsComentariosRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsComentariosRetrieve>>
 >;
-export type DocumentsComentariosRetrieveQueryError = AxiosError<void>;
+export type DocumentsComentariosRetrieveQueryError = ErrorType<void>;
 
 /**
  * @summary Detalhes de um comentário
@@ -1107,7 +1121,7 @@ export type DocumentsComentariosRetrieveQueryError = AxiosError<void>;
 
 export function useDocumentsComentariosRetrieve<
   TData = Awaited<ReturnType<typeof documentsComentariosRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1118,7 +1132,6 @@ export function useDocumentsComentariosRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1147,20 +1160,20 @@ export function useDocumentsComentariosRetrieve<
 export const documentsComentariosUpdate = (
   id: MaybeRef<number>,
   comentarioRequest: MaybeRef<ComentarioRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comentario>> => {
+) => {
   id = unref(id);
   comentarioRequest = unref(comentarioRequest);
 
-  return axios.put(
-    `/api/documents/comentarios/${id}/`,
-    comentarioRequest,
-    options,
-  );
+  return customMutator<Comentario>({
+    url: `/api/documents/comentarios/${id}/`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: comentarioRequest,
+  });
 };
 
 export const getDocumentsComentariosUpdateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1169,7 +1182,6 @@ export const getDocumentsComentariosUpdateMutationOptions = <
     { id: number; data: ComentarioRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsComentariosUpdate>>,
   TError,
@@ -1177,13 +1189,13 @@ export const getDocumentsComentariosUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsComentariosUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsComentariosUpdate>>,
@@ -1191,7 +1203,7 @@ export const getDocumentsComentariosUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsComentariosUpdate(id, data, axiosOptions);
+    return documentsComentariosUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1201,13 +1213,13 @@ export type DocumentsComentariosUpdateMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsComentariosUpdate>>
 >;
 export type DocumentsComentariosUpdateMutationBody = ComentarioRequest;
-export type DocumentsComentariosUpdateMutationError = AxiosError<void>;
+export type DocumentsComentariosUpdateMutationError = ErrorType<void>;
 
 /**
  * @summary Atualizar um comentário
  */
 export const useDocumentsComentariosUpdate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -1217,7 +1229,6 @@ export const useDocumentsComentariosUpdate = <
       { id: number; data: ComentarioRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1237,20 +1248,20 @@ export const useDocumentsComentariosUpdate = <
 export const documentsComentariosPartialUpdate = (
   id: MaybeRef<number>,
   patchedComentarioRequest: MaybeRef<PatchedComentarioRequest>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<Comentario>> => {
+) => {
   id = unref(id);
   patchedComentarioRequest = unref(patchedComentarioRequest);
 
-  return axios.patch(
-    `/api/documents/comentarios/${id}/`,
-    patchedComentarioRequest,
-    options,
-  );
+  return customMutator<Comentario>({
+    url: `/api/documents/comentarios/${id}/`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: patchedComentarioRequest,
+  });
 };
 
 export const getDocumentsComentariosPartialUpdateMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1259,7 +1270,6 @@ export const getDocumentsComentariosPartialUpdateMutationOptions = <
     { id: number; data: PatchedComentarioRequest },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsComentariosPartialUpdate>>,
   TError,
@@ -1267,13 +1277,13 @@ export const getDocumentsComentariosPartialUpdateMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsComentariosPartialUpdate"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsComentariosPartialUpdate>>,
@@ -1281,7 +1291,7 @@ export const getDocumentsComentariosPartialUpdateMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return documentsComentariosPartialUpdate(id, data, axiosOptions);
+    return documentsComentariosPartialUpdate(id, data);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1292,13 +1302,13 @@ export type DocumentsComentariosPartialUpdateMutationResult = NonNullable<
 >;
 export type DocumentsComentariosPartialUpdateMutationBody =
   PatchedComentarioRequest;
-export type DocumentsComentariosPartialUpdateMutationError = AxiosError<void>;
+export type DocumentsComentariosPartialUpdateMutationError = ErrorType<void>;
 
 /**
  * @summary Atualizar parcialmente um comentário
  */
 export const useDocumentsComentariosPartialUpdate = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -1308,7 +1318,6 @@ export const useDocumentsComentariosPartialUpdate = <
       { id: number; data: PatchedComentarioRequest },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1326,17 +1335,17 @@ export const useDocumentsComentariosPartialUpdate = <
  * Remove um comentário do sistema. Somente o autor ou um administrador pode excluí-lo.
  * @summary Excluir um comentário
  */
-export const documentsComentariosDestroy = (
-  id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
+export const documentsComentariosDestroy = (id: MaybeRef<number>) => {
   id = unref(id);
 
-  return axios.delete(`/api/documents/comentarios/${id}/`, options);
+  return customMutator<void>({
+    url: `/api/documents/comentarios/${id}/`,
+    method: "DELETE",
+  });
 };
 
 export const getDocumentsComentariosDestroyMutationOptions = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1345,7 +1354,6 @@ export const getDocumentsComentariosDestroyMutationOptions = <
     { id: number },
     TContext
   >;
-  axios?: AxiosRequestConfig;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof documentsComentariosDestroy>>,
   TError,
@@ -1353,13 +1361,13 @@ export const getDocumentsComentariosDestroyMutationOptions = <
   TContext
 > => {
   const mutationKey = ["documentsComentariosDestroy"];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
+  const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
       options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
+    : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof documentsComentariosDestroy>>,
@@ -1367,7 +1375,7 @@ export const getDocumentsComentariosDestroyMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return documentsComentariosDestroy(id, axiosOptions);
+    return documentsComentariosDestroy(id);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1377,13 +1385,13 @@ export type DocumentsComentariosDestroyMutationResult = NonNullable<
   Awaited<ReturnType<typeof documentsComentariosDestroy>>
 >;
 
-export type DocumentsComentariosDestroyMutationError = AxiosError<void>;
+export type DocumentsComentariosDestroyMutationError = ErrorType<void>;
 
 /**
  * @summary Excluir um comentário
  */
 export const useDocumentsComentariosDestroy = <
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
@@ -1393,7 +1401,6 @@ export const useDocumentsComentariosDestroy = <
       { id: number },
       TContext
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
@@ -1413,13 +1420,15 @@ export const useDocumentsComentariosDestroy = <
  */
 export const documentsHistoricoList = (
   params?: MaybeRef<DocumentsHistoricoListParams>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<PaginatedHistoricoDocumentoList>> => {
+  signal?: AbortSignal,
+) => {
   params = unref(params);
 
-  return axios.get(`/api/documents/historico/`, {
-    ...options,
-    params: { ...unref(params), ...options?.params },
+  return customMutator<PaginatedHistoricoDocumentoList>({
+    url: `/api/documents/historico/`,
+    method: "GET",
+    params: unref(params),
+    signal,
   });
 };
 
@@ -1436,7 +1445,7 @@ export const getDocumentsHistoricoListQueryKey = (
 
 export const getDocumentsHistoricoListQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsHistoricoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsHistoricoListParams>,
   options?: {
@@ -1447,17 +1456,15 @@ export const getDocumentsHistoricoListQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsHistoricoListQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsHistoricoList>>
-  > = ({ signal }) =>
-    documentsHistoricoList(params, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsHistoricoList(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof documentsHistoricoList>>,
@@ -1469,7 +1476,7 @@ export const getDocumentsHistoricoListQueryOptions = <
 export type DocumentsHistoricoListQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsHistoricoList>>
 >;
-export type DocumentsHistoricoListQueryError = AxiosError<unknown>;
+export type DocumentsHistoricoListQueryError = ErrorType<unknown>;
 
 /**
  * @summary Listar histórico de alterações de documentos
@@ -1477,7 +1484,7 @@ export type DocumentsHistoricoListQueryError = AxiosError<unknown>;
 
 export function useDocumentsHistoricoList<
   TData = Awaited<ReturnType<typeof documentsHistoricoList>>,
-  TError = AxiosError<unknown>,
+  TError = ErrorType<unknown>,
 >(
   params?: MaybeRef<DocumentsHistoricoListParams>,
   options?: {
@@ -1488,7 +1495,6 @@ export function useDocumentsHistoricoList<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
@@ -1516,11 +1522,15 @@ export function useDocumentsHistoricoList<
  */
 export const documentsHistoricoRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
-): Promise<AxiosResponse<HistoricoDocumento>> => {
+  signal?: AbortSignal,
+) => {
   id = unref(id);
 
-  return axios.get(`/api/documents/historico/${id}/`, options);
+  return customMutator<HistoricoDocumento>({
+    url: `/api/documents/historico/${id}/`,
+    method: "GET",
+    signal,
+  });
 };
 
 export const getDocumentsHistoricoRetrieveQueryKey = (id: MaybeRef<number>) => {
@@ -1529,7 +1539,7 @@ export const getDocumentsHistoricoRetrieveQueryKey = (id: MaybeRef<number>) => {
 
 export const getDocumentsHistoricoRetrieveQueryOptions = <
   TData = Awaited<ReturnType<typeof documentsHistoricoRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1540,17 +1550,15 @@ export const getDocumentsHistoricoRetrieveQueryOptions = <
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
 ) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
+  const { query: queryOptions } = options ?? {};
 
   const queryKey = getDocumentsHistoricoRetrieveQueryKey(id);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof documentsHistoricoRetrieve>>
-  > = ({ signal }) =>
-    documentsHistoricoRetrieve(id, { signal, ...axiosOptions });
+  > = ({ signal }) => documentsHistoricoRetrieve(id, signal);
 
   return {
     queryKey,
@@ -1567,7 +1575,7 @@ export const getDocumentsHistoricoRetrieveQueryOptions = <
 export type DocumentsHistoricoRetrieveQueryResult = NonNullable<
   Awaited<ReturnType<typeof documentsHistoricoRetrieve>>
 >;
-export type DocumentsHistoricoRetrieveQueryError = AxiosError<void>;
+export type DocumentsHistoricoRetrieveQueryError = ErrorType<void>;
 
 /**
  * @summary Detalhes de um registro de histórico
@@ -1575,7 +1583,7 @@ export type DocumentsHistoricoRetrieveQueryError = AxiosError<void>;
 
 export function useDocumentsHistoricoRetrieve<
   TData = Awaited<ReturnType<typeof documentsHistoricoRetrieve>>,
-  TError = AxiosError<void>,
+  TError = ErrorType<void>,
 >(
   id: MaybeRef<number>,
   options?: {
@@ -1586,7 +1594,6 @@ export function useDocumentsHistoricoRetrieve<
         TData
       >
     >;
-    axios?: AxiosRequestConfig;
   },
   queryClient?: QueryClient,
 ): UseQueryReturnType<TData, TError> & {
