@@ -1,190 +1,167 @@
+<!-- filepath: pages/login.vue -->
+<template>
+  <div
+    class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+  >
+    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+      <!-- Logo e cabeçalho -->
+      <div class="text-center">
+        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Planify</h2>
+        <p class="mt-2 text-sm text-gray-600">Faça login para continuar</p>
+      </div>
+
+      <!-- Formulário de login -->
+      <form @submit.prevent="handleLogin" class="mt-8 space-y-6">
+        <div class="rounded-md -space-y-px">
+          <div class="mb-4">
+            <label
+              for="username"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Usuário ou Email</label
+            >
+            <input
+              id="username"
+              v-model="credentials.username"
+              type="text"
+              required
+              class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="Digite seu usuário ou email"
+            />
+          </div>
+
+          <div class="mb-4">
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Senha</label
+            >
+            <input
+              id="password"
+              v-model="credentials.password"
+              type="password"
+              required
+              class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="Digite sua senha"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label for="remember-me" class="ml-2 block text-sm text-gray-900"
+              >Lembrar-me</label
+            >
+          </div>
+
+          <div class="text-sm">
+            <a
+              href="#"
+              class="font-medium text-primary-600 hover:text-primary-500"
+              >Esqueceu sua senha?</a
+            >
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+          >
+            <span
+              v-if="isLoading"
+              class="absolute left-0 inset-y-0 flex items-center pl-3"
+            >
+              <svg
+                class="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            </span>
+            {{ isLoading ? "Entrando..." : "Entrar" }}
+          </button>
+        </div>
+
+        <!-- Mensagem de erro -->
+        <div
+          v-if="isError"
+          class="mt-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md"
+        >
+          <p class="flex items-center">
+            <svg
+              class="h-5 w-5 text-red-500 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            {{
+              error?.message || "Verifique suas credenciais e tente novamente"
+            }}
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "~/stores/auth";
-import { Icon } from "@iconify/vue";
-import { useToast } from "~/composables/useToast";
-import type { TokenObtainPairRequest } from "~/api/schemas";
-import { useAuthJwtCreateCreate } from "~/api/auth/auth";
+import { useAuth } from "@/composables/useAuth";
+import type { TokenObtainPairRequest } from "@/api/schemas";
 
+// Define que esta é uma página pública (não requer autenticação)
 definePageMeta({
-  middleware: "guest",
-  layout: false,
+  middleware: ["guest"],
 });
 
-const authStore = useAuthStore();
-const { toast } = useToast();
-const router = useRouter();
+const { login, isLoading, isError, error } = useAuth();
 
-const form = ref<TokenObtainPairRequest>({
+// Dados do formulário
+const credentials = ref<TokenObtainPairRequest>({
   username: "",
   password: "",
 });
 
-// Chama o hook de mutação no setup.
-// A renomeação de 'isPending' para 'isLoading' está correta para o template.
-const { mutateAsync: performLogin, isPending: isLoading } =
-  useAuthJwtCreateCreate();
-
-const handleSubmit = async () => {
-  if (!form.value.username || !form.value.password) {
-    toast({
-      title: "Campos obrigatórios",
-      description: "Por favor, preencha o nome de usuário e a senha.",
-      type: "warning",
-    });
+// Função para lidar com o submit do formulário
+const handleLogin = () => {
+  if (!credentials.value.username || !credentials.value.password) {
+    console.error("Usuário e senha são obrigatórios");
     return;
   }
 
-  try {
-    const response = await performLogin({ data: form.value });
-    await authStore.setAuthData(response.data);
+  console.log("Tentando fazer login com:", {
+    username: credentials.value.username,
+  });
 
-    toast({
-      title: "Sucesso!",
-      description: "Login realizado com sucesso. Bem-vindo de volta!",
-      type: "success",
-    });
-    router.push("/dashboard");
-  } catch (error: any) {
-    console.error("Login falhou no componente:", error);
-    toast({
-      title: "Falha no Login",
-      description:
-        error.response?.data?.detail ||
-        "Nome de usuário ou senha inválidos. Por favor, tente novamente.",
-      type: "error",
-    });
-  }
+  // Execute o login através do composable
+  login(credentials.value);
 };
 </script>
-
-<template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8"
-  >
-    <div class="max-w-md w-full space-y-8">
-      <!-- Cabeçalho - pode ser renderizado no servidor -->
-      <div>
-        <div class="flex justify-center">
-          <div
-            class="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center"
-          >
-            <Icon icon="lucide:layout-dashboard" class="w-8 h-8 text-white" />
-          </div>
-        </div>
-        <h2
-          class="mt-6 text-center text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-        >
-          Planify
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Faça login em sua conta
-        </p>
-      </div>
-
-      <!-- ==================== CORREÇÃO PRINCIPAL ==================== -->
-      <!-- Envolve o formulário com a tag <ClientOnly> para evitar erros de SSR -->
-      <ClientOnly>
-        <div
-          class="bg-white py-8 px-6 shadow-xl rounded-xl border border-gray-100"
-        >
-          <form @submit.prevent="handleSubmit" class="space-y-6">
-            <div>
-              <label
-                for="username"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Nome de usuário
-              </label>
-              <input
-                id="username"
-                v-model="form.username"
-                name="username"
-                type="text"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Seu nome de usuário"
-              />
-            </div>
-
-            <div>
-              <label
-                for="password"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Senha
-              </label>
-              <input
-                id="password"
-                v-model="form.password"
-                name="password"
-                type="password"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Sua senha"
-              />
-            </div>
-
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label for="remember" class="ml-2 block text-sm text-gray-700">
-                  Lembrar de mim
-                </label>
-              </div>
-              <a href="#" class="text-sm text-blue-600 hover:text-blue-500">
-                Esqueceu a senha?
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <Icon
-                v-if="isLoading"
-                icon="lucide:loader-2"
-                class="w-4 h-4 mr-2 animate-spin"
-              />
-              {{ isLoading ? "Entrando..." : "Entrar" }}
-            </button>
-          </form>
-
-          <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">
-              Não tem uma conta?
-              <NuxtLink
-                to="/register"
-                class="text-blue-600 hover:text-blue-500 font-medium"
-              >
-                Criar conta grátis
-              </NuxtLink>
-            </p>
-          </div>
-        </div>
-
-        <!-- Fallback que o Nuxt mostrará no lugar do conteúdo durante o SSR -->
-        <template #fallback>
-          <div
-            class="bg-white py-8 px-6 shadow-xl rounded-xl border border-gray-100 opacity-50"
-          >
-            <p class="text-center text-gray-500">Carregando formulário...</p>
-          </div>
-        </template>
-      </ClientOnly>
-      <!-- ============================================================ -->
-
-      <div class="text-center">
-        <NuxtLink to="/" class="text-sm text-gray-500 hover:text-gray-700">
-          ← Voltar ao início
-        </NuxtLink>
-      </div>
-    </div>
-  </div>
-</template>

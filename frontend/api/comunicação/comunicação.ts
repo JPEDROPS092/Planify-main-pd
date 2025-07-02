@@ -48,7 +48,7 @@ import type {
  */
 export const communicationsConfiguracoesList = (
   params?: MaybeRef<CommunicationsConfiguracoesListParams>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<PaginatedConfiguracaoNotificacaoList>> => {
   params = unref(params);
 
@@ -59,7 +59,7 @@ export const communicationsConfiguracoesList = (
 };
 
 export const getCommunicationsConfiguracoesListQueryKey = (
-  params?: MaybeRef<CommunicationsConfiguracoesListParams>,
+  params?: MaybeRef<CommunicationsConfiguracoesListParams>
 ) => {
   return [
     "api",
@@ -83,7 +83,7 @@ export const getCommunicationsConfiguracoesListQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -125,13 +125,13 @@ export function useCommunicationsConfiguracoesList<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsConfiguracoesListQueryOptions(
     params,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -154,14 +154,14 @@ export function useCommunicationsConfiguracoesList<
  */
 export const communicationsConfiguracoesCreate = (
   configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
 
   return axios.post(
     `/api/communications/configuracoes/`,
     configuracaoNotificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -227,7 +227,7 @@ export const useCommunicationsConfiguracoesCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsConfiguracoesCreate>>,
   TError,
@@ -245,7 +245,7 @@ export const useCommunicationsConfiguracoesCreate = <
  */
 export const communicationsConfiguracoesRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   id = unref(id);
 
@@ -253,7 +253,7 @@ export const communicationsConfiguracoesRetrieve = (
 };
 
 export const getCommunicationsConfiguracoesRetrieveQueryKey = (
-  id: MaybeRef<number>,
+  id: MaybeRef<number>
 ) => {
   return ["api", "communications", "configuracoes", id] as const;
 };
@@ -272,7 +272,7 @@ export const getCommunicationsConfiguracoesRetrieveQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -319,13 +319,13 @@ export function useCommunicationsConfiguracoesRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsConfiguracoesRetrieveQueryOptions(
     id,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -349,7 +349,7 @@ export function useCommunicationsConfiguracoesRetrieve<
 export const communicationsConfiguracoesUpdate = (
   id: MaybeRef<number>,
   configuracaoNotificacaoRequest: MaybeRef<ConfiguracaoNotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   id = unref(id);
   configuracaoNotificacaoRequest = unref(configuracaoNotificacaoRequest);
@@ -357,7 +357,7 @@ export const communicationsConfiguracoesUpdate = (
   return axios.put(
     `/api/communications/configuracoes/${id}/`,
     configuracaoNotificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -423,7 +423,7 @@ export const useCommunicationsConfiguracoesUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsConfiguracoesUpdate>>,
   TError,
@@ -442,17 +442,17 @@ export const useCommunicationsConfiguracoesUpdate = <
 export const communicationsConfiguracoesPartialUpdate = (
   id: MaybeRef<number>,
   patchedConfiguracaoNotificacaoRequest: MaybeRef<PatchedConfiguracaoNotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   id = unref(id);
   patchedConfiguracaoNotificacaoRequest = unref(
-    patchedConfiguracaoNotificacaoRequest,
+    patchedConfiguracaoNotificacaoRequest
   );
 
   return axios.patch(
     `/api/communications/configuracoes/${id}/`,
     patchedConfiguracaoNotificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -519,7 +519,7 @@ export const useCommunicationsConfiguracoesPartialUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsConfiguracoesPartialUpdate>>,
   TError,
@@ -537,7 +537,7 @@ export const useCommunicationsConfiguracoesPartialUpdate = <
  */
 export const communicationsConfiguracoesDestroy = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   id = unref(id);
 
@@ -605,7 +605,7 @@ export const useCommunicationsConfiguracoesDestroy = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsConfiguracoesDestroy>>,
   TError,
@@ -622,11 +622,11 @@ export const useCommunicationsConfiguracoesDestroy = <
  * @summary Ver minha configuração
  */
 export const communicationsConfiguracoesMinhaConfiguracaoRetrieve = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   return axios.get(
     `/api/communications/configuracoes/minha_configuracao/`,
-    options,
+    options
   );
 };
 
@@ -717,13 +717,13 @@ export function useCommunicationsConfiguracoesMinhaConfiguracaoRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions =
     getCommunicationsConfiguracoesMinhaConfiguracaoRetrieveQueryOptions(
-      options,
+      options
     );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -746,7 +746,7 @@ export function useCommunicationsConfiguracoesMinhaConfiguracaoRetrieve<
  */
 export const communicationsMensagensList = (
   params?: MaybeRef<CommunicationsMensagensListParams>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<PaginatedChatMensagemList>> => {
   params = unref(params);
 
@@ -757,7 +757,7 @@ export const communicationsMensagensList = (
 };
 
 export const getCommunicationsMensagensListQueryKey = (
-  params?: MaybeRef<CommunicationsMensagensListParams>,
+  params?: MaybeRef<CommunicationsMensagensListParams>
 ) => {
   return [
     "api",
@@ -781,7 +781,7 @@ export const getCommunicationsMensagensListQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -823,13 +823,13 @@ export function useCommunicationsMensagensList<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsMensagensListQueryOptions(
     params,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -852,14 +852,14 @@ export function useCommunicationsMensagensList<
  */
 export const communicationsMensagensCreate = (
   chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ChatMensagem>> => {
   chatMensagemRequest = unref(chatMensagemRequest);
 
   return axios.post(
     `/api/communications/mensagens/`,
     chatMensagemRequest,
-    options,
+    options
   );
 };
 
@@ -923,7 +923,7 @@ export const useCommunicationsMensagensCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsMensagensCreate>>,
   TError,
@@ -941,7 +941,7 @@ export const useCommunicationsMensagensCreate = <
  */
 export const communicationsMensagensRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ChatMensagem>> => {
   id = unref(id);
 
@@ -949,7 +949,7 @@ export const communicationsMensagensRetrieve = (
 };
 
 export const getCommunicationsMensagensRetrieveQueryKey = (
-  id: MaybeRef<number>,
+  id: MaybeRef<number>
 ) => {
   return ["api", "communications", "mensagens", id] as const;
 };
@@ -968,7 +968,7 @@ export const getCommunicationsMensagensRetrieveQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -1015,13 +1015,13 @@ export function useCommunicationsMensagensRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsMensagensRetrieveQueryOptions(
     id,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -1045,7 +1045,7 @@ export function useCommunicationsMensagensRetrieve<
 export const communicationsMensagensUpdate = (
   id: MaybeRef<number>,
   chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ChatMensagem>> => {
   id = unref(id);
   chatMensagemRequest = unref(chatMensagemRequest);
@@ -1053,7 +1053,7 @@ export const communicationsMensagensUpdate = (
   return axios.put(
     `/api/communications/mensagens/${id}/`,
     chatMensagemRequest,
-    options,
+    options
   );
 };
 
@@ -1117,7 +1117,7 @@ export const useCommunicationsMensagensUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsMensagensUpdate>>,
   TError,
@@ -1136,7 +1136,7 @@ export const useCommunicationsMensagensUpdate = <
 export const communicationsMensagensPartialUpdate = (
   id: MaybeRef<number>,
   patchedChatMensagemRequest: MaybeRef<PatchedChatMensagemRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ChatMensagem>> => {
   id = unref(id);
   patchedChatMensagemRequest = unref(patchedChatMensagemRequest);
@@ -1144,7 +1144,7 @@ export const communicationsMensagensPartialUpdate = (
   return axios.patch(
     `/api/communications/mensagens/${id}/`,
     patchedChatMensagemRequest,
-    options,
+    options
   );
 };
 
@@ -1210,7 +1210,7 @@ export const useCommunicationsMensagensPartialUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsMensagensPartialUpdate>>,
   TError,
@@ -1228,7 +1228,7 @@ export const useCommunicationsMensagensPartialUpdate = <
  */
 export const communicationsMensagensDestroy = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   id = unref(id);
 
@@ -1295,7 +1295,7 @@ export const useCommunicationsMensagensDestroy = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsMensagensDestroy>>,
   TError,
@@ -1321,7 +1321,7 @@ Returns:
 export const communicationsMensagensMarcarComoLidaCreate = (
   id: MaybeRef<number>,
   chatMensagemRequest: MaybeRef<ChatMensagemRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   id = unref(id);
   chatMensagemRequest = unref(chatMensagemRequest);
@@ -1329,7 +1329,7 @@ export const communicationsMensagensMarcarComoLidaCreate = (
   return axios.post(
     `/api/communications/mensagens/${id}/marcar_como_lida/`,
     chatMensagemRequest,
-    options,
+    options
   );
 };
 
@@ -1396,7 +1396,7 @@ export const useCommunicationsMensagensMarcarComoLidaCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsMensagensMarcarComoLidaCreate>>,
   TError,
@@ -1422,11 +1422,11 @@ Returns:
  * @summary Listar mensagens não lidas
  */
 export const communicationsMensagensMensagensNaoLidasRetrieve = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   return axios.get(
     `/api/communications/mensagens/mensagens_nao_lidas/`,
-    options,
+    options
   );
 };
 
@@ -1508,7 +1508,7 @@ export function useCommunicationsMensagensMensagensNaoLidasRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
@@ -1535,7 +1535,7 @@ export function useCommunicationsMensagensMensagensNaoLidasRetrieve<
  */
 export const communicationsNotificacoesList = (
   params?: MaybeRef<CommunicationsNotificacoesListParams>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<PaginatedNotificacaoList>> => {
   params = unref(params);
 
@@ -1546,7 +1546,7 @@ export const communicationsNotificacoesList = (
 };
 
 export const getCommunicationsNotificacoesListQueryKey = (
-  params?: MaybeRef<CommunicationsNotificacoesListParams>,
+  params?: MaybeRef<CommunicationsNotificacoesListParams>
 ) => {
   return [
     "api",
@@ -1570,7 +1570,7 @@ export const getCommunicationsNotificacoesListQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -1612,13 +1612,13 @@ export function useCommunicationsNotificacoesList<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsNotificacoesListQueryOptions(
     params,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -1641,14 +1641,14 @@ export function useCommunicationsNotificacoesList<
  */
 export const communicationsNotificacoesCreate = (
   notificacaoRequest: MaybeRef<NotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Notificacao>> => {
   notificacaoRequest = unref(notificacaoRequest);
 
   return axios.post(
     `/api/communications/notificacoes/`,
     notificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -1712,7 +1712,7 @@ export const useCommunicationsNotificacoesCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsNotificacoesCreate>>,
   TError,
@@ -1730,7 +1730,7 @@ export const useCommunicationsNotificacoesCreate = <
  */
 export const communicationsNotificacoesRetrieve = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Notificacao>> => {
   id = unref(id);
 
@@ -1738,7 +1738,7 @@ export const communicationsNotificacoesRetrieve = (
 };
 
 export const getCommunicationsNotificacoesRetrieveQueryKey = (
-  id: MaybeRef<number>,
+  id: MaybeRef<number>
 ) => {
   return ["api", "communications", "notificacoes", id] as const;
 };
@@ -1757,7 +1757,7 @@ export const getCommunicationsNotificacoesRetrieveQueryOptions = <
       >
     >;
     axios?: AxiosRequestConfig;
-  },
+  }
 ) => {
   const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
@@ -1804,13 +1804,13 @@ export function useCommunicationsNotificacoesRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getCommunicationsNotificacoesRetrieveQueryOptions(
     id,
-    options,
+    options
   );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
@@ -1834,7 +1834,7 @@ export function useCommunicationsNotificacoesRetrieve<
 export const communicationsNotificacoesUpdate = (
   id: MaybeRef<number>,
   notificacaoRequest: MaybeRef<NotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Notificacao>> => {
   id = unref(id);
   notificacaoRequest = unref(notificacaoRequest);
@@ -1842,7 +1842,7 @@ export const communicationsNotificacoesUpdate = (
   return axios.put(
     `/api/communications/notificacoes/${id}/`,
     notificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -1906,7 +1906,7 @@ export const useCommunicationsNotificacoesUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsNotificacoesUpdate>>,
   TError,
@@ -1925,7 +1925,7 @@ export const useCommunicationsNotificacoesUpdate = <
 export const communicationsNotificacoesPartialUpdate = (
   id: MaybeRef<number>,
   patchedNotificacaoRequest: MaybeRef<PatchedNotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Notificacao>> => {
   id = unref(id);
   patchedNotificacaoRequest = unref(patchedNotificacaoRequest);
@@ -1933,7 +1933,7 @@ export const communicationsNotificacoesPartialUpdate = (
   return axios.patch(
     `/api/communications/notificacoes/${id}/`,
     patchedNotificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -1999,7 +1999,7 @@ export const useCommunicationsNotificacoesPartialUpdate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsNotificacoesPartialUpdate>>,
   TError,
@@ -2017,7 +2017,7 @@ export const useCommunicationsNotificacoesPartialUpdate = <
  */
 export const communicationsNotificacoesDestroy = (
   id: MaybeRef<number>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   id = unref(id);
 
@@ -2085,7 +2085,7 @@ export const useCommunicationsNotificacoesDestroy = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsNotificacoesDestroy>>,
   TError,
@@ -2113,7 +2113,7 @@ Returns:
 export const communicationsNotificacoesMarcarComoLidaCreate = (
   id: MaybeRef<number>,
   notificacaoRequest: MaybeRef<NotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   id = unref(id);
   notificacaoRequest = unref(notificacaoRequest);
@@ -2121,7 +2121,7 @@ export const communicationsNotificacoesMarcarComoLidaCreate = (
   return axios.post(
     `/api/communications/notificacoes/${id}/marcar_como_lida/`,
     notificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -2162,7 +2162,7 @@ export const getCommunicationsNotificacoesMarcarComoLidaCreateMutationOptions =
       return communicationsNotificacoesMarcarComoLidaCreate(
         id,
         data,
-        axiosOptions,
+        axiosOptions
       );
     };
 
@@ -2196,7 +2196,7 @@ export const useCommunicationsNotificacoesMarcarComoLidaCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof communicationsNotificacoesMarcarComoLidaCreate>>,
   TError,
@@ -2223,14 +2223,14 @@ Returns:
  */
 export const communicationsNotificacoesMarcarTodasComoLidasCreate = (
   notificacaoRequest: MaybeRef<NotificacaoRequest>,
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   notificacaoRequest = unref(notificacaoRequest);
 
   return axios.post(
     `/api/communications/notificacoes/marcar_todas_como_lidas/`,
     notificacaoRequest,
-    options,
+    options
   );
 };
 
@@ -2274,7 +2274,7 @@ export const getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOpti
 
       return communicationsNotificacoesMarcarTodasComoLidasCreate(
         data,
-        axiosOptions,
+        axiosOptions
       );
     };
 
@@ -2310,7 +2310,7 @@ export const useCommunicationsNotificacoesMarcarTodasComoLidasCreate = <
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseMutationReturnType<
   Awaited<
     ReturnType<typeof communicationsNotificacoesMarcarTodasComoLidasCreate>
@@ -2321,7 +2321,7 @@ export const useCommunicationsNotificacoesMarcarTodasComoLidasCreate = <
 > => {
   const mutationOptions =
     getCommunicationsNotificacoesMarcarTodasComoLidasCreateMutationOptions(
-      options,
+      options
     );
 
   return useMutation(mutationOptions, queryClient);
@@ -2339,7 +2339,7 @@ Returns:
  * @summary Listar notificações não lidas
  */
 export const communicationsNotificacoesNaoLidasRetrieve = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<ConfiguracaoNotificacao>> => {
   return axios.get(`/api/communications/notificacoes/nao_lidas/`, options);
 };
@@ -2405,7 +2405,7 @@ export function useCommunicationsNotificacoesNaoLidasRetrieve<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {

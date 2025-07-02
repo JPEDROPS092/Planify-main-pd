@@ -1,79 +1,121 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import axios from "axios";
-
-// Importe APENAS o hook para buscar o usuário. O de login não é mais necessário aqui.
-import { useAuthUsersMeRetrieve } from "~/api/auth/auth";
-import type { User, TokenObtainPair } from "~/api/schemas";
+import type { User } from "@/api/schemas";
 
 export const useAuthStore = defineStore("auth", () => {
-  // --- STATE (sem mudanças) ---
-  const accessToken = ref<string | null>(null);
-  const refreshToken = ref<string | null>(null);
+  // Use useCookie para persistência de token (funciona no SSR e no cliente)
+  const accessToken = useCookie<string | null>("auth_token", {
+    maxAge: 60 * 60 * 24 * 7, // 7 dias
+    default: () => null,
+    secure: true,
+    sameSite: "strict",
+  });
+
+  const refreshToken = useCookie<string | null>("auth_refresh_token", {
+    maxAge: 60 * 60 * 24 * 30, // 30 dias
+    default: () => null,
+    secure: true,
+    sameSite: "strict",
+  });
+
   const user = ref<User | null>(null);
 
-  // --- GETTERS (sem mudanças) ---
-  const isAuthenticated = computed(() => !!accessToken.value && !!user.value);
+  // Computed para verificar se o usuário está logado
+  const isLoggedIn = computed(() => !!accessToken.value && !!user.value);
 
-  // --- ACTIONS ---
+  // Mantendo compatibilidade com código existente
+  const isAuthenticated = computed(() => isLoggedIn.value);
 
   /**
-   * Nova ação para definir os dados de autenticação e buscar o usuário.
-   * Esta função será chamada pelo componente de login após uma chamada de API bem-sucedida.
+   * Define os tokens de acesso e refresh
    */
-  async function setAuthData(tokenData: TokenObtainPair) {
-    accessToken.value = tokenData.access;
-    refreshToken.value = tokenData.refresh ?? null; // Usa ?? para o caso de refresh ser opcional
-
-    if (process.client) {
-      localStorage.setItem("accessToken", tokenData.access);
-      if (tokenData.refresh) {
-        localStorage.setItem("refreshToken", tokenData.refresh);
-      }
+  function setTokens(newAccessToken: string, newRefreshToken?: string) {
+    accessToken.value = newAccessToken;
+    if (newRefreshToken) {
+      refreshToken.value = newRefreshToken;
     }
-
-    // Após salvar os tokens, busque os dados do usuário.
-    await fetchUser();
+    console.log("Tokens set in store.");
   }
 
+  /**
+   * Define os dados do usuário
+   */
+  function setUser(newUser: User) {
+    user.value = newUser;
+    console.log("User data set in store:", newUser.username);
+  }
+
+  /**
+   * Busca as informações do usuário atual (mantido para compatibilidade)
+   */
   async function fetchUser() {
     if (!accessToken.value) return;
-    const { refetch } = useAuthUsersMeRetrieve({
-      query: { enabled: false, retry: false },
-    });
 
     try {
-      const response = await refetch();
-      if (response.data?.value) {
-        user.value = response.data.value.data;
+      // Importação dinâmica para evitar problemas de SSR
+      const { authUsersMeRetrieve } = await import("~/api/auth/auth");
+      const response = await authUsersMeRetrieve();
+
+      if (response.data) {
+        user.value = response.data;
+        console.log("User data fetched and set:", response.data.username);
       } else {
         throw new Error("Dados do usuário não encontrados na resposta.");
       }
     } catch (error) {
       console.error("Falha ao buscar dados do usuário:", error);
-      await logout();
+      logout();
     }
   }
 
-  // ... (tryToLoadSession, logout, _clearSession permanecem iguais) ...
+  /**
+   * Tenta carregar a sessão a partir dos cookies (para inicialização da app)
+   */
   async function tryToLoadSession() {
-    /* ...código existente... */
+    if (accessToken.value && !user.value) {
+      console.log("Token encontrado, tentando carregar sessão...");
+      await fetchUser();
+    }
   }
-  async function _clearSession() {
-    /* ...código existente... */
+
+  /**
+   * Limpa todos os dados de autenticação
+   */
+  function logout() {
+    accessToken.value = null;
+    refreshToken.value = null;
+    user.value = null;
+    console.log("User logged out, tokens and user cleared.");
   }
-  async function logout() {
-    /* ...código existente... */
+
+  /**
+   * Função legacy para compatibilidade (deprecated)
+   * @deprecated Use setTokens e setUser separadamente
+   */
+  async function setAuthData(tokenData: { access: string; refresh?: string }) {
+    console.warn(
+      "setAuthData is deprecated. Use setTokens and setUser instead."
+    );
+    setTokens(tokenData.access, tokenData.refresh);
+    await fetchUser();
   }
 
   return {
+    // State
     accessToken,
+    refreshToken,
     user,
-    isAuthenticated,
-    // Remova a exportação do 'login' antigo e exporte a nova função
-    setAuthData,
-    logout,
+
+    // Getters
+    isLoggedIn,
+    isAuthenticated, // Para compatibilidade
+
+    // Actions
+    setTokens,
+    setUser,
     fetchUser,
     tryToLoadSession,
+    logout,
+    setAuthData, // Deprecated but kept for compatibility
   };
 });

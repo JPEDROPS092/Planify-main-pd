@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   // Manter a data de compatibilidade é uma boa prática.
   compatibilityDate: "2024-07-26",
 
+  // --- CONFIGURAÇÃO SPA ---
+  // Desativa totalmente o SSR para todo o projeto
+  ssr: false,
+
   // --- MÓDULOS ESSENCIAIS ---
   // A ordem dos módulos geralmente não é crítica, mas é bom mantê-los organizados.
   modules: [

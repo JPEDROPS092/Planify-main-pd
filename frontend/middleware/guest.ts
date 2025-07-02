@@ -1,4 +1,4 @@
-import { useAuthStore } from "~/stores/auth";
+import { useAuthStore } from "@/stores/auth";
 
 export default defineNuxtRouteMiddleware((to, from) => {
   // 1. Instancie a store Pinia.
@@ -6,9 +6,9 @@ export default defineNuxtRouteMiddleware((to, from) => {
   //    pode ser fora se for um middleware global. Mas aqui dentro é mais seguro.
   const authStore = useAuthStore();
 
-  // 2. Verifique o estado `isAuthenticated` da store.
+  // 2. Verifique o estado `isLoggedIn` da store.
   //    Acessamos diretamente a propriedade computada.
-  if (authStore.isAuthenticated) {
+  if (authStore.isLoggedIn) {
     // Se o usuário já está autenticado, redirecione-o do /login para o /dashboard.
     console.log(
       "[Guest Middleware] Usuário autenticado tentando acessar uma página de convidado. Redirecionando para /dashboard."
