@@ -1,45 +1,26 @@
-<script setup lang="ts">
-import { onMounted } from "vue";
-import { useAuthStore } from "~/stores/auth";
-// Importe componentes globais que devem aparecer em todas as páginas,
-// como o container de toasts.
-import ToastContainer from "~/components/ToastContainer.vue";
-import AuthLoadingScreen from "~/components/AuthLoadingScreen.vue";
-
-// Use um nome descritivo para a instância da store
-const authStore = useAuthStore();
-
-// onMounted garante que este código só rode no cliente,
-// após a hidratação inicial. É o lugar perfeito para restaurar a sessão.
-onMounted(() => {
-  // Tenta carregar a sessão do usuário a partir do localStorage.
-  // Isso é crucial para manter o usuário logado ao recarregar a página.
-  authStore.tryToLoadSession();
-});
-</script>
-
+<!-- filepath: app.vue -->
 <template>
   <div>
-    <!-- Envolver em um único div raiz é uma boa prática -->
     <!-- 
-      Mostra uma tela de carregamento inicial enquanto a store de autenticação 
-      verifica se há uma sessão válida. Isso previne um "flash" de conteúdo
-      público antes do redirecionamento para o dashboard.
+      NuxtLayout é o componente mestre que escolhe o layout apropriado
+      (default.vue, auth.vue, etc.) com base na rota atual.
     -->
-    <AuthLoadingScreen v-if="authStore.isAuthLoading" />
-
-    <!-- 
-      O layout principal e a página só são renderizados após a verificação inicial.
-      Você pode usar v-else se preferir.
-    -->
-    <NuxtLayout v-show="!authStore.isAuthLoading">
+    <NuxtLayout>
+      <!-- 
+        NuxtPage renderiza o componente da página atual (ex: /dashboard -> Dashboard.vue)
+        DENTRO do espaço fornecido pelo <slot /> do layout ativo.
+        Este componente é essencial e substitui o <router-view>.
+      -->
       <NuxtPage />
     </NuxtLayout>
 
-    <!-- 
-      O ToastContainer é colocado aqui para estar disponível globalmente.
-      Ele ficará acima de todos os layouts e páginas.
-    -->
+    <!-- Componentes globais como Toasts devem ficar aqui, fora do layout. -->
     <ToastContainer />
   </div>
 </template>
+
+<script setup lang="ts">
+// Geralmente, o script do app.vue pode ficar vazio, a menos que você tenha
+// uma lógica global de SEO ou outra configuração de alto nível.
+import ToastContainer from "@/components/ToastContainer.vue";
+</script>

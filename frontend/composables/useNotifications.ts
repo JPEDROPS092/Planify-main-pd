@@ -1,50 +1,35 @@
+// composables/useNotifications.ts
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import type { Notificacao } from "@/api/schemas";
+
 /**
- * Composable para gerenciar notificações
- *
- * Nota: Este composable fornece utilitários para trabalhar com notificações
- * As importações da API serão feitas onde necessário para evitar problemas de path mapping
+ * Composable que fornece utilitários para trabalhar com notificações.
  */
 export function useNotifications() {
-  /**
-   * Função para obter ícone baseado no tipo de notificação
-   */
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type?: Notificacao["tipo"]) => {
     const icons: Record<string, string> = {
       TAREFA: "lucide:check-square",
-      COMENTARIO: "lucide:message-square",
       PROJETO: "lucide:briefcase",
+      COMENTARIO: "lucide:message-square",
       DOCUMENTO: "lucide:file-text",
-      RISCO: "lucide:alert-triangle",
+      RISCO: "lucide:shield-alert",
       EQUIPE: "lucide:users",
+      CHAT: "lucide:messages-square",
       SISTEMA: "lucide:info",
     };
-
-    return icons[type] || "lucide:bell";
+    return icons[type || ""] || "lucide:bell";
   };
 
-  /**
-   * Função para formatar data relativa
-   */
-  const formatRelativeDate = (dateString: string) => {
+  const formatRelativeDate = (dateString: string | null) => {
     if (!dateString) return "";
-
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    const diffHours = Math.round(diffMs / 3600000);
-    const diffDays = Math.round(diffMs / 86400000);
-
-    if (diffMins < 1) {
-      return "Agora";
-    } else if (diffMins < 60) {
-      return `${diffMins} min atrás`;
-    } else if (diffHours < 24) {
-      return `${diffHours} h atrás`;
-    } else if (diffDays < 7) {
-      return `${diffDays} dias atrás`;
-    } else {
-      return date.toLocaleDateString("pt-BR");
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: ptBR,
+      });
+    } catch (e) {
+      return dateString;
     }
   };
 

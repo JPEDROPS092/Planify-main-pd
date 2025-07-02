@@ -3,22 +3,20 @@
 import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
-import { useToast } from "@/composables/useToast";
-import type { Projeto, ProjetoRequest } from "@/api/schemas";
+import { useToast } from "~/composables/useToast";
+import type { Projeto, ProjetoRequest } from "~/api/schemas";
 
 // Importar os componentes de cada aba
-import ProjectOverview from "@/components/project/ProjectOverview.vue";
-import ProjectTasks from "@/components/project/ProjectTasks.vue";
-// Importe outros componentes de abas aqui quando criá-los
-// import ProjectKanban from '@/components/project/ProjectKanban.vue';
+import ProjectOverview from "~/components/project/ProjectOverview.vue";
+import ProjectTasks from "~/components/project/ProjectTasks.vue";
+import ProjectModal from "~/components/ui/card/ProjectModal.vue";
 
-// 1. Importar funções do Orval
+// Importar funções do Orval
 import {
   useProjectsProjectsRetrieve,
   useProjectsProjectsUpdate,
-  useProjectsProjectsArchiveCreate,
   useProjectsProjectsDestroy,
-} from "@/api/projects/projects";
+} from "~/api/projects/projects";
 
 definePageMeta({
   middleware: "auth",
@@ -33,7 +31,7 @@ const projectId = computed(() => parseInt(route.params.id as string, 10));
 const activeTab = ref("overview");
 const showEditModal = ref(false);
 
-// 2. Query principal para buscar os dados do projeto.
+// Query principal para buscar os dados do projeto.
 // Esta query é a ÚNICA que carrega os dados do PROJETO.
 const {
   data: project,
@@ -67,7 +65,29 @@ const updateMutation = useProjectsProjectsUpdate({
   },
 });
 
-// ... (outras mutações como delete, archive podem ser colocadas aqui também) ...
+// Mutação para excluir o projeto
+const deleteMutation = useProjectsProjectsDestroy({
+  mutation: {
+    onSuccess: () => {
+      toast({ title: "Sucesso!", description: "Projeto excluído." });
+      router.push("/projects");
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Erro",
+        description: "Falha ao excluir o projeto.",
+        variant: "destructive",
+      }),
+  },
+});
+
+const handleDelete = () => {
+  if (
+    confirm("Atenção! Excluir este projeto é irreversível. Deseja continuar?")
+  ) {
+    deleteMutation.mutate({ id: projectId.value });
+  }
+};
 
 const tabs = [
   {
@@ -82,34 +102,95 @@ const tabs = [
     icon: "lucide:check-square",
     component: ProjectTasks,
   },
-  // Adicione outras abas aqui
+  // Adicione outras abas aqui conforme necessário
 ];
 
 const currentTabComponent = computed(() => {
   return tabs.find((tab) => tab.id === activeTab.value)?.component;
 });
 
-const progressPercentage = computed(() => project.value?.progresso || 0);
+const getStatusColor = (status: string) => {
+  const colors = {
+    PLANEJADO: "text-blue-500",
+    EM_ANDAMENTO: "text-green-500",
+    PAUSADO: "text-yellow-500",
+    CONCLUIDO: "text-green-600",
+    CANCELADO: "text-red-500",
+  };
+  return colors[status as keyof typeof colors] || "text-gray-500";
+};
+
+const formatDate = (date: string) => {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString("pt-BR");
+};
 </script>
 
 <template>
   <div class="py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-      <!-- Loading/Error/Content para o PROJETO PRINCIPAL -->
-      <div v-if="projectLoading">Carregando Projeto...</div>
-      <div v-else-if="projectError">Erro ao carregar o projeto.</div>
+      <div v-if="projectLoading" class="text-center py-8">
+        Carregando projeto...
+      </div>
+      <div v-else-if="projectError" class="text-center py-8 text-red-500">
+        Erro ao carregar o projeto.
+      </div>
       <div v-else-if="project">
-        <!-- Seu Header do Projeto aqui (o que já tinha) -->
+        <!-- Header do Projeto -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 p-6">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {{ project.titulo }}
-          </h1>
-          <!-- ... outros detalhes do cabeçalho ... -->
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {{ project.titulo }}
+              </h1>
+              <div class="mt-1 flex items-center space-x-4">
+                <span
+                  :class="[
+                    getStatusColor(project.status),
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                  ]"
+                >
+                  {{ project.status_display }}
+                </span>
+                <span class="text-sm text-gray-500">
+                  Criado por {{ project.criador_username }}
+                </span>
+                <span class="text-sm text-gray-500">
+                  {{ formatDate(project.criado_em) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <button
+                @click="showEditModal = true"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <Icon icon="lucide:edit" class="h-4 w-4 mr-2" />
+                Editar
+              </button>
+              <button
+                @click="handleDelete"
+                class="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+              >
+                <Icon icon="lucide:trash" class="h-4 w-4 mr-2" />
+                Excluir
+              </button>
+            </div>
+          </div>
+
+          <!-- Progresso -->
           <div class="mt-4">
+            <div
+              class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1"
+            >
+              <span>Progresso Geral</span>
+              <span>{{ project.progresso }}%</span>
+            </div>
             <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
               <div
-                class="bg-primary-600 h-2.5 rounded-full"
-                :style="{ width: `${progressPercentage}%` }"
+                class="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+                :style="{ width: `${project.progresso}%` }"
               ></div>
             </div>
           </div>
@@ -136,16 +217,23 @@ const progressPercentage = computed(() => project.value?.progresso || 0);
         </div>
 
         <!-- Conteúdo da Aba Ativa -->
-        <div>
-          <keep-alive>
-            <component
-              :is="currentTabComponent"
-              v-if="currentTabComponent"
-              :project-id="projectId"
-              :project="project"
-            />
-          </keep-alive>
-        </div>
+        <keep-alive>
+          <component
+            :is="currentTabComponent"
+            v-if="currentTabComponent"
+            :project-id="projectId"
+            :project="project"
+          />
+        </keep-alive>
+
+        <!-- Modal de Edição -->
+        <ProjectModal
+          :show="showEditModal"
+          :project="project"
+          :loading="updateMutation.isPending.value"
+          @close="showEditModal = false"
+          @submit="(data) => updateMutation.mutate({ id: projectId, data })"
+        />
       </div>
     </div>
   </div>

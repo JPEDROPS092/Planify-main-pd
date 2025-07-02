@@ -25,7 +25,7 @@ import { unref } from "vue";
  * @summary Retornar minhas permissões
  */
 export const usersMyPermissionsList = (
-  options?: AxiosRequestConfig,
+  options?: AxiosRequestConfig
 ): Promise<AxiosResponse<void>> => {
   return axios.get(`/api/users/admin/users/permissions/`, options);
 };
@@ -85,7 +85,7 @@ export function useUsersMyPermissionsList<
     >;
     axios?: AxiosRequestConfig;
   },
-  queryClient?: QueryClient,
+  queryClient?: QueryClient
 ): UseQueryReturnType<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
