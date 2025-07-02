@@ -1,3 +1,109 @@
+<script setup lang="ts">
+definePageMeta({
+  middleware: 'auth'
+})
+
+import { ref } from 'vue';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
+import { useTeamService } from '../../services/teamService';
+import { Icon } from '@iconify/vue';
+import { useToast } from '../../composables/useToast';
+import { Equipe, EquipeRequest, PaginatedEquipeList } from '../../api-types';
+
+const router = useRouter();
+const teamService = useTeamService();
+const queryClient = useQueryClient();
+const { toast } = useToast();
+
+// Estado para paginação
+const currentPage = ref(1);
+
+// Estado para modal
+const showModal = ref(false);
+
+// Estado para nova equipe
+const newTeam = ref<EquipeRequest>({
+  nome: '',
+  descricao: ''
+} as EquipeRequest);
+
+// Consulta para carregar equipes
+const { data: teams, isLoading, error } = useQuery<PaginatedEquipeList>({
+  queryKey: ['teams', currentPage],
+  queryFn: () => teamService.getTeams(currentPage.value)
+});
+
+// Mutação para criar equipe
+const createTeamMutation = useMutation({
+  mutationFn: (team: EquipeRequest) => teamService.createTeam(team),
+  onSuccess: () => {
+    // Invalidar a consulta para recarregar a lista de equipes
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    // Limpar formulário
+    newTeam.value = {
+      nome: '',
+      descricao: ''
+    } as EquipeRequest;
+    // Fechar modal
+    showModal.value = false;
+    
+    toast({
+      title: 'Equipe criada',
+      description: 'A equipe foi criada com sucesso'
+    });
+  },
+  onError: (error: any) => {
+    toast({
+      title: 'Erro',
+      description: 'Erro ao criar a equipe',
+      variant: 'destructive'
+    });
+    console.error('Erro ao criar equipe:', error);
+  }
+});
+
+// Mutação para excluir equipe
+const deleteTeamMutation = useMutation({
+  mutationFn: (id: number) => teamService.deleteTeam(id),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    toast({
+      title: 'Equipe excluída',
+      description: 'A equipe foi excluída com sucesso'
+    });
+  },
+  onError: (error: any) => {
+    toast({
+      title: 'Erro',
+      description: 'Erro ao excluir a equipe',
+      variant: 'destructive'
+    });
+    console.error('Erro ao excluir equipe:', error);
+  }
+});
+
+// Confirmar exclusão da equipe
+const confirmDelete = (id: number) => {
+  if (confirm('Tem certeza que deseja excluir esta equipe?')) {
+    deleteTeamMutation.mutate(id);
+  }
+};
+
+// Criar nova equipe
+const handleCreateTeam = () => {
+  if (!newTeam.value.nome) {
+    toast({
+      title: 'Erro',
+      description: 'O nome da equipe é obrigatório',
+      variant: 'destructive'
+    });
+    return;
+  }
+  
+  createTeamMutation.mutate(newTeam.value);
+};
+</script>
+
 <template>
   <div class="container mx-auto p-6">
     <div class="flex justify-between items-center mb-6">
@@ -206,109 +312,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  middleware: 'auth'
-})
-
-import { ref } from 'vue';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useTeamService } from '../../services/teamService';
-import { Icon } from '@iconify/vue';
-import { useToast } from '../../composables/useToast';
-import { Equipe, EquipeRequest, PaginatedEquipeList } from '../../api-types';
-
-const router = useRouter();
-const teamService = useTeamService();
-const queryClient = useQueryClient();
-const { toast } = useToast();
-
-// Estado para paginação
-const currentPage = ref(1);
-
-// Estado para modal
-const showModal = ref(false);
-
-// Estado para nova equipe
-const newTeam = ref<EquipeRequest>({
-  nome: '',
-  descricao: ''
-} as EquipeRequest);
-
-// Consulta para carregar equipes
-const { data: teams, isLoading, error } = useQuery<PaginatedEquipeList>({
-  queryKey: ['teams', currentPage],
-  queryFn: () => teamService.getTeams(currentPage.value)
-});
-
-// Mutação para criar equipe
-const createTeamMutation = useMutation({
-  mutationFn: (team: EquipeRequest) => teamService.createTeam(team),
-  onSuccess: () => {
-    // Invalidar a consulta para recarregar a lista de equipes
-    queryClient.invalidateQueries({ queryKey: ['teams'] });
-    // Limpar formulário
-    newTeam.value = {
-      nome: '',
-      descricao: ''
-    } as EquipeRequest;
-    // Fechar modal
-    showModal.value = false;
-    
-    toast({
-      title: 'Equipe criada',
-      description: 'A equipe foi criada com sucesso'
-    });
-  },
-  onError: (error: any) => {
-    toast({
-      title: 'Erro',
-      description: 'Erro ao criar a equipe',
-      variant: 'destructive'
-    });
-    console.error('Erro ao criar equipe:', error);
-  }
-});
-
-// Mutação para excluir equipe
-const deleteTeamMutation = useMutation({
-  mutationFn: (id: number) => teamService.deleteTeam(id),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['teams'] });
-    toast({
-      title: 'Equipe excluída',
-      description: 'A equipe foi excluída com sucesso'
-    });
-  },
-  onError: (error: any) => {
-    toast({
-      title: 'Erro',
-      description: 'Erro ao excluir a equipe',
-      variant: 'destructive'
-    });
-    console.error('Erro ao excluir equipe:', error);
-  }
-});
-
-// Confirmar exclusão da equipe
-const confirmDelete = (id: number) => {
-  if (confirm('Tem certeza que deseja excluir esta equipe?')) {
-    deleteTeamMutation.mutate(id);
-  }
-};
-
-// Criar nova equipe
-const handleCreateTeam = () => {
-  if (!newTeam.value.nome) {
-    toast({
-      title: 'Erro',
-      description: 'O nome da equipe é obrigatório',
-      variant: 'destructive'
-    });
-    return;
-  }
-  
-  createTeamMutation.mutate(newTeam.value);
-};
-</script>
