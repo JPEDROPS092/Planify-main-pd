@@ -1,314 +1,376 @@
+<!-- filepath: pages/teams/index.vue -->
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { Icon } from "@iconify/vue";
+import { useToast } from "@/composables/useToast";
+
+// 1. Importar as funções e tipos corretos do Orval
+import {
+  useTeamsEquipesList,
+  useTeamsEquipesCreate,
+  useTeamsEquipesDestroy,
+} from "@/api/equipes/equipes";
+import type {
+  Equipe,
+  EquipeRequest,
+  EquipeList,
+  PaginatedEquipeListList,
+} from "@/api/schemas";
+
+definePageMeta({
+  middleware: "auth",
+});
+
+// --- HOOKS E ESTADO INICIAL ---
+const router = useRouter();
+const queryClient = useQueryClient();
+const { toast } = useToast();
+
+const currentPage = ref(1);
+const pageSize = 9; // 9 para um grid 3x3
+const showModal = ref(false);
+
+const getInitialFormState = (): EquipeRequest => ({
+  nome: "",
+  descricao: "",
+});
+
+const newTeam = ref<EquipeRequest>(getInitialFormState());
+
+// --- QUERIES ---
+const {
+  data: paginatedTeams,
+  isLoading,
+  error,
+  refetch,
+} = useQuery<PaginatedEquipeListList>({
+  queryKey: ["teams", currentPage],
+  queryFn: () =>
+    useTeamsEquipesList({ page: currentPage.value, page_size: pageSize }).then(
+      (res) => res.data
+    ),
+});
+
+const teams = computed(() => paginatedTeams.value?.results || []);
+const totalPages = computed(() =>
+  paginatedTeams.value?.count
+    ? Math.ceil(paginatedTeams.value.count / pageSize)
+    : 1
+);
+
+// --- MUTAÇÕES ---
+const createTeamMutation = useTeamsEquipesCreate({
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Equipe Criada",
+        description: "A nova equipe foi criada com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      closeModal();
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Erro",
+        description:
+          err.response?.data?.detail || "Não foi possível criar a equipe.",
+        variant: "destructive",
+      });
+    },
+  },
+});
+
+const deleteTeamMutation = useTeamsEquipesDestroy({
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Equipe Excluída",
+        description: "A equipe foi removida com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Erro",
+        description:
+          err.response?.data?.detail || "Não foi possível excluir a equipe.",
+        variant: "destructive",
+      });
+    },
+  },
+});
+
+// --- FUNÇÕES DE MANIPULAÇÃO ---
+const openModal = () => {
+  newTeam.value = getInitialFormState();
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const handleCreateTeam = () => {
+  if (!newTeam.value.nome) {
+    toast({
+      title: "Campo Obrigatório",
+      description: "O nome da equipe é obrigatório.",
+      variant: "destructive",
+    });
+    return;
+  }
+  createTeamMutation.mutate({ data: newTeam.value });
+};
+
+const confirmDelete = (id: number) => {
+  if (
+    window.confirm(
+      "Tem certeza que deseja excluir esta equipe? Todos os membros e permissões associados serão removidos."
+    )
+  ) {
+    deleteTeamMutation.mutate({ id });
+  }
+};
+
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
+</script>
+
 <template>
-  <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">Equipes</h1>
-      <button 
-        @click="showModal = true"
-        class="bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md flex items-center"
+  <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
+    >
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Gerenciamento de Equipes
+        </h1>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Crie e organize suas equipes de projeto.
+        </p>
+      </div>
+      <button
+        @click="openModal"
+        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       >
-        <Icon icon="lucide:plus" class="mr-2 h-4 w-4" />
+        <Icon icon="lucide:plus" class="mr-2 h-5 w-5" />
         Nova Equipe
       </button>
     </div>
-    
-    <!-- Loading state -->
-    <div v-if="isLoading" class="text-center py-8">
-      <Icon icon="svg-spinners:180-ring-with-bg" class="w-12 h-12 mx-auto text-primary" />
-      <p class="mt-2">Carregando equipes...</p>
+
+    <!-- Estados da UI -->
+    <div v-if="isLoading" class="text-center py-20">
+      <Icon
+        icon="svg-spinners:180-ring-with-bg"
+        class="w-16 h-16 mx-auto text-primary-600"
+      />
     </div>
-    
-    <!-- Error state -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-md p-4 text-center">
-      <Icon icon="lucide:alert-circle" class="w-8 h-8 mx-auto text-red-500" />
-      <p class="mt-2 text-red-600">Erro ao carregar equipes</p>
-      <button 
-        @click="() => queryClient.invalidateQueries({ queryKey: ['teams'] })"
-        class="mt-2 text-red-600 underline"
-      >
-        Tentar novamente
-      </button>
+    <div
+      v-else-if="error"
+      class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md"
+      role="alert"
+    >
+      Erro ao carregar equipes.
     </div>
-    
-    <!-- Empty state -->
-    <div v-else-if="!teams?.results?.length" class="text-center py-8 border rounded-lg">
-      <Icon icon="lucide:users" class="w-16 h-16 mx-auto text-gray-300" />
-      <h3 class="mt-2 text-xl font-medium text-gray-700">Nenhuma equipe encontrada</h3>
-      <p class="mt-1 text-gray-500">Crie uma equipe para começar a colaborar</p>
-      <button 
-        @click="showModal = true"
-        class="mt-4 bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md"
-      >
-        <Icon icon="lucide:plus" class="mr-2 h-4 w-4 inline-block" />
-        Nova Equipe
-      </button>
+    <div
+      v-else-if="teams.length === 0"
+      class="text-center py-20 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg"
+    >
+      <Icon
+        icon="lucide:users"
+        class="w-20 h-20 mx-auto text-gray-400 dark:text-gray-500"
+      />
+      <h3 class="mt-4 text-xl font-medium text-gray-800 dark:text-gray-200">
+        Nenhuma equipe encontrada
+      </h3>
+      <p class="mt-1 text-gray-500 dark:text-gray-400">
+        Crie uma equipe para começar a colaborar.
+      </p>
     </div>
-    
-    <!-- Teams grid -->
+
+    <!-- Grid de Equipes -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div 
-        v-for="team in teams.results" 
-        :key="team.id" 
-        class="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      <div
+        v-for="team in teams"
+        :key="team.id"
+        class="bg-white dark:bg-gray-800/50 border dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
       >
         <div class="p-5">
           <div class="flex justify-between items-start">
-            <h3 class="text-xl font-semibold text-gray-800">{{ team.nome }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {{ team.nome }}
+            </h3>
             <div class="flex space-x-2">
-              <button 
-                @click="() => router.push(`/teams/${team.id}`)"
-                class="text-blue-600 hover:text-blue-800"
+              <button
+                @click="router.push(`/teams/${team.id}`)"
+                class="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                title="Editar Equipe"
               >
                 <Icon icon="lucide:edit" class="w-5 h-5" />
               </button>
-              <button 
+              <button
                 @click="confirmDelete(team.id)"
-                class="text-red-600 hover:text-red-800"
+                class="text-gray-400 hover:text-red-600 dark:hover:text-red-500"
+                title="Excluir Equipe"
               >
                 <Icon icon="lucide:trash-2" class="w-5 h-5" />
               </button>
             </div>
           </div>
-          
-          <p class="text-gray-600 mt-2">{{ team.descricao || "Sem descrição" }}</p>
-          
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 min-h-[40px]">
+            {{ team.descricao || "Sem descrição" }}
+          </p>
           <div class="mt-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">Membros ({{ team.membros?.length || 0 }})</h4>
-            <div class="flex -space-x-2 overflow-hidden">
-              <div v-for="(membro, index) in team.membros?.slice(0, 5)" :key="index" 
-                   class="inline-block h-8 w-8 rounded-full ring-2 ring-white">
-                <div class="h-full w-full bg-primary-100 flex items-center justify-center text-primary text-xs font-medium">
-                  {{ membro.usuario_nome?.charAt(0) || 'U' }}
+            <h4
+              class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2"
+            >
+              Membros ({{ team.total_membros || 0 }})
+            </h4>
+            <div
+              v-if="(team as any).membros?.length"
+              class="flex -space-x-2 overflow-hidden"
+            >
+              <div
+                v-for="membro in (team as any).membros.slice(0, 5)"
+                :key="membro.id"
+                class="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800"
+                :title="membro.usuario_nome"
+              >
+                <div
+                  class="h-full w-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold"
+                >
+                  {{ getInitials(membro.usuario_nome) }}
                 </div>
               </div>
-              <div v-if="team.membros?.length > 5" 
-                   class="h-8 w-8 rounded-full ring-2 ring-white bg-gray-200 flex items-center justify-center text-gray-600 text-xs">
-                +{{ team.membros.length - 5 }}
+              <div
+                v-if="(team as any).membros.length > 5"
+                class="h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-medium"
+              >
+                +{{ (team as any).membros.length - 5 }}
               </div>
             </div>
+            <p v-else class="text-xs text-gray-400">
+              Nenhum membro adicionado.
+            </p>
           </div>
-          
-          <div class="mt-4 pt-4 border-t border-gray-100">
-            <button 
-              @click="() => router.push(`/teams/${team.id}`)"
-              class="text-primary hover:text-primary-700 text-sm font-medium flex items-center"
+          <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              @click="router.push(`/teams/${team.id}`)"
+              class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 flex items-center"
             >
-              Ver detalhes
-              <Icon icon="lucide:chevron-right" class="ml-1 h-4 w-4" />
+              Gerenciar equipe
+              <Icon icon="lucide:arrow-right" class="ml-1.5 h-4 w-4" />
             </button>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Pagination -->
-    <div v-if="teams?.count" class="mt-8 flex justify-center">
-      <div class="flex gap-2">
-        <button 
-          @click="currentPage--" 
-          :disabled="currentPage === 1"
-          class="px-4 py-2 border rounded disabled:opacity-50"
-          :class="currentPage !== 1 ? 'hover:bg-gray-100' : ''"
-        >
-          <Icon icon="lucide:chevron-left" class="h-4 w-4" />
-        </button>
-        <span class="px-4 py-2 border bg-primary text-white rounded">
-          {{ currentPage }} de {{ Math.ceil(teams.count / 10) }}
-        </span>
-        <button 
-          @click="currentPage++" 
-          :disabled="currentPage >= Math.ceil(teams.count / 10)"
-          class="px-4 py-2 border rounded disabled:opacity-50"
-          :class="currentPage < Math.ceil(teams.count / 10) ? 'hover:bg-gray-100' : ''"
-        >
-          <Icon icon="lucide:chevron-right" class="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-    
-    <!-- Create team modal -->
-    <div v-if="showModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showModal = false"></div>
 
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        
-        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-          <div class="absolute top-0 right-0 pt-4 pr-4">
-            <button
-              type="button"
-              @click="showModal = false"
-              class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              <span class="sr-only">Fechar</span>
-              <Icon icon="lucide:x" class="h-6 w-6" />
-            </button>
-          </div>
-          
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                Nova Equipe
+    <!-- Paginação -->
+    <div v-if="totalPages > 1" class="mt-8 flex justify-center">
+      <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+        <button
+          @click="currentPage--"
+          :disabled="!paginatedTeams?.previous"
+          class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+        >
+          Anterior
+        </button>
+        <span
+          class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Página {{ currentPage }} de {{ totalPages }}</span
+        >
+        <button
+          @click="currentPage++"
+          :disabled="!paginatedTeams?.next"
+          class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+        >
+          Próximo
+        </button>
+      </nav>
+    </div>
+
+    <!-- Modal de Criação de Equipe -->
+    <div v-if="showModal" class="fixed z-50 inset-0 overflow-y-auto">
+      <div class="flex items-center justify-center min-h-screen">
+        <div
+          class="fixed inset-0 bg-gray-500 bg-opacity-75"
+          @click="closeModal"
+        ></div>
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full"
+        >
+          <form @submit.prevent="handleCreateTeam">
+            <div class="px-4 pt-5 pb-4 sm:p-6">
+              <h3
+                class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
+              >
+                Criar Nova Equipe
               </h3>
-              <div class="mt-4">
-                <form @submit.prevent="handleCreateTeam" class="space-y-4">
-                  <div>
-                    <label for="nome" class="block text-sm font-medium text-gray-700">
-                      Nome *
-                    </label>
-                    <input
-                      type="text"
-                      id="nome"
-                      v-model="newTeam.nome"
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      placeholder="Nome da equipe"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label for="descricao" class="block text-sm font-medium text-gray-700">
-                      Descrição
-                    </label>
-                    <textarea
-                      id="descricao"
-                      v-model="newTeam.descricao"
-                      rows="3"
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      placeholder="Descrição da equipe"
-                    ></textarea>
-                  </div>
-                  
-                  <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button
-                      type="submit"
-                      class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:col-start-2 sm:text-sm"
-                      :disabled="createTeamMutation.isLoading"
-                    >
-                      <span v-if="createTeamMutation.isLoading" class="inline-block mr-2">
-                        <Icon icon="lucide:loader-2" class="h-4 w-4 animate-spin" />
-                      </span>
-                      Criar
-                    </button>
-                    <button
-                      type="button"
-                      @click="showModal = false"
-                      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
+              <div class="mt-4 space-y-4">
+                <div>
+                  <label
+                    for="nome"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Nome da Equipe *</label
+                  >
+                  <input
+                    type="text"
+                    v-model="newTeam.nome"
+                    id="nome"
+                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    for="descricao"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Descrição</label
+                  >
+                  <textarea
+                    v-model="newTeam.descricao"
+                    id="descricao"
+                    rows="3"
+                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
+                  ></textarea>
+                </div>
               </div>
             </div>
-          </div>
+            <div
+              class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+            >
+              <button
+                type="submit"
+                :disabled="createTeamMutation.isPending.value"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              >
+                <Icon
+                  v-if="createTeamMutation.isPending.value"
+                  icon="svg-spinners:180-ring-with-bg"
+                  class="mr-2 h-5 w-5"
+                />
+                Criar Equipe
+              </button>
+              <button
+                type="button"
+                @click="closeModal"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  middleware: 'auth'
-})
-
-import { ref } from 'vue';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useTeamService } from '../../services/teamService';
-import { Icon } from '@iconify/vue';
-import { useToast } from '../../composables/useToast';
-import { Equipe, EquipeRequest, PaginatedEquipeList } from '../../api-types';
-
-const router = useRouter();
-const teamService = useTeamService();
-const queryClient = useQueryClient();
-const { toast } = useToast();
-
-// Estado para paginação
-const currentPage = ref(1);
-
-// Estado para modal
-const showModal = ref(false);
-
-// Estado para nova equipe
-const newTeam = ref<EquipeRequest>({
-  nome: '',
-  descricao: ''
-} as EquipeRequest);
-
-// Consulta para carregar equipes
-const { data: teams, isLoading, error } = useQuery<PaginatedEquipeList>({
-  queryKey: ['teams', currentPage],
-  queryFn: () => teamService.getTeams(currentPage.value)
-});
-
-// Mutação para criar equipe
-const createTeamMutation = useMutation({
-  mutationFn: (team: EquipeRequest) => teamService.createTeam(team),
-  onSuccess: () => {
-    // Invalidar a consulta para recarregar a lista de equipes
-    queryClient.invalidateQueries({ queryKey: ['teams'] });
-    // Limpar formulário
-    newTeam.value = {
-      nome: '',
-      descricao: ''
-    } as EquipeRequest;
-    // Fechar modal
-    showModal.value = false;
-    
-    toast({
-      title: 'Equipe criada',
-      description: 'A equipe foi criada com sucesso'
-    });
-  },
-  onError: (error: any) => {
-    toast({
-      title: 'Erro',
-      description: 'Erro ao criar a equipe',
-      variant: 'destructive'
-    });
-    console.error('Erro ao criar equipe:', error);
-  }
-});
-
-// Mutação para excluir equipe
-const deleteTeamMutation = useMutation({
-  mutationFn: (id: number) => teamService.deleteTeam(id),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['teams'] });
-    toast({
-      title: 'Equipe excluída',
-      description: 'A equipe foi excluída com sucesso'
-    });
-  },
-  onError: (error: any) => {
-    toast({
-      title: 'Erro',
-      description: 'Erro ao excluir a equipe',
-      variant: 'destructive'
-    });
-    console.error('Erro ao excluir equipe:', error);
-  }
-});
-
-// Confirmar exclusão da equipe
-const confirmDelete = (id: number) => {
-  if (confirm('Tem certeza que deseja excluir esta equipe?')) {
-    deleteTeamMutation.mutate(id);
-  }
-};
-
-// Criar nova equipe
-const handleCreateTeam = () => {
-  if (!newTeam.value.nome) {
-    toast({
-      title: 'Erro',
-      description: 'O nome da equipe é obrigatório',
-      variant: 'destructive'
-    });
-    return;
-  }
-  
-  createTeamMutation.mutate(newTeam.value);
-};
-</script>

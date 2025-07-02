@@ -23,8 +23,6 @@ const authConfig = {
     "/risks",
     "/notifications",
     "/alerts",
-    "/finances",
-    "/settings",
   ],
   publicRoutes: ["/login", "/register", "/", "/about"],
   redirectAfterLogin: "/dashboard",
@@ -46,7 +44,7 @@ const navigation = [
   { name: "Riscos", href: "/risks", icon: "lucide:alert-triangle" },
   { name: "Notificações", href: "/notifications", icon: "lucide:bell" },
   { name: "Alertas", href: "/alerts", icon: "lucide:shield-alert" },
-  { name: "Finanças", href: "/finances", icon: "lucide:dollar-sign" },
+  // Removing finances as it doesn't have a page yet
 ];
 
 // Computeds para controle de UI
@@ -304,7 +302,7 @@ watch(
             </div>
 
             <main class="flex-1">
-              <slot />
+              <NuxtPage />
             </main>
           </div>
         </div>
