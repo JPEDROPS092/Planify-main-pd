@@ -3,7 +3,7 @@
 import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
-import { useToast } from "~/composables/useToast";
+import { useToast } from "@/composables/useToast";
 
 // 1. Importar as funções e tipos corretos do Orval
 import {
@@ -11,14 +11,14 @@ import {
   useCostsCustosCreate,
   useCostsCustosUpdate,
   useCostsCustosDestroy,
-} from "~/api/custo/custo";
-import { useProjectsProjectsList } from "~/api/projetos/projetos";
+} from "@/api/custo/custo";
+import { useProjectsProjectsList } from "@/api/projetos/projetos";
 import type {
   Custo,
   CustoRequest,
   PaginatedCustoListList,
   PaginatedProjetoListList,
-} from "~/api/schemas";
+} from "@/api/schemas";
 
 definePageMeta({
   middleware: "auth",

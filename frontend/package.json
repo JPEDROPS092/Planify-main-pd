@@ -29,6 +29,7 @@
     "vue": "^3.3.8"
   },
   "devDependencies": {
+    "@iconify-json/svg-spinners": "^1.2.2",
     "@nuxt/types": "^2.18.1",
     "@nuxtjs/eslint-module": "^4.1.0",
     "@nuxtjs/tailwindcss": "^6.10.1",

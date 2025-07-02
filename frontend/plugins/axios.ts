@@ -1,81 +1,93 @@
-import { defineNuxtPlugin, useRuntimeConfig } from "#app";
+// filepath: plugins/axios.ts
+
+import { axiosInstance } from "@/lib/axios-instance"; // Importe sua instância customizada
 import { useAuthStore } from "@/stores/auth";
-import axiosInstance from "@/lib/axios-instance";
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig();
 
-  // 1. Define a baseURL usando a variável correta do config
-  const apiBaseUrl = config.public.apiBase;
-  axiosInstance.defaults.baseURL = apiBaseUrl;
-
+  // 1. Configura a baseURL na instância que o Orval usa
+  axiosInstance.defaults.baseURL = config.public.apiBase as string;
   console.log(
-    `[Axios Plugin] Configurando baseURL para: ${apiBaseUrl}\n` +
-      `[Axios Plugin] Teste a conexão acessando: ${apiBaseUrl}/api/health/`
+    `[Axios Plugin] baseURL configurada para: ${axiosInstance.defaults.baseURL}`
   );
 
-  // 2. Interceptor de requisição para adicionar o token de autenticação
+  // 2. Interceptor de Requisição - O ponto mais importante
   axiosInstance.interceptors.request.use(
     (requestConfig) => {
+      // É CRUCIAL chamar useAuthStore() AQUI DENTRO, e não fora do interceptor.
+      // Isso garante que você sempre pegue a versão mais atualizada da store.
       const authStore = useAuthStore();
 
-      if (authStore.isLoggedIn && authStore.accessToken) {
-        requestConfig.headers.Authorization = `Bearer ${authStore.accessToken}`;
-        console.debug(
-          `[Axios Plugin] Requisição autenticada para: ${requestConfig.url}`
+      // Verifique se o token existe ANTES de tentar usá-lo
+      if (authStore.accessToken) {
+        console.log(
+          "[Axios Plugin] Token encontrado na store, anexando ao header."
         );
+        requestConfig.headers.Authorization = `Bearer ${authStore.accessToken}`;
       } else {
-        console.debug(
-          `[Axios Plugin] Requisição sem autenticação para: ${requestConfig.url}`
+        console.log(
+          "[Axios Plugin] NENHUM token encontrado na store para esta requisição."
         );
       }
+
       return requestConfig;
     },
     (error) => {
-      console.error("[Axios Plugin] Erro no interceptor de requisição:", error);
+      console.error(
+        "[Axios Plugin] Erro na configuração da requisição:",
+        error
+      );
       return Promise.reject(error);
     }
   );
 
-  // 3. Interceptor de resposta para lidar com erros e logout automático
+  // 3. Interceptor de Resposta - Lógica de logout e refresh
   axiosInstance.interceptors.response.use(
-    (response) => {
-      // Só loga se não for uma requisição de health check
-      if (!response.config.url?.includes("/api/health/")) {
-        console.debug(
-          `[Axios Plugin] Resposta ${response.status} de: ${response.config.url}`
-        );
-      }
-      return response;
-    },
+    (response) => response, // Se a resposta for OK, não faz nada
     async (error) => {
-      // Se temos uma resposta do servidor
-      if (error.response) {
-        console.error(
-          `[Axios Plugin] Erro ${error.response.status} em ${error.config.url}:`,
-          error.response.data
-        );
+      const originalRequest = error.config;
 
-        // Se o token expirou (401), faça logout automático
-        if (error.response.status === 401) {
-          const authStore = useAuthStore();
-          console.warn(
-            "[Axios Plugin] Token expirado, realizando logout automático"
-          );
-          await authStore.logout();
-          // O redirecionamento será feito pelo logout da store
+      // Se o erro é 401 e ainda não tentamos renovar o token
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        const authStore = useAuthStore();
+
+        // Tenta renovar o token se houver um refresh token
+        if (authStore.refreshToken) {
+          try {
+            console.log(
+              "[Axios Plugin] Token de acesso expirado. Tentando renovar..."
+            );
+            // A chamada para refresh deve ser feita com a instância do Axios
+            const { data } = await axiosInstance.post(
+              "/api/auth/jwt/refresh/",
+              {
+                refresh: authStore.refreshToken,
+              }
+            );
+
+            // Sucesso na renovação: salva o novo token de acesso
+            authStore.setTokens(data.access); // Apenas o de acesso, o de refresh continua o mesmo
+
+            // Re-envia a requisição original com o novo token
+            originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
+            return axiosInstance(originalRequest);
+          } catch (refreshError) {
+            console.error(
+              "[Axios Plugin] Falha ao renovar o token. Deslogando.",
+              refreshError
+            );
+            authStore.logout();
+            navigateTo("/login");
+            return Promise.reject(refreshError);
+          }
+        } else {
+          // Se não há refresh token, apenas desloga
+          console.log("[Axios Plugin] Erro 401 sem refresh token. Deslogando.");
+          authStore.logout();
+          navigateTo("/login");
         }
-      }
-      // Se o erro é de rede/conexão
-      else if (error.request) {
-        console.error(
-          `[Axios Plugin] Erro de rede ao acessar ${error.config?.url}. ` +
-            `Verifique se o backend está rodando em ${axiosInstance.defaults.baseURL}`
-        );
-      }
-      // Outros tipos de erro
-      else {
-        console.error("[Axios Plugin] Erro:", error.message);
       }
 
       return Promise.reject(error);

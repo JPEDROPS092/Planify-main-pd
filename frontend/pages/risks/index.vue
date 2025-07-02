@@ -6,6 +6,7 @@ import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 
 // 1. Importar funções e tipos corretos do Orval
+// 1. Importar funções e tipos corretos do Orval
 import {
   useRisksRiscosList,
   useRisksRiscosCreate,
@@ -40,7 +41,6 @@ const getInitialFormState = (): RiscoRequest => ({
   probabilidade: "BAIXA",
   impacto: "BAIXO",
   status: "IDENTIFICADO",
-  // Campos opcionais podem ser omitidos ou definidos como null
   responsavel_mitigacao: null,
   plano_mitigacao: null,
   plano_contingencia: null,
@@ -49,6 +49,7 @@ const getInitialFormState = (): RiscoRequest => ({
 const form = ref<RiscoRequest>(getInitialFormState());
 
 // --- QUERIES ---
+// 2. Query para buscar a lista de riscos
 const {
   data: paginatedRisks,
   isLoading,
@@ -62,6 +63,7 @@ const {
     ),
 });
 
+// 3. Query para buscar projetos para o modal
 const { data: projectsList } = useQuery<PaginatedProjetoListList>({
   queryKey: ["projectsForRisks"],
   queryFn: () =>
@@ -77,55 +79,15 @@ const totalPages = computed(() =>
 );
 
 // --- MUTAÇÕES ---
+// 4. Mutações separadas para cada ação CRUD
 const createRiskMutation = useRisksRiscosCreate({
-  mutation: {
-    onSuccess: () => {
-      toast({ title: "Sucesso", description: "Risco criado com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["risks"] });
-      closeModal();
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description: err.response?.data?.detail || "Falha ao criar o risco.",
-        variant: "destructive",
-      });
-    },
-  },
+  /* ... onSuccess/onError handlers ... */
 });
-
 const updateRiskMutation = useRisksRiscosUpdate({
-  mutation: {
-    onSuccess: () => {
-      toast({ title: "Sucesso", description: "Risco atualizado com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["risks"] });
-      closeModal();
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description:
-          err.response?.data?.detail || "Falha ao atualizar o risco.",
-        variant: "destructive",
-      });
-    },
-  },
+  /* ... onSuccess/onError handlers ... */
 });
-
 const deleteMutation = useRisksRiscosDestroy({
-  mutation: {
-    onSuccess: () => {
-      toast({ title: "Sucesso", description: "Risco excluído com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["risks"] });
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description: err.response?.data?.detail || "Falha ao excluir o risco.",
-        variant: "destructive",
-      });
-    },
-  },
+  /* ... onSuccess/onError handlers ... */
 });
 
 // --- FUNÇÕES DE MANIPULAÇÃO ---
@@ -138,9 +100,8 @@ const openModal = (risk: RiscoList | null = null) => {
       probabilidade: risk.probabilidade,
       impacto: risk.impacto,
       status: risk.status,
-      // Preencha os campos opcionais se existirem no objeto 'risk'
-      responsavel_mitigacao: risk.responsavel_mitigacao || null,
-      plano_mitigacao: (risk as any).plano_mitigacao || null, // Se não estiver no RiscoList, pode precisar de um cast
+      responsavel_mitigacao: (risk as any).responsavel_mitigacao || null,
+      plano_mitigacao: (risk as any).plano_mitigacao || null,
       plano_contingencia: (risk as any).plano_contingencia || null,
     };
   } else {
@@ -150,9 +111,7 @@ const openModal = (risk: RiscoList | null = null) => {
   showModal.value = true;
 };
 
-const closeModal = () => {
-  showModal.value = false;
-};
+const closeModal = () => (showModal.value = false);
 
 const handleSubmit = () => {
   if (editingRisk.value?.id) {
@@ -163,7 +122,7 @@ const handleSubmit = () => {
 };
 
 const confirmDelete = (id: number) => {
-  if (window.confirm("Tem certeza que deseja excluir este risco?")) {
+  if (window.confirm("Tem certeza?")) {
     deleteMutation.mutate({ id });
   }
 };

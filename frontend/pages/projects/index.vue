@@ -3,19 +3,21 @@
 import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
+import type { AxiosResponse } from "axios";
+import { definePageMeta, useRouter } from "#imports";
 
 import { useToast } from "@/composables/useToast";
 import type {
   Projeto,
   ProjetoRequest,
   PaginatedProjetoListList,
+  ProjectsProjectsListParams,
 } from "@/api/schemas";
 import ProjectCard from "@/components/project/ProjectCard.vue";
 import ProjectModal from "@/components/project/ProjectModal.vue";
 
-// 2. CORREÇÃO: Importar as funções do Orval usando o alias '@/'
 import {
-  useProjectsProjectsList,
+  projectsProjectsList,
   useProjectsProjectsCreate,
   useProjectsProjectsUpdate,
   useProjectsProjectsArchiveCreate,
@@ -23,54 +25,65 @@ import {
 } from "@/api/projetos/projetos";
 
 definePageMeta({
-  middleware: "auth",
-  title: "Projetos",
+  middleware: ["auth"],
 });
 
 const router = useRouter();
-const queryClient = useQueryClient();
 const { toast } = useToast();
+const queryClient = useQueryClient();
 
 const currentPage = ref(1);
-const pageSize = 8;
+const pageSize = 10;
 const showModal = ref(false);
 const editingProject = ref<Projeto | null>(null);
 
+// Query principal para listar projetos
 const {
-  data: paginatedProjects,
+  data: paginatedProjectsResponse,
   isLoading,
   error,
-} = useQuery<PaginatedProjetoListList>({
+} = useQuery({
   queryKey: ["projects", currentPage],
-  // 3. CORREÇÃO: A chamada da queryFn estava correta, mas a consistência no alias é boa.
-  // A função `useProjectsProjectsList` é um hook do Orval, não uma função de serviço direta.
-  // Este hook já retorna uma promise, então não precisamos de .then(res => res.data) aqui.
-  // O Vue Query desempacota o 'data' da AxiosResponse automaticamente.
   queryFn: () =>
-    useProjectsProjectsList({ page: currentPage.value, page_size: pageSize }),
+    projectsProjectsList({
+      pageSize,
+      page: currentPage.value,
+    } as ProjectsProjectsListParams),
+  enabled: true,
 });
 
-const projects = computed(() => paginatedProjects.value?.data?.results || []);
-const totalPages = computed(() =>
-  paginatedProjects.value?.data?.count
-    ? Math.ceil(paginatedProjects.value.data.count / pageSize)
-    : 1
+const projects = computed(
+  () => paginatedProjectsResponse.value?.data.results || []
 );
 
-// --- Mutações (sem alterações, já estavam corretas) ---
+const pagination = computed(() => ({
+  count: paginatedProjectsResponse.value?.data.count || 0,
+  next: paginatedProjectsResponse.value?.data.next || null,
+  previous: paginatedProjectsResponse.value?.data.previous || null,
+}));
+
+const totalPages = computed(() =>
+  Math.ceil((pagination.value.count || 0) / pageSize)
+);
+
+// Mutations para operações CRUD
 const createMutation = useProjectsProjectsCreate({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso!", description: "Projeto criado com sucesso." });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      closeModal();
-    },
-    onError: (err: any) =>
       toast({
-        title: "Erro",
-        description: err.response?.data?.detail || "Falha ao criar o projeto.",
-        variant: "destructive",
-      }),
+        title: "Sucesso!",
+        description: "Projeto criado com sucesso.",
+        type: "success",
+      });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro!",
+        description: "Não foi possível criar o projeto.",
+        type: "error",
+      });
+    },
   },
 });
 
@@ -80,52 +93,62 @@ const updateMutation = useProjectsProjectsUpdate({
       toast({
         title: "Sucesso!",
         description: "Projeto atualizado com sucesso.",
+        type: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      if (editingProject.value) {
+      if (editingProject.value?.id) {
         queryClient.invalidateQueries({
-          queryKey: ["project", editingProject.value.id],
+          queryKey: ["projects", editingProject.value.id],
         });
       }
-      closeModal();
     },
-    onError: (err: any) =>
+    onError: (error) => {
       toast({
-        title: "Erro",
-        description:
-          err.response?.data?.detail || "Falha ao atualizar o projeto.",
-        variant: "destructive",
-      }),
+        title: "Erro!",
+        description: "Não foi possível atualizar o projeto.",
+        type: "error",
+      });
+    },
   },
 });
 
 const archiveMutation = useProjectsProjectsArchiveCreate({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso!", description: "Status do projeto alterado." });
+      toast({
+        title: "Sucesso!",
+        description: "Status do projeto alterado.",
+        type: "success",
+      });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
-    onError: (err: any) =>
+    onError: (error) => {
       toast({
-        title: "Erro",
-        description: "Falha ao arquivar o projeto.",
-        variant: "destructive",
-      }),
+        title: "Erro!",
+        description: "Não foi possível arquivar o projeto.",
+        type: "error",
+      });
+    },
   },
 });
 
 const deleteMutation = useProjectsProjectsDestroy({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso!", description: "Projeto excluído." });
+      toast({
+        title: "Sucesso!",
+        description: "Projeto excluído.",
+        type: "success",
+      });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
-    onError: (err: any) =>
+    onError: (error) => {
       toast({
-        title: "Erro",
-        description: "Falha ao excluir o projeto.",
-        variant: "destructive",
-      }),
+        title: "Erro!",
+        description: "Não foi possível excluir o projeto.",
+        type: "error",
+      });
+    },
   },
 });
 
@@ -186,25 +209,53 @@ const isMutationLoading = computed(
 <template>
   <div class="py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           Projetos
         </h1>
         <button
           @click="openCreateModal"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+          :disabled="isLoading"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
         >
           <Icon icon="lucide:plus" class="h-4 w-4 mr-2" />
           Novo Projeto
         </button>
       </div>
 
-      <div v-if="isLoading" class="text-center py-12">Carregando...</div>
-      <div v-else-if="error" class="text-center py-12 text-red-500">
-        Erro ao carregar projetos.
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex items-center justify-center py-12">
+        <div class="flex items-center space-x-2">
+          <Icon
+            icon="lucide:loader"
+            class="h-5 w-5 animate-spin text-primary-600"
+          />
+          <span class="text-gray-600">Carregando projetos...</span>
+        </div>
       </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center py-12">
+        <div class="flex flex-col items-center space-y-4">
+          <Icon icon="lucide:alert-circle" class="h-12 w-12 text-red-500" />
+          <p class="text-red-600 font-medium">Erro ao carregar projetos</p>
+          <p class="text-gray-500 text-sm">Tente novamente mais tarde</p>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="projects.length === 0" class="text-center py-12">
+        <div class="flex flex-col items-center space-y-4">
+          <Icon icon="lucide:folder" class="h-12 w-12 text-gray-400" />
+          <h3 class="text-gray-900 font-medium">Nenhum projeto encontrado</h3>
+          <p class="text-gray-500">Clique em "Novo Projeto" para começar</p>
+        </div>
+      </div>
+
+      <!-- Projects Grid -->
       <div
-        v-else-if="projects.length > 0"
+        v-else
         class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
         <ProjectCard
@@ -216,9 +267,29 @@ const isMutationLoading = computed(
           @delete="handleDelete(project.id)"
         />
       </div>
-      <div v-else class="text-center py-12">Nenhum projeto encontrado.</div>
 
-      <!-- Paginação (sem alterações) -->
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="mt-6 flex justify-center">
+        <nav class="flex items-center space-x-2">
+          <button
+            @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Icon icon="lucide:chevron-left" class="h-5 w-5" />
+          </button>
+          <span class="px-4 py-2 text-sm text-gray-700">
+            Página {{ currentPage }} de {{ totalPages }}
+          </span>
+          <button
+            @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Icon icon="lucide:chevron-right" class="h-5 w-5" />
+          </button>
+        </nav>
+      </div>
 
       <!-- Modal -->
       <ProjectModal

@@ -6,7 +6,7 @@ import { Icon } from "@iconify/vue";
 import { useAuthStore } from "@/stores/auth";
 import { useAuth } from "@/composables/useAuth";
 
-// 1. Importar os hooks e tipos REAIS do Orval
+// 1. Importar os hooks e tipos do Orval
 import { useProjectsProjectsList } from "@/api/projetos/projetos";
 import { useTasksTarefasList } from "@/api/tasks/tasks";
 import type {
@@ -24,59 +24,59 @@ const { logout } = useAuth();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 
-// --- BUSCA DE DADOS REAIS ---
+// --- BUSCA DE DADOS ---
 
-// 2. Buscar projetos REAIS usando o hook do Orval
-const { data: paginatedProjects, isLoading: projectsLoading } =
-  useQuery<PaginatedProjetoListList>({
-    queryKey: ["dashboard-projects"],
-    // Busca os 4 projetos mais recentes para exibir
-    queryFn: () =>
-      useProjectsProjectsList({ page_size: 4, ordering: "-criado_em" }).then(
-        (res) => res.data
-      ),
-  });
+// 2. Query para projetos recentes
+const { data: projectsResponse, isLoading: projectsLoading } = useQuery({
+  queryKey: ["dashboard-projects"],
+  queryFn: () =>
+    useProjectsProjectsList({
+      page_size: 4,
+      ordering: "-criado_em",
+    }).then((res) => res.data),
+});
 
-// 3. Buscar tarefas REAIS usando o hook do Orval
-const { data: paginatedTasks, isLoading: tasksLoading } =
-  useQuery<PaginatedTarefaListList>({
-    queryKey: ["dashboard-tasks"],
-    // Busca as 5 tarefas mais recentes atribuídas ao usuário
-    queryFn: () =>
-      useTasksTarefasList({
-        page_size: 5,
-        minhas_tarefas: true,
-        ordering: "-id",
-      }).then((res) => res.data),
-  });
+// 3. Query para tarefas do usuário
+const { data: tasksResponse, isLoading: tasksLoading } = useQuery({
+  queryKey: ["dashboard-tasks"],
+  queryFn: () =>
+    useTasksTarefasList({
+      page_size: 5,
+      minhas_tarefas: true,
+      ordering: "-criado_em",
+    }).then((res) => res.data),
+});
 
 // --- DADOS COMPUTADOS ---
 
-const projects = computed<ProjetoList[]>(
-  () => paginatedProjects.value?.results || []
-);
-const tasks = computed<TarefaList[]>(() => paginatedTasks.value?.results || []);
+// 4. Acesso correto aos dados da resposta
+const projects = computed<ProjetoList[]>(() => projectsResponse?.results || []);
 
-// 4. Estatísticas calculadas a partir dos dados REAIS (pode ser melhorado com endpoints de métricas)
+const tasks = computed<TarefaList[]>(() => tasksResponse?.results || []);
+
+// 5. Estatísticas calculadas
 const projectStats = computed(() => {
-  if (!paginatedProjects.value) return { active: 0, completed: 0, total: 0 };
-  const total = paginatedProjects.value.count || 0;
-  // Nota: Para ter contagens precisas de ativos/concluídos, o ideal seria ter um endpoint de métricas.
-  // Isso é uma aproximação baseada nos dados carregados.
+  if (!projectsResponse) return { active: 0, completed: 0, total: 0 };
+
+  const total = projectsResponse.count || 0;
   const active = projects.value.filter(
-    (p) => p.status === "EM_ANDAMENTO" || p.status === "PLANEJADO"
+    (p) =>
+      !p.arquivado && (p.status === "EM_ANDAMENTO" || p.status === "PLANEJADO")
   ).length;
   const completed = projects.value.filter(
-    (p) => p.status === "CONCLUIDO"
+    (p) => !p.arquivado && p.status === "CONCLUIDO"
   ).length;
+
   return { active, completed, total };
 });
 
 const taskStats = computed(() => {
-  if (!paginatedTasks.value) return { completed: 0, pending: 0, total: 0 };
-  const total = paginatedTasks.value.count || 0;
+  if (!tasksResponse) return { completed: 0, pending: 0, total: 0 };
+
+  const total = tasksResponse.count || 0;
   const completed = tasks.value.filter((t) => t.status === "FEITO").length;
-  const pending = total - completed;
+  const pending = tasks.value.filter((t) => t.status !== "FEITO").length;
+
   return { completed, pending, total };
 });
 
@@ -251,17 +251,24 @@ const handleLogout = async () => {
               :key="project.id"
               class="px-6 py-4 flex items-center justify-between"
             >
-              <p class="text-sm font-medium text-gray-900 dark:text-gray-200">
+              <div class="text-sm font-medium text-gray-900">
                 {{ project.titulo }}
-              </p>
+              </div>
               <span
-                class="text-xs font-semibold px-2 py-1 rounded-full"
-                :class="
-                  project.status === 'CONCLUIDO'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-blue-100 text-blue-800'
-                "
-                >{{ project.status_display }}</span
+                class="text-xs font-semibold px-2 py-1 rounded-full dark:bg-opacity-30 dark:text-opacity-90"
+                :class="{
+                  'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
+                    project.status === 'CONCLUIDO',
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200':
+                    project.status === 'EM_ANDAMENTO',
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
+                    project.status === 'PLANEJADO',
+                  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
+                    project.status === 'CANCELADO',
+                  'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
+                    project.status === 'ARQUIVADO',
+                }"
+                >{{ project.status }}</span
               >
             </li>
           </ul>
@@ -295,13 +302,20 @@ const handleLogout = async () => {
                 {{ task.titulo }}
               </p>
               <span
-                class="text-xs font-semibold px-2 py-1 rounded-full"
-                :class="
-                  task.status === 'FEITO'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                "
-                >{{ task.status_display }}</span
+                class="text-xs font-semibold px-2 py-1 rounded-full dark:bg-opacity-30 dark:text-opacity-90"
+                :class="{
+                  'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
+                    task.status === 'FEITO',
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200':
+                    task.status === 'EM_ANDAMENTO',
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
+                    task.status === 'A_FAZER',
+                  'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200':
+                    task.status === 'BLOQUEADO',
+                  'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
+                    task.status === 'CANCELADO',
+                }"
+                >{{ task.status }}</span
               >
             </li>
           </ul>
