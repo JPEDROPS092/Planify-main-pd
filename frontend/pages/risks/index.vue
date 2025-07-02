@@ -12,7 +12,7 @@ import {
   useRisksRiscosUpdate,
   useRisksRiscosDestroy,
 } from "@/api/riscos/riscos";
-import { useProjectsProjectsList } from "@/api/projects/projects";
+import { useProjectsProjectsList } from "@/api/projetos/projetos";
 import type {
   Risco,
   RiscoRequest,

@@ -1,12 +1,12 @@
 <!-- filepath: pages/users/index.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { ref, computed, watch } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 import UserModal from "@/components/UserModal.vue";
 
-// Importar as funções e tipos corretos do Orval
+// Import Orval functions and types
 import {
   useUsersAdminUsersList,
   useUsersAdminUsersCreate,
@@ -18,7 +18,6 @@ import {
 import type {
   User,
   UserRequest,
-  PaginatedUserList,
   UsersAdminUsersListParams,
 } from "@/api/schemas";
 
@@ -27,7 +26,7 @@ definePageMeta({
   title: "Gerenciamento de Usuários",
 });
 
-// --- HOOKS E ESTADO INICIAL ---
+// --- HOOKS AND INITIAL STATE ---
 const queryClient = useQueryClient();
 const { toast } = useToast();
 
@@ -43,77 +42,173 @@ const filters = ref<UsersAdminUsersListParams>({
 });
 
 // --- QUERIES ---
+// Use the Orval hook directly
 const {
-  data: paginatedUsers,
+  data: usersResponse,
   isLoading,
   error,
-  refetch,
-} = useQuery<PaginatedUserList>({
-  queryKey: ["users", filters],
-  queryFn: () => useUsersAdminUsersList(filters.value).then((res) => res.data),
-  keepPreviousData: true,
+} = useUsersAdminUsersList(filters.value, {
+  query: {
+    keepPreviousData: true,
+  },
 });
 
-const users = computed(() => paginatedUsers.value?.results || []);
+// Computed properties
+const users = computed<User[]>(() => usersResponse.value?.data.results || []);
 const pagination = computed(() => ({
-  count: paginatedUsers.value?.count || 0,
-  next: paginatedUsers.value?.next,
-  previous: paginatedUsers.value?.previous,
+  count: usersResponse.value?.data.count || 0,
+  next: usersResponse.value?.data.next,
+  previous: usersResponse.value?.data.previous,
 }));
 const currentPage = computed(() => filters.value.page || 1);
 
-// --- MUTAÇÕES ---
-const createMutation = useUsersAdminUsersCreate({
-  /* ... seu código de mutação ... */
+// --- MUTATIONS ---
+const createUserMutation = useUsersAdminUsersCreate({
+  mutation: {
+    onSuccess: (response) => {
+      toast({ title: "Sucesso", description: "Usuário criado com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["users-admin-users-list"] });
+      showCreateModal.value = false;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.response?.data?.detail || "Erro ao criar usuário",
+        variant: "destructive",
+      });
+    },
+  },
 });
-const updateMutation = useUsersAdminUsersUpdate({
-  /* ... seu código de mutação ... */
+
+const updateUserMutation = useUsersAdminUsersUpdate({
+  mutation: {
+    onSuccess: (response) => {
+      toast({
+        title: "Sucesso",
+        description: "Usuário atualizado com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["users-admin-users-list"] });
+      showEditModal.value = false;
+      selectedUser.value = null;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description:
+          error.response?.data?.detail || "Erro ao atualizar usuário",
+        variant: "destructive",
+      });
+    },
+  },
 });
-const deleteMutation = useUsersAdminUsersDestroy({
-  /* ... seu código de mutação ... */
+
+const deleteUserMutation = useUsersAdminUsersDestroy({
+  mutation: {
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Usuário excluído com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["users-admin-users-list"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.response?.data?.detail || "Erro ao excluir usuário",
+        variant: "destructive",
+      });
+    },
+  },
 });
+
 const activateUserMutation = useUsersAdminUsersActivateCreate({
-  /* ... seu código de mutação ... */
+  mutation: {
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Usuário ativado com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["users-admin-users-list"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.response?.data?.detail || "Erro ao ativar usuário",
+        variant: "destructive",
+      });
+    },
+  },
 });
+
 const deactivateUserMutation = useUsersAdminUsersDeactivateCreate({
-  /* ... seu código de mutação ... */
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Usuário desativado com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["users-admin-users-list"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description:
+          error.response?.data?.detail || "Erro ao desativar usuário",
+        variant: "destructive",
+      });
+    },
+  },
 });
 
 // --- HANDLERS ---
-const loadUsers = () => refetch();
-
 const editUser = (user: User) => {
   selectedUser.value = { ...user };
   showEditModal.value = true;
 };
 
-// ... (resto das suas funções handle, elas parecem corretas) ...
-
-const onUserSaved = () => {
-  showCreateModal.value = false;
-  showEditModal.value = false;
-  selectedUser.value = null;
-  loadUsers(); // Recarrega a lista após salvar
+const deleteUser = (userId: number) => {
+  if (confirm("Tem certeza que deseja excluir este usuário?")) {
+    deleteUserMutation.mutate({ id: userId });
+  }
 };
 
+const toggleUserStatus = (user: User) => {
+  if (user.is_active) {
+    deactivateUserMutation.mutate({ id: user.id });
+  } else {
+    activateUserMutation.mutate({ id: user.id });
+  }
+};
+
+watch(
+  () => filters.value,
+  (newFilters) => {
+    // The Orval hook will automatically refetch when params change
+  },
+  { deep: true }
+);
+
 const nextPage = () => {
-  if (pagination.value.next) filters.value.page++;
+  if (pagination.value.next) {
+    filters.value.page = (filters.value.page || 1) + 1;
+  }
 };
 
 const previousPage = () => {
-  if (pagination.value.previous) filters.value.page--;
+  if (pagination.value.previous && filters.value.page > 1) {
+    filters.value.page = (filters.value.page || 2) - 1;
+  }
 };
 
-// --- HELPERS ---
-const getRoleLabel = (role?: string) =>
-  ({ ADMIN: "Admin", PROJECT_MANAGER: "Gerente", TEAM_MEMBER: "Membro" })[
-    role || ""
-  ] || "N/A";
-const formatDate = (date: string) =>
-  date ? new Date(date).toLocaleDateString("pt-BR") : "-";
+const handleSearch = (searchTerm: string) => {
+  filters.value = {
+    ...filters.value,
+    search: searchTerm,
+    page: 1,
+  };
+};
 
-// Carregar dados no mounted
-onMounted(loadUsers);
+const handleFilterChange = (newFilters: Partial<UsersAdminUsersListParams>) => {
+  filters.value = {
+    ...filters.value,
+    ...newFilters,
+    page: 1,
+  };
+};
 </script>
 
 <template>

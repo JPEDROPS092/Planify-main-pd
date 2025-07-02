@@ -20,7 +20,7 @@ import {
   useProjectsProjectsUpdate,
   useProjectsProjectsArchiveCreate,
   useProjectsProjectsDestroy,
-} from "@/api/projects/projects";
+} from "@/api/projetos/projetos";
 
 definePageMeta({
   middleware: "auth",

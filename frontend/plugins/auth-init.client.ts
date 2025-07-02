@@ -1,31 +1,30 @@
 import { defineNuxtPlugin } from "#imports";
-import { useAuthStore } from "~/stores/auth";
+import { useAuthStore } from "@/stores/auth";
 
-export default defineNuxtPlugin(async () => {
-  console.log("[auth-init.ts plugin] Tentando carregar sessão do cookie...");
+export default defineNuxtPlugin(async (nuxtApp) => {
+  console.log(
+    "[auth-init.ts plugin] Rodando plugin de inicialização de autenticação..."
+  );
 
-  // Only run in client-side
-  if (process.client) {
-    const authStore = useAuthStore();
+  // Aguarda a conclusão da store antes de permitir que a aplicação continue
+  const authStore = useAuthStore();
+  await authStore.initialize();
 
-    // Try to load user data if we have a token
-    if (authStore.accessToken) {
-      try {
-        const { authUsersMeRetrieve } = await import("~/api/auth/auth");
-        const response = await authUsersMeRetrieve({
-          headers: {
-            Authorization: `Bearer ${authStore.accessToken}`,
-          },
-        });
-        authStore.setUser(response.data);
-        console.log("[auth-init.ts plugin] Sessão carregada com sucesso.");
-      } catch (error) {
-        console.error("[auth-init.ts plugin] Erro ao carregar sessão:", error);
-        // If we get here, the token is invalid - clean up
-        authStore.logout();
-      }
-    } else {
-      console.log("[auth-init.ts plugin] Nenhum token encontrado.");
-    }
-  }
+  console.log("[auth-init.ts plugin] Inicialização de autenticação concluída");
+
+  // Expõe algumas funções úteis para o resto da aplicação
+  return {
+    provide: {
+      auth: {
+        // Funções que podem ser úteis em outros lugares da aplicação
+        login: async (token: string, refreshToken?: string) => {
+          authStore.setTokens(token, refreshToken);
+          await authStore.initialize();
+        },
+        logout: () => {
+          authStore.logout();
+        },
+      },
+    },
+  };
 });

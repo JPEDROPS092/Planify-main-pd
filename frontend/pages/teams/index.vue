@@ -1,11 +1,11 @@
 <!-- filepath: pages/teams/index.vue -->
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 
-// 1. Importar as funções e tipos corretos do Orval
+// Importar as funções e tipos do Orval
 import {
   useTeamsEquipesList,
   useTeamsEquipesCreate,
@@ -14,7 +14,6 @@ import {
 import type {
   Equipe,
   EquipeRequest,
-  EquipeList,
   PaginatedEquipeListList,
 } from "@/api/schemas";
 
@@ -39,23 +38,25 @@ const getInitialFormState = (): EquipeRequest => ({
 const newTeam = ref<EquipeRequest>(getInitialFormState());
 
 // --- QUERIES ---
+// CORREÇÃO: Usar o hook do Orval diretamente
 const {
   data: paginatedTeams,
   isLoading,
   error,
-  refetch,
-} = useQuery<PaginatedEquipeListList>({
-  queryKey: ["teams", currentPage],
-  queryFn: () =>
-    useTeamsEquipesList({ page: currentPage.value, page_size: pageSize }).then(
-      (res) => res.data
-    ),
-});
+} = useTeamsEquipesList(
+  { page: currentPage.value, page_size: pageSize },
+  {
+    query: {
+      keepPreviousData: true,
+    },
+  }
+);
 
-const teams = computed(() => paginatedTeams.value?.results || []);
+// CORREÇÃO: Acessar os dados corretamente da resposta do Axios
+const teams = computed(() => paginatedTeams.value?.data.results || []);
 const totalPages = computed(() =>
-  paginatedTeams.value?.count
-    ? Math.ceil(paginatedTeams.value.count / pageSize)
+  paginatedTeams.value?.data.count
+    ? Math.ceil(paginatedTeams.value.data.count / pageSize)
     : 1
 );
 
@@ -67,7 +68,7 @@ const createTeamMutation = useTeamsEquipesCreate({
         title: "Equipe Criada",
         description: "A nova equipe foi criada com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"] });
       closeModal();
     },
     onError: (err: any) => {
@@ -88,7 +89,7 @@ const deleteTeamMutation = useTeamsEquipesDestroy({
         title: "Equipe Excluída",
         description: "A equipe foi removida com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"] });
     },
     onError: (err: any) => {
       toast({

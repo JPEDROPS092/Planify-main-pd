@@ -1,88 +1,89 @@
-import { useAuthStore } from "@/stores/auth";
-import { useAuthJwtCreateCreate, authUsersMeRetrieve } from "@/api/auth/auth";
-import type { TokenObtainPairRequest } from "@/api/schemas";
+import { useAuthStore } from "~/stores/auth";
+import { useAuthJwtCreateCreate, authUsersMeRetrieve } from "~/api/auth/auth";
+import type { TokenObtainPairRequest } from "~/api/schemas";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
-interface LoginVariables {
-  data: TokenObtainPairRequest;
-  redirectTo?: string;
-}
-
-/**
- * Composable para orquestrar o fluxo de autenticação.
- * Otimizado para SPA (Single Page Application).
- */
 export function useAuth() {
   const authStore = useAuthStore();
   const router = useRouter();
+  const route = useRoute();
 
-  // 1. Login mutation with explicit navigation handling
+  // Login mutation com tratamento explícito da navegação
   const loginMutation = useAuthJwtCreateCreate({
     mutation: {
-      onSuccess: async (response, variables: LoginVariables) => {
-        console.log("Login API call successful. Response:", response);
+      onSuccess: async (response) => {
+        console.log(
+          "[useAuth] Login bem-sucedido. Resposta da API:",
+          response.data
+        );
 
-        // Extract the new access token from the response
+        // 1. Extrair o novo token de acesso DIRETAMENTE da resposta
         const newAccessToken = response.data.access;
 
-        // Save tokens in store
+        // 2. Salvar os tokens na store para uso futuro
         authStore.setTokens(newAccessToken, response.data.refresh);
 
         try {
-          // Fetch user info with explicit token
+          console.log(
+            "[useAuth] Buscando dados do usuário com o novo token..."
+          );
+          // 3. Fazer a chamada para /me/ passando o novo token MANUALMENTE
+          // Isso ignora o interceptor para esta chamada específica
           const userResponse = await authUsersMeRetrieve({
             headers: {
               Authorization: `Bearer ${newAccessToken}`,
             },
           });
+
+          // 4. Salvar os dados do usuário na store
           authStore.setUser(userResponse.data);
           console.log(
-            "User data fetched and set in store:",
+            "[useAuth] Dados do usuário salvos na store:",
             userResponse.data.username
           );
 
-          // Navigate using Nuxt's built-in navigation utility
-          const targetPath = variables.redirectTo || "/dashboard";
-          await router.replace(targetPath);
+          // 5. Redirecionar para a página alvo ou dashboard
+          const redirectPath = route.query.redirect?.toString() || "/dashboard";
+          await router.replace(redirectPath);
+          console.log("[useAuth] Redirecionando para:", redirectPath);
         } catch (fetchError) {
-          console.error("Failed to fetch user after login:", fetchError);
-          // Logout to avoid inconsistent state if user fetch fails
+          console.error(
+            "[useAuth] Falha ao buscar dados do usuário após login:",
+            fetchError
+          );
+          // Fazer logout para evitar estado inconsistente
           authStore.logout();
         }
       },
       onError: (error) => {
-        console.error("Login mutation failed:", error);
+        console.error("[useAuth] Falha na mutação de login:", error);
       },
     },
   });
 
   /**
-   * Login function that components will call to start the login process.
+   * Função de login que os componentes chamarão para iniciar o processo
    */
-  const login = (credentials: TokenObtainPairRequest, redirectTo?: string) => {
-    return loginMutation.mutate({
-      data: credentials,
-      redirectTo,
-    } as LoginVariables);
+  const login = (credentials: TokenObtainPairRequest) => {
+    return loginMutation.mutate({ data: credentials });
   };
 
   const logout = async () => {
     authStore.logout();
-    // Use router.replace instead of navigateTo
     await router.replace("/login");
   };
 
   return {
-    // Auth state from store
-    user: authStore.user,
-    isAuthenticated: authStore.isAuthenticated,
+    // Estado de autenticação da store
+    user: computed(() => authStore.user),
+    isAuthenticated: computed(() => authStore.isAuthenticated),
 
-    // Functions
+    // Funções
     login,
     logout,
 
-    // Login mutation state
+    // Estado da mutação de login
     isLoading: computed(() => loginMutation.isPending.value),
     isError: computed(() => loginMutation.isError.value),
     error: computed(() => loginMutation.error.value),

@@ -12,7 +12,7 @@ import {
   useCostsCustosUpdate,
   useCostsCustosDestroy,
 } from "~/api/custo/custo";
-import { useProjectsProjectsList } from "~/api/projects/projects";
+import { useProjectsProjectsList } from "~/api/projetos/projetos";
 import type {
   Custo,
   CustoRequest,

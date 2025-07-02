@@ -6,18 +6,9 @@ import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 
 // 1. Importar as funções e tipos corretos do Orval
-import {
-  useDocumentsList,
-  useDocumentsCreate,
-  useDocumentsDestroy,
-} from "@/api/documentos/documentos";
-import { useProjectsProjectsList } from "@/api/projects/projects";
-import type {
-  DocumentoList,
-  DocumentoRequest,
-  PaginatedDocumentoListList,
-  PaginatedProjetoListList,
-} from "@/api/schemas";
+import { useDocumentsDestroy } from "@/api/documentos/documentos";
+import { useProjectsProjectsList } from "@/api/projetos/projetos";
+import type { PaginatedProjetoListList } from "@/api/schemas";
 
 definePageMeta({
   middleware: "auth",

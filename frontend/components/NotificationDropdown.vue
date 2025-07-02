@@ -1,50 +1,51 @@
 <!-- components/NotificationDropdown.vue -->
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+import { useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 import { useNotifications } from "@/composables/useNotifications";
 
-// 1. Importar funções e tipos corretos do Orval
+// Import Orval functions and types
 import {
   useCommunicationsNotificacoesList,
   useCommunicationsNotificacoesMarcarComoLidaCreate,
   useCommunicationsNotificacoesMarcarTodasComoLidasCreate,
 } from "@/api/comunicação/comunicação";
-import type { Notificacao, PaginatedNotificacaoList } from "@/api/schemas";
+import type { Notificacao } from "@/api/schemas";
 
 const isOpen = ref(false);
 const queryClient = useQueryClient();
 const { toast } = useToast();
 const { getNotificationIcon, formatRelativeDate } = useNotifications();
 
-// 2. Usar o hook do Orval DIRETAMENTE para buscar notificações
-const {
-  data: paginatedNotifications,
-  isLoading,
-  error,
-} = useQuery<PaginatedNotificacaoList>({
-  queryKey: ["unread-notifications"],
-  queryFn: () =>
-    useCommunicationsNotificacoesList({ lida: false, page_size: 10 }).then(
-      (res) => res.data
-    ),
-  enabled: isOpen, // A query só será executada quando o dropdown estiver aberto (isOpen === true)
-  refetchOnWindowFocus: true,
-});
+// Use the Orval hook directly with options
+const { data: notificationsResponse, isLoading } =
+  useCommunicationsNotificacoesList(
+    { lida: false, page_size: 10 },
+    {
+      query: {
+        enabled: isOpen,
+        refetchOnWindowFocus: true,
+      },
+    }
+  );
 
-const notifications = computed(
-  () => paginatedNotifications.value?.results || []
+// Computed properties to access the data
+const notifications = computed<Notificacao[]>(
+  () => notificationsResponse.value?.data.results || []
 );
-const unreadCount = computed(() => paginatedNotifications.value?.count || 0);
+const unreadCount = computed(
+  () => notificationsResponse.value?.data.count || 0
+);
 
-// 3. Mutação para marcar UMA notificação como lida
+// Mark as read mutation
 const markAsReadMutation = useCommunicationsNotificacoesMarcarComoLidaCreate({
   mutation: {
     onSuccess: () => {
-      // Invalida a query para que a lista seja recarregada na próxima vez que o dropdown abrir
-      queryClient.invalidateQueries({ queryKey: ["unread-notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["communications-notificacoes-list"],
+      });
     },
     onError: (err: any) =>
       toast({
@@ -55,7 +56,7 @@ const markAsReadMutation = useCommunicationsNotificacoesMarcarComoLidaCreate({
   },
 });
 
-// 4. Mutação para marcar TODAS como lidas
+// Mark all as read mutation
 const markAllAsReadMutation =
   useCommunicationsNotificacoesMarcarTodasComoLidasCreate({
     mutation: {
@@ -64,7 +65,9 @@ const markAllAsReadMutation =
           title: "Sucesso",
           description: "Todas as notificações foram marcadas como lidas.",
         });
-        queryClient.invalidateQueries({ queryKey: ["unread-notifications"] });
+        queryClient.invalidateQueries({
+          queryKey: ["communications-notificacoes-list"],
+        });
       },
       onError: (err: any) =>
         toast({
@@ -75,19 +78,19 @@ const markAllAsReadMutation =
     },
   });
 
-// --- HANDLERS ---
+// Handlers
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
 };
 
 const markAllAsRead = () => {
-  markAllAsReadMutation.mutate({ data: {} as any }); // Passa um payload vazio para satisfazer a tipagem
+  markAllAsReadMutation.mutate({ data: {} });
 };
 
 const handleNotificationClick = (notification: Notificacao) => {
   // Marca como lida se ainda não estiver
   if (!notification.lida) {
-    markAsReadMutation.mutate({ id: notification.id, data: {} as any });
+    markAsReadMutation.mutate({ id: notification.id, data: {} });
   }
 
   // Navega para a URL da notificação, se existir
@@ -97,8 +100,6 @@ const handleNotificationClick = (notification: Notificacao) => {
 
   isOpen.value = false; // Fecha o dropdown após o clique
 };
-
-const formatDate = formatRelativeDate;
 </script>
 
 <template>

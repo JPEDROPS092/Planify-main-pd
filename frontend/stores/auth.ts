@@ -3,7 +3,6 @@ import { ref, computed } from "vue";
 import type { User } from "@/api/schemas";
 
 export const useAuthStore = defineStore("auth", () => {
-  // Use useCookie para persistência de token (funciona no SSR e no cliente)
   const accessToken = useCookie<string | null>("auth_token", {
     maxAge: 60 * 60 * 24 * 7, // 7 dias
     default: () => null,
@@ -19,85 +18,56 @@ export const useAuthStore = defineStore("auth", () => {
   });
 
   const user = ref<User | null>(null);
-
-  // Computed para verificar se o usuário está logado
   const isLoggedIn = computed(() => !!accessToken.value && !!user.value);
-
-  // Mantendo compatibilidade com código existente
   const isAuthenticated = computed(() => isLoggedIn.value);
 
-  /**
-   * Define os tokens de acesso e refresh
-   */
   function setTokens(newAccessToken: string, newRefreshToken?: string) {
     accessToken.value = newAccessToken;
     if (newRefreshToken) {
       refreshToken.value = newRefreshToken;
     }
-    console.log("Tokens set in store.");
+    console.log("[auth.ts] Tokens definidos na store");
   }
 
-  /**
-   * Define os dados do usuário
-   */
-  function setUser(newUser: User) {
+  function setUser(newUser: User | null) {
     user.value = newUser;
-    console.log("User data set in store:", newUser.username);
+    console.log(
+      `[auth.ts] Dados do usuário definidos na store: ${
+        newUser?.username || "null"
+      }`
+    );
   }
 
-  /**
-   * Busca as informações do usuário atual (mantido para compatibilidade)
-   */
-  async function fetchUser() {
-    if (!accessToken.value) return;
-
-    try {
-      // Importação dinâmica para evitar problemas de SSR
-      const { authUsersMeRetrieve } = await import("~/api/auth/auth");
-      const response = await authUsersMeRetrieve();
-
-      if (response.data) {
-        user.value = response.data;
-        console.log("User data fetched and set:", response.data.username);
-      } else {
-        throw new Error("Dados do usuário não encontrados na resposta.");
-      }
-    } catch (error) {
-      console.error("Falha ao buscar dados do usuário:", error);
-      logout();
-    }
-  }
-
-  /**
-   * Tenta carregar a sessão a partir dos cookies (para inicialização da app)
-   */
-  async function tryToLoadSession() {
-    if (accessToken.value && !user.value) {
-      console.log("Token encontrado, tentando carregar sessão...");
-      await fetchUser();
-    }
-  }
-
-  /**
-   * Limpa todos os dados de autenticação
-   */
   function logout() {
+    console.log("[auth.ts] Realizando logout, limpando dados da sessão");
     accessToken.value = null;
     refreshToken.value = null;
     user.value = null;
-    console.log("User logged out, tokens and user cleared.");
   }
 
-  /**
-   * Função legacy para compatibilidade (deprecated)
-   * @deprecated Use setTokens e setUser separadamente
-   */
-  async function setAuthData(tokenData: { access: string; refresh?: string }) {
-    console.warn(
-      "setAuthData is deprecated. Use setTokens and setUser instead."
-    );
-    setTokens(tokenData.access, tokenData.refresh);
-    await fetchUser();
+  async function initialize() {
+    console.log("[auth.ts] Iniciando inicialização da store de autenticação");
+
+    if (!accessToken.value) {
+      console.log("[auth.ts] Nenhum token encontrado, pulando inicialização");
+      return;
+    }
+
+    if (user.value) {
+      console.log("[auth.ts] Usuário já está carregado, pulando inicialização");
+      return;
+    }
+
+    console.log("[auth.ts] Token encontrado. Buscando dados do usuário...");
+    try {
+      const { authUsersMeRetrieve } = await import("~/api/auth/auth");
+      const response = await authUsersMeRetrieve();
+      setUser(response.data);
+      console.log("[auth.ts] Dados do usuário carregados com sucesso");
+    } catch (error) {
+      console.error("[auth.ts] Erro ao carregar dados do usuário:", error);
+      logout();
+    }
   }
 
   return {
@@ -108,14 +78,12 @@ export const useAuthStore = defineStore("auth", () => {
 
     // Getters
     isLoggedIn,
-    isAuthenticated, // Para compatibilidade
+    isAuthenticated,
 
     // Actions
     setTokens,
     setUser,
-    fetchUser,
-    tryToLoadSession,
+    initialize,
     logout,
-    setAuthData, // Deprecated but kept for compatibility
   };
 });

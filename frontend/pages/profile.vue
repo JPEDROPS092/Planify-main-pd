@@ -4,9 +4,9 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
-import { useAuthStore } from "@/stores/auth"; // Importar a store para ser a fonte da verdade
+import { useAuthStore } from "@/stores/auth";
 
-// 1. Importar os hooks e tipos corretos do Orval para o perfil do usuário
+// Import Orval types and functions
 import { useAuthUsersMePartialUpdate } from "@/api/auth/auth";
 import type { User, PatchedUserRequest } from "@/api/schemas";
 
@@ -21,17 +21,16 @@ const { toast } = useToast();
 const authStore = useAuthStore();
 
 const showEditModal = ref(false);
-
-// 2. O formulário de edição agora é tipado como PatchedUserRequest
 const editForm = ref<PatchedUserRequest>({});
 
-// 3. O usuário é obtido diretamente da store. Não é mais necessário um `useQuery` aqui.
-const user = computed(() => authStore.user);
-// Para o loading inicial, podemos observar o estado da store, se necessário, ou usar um v-if no template.
-const isLoadingProfile = ref(!authStore.user); // Simula um carregamento se o usuário da store ainda não chegou
+// User from store with proper typing
+const user = computed<User | null>(() => authStore.user);
+const isLoadingProfile = ref(!authStore.user);
+
 onMounted(() => {
   if (authStore.user) isLoadingProfile.value = false;
 });
+
 watch(
   () => authStore.user,
   (newUser) => {
@@ -40,14 +39,12 @@ watch(
 );
 
 // --- MUTAÇÃO ---
-// 4. Usar a mutação para ATUALIZAÇÃO PARCIAL do perfil
 const updateProfileMutation = useAuthUsersMePartialUpdate({
   mutation: {
     onSuccess: (updatedUserData) => {
-      // Atualiza a store com os novos dados recebidos da API
       authStore.setUser(updatedUserData.data);
       toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
-      closeModal();
+      showEditModal.value = false;
     },
     onError: (err: any) => {
       toast({
@@ -64,21 +61,14 @@ const updateProfileMutation = useAuthUsersMePartialUpdate({
 // --- FUNÇÕES DE MANIPULAÇÃO ---
 const openEditModal = () => {
   if (!user.value) return;
-  // Preenche o formulário com os dados atuais do usuário da store
   editForm.value = {
     full_name: user.value.full_name,
     email: user.value.email,
-    // Outros campos do PatchedUserRequest podem ser adicionados aqui
   };
   showEditModal.value = true;
 };
 
-const closeModal = () => {
-  showEditModal.value = false;
-};
-
 const handleSubmit = () => {
-  // A mutação espera o payload dentro de um objeto 'data'
   updateProfileMutation.mutate({ data: editForm.value });
 };
 </script>
@@ -166,7 +156,7 @@ const handleSubmit = () => {
               </div>
               <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
-                  @click="openModal"
+                  @click="openEditModal"
                   class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
                 >
                   Editar Perfil
@@ -203,61 +193,62 @@ const handleSubmit = () => {
 
     <!-- Modal de Edição -->
     <div
-      v-if="showModal"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center"
+      v-if="showEditModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
       <div
-        class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800"
+        class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
       >
-        <div class="mt-3">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-            Editar Perfil
-          </h3>
-          <form @submit.prevent="handleSubmit" class="space-y-4">
-            <div>
-              <label
-                for="fullName"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >Nome Completo</label
-              >
-              <input
-                v-model="editForm.full_name"
-                id="fullName"
-                type="text"
-                class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-              />
-            </div>
-            <div>
-              <label
-                for="email"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >Email</label
-              >
-              <input
-                v-model="editForm.email"
-                id="email"
-                type="email"
-                class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-              />
-            </div>
-            <div class="flex justify-end space-x-3 pt-4">
-              <button
-                @click="closeModal"
-                type="button"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                :disabled="updateProfileMutation.isPending.value"
-                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md disabled:opacity-50"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </form>
-        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+          Editar Perfil
+        </h3>
+
+        <form @submit.prevent="handleSubmit" class="space-y-4">
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Nome Completo
+            </label>
+            <input
+              v-model="editForm.full_name"
+              type="text"
+              class="w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Email
+            </label>
+            <input
+              v-model="editForm.email"
+              type="email"
+              class="w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+              required
+            />
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              @click="showEditModal = false"
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+              :disabled="updateProfileMutation.isPending"
+            >
+              {{ updateProfileMutation.isPending ? "Salvando..." : "Salvar" }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
