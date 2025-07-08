@@ -4,7 +4,6 @@ import { ref, computed } from "vue";
 import { useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
-import type { AxiosResponse } from "axios";
 
 // Importar as funções e tipos do Orval
 import {
@@ -40,7 +39,7 @@ const newTeam = ref<EquipeRequest>(getInitialFormState());
 
 // --- QUERIES ---
 // CORREÇÃO: Usar o hook do Orval diretamente
-let {
+const {
   data: paginatedTeams,
   isLoading,
   error,
@@ -49,7 +48,6 @@ let {
   {
     query: {
       keepPreviousData: true,
-      queryKey: ["teams-equipes-list", { page: currentPage.value, page_size: pageSize }],
     },
   }
 );
@@ -91,7 +89,7 @@ const deleteTeamMutation = useTeamsEquipesDestroy({
         title: "Equipe Excluída",
         description: "A equipe foi removida com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"] });
     },
     onError: (err: any) => {
       toast({
@@ -135,31 +133,6 @@ const confirmDelete = (id: number) => {
     deleteTeamMutation.mutate({ id });
   }
 };
-
-const updateList = (): Promise<AxiosResponse<PaginatedEquipeListList, any>> => {
-  let {
-    data: paginatedTeams,
-    isLoading,
-    error,
-  } = useTeamsEquipesList(
-    { page: currentPage.value, page_size: pageSize },
-    {
-      query: {
-        keepPreviousData: true,
-      },
-    }
-  );
-  
-  return new Promise<AxiosResponse<PaginatedEquipeListList, any>>((resolve, reject) => {
-    if (!isLoading) {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(paginatedTeams);
-      }
-    }
-  });
-}
 
 const getInitials = (name: string) => {
   if (!name) return "U";
