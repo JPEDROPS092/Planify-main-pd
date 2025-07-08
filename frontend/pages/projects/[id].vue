@@ -3,20 +3,20 @@
 import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
-import { useToast } from "~/composables/useToast";
-import type { Projeto, ProjetoRequest } from "~/api/schemas";
+import { useToast } from "@/composables/useToast";
+import type { Projeto, ProjetoRequest } from "@/api/schemas";
 
 // Importar os componentes de cada aba
-import ProjectOverview from "~/components/project/ProjectOverview.vue";
-import ProjectTasks from "~/components/project/ProjectTasks.vue";
-import ProjectModal from "~/components/ui/card/ProjectModal.vue";
+import ProjectOverview from "@/components/project/ProjectOverview.vue";
+import ProjectTasks from "@/components/project/ProjectTasks.vue";
+import ProjectModal from "@/components/project/ProjectModal.vue";
 
 // Importar funções do Orval
 import {
   useProjectsProjectsRetrieve,
   useProjectsProjectsUpdate,
   useProjectsProjectsDestroy,
-} from "~/api/projects/projects";
+} from "@/api/projects/projects";
 
 definePageMeta({
   middleware: "auth",

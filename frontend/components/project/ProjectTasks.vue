@@ -3,19 +3,20 @@
 import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
-import { useToast } from "~/composables/useToast";
+import { useToast } from "@/composables/useToast";
 import type {
   Projeto,
   TarefaList,
   PaginatedTarefaListList,
   TarefaRequest,
-} from "~/api/schemas";
+  NovoStatusBbcEnum,
+} from "@/api/schemas";
 import {
   useTasksTarefasList,
   useTasksTarefasCreate,
   useTasksTarefasUpdate,
   useTasksTarefasDestroy,
-} from "~/api/tasks/tasks";
+} from "@/api/tasks/tasks";
 
 const props = defineProps<{
   projectId: number;
@@ -30,10 +31,10 @@ const editingTask = ref<TarefaList | null>(null);
 const taskForm = ref<Partial<TarefaRequest>>({
   titulo: "",
   descricao: "",
-  status: "PENDENTE",
+  status: "A_FAZER",
   prioridade: "MEDIA",
   data_inicio: "",
-  data_fim: "",
+  data_termino: "",
   projeto: props.projectId,
 });
 
@@ -42,71 +43,87 @@ const {
   data: paginatedTasks,
   isLoading,
   error,
-} = useQuery<PaginatedTarefaListList>({
-  queryKey: ["project-tasks", props.projectId],
-  queryFn: () =>
-    useTasksTarefasList({
-      projeto: props.projectId,
-      page_size: 100,
-      ordering: "-criado_em",
-    }).then((res) => res.data),
-});
+} = useTasksTarefasList(
+  {
+    projeto: props.projectId,
+    page: 1,
+    ordering: "-criado_em",
+  },
+  {
+    query: {
+      queryKey: ["project-tasks", props.projectId],
+    },
+  }
+);
 
-const tasks = computed(() => paginatedTasks.value?.results || []);
+const tasks = computed(() => paginatedTasks.value?.data?.results || []);
 
 // Mutações
-const createTaskMutation = useMutation({
-  mutationFn: (data: TarefaRequest) =>
-    useTasksTarefasCreate({ data }).then((res) => res.data),
-  onSuccess: () => {
-    toast({ title: "Sucesso!", description: "Tarefa criada com sucesso." });
-    queryClient.invalidateQueries({
-      queryKey: ["project-tasks", props.projectId],
-    });
-    closeTaskModal();
-  },
-  onError: () => {
-    toast({
-      title: "Erro",
-      description: "Erro ao criar a tarefa.",
-      variant: "destructive",
-    });
-  },
-});
-
-const updateTaskMutation = useMutation({
-  mutationFn: (params: { id: number; data: TarefaRequest }) =>
-    useTasksTarefasUpdate(params).then((res) => res.data),
-  onSuccess: () => {
-    toast({ title: "Sucesso!", description: "Tarefa atualizada com sucesso." });
-    queryClient.invalidateQueries({
-      queryKey: ["project-tasks", props.projectId],
-    });
-    closeTaskModal();
-  },
-  onError: () => {
-    toast({
-      title: "Erro",
-      description: "Erro ao atualizar a tarefa.",
-      variant: "destructive",
-    });
+const createTaskMutation = useTasksTarefasCreate({
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Sucesso!",
+        description: "Tarefa criada com sucesso.",
+        type: "success",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", props.projectId],
+      });
+      closeTaskModal();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar a tarefa.",
+        type: "error",
+      });
+    },
   },
 });
 
-const deleteTaskMutation = useMutation({
-  mutationFn: (id: number) => useTasksTarefasDestroy({ id }),
-  onSuccess: () => {
-    toast({ title: "Sucesso!", description: "Tarefa excluída com sucesso." });
-    queryClient.invalidateQueries({
-      queryKey: ["project-tasks", props.projectId],
-    });
+const updateTaskMutation = useTasksTarefasUpdate({
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Sucesso!",
+        description: "Tarefa atualizada com sucesso.",
+        type: "success",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", props.projectId],
+      });
+      closeTaskModal();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar a tarefa.",
+        type: "error",
+      });
+    },
   },
-  onError: () => {
-    toast({
-      title: "Erro",
-      description: "Erro ao excluir a tarefa.",
-      variant: "destructive",
-    });
+});
+
+const deleteTaskMutation = useTasksTarefasDestroy({
+  mutation: {
+    onSuccess: () => {
+      toast({
+        title: "Sucesso!",
+        description: "Tarefa excluída com sucesso.",
+        type: "success",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-tasks", props.projectId],
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir a tarefa.",
+        type: "error",
+      });
+    },
   },
 });
 
@@ -115,10 +132,10 @@ const handleCreateTask = () => {
   taskForm.value = {
     titulo: "",
     descricao: "",
-    status: "PENDENTE",
+    status: "A_FAZER",
     prioridade: "MEDIA",
     data_inicio: "",
-    data_fim: "",
+    data_termino: "",
     projeto: props.projectId,
   };
   showTaskModal.value = true;
@@ -132,7 +149,7 @@ const handleEditTask = (task: TarefaList) => {
 
 const handleDeleteTask = (task: TarefaList) => {
   if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
-    deleteTaskMutation.mutate(task.id);
+    deleteTaskMutation.mutate({ id: task.id });
   }
 };
 
@@ -148,18 +165,35 @@ const submitTask = () => {
       data: taskForm.value as TarefaRequest,
     });
   } else {
-    createTaskMutation.mutate(taskForm.value as TarefaRequest);
+    createTaskMutation.mutate({ data: taskForm.value as TarefaRequest });
   }
 };
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: NovoStatusBbcEnum) => {
   const colors = {
-    PENDENTE: "bg-yellow-100 text-yellow-800",
+    A_FAZER: "bg-yellow-100 text-yellow-800",
     EM_ANDAMENTO: "bg-blue-100 text-blue-800",
-    CONCLUIDA: "bg-green-100 text-green-800",
-    CANCELADA: "bg-red-100 text-red-800",
+    FEITO: "bg-green-100 text-green-800",
   };
-  return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
+  return colors[status] || "bg-gray-100 text-gray-800";
+};
+
+const getStatusLabel = (status?: NovoStatusBbcEnum) => {
+  const labels = {
+    A_FAZER: "A Fazer",
+    EM_ANDAMENTO: "Em Andamento",
+    FEITO: "Feito",
+  };
+  return status ? labels[status] : "Sem status";
+};
+
+const getPriorityLabel = (priority?: string) => {
+  const labels = {
+    BAIXA: "Baixa",
+    MEDIA: "Média",
+    ALTA: "Alta",
+  };
+  return priority ? labels[priority as keyof typeof labels] : "Não definida";
 };
 
 const formatDate = (date: string) => {
@@ -203,35 +237,40 @@ const formatDate = (date: string) => {
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
               {{ task.titulo }}
             </h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ task.descricao }}
-            </p>
 
             <div class="mt-2 flex flex-wrap gap-2">
               <!-- Status -->
               <span
+                v-if="task.status"
                 :class="[
                   getStatusColor(task.status),
                   'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
                 ]"
               >
-                {{ task.status_display }}
+                {{ getStatusLabel(task.status) }}
               </span>
 
-              <!-- Datas -->
+              <!-- Prioridade -->
+              <span
+                v-if="task.prioridade"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+              >
+                {{ getPriorityLabel(task.prioridade) }}
+              </span>
+
+              <!-- Data de término -->
               <span class="inline-flex items-center text-xs text-gray-500">
                 <Icon icon="lucide:calendar" class="h-3 w-3 mr-1" />
-                {{ formatDate(task.data_inicio) }} -
-                {{ formatDate(task.data_fim) }}
+                {{ formatDate(task.data_termino) }}
               </span>
 
-              <!-- Responsável -->
+              <!-- Responsáveis -->
               <span
-                v-if="task.responsavel"
+                v-if="task.atribuicoes.length > 0"
                 class="inline-flex items-center text-xs text-gray-500"
               >
-                <Icon icon="lucide:user" class="h-3 w-3 mr-1" />
-                {{ task.responsavel }}
+                <Icon icon="lucide:users" class="h-3 w-3 mr-1" />
+                {{ task.atribuicoes.length }} responsável(is)
               </span>
             </div>
           </div>
@@ -346,14 +385,14 @@ const formatDate = (date: string) => {
 
           <div>
             <label
-              for="data_fim"
+              for="data_termino"
               class="block text-sm font-medium text-gray-700"
             >
-              Data de Fim
+              Data de Término
             </label>
             <input
-              id="data_fim"
-              v-model="taskForm.data_fim"
+              id="data_termino"
+              v-model="taskForm.data_termino"
               type="date"
               required
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
@@ -373,7 +412,8 @@ const formatDate = (date: string) => {
             type="submit"
             class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             :disabled="
-              createTaskMutation.isPending || updateTaskMutation.isPending
+              createTaskMutation.isPending.value ||
+              updateTaskMutation.isPending.value
             "
           >
             {{ editingTask ? "Atualizar" : "Criar" }}

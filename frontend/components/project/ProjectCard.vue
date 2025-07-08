@@ -1,143 +1,213 @@
 <template>
-  <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200">
-    <div class="p-6">
-      <!-- Header do projeto -->
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center space-x-3">
-          <div class="flex-shrink-0">
-            <Icon 
-              :icon="getProjectIcon(project.status)" 
-              :class="getStatusColor(project.status)"
-              class="h-8 w-8"
-            />
-          </div>
-          <div>
-            <h3 class="text-lg font-medium text-gray-900 truncate">
-              {{ project.titulo }}
-            </h3>
-            <p class="text-sm text-gray-500">
-              {{ project.criador_username }}
-            </p>
-          </div>
-        </div>
-        
-        <!-- Menu de ações -->
-        <div class="relative" ref="menuRef">
-          <button
-            @click="showMenu = !showMenu"
-            class="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <Icon icon="lucide:more-vertical" class="h-5 w-5 text-gray-400" />
-          </button>
-          
-          <div
-            v-if="showMenu"
-            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200"
-          >
-            <div class="py-1">
-              <button
-                @click="viewProject"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+  <div
+    class="bg-white overflow-hidden shadow-sm rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-gray-200 group cursor-pointer"
+  >
+    <!-- Header do Card -->
+    <div class="p-6 pb-4">
+      <div class="flex items-start justify-between">
+        <!-- Título e Status -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="flex-shrink-0">
+              <div
+                :class="[
+                  'w-10 h-10 rounded-lg flex items-center justify-center',
+                  getStatusIconBg(project.status),
+                ]"
               >
-                <Icon icon="lucide:eye" class="h-4 w-4 mr-2" />
-                Ver Detalhes
-              </button>
-              <button
-                @click="editProject"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                <Icon
+                  :icon="getProjectIcon(project.status)"
+                  class="h-5 w-5 text-white"
+                />
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3
+                class="text-lg font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors"
               >
-                <Icon icon="lucide:edit" class="h-4 w-4 mr-2" />
-                Editar
-              </button>
-              <button
-                @click="archiveProject"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-              >
-                <Icon :icon="project.arquivado ? 'lucide:archive-restore' : 'lucide:archive'" class="h-4 w-4 mr-2" />
-                {{ project.arquivado ? 'Desarquivar' : 'Arquivar' }}
-              </button>
-              <button
-                @click="deleteProject"
-                class="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-              >
-                <Icon icon="lucide:trash-2" class="h-4 w-4 mr-2" />
-                Excluir
-              </button>
+                {{ project.titulo }}
+              </h3>
+              <div class="flex items-center gap-2 mt-1">
+                <Badge :variant="getStatusVariant(project.status)" size="sm">
+                  {{ getStatusLabel(project.status) }}
+                </Badge>
+                <Badge
+                  :variant="getPriorityVariant(project.prioridade)"
+                  size="sm"
+                >
+                  {{ getPriorityLabel(project.prioridade) }}
+                </Badge>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- Menu de Ações -->
+        <div class="flex-shrink-0 relative" ref="menuRef">
+          <Dropdown>
+            <template #trigger>
+              <button
+                class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Icon icon="lucide:more-horizontal" class="h-4 w-4" />
+              </button>
+            </template>
+
+            <DropdownItem
+              icon="lucide:eye"
+              label="Ver Detalhes"
+              @click="viewProject"
+            />
+            <DropdownItem
+              icon="lucide:edit"
+              label="Editar"
+              @click="editProject"
+            />
+            <DropdownItem
+              :icon="
+                project.arquivado ? 'lucide:archive-restore' : 'lucide:archive'
+              "
+              :label="project.arquivado ? 'Desarquivar' : 'Arquivar'"
+              @click="archiveProject"
+            />
+            <DropdownItem
+              icon="lucide:trash-2"
+              label="Excluir"
+              danger
+              @click="deleteProject"
+              divider
+            />
+          </Dropdown>
         </div>
       </div>
 
       <!-- Descrição -->
-      <p class="text-sm text-gray-600 mb-4 line-clamp-2">
-        {{ project.descricao || 'Sem descrição' }}
+      <p
+        v-if="project.descricao"
+        class="text-gray-600 text-sm line-clamp-2 mt-2"
+      >
+        {{ project.descricao }}
       </p>
+    </div>
 
-      <!-- Status e Prioridade -->
-      <div class="flex items-center space-x-4 mb-4">
-        <span 
-          :class="getStatusBadgeClass(project.status)"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-        >
-          {{ project.status_display }}
-        </span>
-        <span 
-          :class="getPriorityBadgeClass(project.prioridade)"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-        >
-          {{ project.prioridade_display }}
-        </span>
-        <span 
-          v-if="project.atrasado"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-        >
-          <Icon icon="lucide:clock" class="h-3 w-3 mr-1" />
-          Atrasado
-        </span>
+    <!-- Progresso -->
+    <div class="px-6 pb-4">
+      <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+        <span>Progresso</span>
+        <span class="font-medium">{{ progressPercentage }}%</span>
       </div>
+      <Progress
+        :value="progressPercentage"
+        size="sm"
+        :variant="getProgressVariant()"
+        animated
+      />
+    </div>
 
-      <!-- Progresso -->
-      <div class="mb-4">
-        <div class="flex justify-between text-sm text-gray-600 mb-1">
-          <span>Progresso</span>
-          <span>{{ project.progresso }}%</span>
+    <!-- Estatísticas -->
+    <div class="px-6 pb-4 grid grid-cols-3 gap-4">
+      <div class="text-center">
+        <div class="text-lg font-semibold text-gray-900">
+          {{ project.total_tarefas || 0 }}
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            class="bg-primary h-2 rounded-full transition-all duration-300"
-            :style="{ width: `${project.progresso}%` }"
-          ></div>
-        </div>
+        <div class="text-xs text-gray-500">Tarefas</div>
       </div>
-
-      <!-- Estatísticas -->
-      <div class="grid grid-cols-3 gap-4 mb-4">
-        <div class="text-center">
-          <div class="text-lg font-semibold text-gray-900">{{ project.tasks_count }}</div>
-          <div class="text-xs text-gray-500">Tarefas</div>
+      <div class="text-center">
+        <div class="text-lg font-semibold text-green-600">
+          {{ project.tarefas_concluidas || 0 }}
         </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-gray-900">{{ project.membros_count }}</div>
-          <div class="text-xs text-gray-500">Membros</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-gray-900">{{ project.dias_restantes || 0 }}</div>
-          <div class="text-xs text-gray-500">Dias</div>
-        </div>
+        <div class="text-xs text-gray-500">Concluídas</div>
       </div>
+      <div class="text-center">
+        <div class="text-lg font-semibold text-blue-600">
+          {{ project.total_membros || 0 }}
+        </div>
+        <div class="text-xs text-gray-500">Membros</div>
+      </div>
+    </div>
 
+    <!-- Datas e Membros -->
+    <div class="px-6 pb-6">
       <!-- Datas -->
-      <div class="flex justify-between text-xs text-gray-500">
-        <span>Início: {{ formatDate(project.data_inicio) }}</span>
-        <span>Fim: {{ formatDate(project.data_fim) }}</span>
+      <div class="flex items-center gap-4 text-sm text-gray-500 mb-3">
+        <div class="flex items-center gap-1">
+          <Icon icon="lucide:calendar" class="h-4 w-4" />
+          <span>{{ formatDate(project.data_inicio) }}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <Icon icon="lucide:flag" class="h-4 w-4" />
+          <span>{{ formatDate(project.data_fim) }}</span>
+        </div>
+      </div>
+
+      <!-- Membros -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="flex -space-x-2">
+            <Avatar
+              v-for="(member, index) in project.membros?.slice(0, 3)"
+              :key="index"
+              :name="member.nome || `Membro ${index + 1}`"
+              :src="member.avatar"
+              size="sm"
+              class="border-2 border-white"
+            />
+            <div
+              v-if="(project.membros?.length || 0) > 3"
+              class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600"
+            >
+              +{{ (project.membros?.length || 0) - 3 }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicador de atraso -->
+        <div
+          v-if="isOverdue"
+          class="flex items-center gap-1 text-red-500 text-sm"
+        >
+          <Icon icon="lucide:alert-triangle" class="h-4 w-4" />
+          <span>Atrasado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer com ações rápidas -->
+    <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Tooltip content="Última atualização">
+            <template #trigger>
+              <div class="flex items-center gap-1 text-xs text-gray-500">
+                <Icon icon="lucide:clock" class="h-3 w-3" />
+                <span>{{ formatRelativeTime(project.atualizado_em) }}</span>
+              </div>
+            </template>
+          </Tooltip>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            @click="viewProject"
+            class="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
+          >
+            Ver Detalhes
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
-import type { Projeto } from '~/api-types';
+import { Icon } from "@iconify/vue";
+import type { Projeto } from "~/api/schemas";
+import Badge from "@/components/ui/Badge.vue";
+import Avatar from "@/components/ui/Avatar.vue";
+import Progress from "@/components/ui/Progress.vue";
+import Tooltip from "@/components/ui/Tooltip.vue";
+import Dropdown from "@/components/ui/Dropdown.vue";
+import DropdownItem from "@/components/ui/DropdownItem.vue";
 
 interface Props {
   project: Projeto;
@@ -152,80 +222,139 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
-const showMenu = ref(false);
 const menuRef = ref<HTMLElement>();
 
-// Fechar menu ao clicar fora
-onClickOutside(menuRef, () => {
-  showMenu.value = false;
+// Computed properties
+const progressPercentage = computed(() => {
+  const total = props.project.total_tarefas || 0;
+  const completed = props.project.tarefas_concluidas || 0;
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
 });
 
+const isOverdue = computed(() => {
+  if (!props.project.data_fim) return false;
+  const today = new Date();
+  const endDate = new Date(props.project.data_fim);
+  return endDate < today && props.project.status !== "CONCLUIDO";
+});
+
+// Ícones e cores para status
 const getProjectIcon = (status: string) => {
   const icons = {
-    'PLANEJADO': 'lucide:calendar',
-    'EM_ANDAMENTO': 'lucide:play-circle',
-    'PAUSADO': 'lucide:pause-circle',
-    'CONCLUIDO': 'lucide:check-circle',
-    'CANCELADO': 'lucide:x-circle'
+    PLANEJADO: "lucide:calendar",
+    EM_ANDAMENTO: "lucide:play-circle",
+    PAUSADO: "lucide:pause-circle",
+    CONCLUIDO: "lucide:check-circle",
+    CANCELADO: "lucide:x-circle",
   };
-  return icons[status as keyof typeof icons] || 'lucide:folder';
+  return icons[status as keyof typeof icons] || "lucide:folder";
 };
 
-const getStatusColor = (status: string) => {
+const getStatusIconBg = (status: string) => {
   const colors = {
-    'PLANEJADO': 'text-blue-500',
-    'EM_ANDAMENTO': 'text-green-500',
-    'PAUSADO': 'text-yellow-500',
-    'CONCLUIDO': 'text-green-600',
-    'CANCELADO': 'text-red-500'
+    PLANEJADO: "bg-blue-500",
+    EM_ANDAMENTO: "bg-green-500",
+    PAUSADO: "bg-yellow-500",
+    CONCLUIDO: "bg-emerald-500",
+    CANCELADO: "bg-red-500",
   };
-  return colors[status as keyof typeof colors] || 'text-gray-500';
+  return colors[status as keyof typeof colors] || "bg-gray-500";
 };
 
-const getStatusBadgeClass = (status: string) => {
-  const classes = {
-    'PLANEJADO': 'bg-blue-100 text-blue-800',
-    'EM_ANDAMENTO': 'bg-green-100 text-green-800',
-    'PAUSADO': 'bg-yellow-100 text-yellow-800',
-    'CONCLUIDO': 'bg-green-100 text-green-800',
-    'CANCELADO': 'bg-red-100 text-red-800'
+const getStatusVariant = (status: string) => {
+  const variants = {
+    PLANEJADO: "status-planejado" as const,
+    EM_ANDAMENTO: "status-andamento" as const,
+    PAUSADO: "status-pausado" as const,
+    CONCLUIDO: "status-concluido" as const,
+    CANCELADO: "status-cancelado" as const,
   };
-  return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800';
+  return variants[status as keyof typeof variants] || ("default" as const);
 };
 
-const getPriorityBadgeClass = (priority: string) => {
-  const classes = {
-    'BAIXA': 'bg-gray-100 text-gray-800',
-    'MEDIA': 'bg-yellow-100 text-yellow-800',
-    'ALTA': 'bg-orange-100 text-orange-800',
-    'CRITICA': 'bg-red-100 text-red-800'
+const getStatusLabel = (status: string) => {
+  const labels = {
+    PLANEJADO: "Planejado",
+    EM_ANDAMENTO: "Em Andamento",
+    PAUSADO: "Pausado",
+    CONCLUIDO: "Concluído",
+    CANCELADO: "Cancelado",
   };
-  return classes[priority as keyof typeof classes] || 'bg-gray-100 text-gray-800';
+  return labels[status as keyof typeof labels] || status;
 };
 
+const getPriorityVariant = (priority: string) => {
+  const variants = {
+    BAIXA: "priority-baixa" as const,
+    MEDIA: "priority-media" as const,
+    ALTA: "priority-alta" as const,
+    CRITICA: "priority-critica" as const,
+  };
+  return variants[priority as keyof typeof variants] || ("default" as const);
+};
+
+const getPriorityLabel = (priority: string) => {
+  const labels = {
+    BAIXA: "Baixa",
+    MEDIA: "Média",
+    ALTA: "Alta",
+    CRITICA: "Crítica",
+  };
+  return labels[priority as keyof typeof labels] || priority;
+};
+
+const getProgressVariant = () => {
+  if (progressPercentage.value >= 80) return "success" as const;
+  if (progressPercentage.value >= 60) return "info" as const;
+  if (progressPercentage.value >= 40) return "warning" as const;
+  return "danger" as const;
+};
+
+// Formatação de datas
 const formatDate = (date: string) => {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('pt-BR');
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
 };
 
+const formatRelativeTime = (date: string) => {
+  if (!date) return "N/A";
+
+  const now = new Date();
+  const past = new Date(date);
+  const diffInHours = Math.floor(
+    (now.getTime() - past.getTime()) / (1000 * 60 * 60)
+  );
+
+  if (diffInHours < 1) return "Agora mesmo";
+  if (diffInHours < 24) return `${diffInHours}h atrás`;
+  if (diffInHours < 48) return "Ontem";
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d atrás`;
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}sem atrás`;
+
+  return formatDate(date);
+};
+
+// Handlers
 const viewProject = () => {
-  showMenu.value = false;
   router.push(`/projects/${props.project.id}`);
 };
 
 const editProject = () => {
-  showMenu.value = false;
-  emit('edit', props.project);
+  emit("edit", props.project);
 };
 
 const archiveProject = () => {
-  showMenu.value = false;
-  emit('archive', props.project.id);
+  emit("archive", props.project.id);
 };
 
 const deleteProject = () => {
-  showMenu.value = false;
-  emit('delete', props.project.id);
+  emit("delete", props.project.id);
 };
 </script>
 
