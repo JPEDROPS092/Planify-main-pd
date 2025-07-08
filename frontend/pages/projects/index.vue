@@ -528,7 +528,7 @@ const visiblePages = computed(() => {
         <!-- Grid View -->
         <div
           v-if="viewMode === 'grid'"
-          class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          class="grid grid-cols-1 gap-8 lg:grid-cols-2"
         >
           <ProjectCard
             v-for="project in projects"

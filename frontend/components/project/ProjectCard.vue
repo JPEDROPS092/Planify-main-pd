@@ -1,14 +1,14 @@
 <template>
   <div
-    class="bg-white overflow-hidden shadow-sm rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-gray-200 group cursor-pointer"
+    class="bg-white overflow-hidden shadow-sm rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-gray-200 group cursor-pointer min-h-[380px] flex flex-col"
   >
     <!-- Header do Card -->
     <div class="p-6 pb-4">
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between gap-4">
         <!-- Título e Status -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="flex-shrink-0">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="flex-shrink-0 mt-1">
               <div
                 :class="[
                   'w-10 h-10 rounded-lg flex items-center justify-center',
@@ -23,11 +23,12 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3
-                class="text-lg font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors"
+                class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors leading-tight mb-2"
+                :title="project.titulo"
               >
                 {{ project.titulo }}
               </h3>
-              <div class="flex items-center gap-2 mt-1">
+              <div class="flex items-center gap-2 flex-wrap">
                 <Badge :variant="getStatusVariant(project.status)" size="sm">
                   {{ getStatusLabel(project.status) }}
                 </Badge>
@@ -82,16 +83,15 @@
       </div>
 
       <!-- Descrição -->
-      <p
-        v-if="project.descricao"
-        class="text-gray-600 text-sm line-clamp-2 mt-2"
-      >
-        {{ project.descricao }}
-      </p>
+      <div v-if="project.descricao" class="mt-3">
+        <p class="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+          {{ project.descricao }}
+        </p>
+      </div>
     </div>
 
     <!-- Progresso -->
-    <div class="px-6 pb-4">
+    <div class="px-6 pb-4 mt-auto">
       <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
         <span>Progresso</span>
         <span class="font-medium">{{ progressPercentage }}%</span>
@@ -105,7 +105,7 @@
     </div>
 
     <!-- Estatísticas -->
-    <div class="px-6 pb-4 grid grid-cols-3 gap-4">
+    <div class="px-6 pb-4 grid grid-cols-3 gap-5 border-t border-gray-100">
       <div class="text-center">
         <div class="text-lg font-semibold text-gray-900">
           {{ project.total_tarefas || 0 }}
@@ -362,6 +362,15 @@ const deleteProject = () => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

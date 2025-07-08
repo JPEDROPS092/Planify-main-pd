@@ -16,7 +16,7 @@ import {
   useProjectsProjectsRetrieve,
   useProjectsProjectsUpdate,
   useProjectsProjectsDestroy,
-} from "@/api/projects/projects";
+} from "@/api/projetos/projetos";
 
 definePageMeta({
   middleware: "auth",
@@ -34,33 +34,38 @@ const showEditModal = ref(false);
 // Query principal para buscar os dados do projeto.
 // Esta query é a ÚNICA que carrega os dados do PROJETO.
 const {
-  data: project,
+  data: projectResponse,
   isLoading: projectLoading,
   error: projectError,
-} = useQuery<Projeto>({
-  queryKey: ["project", projectId],
-  queryFn: () =>
-    useProjectsProjectsRetrieve(projectId.value).then((res) => res.data),
-  enabled: computed(() => !!projectId.value && !isNaN(projectId.value)),
+} = useProjectsProjectsRetrieve(projectId, {
+  query: {
+    enabled: computed(() => !!projectId.value && !isNaN(projectId.value)),
+  },
 });
+
+// Extrair o projeto da resposta
+const project = computed(() => projectResponse.value?.data);
 
 // Mutação para atualizar o projeto (usada pelo modal)
 const updateMutation = useProjectsProjectsUpdate({
   mutation: {
     onSuccess: (updatedProject) => {
-      toast({ title: "Sucesso!", description: "Projeto atualizado." });
-      // Atualiza o cache da query com os novos dados para evitar um refetch
-      queryClient.setQueryData(
-        ["project", projectId.value],
-        updatedProject.data
-      );
+      toast({
+        title: "Sucesso!",
+        description: "Projeto atualizado.",
+        type: "success",
+      });
+      // Invalida e refaz a query para obter os dados atualizados
+      queryClient.invalidateQueries({
+        queryKey: ["projects", "projects", "retrieve", projectId.value],
+      });
       showEditModal.value = false;
     },
     onError: (err: any) =>
       toast({
         title: "Erro",
         description: "Falha ao atualizar o projeto.",
-        variant: "destructive",
+        type: "error",
       }),
   },
 });
@@ -69,14 +74,18 @@ const updateMutation = useProjectsProjectsUpdate({
 const deleteMutation = useProjectsProjectsDestroy({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso!", description: "Projeto excluído." });
+      toast({
+        title: "Sucesso!",
+        description: "Projeto excluído.",
+        type: "success",
+      });
       router.push("/projects");
     },
     onError: (err: any) =>
       toast({
         title: "Erro",
         description: "Falha ao excluir o projeto.",
-        variant: "destructive",
+        type: "error",
       }),
   },
 });
@@ -109,7 +118,8 @@ const currentTabComponent = computed(() => {
   return tabs.find((tab) => tab.id === activeTab.value)?.component;
 });
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string | undefined) => {
+  if (!status) return "text-gray-500";
   const colors = {
     PLANEJADO: "text-blue-500",
     EM_ANDAMENTO: "text-green-500",
@@ -120,7 +130,7 @@ const getStatusColor = (status: string) => {
   return colors[status as keyof typeof colors] || "text-gray-500";
 };
 
-const formatDate = (date: string) => {
+const formatDate = (date: string | undefined) => {
   if (!date) return "N/A";
   return new Date(date).toLocaleDateString("pt-BR");
 };
@@ -141,22 +151,22 @@ const formatDate = (date: string) => {
           <div class="flex justify-between items-start mb-4">
             <div>
               <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {{ project.titulo }}
+                {{ project?.titulo || "Projeto" }}
               </h1>
               <div class="mt-1 flex items-center space-x-4">
                 <span
                   :class="[
-                    getStatusColor(project.status),
+                    getStatusColor(project?.status),
                     'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
                   ]"
                 >
-                  {{ project.status_display }}
+                  {{ project?.status_display || "N/A" }}
                 </span>
                 <span class="text-sm text-gray-500">
-                  Criado por {{ project.criador_username }}
+                  Criado por {{ project?.criador_username || "N/A" }}
                 </span>
                 <span class="text-sm text-gray-500">
-                  {{ formatDate(project.criado_em) }}
+                  {{ formatDate(project?.criado_em) }}
                 </span>
               </div>
             </div>
@@ -185,12 +195,12 @@ const formatDate = (date: string) => {
               class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1"
             >
               <span>Progresso Geral</span>
-              <span>{{ project.progresso }}%</span>
+              <span>{{ project?.progresso || 0 }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
               <div
                 class="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
-                :style="{ width: `${project.progresso}%` }"
+                :style="{ width: `${project?.progresso || 0}%` }"
               ></div>
             </div>
           </div>
@@ -220,7 +230,7 @@ const formatDate = (date: string) => {
         <keep-alive>
           <component
             :is="currentTabComponent"
-            v-if="currentTabComponent"
+            v-if="currentTabComponent && project"
             :project-id="projectId"
             :project="project"
           />
@@ -228,6 +238,7 @@ const formatDate = (date: string) => {
 
         <!-- Modal de Edição -->
         <ProjectModal
+          v-if="project"
           :show="showEditModal"
           :project="project"
           :loading="updateMutation.isPending.value"
