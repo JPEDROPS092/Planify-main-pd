@@ -5,29 +5,46 @@ import { useToast } from "@/composables/useToast";
 // Substitua pelo seu endpoint real:
 import { useTeamsEquipesUsuariosDisponiveisList } from "@/api/equipes/equipes";
 
+const PapelEnum = {
+  PO: "Product Owner",
+  SM: "Scrum Master",
+  DEV: "Desenvolvedor",
+  QA: "Analista de Qualidade",
+  DESIGN: "Designer",
+  ANALISTA: "Analista",
+};
+
 const props = defineProps<{
   show: boolean;
 }>();
 const emit = defineEmits(["close", "add"]);
 
 const selectedUserId = ref<number | null>(null);
+const selectedRole = ref<keyof typeof PapelEnum | "">("");
 
 const { data, isLoading, error } = useTeamsEquipesUsuariosDisponiveisList();
 
 const userOptions = computed(() =>
   {
-    console.log(data.value?.data);
     return (data.value?.data || []).map((u: any) => ({
       label: u.full_name || u.username || u.email,
       value: u.id,
     })) || []
   }
-  
 );
+
+const papelOptions = Object.entries(PapelEnum).map(([key, value]) => ({
+  label: value,
+  value: key
+}))
 
 function handleAdd() {
   if (selectedUserId.value) {
-    emit("add", selectedUserId.value);
+    emit("add", 
+      {
+        usuario: selectedUserId.value,
+        papel: selectedRole.value
+      });
     emit("close");
     selectedUserId.value = null;
   }
@@ -65,6 +82,20 @@ watch(
             {{ user.label }}
           </option>
         </select>
+        <select
+          v-if="selectedUserId"
+          v-model="selectedRole"
+          class="w-full border rounded px-3 py-2 mb-4"
+        >
+          <option value="" disabled>Selecione o papel do membro</option>
+          <option
+            v-for="papel in papelOptions"
+            :key="papel.value"
+            :value="papel.value"
+          >
+            {{ papel.label }}
+          </option>
+        </select>
         <div class="flex justify-end space-x-2">
           <button
             @click="emit('close')"
@@ -74,7 +105,7 @@ watch(
             Cancelar
           </button>
           <button
-            :disabled="!selectedUserId"
+            :disabled="!selectedUserId || !selectedRole"
             @click="handleAdd"
             class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             type="button"

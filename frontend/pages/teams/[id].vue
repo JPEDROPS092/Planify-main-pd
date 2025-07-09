@@ -101,19 +101,24 @@ const updateMutation = useTeamsEquipesUpdate({
 
 const createAdicionarMembroMutation = useTeamsEquipesAdicionarMembroCreate({
   mutation: {
-    onSuccess: () => {
+    onSuccess: (updatedTeam) => {
       toast({
-        title: "Equipe Criada",
-        description: "A nova equipe foi criada com sucesso.",
+        title: "Membro Adicionado",
+        description: "O novo membro de equipe foi adicionado com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"] });
+      console.log('updated team', updatedTeam.data);
+
+      queryClient.setQueryData(
+        ["equipe", teamId.value],
+        updatedTeam.data
+      );
       showMembersModal.value = false;
     },
     onError: (err: any) => {
       toast({
         title: "Erro",
         description:
-          err.response?.data?.detail || "Não foi possível criar a equipe.",
+          err.response?.data?.detail || "Não foi possível adicionar o membro de equipe.",
         variant: "destructive",
       });
     },
@@ -205,7 +210,7 @@ const handleAddMember = () => {
           <TeamMembers
             :show="showMembersModal"
             @close="showMembersModal = false"
-            @submit="(data) => updateMutation.mutate({ id: teamId, data })"
+            @add="(data) => createAdicionarMembroMutation.mutate({ id: teamId, data })"
           />
         </div>
 
