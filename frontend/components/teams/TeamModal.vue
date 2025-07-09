@@ -90,7 +90,7 @@ onMounted(() => {
         <div class="sm:flex sm:items-start">
           <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-              {{ isEditing ? 'Editar Projeto' : 'Novo Projeto' }}
+              {{ isEditing ? 'Editar Equipe' : 'Nova Equipe' }}
             </h3>
             <div class="mt-4">
               <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -128,7 +128,7 @@ onMounted(() => {
                 <div class="mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
                   <button
                     type="submit"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800"
                     :disabled="loading"
                   >
                     <span v-if="loading" class="inline-block mr-2">

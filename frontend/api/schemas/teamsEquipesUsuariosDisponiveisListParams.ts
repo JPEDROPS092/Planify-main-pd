@@ -19,4 +19,8 @@ export type TeamsEquipesUsuariosDisponiveisListParams = {
    * A search term.
    */
   search?: string;
+  /**
+   * Novo parâmetro! Serve para saber quais usuários não fazem parte da equipe
+   */
+  equipe?: number;
 };
