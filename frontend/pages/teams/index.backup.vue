@@ -4,7 +4,6 @@ import { ref, computed } from "vue";
 import { useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
-import type { AxiosResponse } from "axios";
 
 // Importar as funções e tipos do Orval
 import {
@@ -40,7 +39,7 @@ const newTeam = ref<EquipeRequest>(getInitialFormState());
 
 // --- QUERIES ---
 // CORREÇÃO: Usar o hook do Orval diretamente
-let {
+const {
   data: paginatedTeams,
   isLoading,
   error,
@@ -49,7 +48,6 @@ let {
   {
     query: {
       keepPreviousData: true,
-      queryKey: ["teams-equipes-list", { page: currentPage.value, page_size: pageSize }],
     },
   }
 );
@@ -91,7 +89,7 @@ const deleteTeamMutation = useTeamsEquipesDestroy({
         title: "Equipe Excluída",
         description: "A equipe foi removida com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["teams-equipes-list"] });
     },
     onError: (err: any) => {
       toast({
@@ -136,31 +134,6 @@ const confirmDelete = (id: number) => {
   }
 };
 
-const updateList = (): Promise<AxiosResponse<PaginatedEquipeListList, any>> => {
-  let {
-    data: paginatedTeams,
-    isLoading,
-    error,
-  } = useTeamsEquipesList(
-    { page: currentPage.value, page_size: pageSize },
-    {
-      query: {
-        keepPreviousData: true,
-      },
-    }
-  );
-  
-  return new Promise<AxiosResponse<PaginatedEquipeListList, any>>((resolve, reject) => {
-    if (!isLoading) {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(paginatedTeams);
-      }
-    }
-  });
-}
-
 const getInitials = (name: string) => {
   if (!name) return "U";
   return name
@@ -187,7 +160,7 @@ const getInitials = (name: string) => {
       </div>
       <button
         @click="openModal"
-        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-900 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       >
         <Icon icon="lucide:plus" class="mr-2 h-5 w-5" />
         Nova Equipe
@@ -379,7 +352,7 @@ const getInitials = (name: string) => {
               <button
                 type="submit"
                 :disabled="createTeamMutation.isPending.value"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-900 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               >
                 <Icon
                   v-if="createTeamMutation.isPending.value"

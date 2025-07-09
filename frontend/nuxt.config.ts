@@ -11,8 +11,8 @@ export default defineNuxtConfig({
   // A ordem dos módulos geralmente não é crítica, mas é bom mantê-los organizados.
   modules: [
     "@nuxtjs/tailwindcss",
-    "@pinia/nuxt", // Pinia é fundamental para sua store de autenticação.
-    "nuxt-icon",
+    "@pinia/nuxt",
+    "@nuxt/icon",
     "@vueuse/nuxt",
   ],
 

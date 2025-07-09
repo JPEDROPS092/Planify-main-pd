@@ -14,7 +14,7 @@ import {
   useUsersAdminUsersDestroy,
   useUsersAdminUsersActivateCreate,
   useUsersAdminUsersDeactivateCreate,
-} from "@/api/usuários/usuários";
+} from "@/api/usuarios/usuarios";
 import type {
   User,
   UserRequest,

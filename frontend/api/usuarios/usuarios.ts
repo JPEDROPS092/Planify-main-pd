@@ -28,7 +28,7 @@ import type {
   UserCreate,
   UserRequest,
   UsersAdminUsersListParams,
-} from ".././schemas";
+} from "../schemas";
 
 import { customMutator } from "../../lib/axios-instance";
 import type { ErrorType } from "../../lib/axios-instance";

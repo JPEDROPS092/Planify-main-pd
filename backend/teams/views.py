@@ -172,7 +172,13 @@ class EquipeViewSet(viewsets.ModelViewSet):
         Remove um membro da equipe.
         """
         equipe = self.get_object()
-        membro = equipe.membros.get(usuario_id=request.data.get('usuario'))
+        try: 
+            membro = equipe.membros.get(usuario_id=request.data.get('usuario'))
+        except MembroEquipe.DoesNotExist as e:
+            return Response(
+                data={'message': 'Membro de equipe não foi encontrado', 'detail': str(e)}, 
+                status=status.HTTP_404_NOT_FOUND
+                )
         membro.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
