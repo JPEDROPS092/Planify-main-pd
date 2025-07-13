@@ -4,11 +4,18 @@ import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
+import { useApiErrorHandler } from "@/composables/useApiErrorHandler";
 import { format } from "date-fns";
+import { debugAuthToken } from "@/utils/auth-debug";
 
 // 1. Importar funções e tipos do Orval
 import { useTasksTarefasList, useTasksTarefasDestroy } from "@/api/tasks/tasks";
-import type { TarefaList, PaginatedTarefaListList } from "@/api/schemas";
+import type {
+  TarefaList,
+  PaginatedTarefaListList,
+  NovoStatusBbcEnum,
+  PrioridadeEnum,
+} from "@/api/schemas";
 
 definePageMeta({
   middleware: "auth",
@@ -17,45 +24,46 @@ definePageMeta({
 const router = useRouter();
 const queryClient = useQueryClient();
 const { toast } = useToast();
+const { handleApiError } = useApiErrorHandler();
 
 const currentPage = ref(1);
-const pageSize = 10;
 
 // 2. Query para buscar a lista de tarefas
 const {
-  data: paginatedTasks,
+  data: tasksResponse,
   isLoading,
   error,
   refetch,
-} = useQuery<PaginatedTarefaListList>({
-  queryKey: ["tasks", currentPage],
-  queryFn: () =>
-    useTasksTarefasList({ page: currentPage.value, page_size: pageSize }).then(
-      (res) => res.data
-    ),
-});
+} = useTasksTarefasList(computed(() => ({ page: currentPage.value })));
 
+const paginatedTasks = computed(() => tasksResponse.value?.data);
 const tasks = computed(() => paginatedTasks.value?.results || []);
 const totalPages = computed(() =>
   paginatedTasks.value?.count
-    ? Math.ceil(paginatedTasks.value.count / pageSize)
+    ? Math.ceil(paginatedTasks.value.count / 20) // Assumindo 20 itens por página como padrão
     : 1
 );
 
-// 3. Mutação para deletar uma tarefa
+// 3. Enhanced mutação para deletar uma tarefa
 const deleteTaskMutation = useTasksTarefasDestroy({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Tarefa excluída com sucesso." });
+      toast({
+        title: "Sucesso",
+        description: "Tarefa excluída com sucesso.",
+        type: "success",
+      });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description:
-          err.response?.data?.detail || "Não foi possível excluir a tarefa.",
-        variant: "destructive",
+      console.error("Delete Task Error Details:", {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers,
       });
+
+      handleApiError(err, "Não foi possível excluir a tarefa.");
     },
   },
 });
@@ -66,6 +74,7 @@ const handleCreateTask = () => {
   toast({
     title: "Em breve",
     description: "O modal para criar tarefas será implementado aqui.",
+    type: "info",
   });
 };
 
@@ -75,6 +84,8 @@ const handleEditTask = (taskId: number) => {
 
 const handleDeleteTask = (taskId: number) => {
   if (window.confirm("Tem certeza que deseja excluir esta tarefa?")) {
+    console.log(`Attempting to delete task ${taskId}`);
+    debugAuthToken();
     deleteTaskMutation.mutate({ id: taskId });
   }
 };
@@ -83,7 +94,7 @@ const handleDeleteTask = (taskId: number) => {
 const formatDate = (dateString: string) =>
   dateString ? format(new Date(`${dateString}T12:00:00`), "dd/MM/yyyy") : "-";
 
-const getStatusClass = (status?: TarefaList["status"]) =>
+const getStatusClass = (status?: NovoStatusBbcEnum) =>
   ({
     A_FAZER:
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
@@ -91,28 +102,28 @@ const getStatusClass = (status?: TarefaList["status"]) =>
       "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     FEITO:
       "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  })[status || ""] || "bg-gray-100 text-gray-800";
+  })[status || "A_FAZER"] || "bg-gray-100 text-gray-800";
 
-const getStatusLabel = (status?: TarefaList["status"]) =>
+const getStatusLabel = (status?: NovoStatusBbcEnum) =>
   ({
     A_FAZER: "A Fazer",
     EM_ANDAMENTO: "Em Andamento",
     FEITO: "Feito",
-  })[status || ""] || "Desconhecido";
+  })[status || "A_FAZER"] || "Desconhecido";
 
-const getPriorityClass = (priority?: TarefaList["prioridade"]) =>
+const getPriorityClass = (priority?: PrioridadeEnum) =>
   ({
     ALTA: "text-red-600",
     MEDIA: "text-orange-500",
     BAIXA: "text-green-600",
-  })[priority || ""] || "text-gray-500";
+  })[priority || "BAIXA"] || "text-gray-500";
 
-const getPriorityLabel = (priority?: TarefaList["prioridade"]) =>
+const getPriorityLabel = (priority?: PrioridadeEnum) =>
   ({
     ALTA: "Alta",
     MEDIA: "Média",
     BAIXA: "Baixa",
-  })[priority || ""] || "Não definida";
+  })[priority || "BAIXA"] || "Não definida";
 </script>
 
 <template>
@@ -171,10 +182,10 @@ const getPriorityLabel = (priority?: TarefaList["prioridade"]) =>
             >
               <div
                 class="flex items-center gap-1.5"
-                :title="`Projeto: ${task.projeto_nome}`"
+                :title="`Projeto ID: ${task.projeto}`"
               >
                 <Icon icon="lucide:folder" class="w-4 h-4" />
-                <span>{{ task.projeto_nome }}</span>
+                <span>Projeto {{ task.projeto }}</span>
               </div>
               <div
                 v-if="task.data_termino"

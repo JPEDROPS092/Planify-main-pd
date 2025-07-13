@@ -1,10 +1,23 @@
 <!-- filepath: pages/tasks/[id].vue -->
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
+import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
+import { useApiErrorHandler } from "@/composables/useApiErrorHandler";
 import { format } from "date-fns";
+import {
+  debugAuthToken,
+  checkTaskPermissions,
+  testTaskAPIDirectly,
+} from "@/utils/auth-debug";
+import DebugAuthPanel from "@/components/DebugAuthPanel.vue";
+
+// Nuxt-specific function for page metadata (available globally)
+// definePageMeta({
+//   middleware: "auth",
+// });
 
 // 1. Importar funções e tipos do Orval
 import {
@@ -18,11 +31,9 @@ import type {
   TasksAddCommentRequest,
   TasksUpdateStatusRequest,
   TasksAssignUserRequest,
+  NovoStatusBbcEnum,
+  PrioridadeEnum,
 } from "@/api/schemas";
-
-definePageMeta({
-  middleware: "auth",
-});
 
 const router = useRouter();
 const route = useRoute();
@@ -30,72 +41,91 @@ const taskId = computed(() => Number(route.params.id));
 
 const queryClient = useQueryClient();
 const { toast } = useToast();
+const { handleApiError } = useApiErrorHandler();
 
 const newComment = ref("");
 
 // 2. Query para buscar os detalhes da tarefa
 const {
-  data: task,
+  data: taskResponse,
   isLoading,
   error,
-} = useQuery<Tarefa>({
-  queryKey: ["task", taskId],
-  queryFn: () => useTasksTarefasRetrieve(taskId.value).then((res) => res.data),
-  enabled: computed(() => !!taskId.value), // Só executa se o ID for válido
+} = useTasksTarefasRetrieve(taskId, {
+  query: {
+    enabled: computed(() => !!taskId.value),
+  },
+});
+
+const task = computed(() => taskResponse.value?.data);
+
+// Add debugging when component mounts
+onMounted(() => {
+  console.log("Task detail page mounted for task:", taskId.value);
+  checkTaskPermissions(taskId.value);
+  // Test direct API call to see raw response
+  testTaskAPIDirectly(taskId.value);
 });
 
 // --- MUTAÇÕES ---
 
-// 3. Mutação para adicionar comentário
+// 3. Enhanced mutação para adicionar comentário
 const addCommentMutation = useTasksTarefasAddCommentCreate({
   mutation: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId.value] });
       newComment.value = "";
-      toast({ title: "Comentário adicionado!" });
+      toast({ title: "Comentário adicionado!", type: "success" });
     },
     onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description:
-          err.response?.data?.detail ||
-          "Não foi possível adicionar o comentário.",
-        variant: "destructive",
+      console.error("Add Comment Error Details:", {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers,
       });
+
+      handleApiError(err, "Não foi possível adicionar o comentário.");
     },
   },
 });
 
-// 4. Mutação para atualizar o status
+// 4. Enhanced mutação para atualizar o status
 const updateStatusMutation = useTasksTarefasUpdateStatusCreate({
   mutation: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId.value] });
-      toast({ title: "Status Atualizado" });
+      toast({ title: "Status Atualizado", type: "success" });
     },
     onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o status.",
-        variant: "destructive",
+      console.error("Update Status Error Details:", {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers,
+        config: err.config,
       });
+
+      handleApiError(err, "Não foi possível atualizar o status.");
     },
   },
 });
 
-// 5. Mutação para remover responsável
+// 5. Enhanced mutação para remover responsável
 const removeAssignmentMutation = useTasksTarefasUnassignUserCreate({
   mutation: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId.value] });
-      toast({ title: "Responsável Removido" });
+      toast({ title: "Responsável Removido", type: "success" });
     },
     onError: (err: any) => {
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover o responsável.",
-        variant: "destructive",
+      console.error("Remove Assignment Error Details:", {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers,
       });
+
+      handleApiError(err, "Não foi possível remover o responsável.");
     },
   },
 });
@@ -103,11 +133,20 @@ const removeAssignmentMutation = useTasksTarefasUnassignUserCreate({
 // --- HANDLERS ---
 const handleAddComment = () => {
   if (!newComment.value.trim()) return;
+
+  console.log(`Attempting to add comment to task ${taskId.value}`);
+  checkTaskPermissions(taskId.value);
+
   const payload: TasksAddCommentRequest = { texto: newComment.value };
   addCommentMutation.mutate({ id: taskId.value, data: payload });
 };
 
-const handleUpdateStatus = (newStatus: TasksUpdateStatusRequest["status"]) => {
+const handleUpdateStatus = (newStatus: NovoStatusBbcEnum) => {
+  console.log(
+    `Attempting to update status of task ${taskId.value} to ${newStatus}`
+  );
+  checkTaskPermissions(taskId.value);
+
   const payload: TasksUpdateStatusRequest = { status: newStatus };
   updateStatusMutation.mutate({ id: taskId.value, data: payload });
 };
@@ -129,13 +168,13 @@ const statusDisplayMap = {
   A_FAZER: { label: "A Fazer", class: "bg-yellow-100 text-yellow-800" },
   EM_ANDAMENTO: { label: "Em Andamento", class: "bg-blue-100 text-blue-800" },
   FEITO: { label: "Feito", class: "bg-green-100 text-green-800" },
-};
+} as const;
 
 const priorityDisplayMap = {
   ALTA: { label: "Alta", class: "text-red-600" },
   MEDIA: { label: "Média", class: "text-orange-500" },
   BAIXA: { label: "Baixa", class: "text-green-600" },
-};
+} as const;
 </script>
 
 <template>
@@ -163,7 +202,7 @@ const priorityDisplayMap = {
               <Icon icon="lucide:arrow-left" class="w-6 h-6" />
             </button>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {{ task.titulo }}
+              {{ task?.titulo }}
             </h1>
           </div>
         </div>
@@ -178,37 +217,8 @@ const priorityDisplayMap = {
               Descrição
             </h2>
             <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-              {{ task.descricao || "Sem descrição detalhada." }}
+              {{ task?.descricao || "Sem descrição detalhada." }}
             </p>
-          </div>
-
-          <div v-if="task.comentarios?.length">
-            <h2
-              class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200"
-            >
-              Comentários
-            </h2>
-            <div class="space-y-4">
-              <div
-                v-for="comment in task.comentarios"
-                :key="comment.id"
-                class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4"
-              >
-                <div class="flex justify-between items-center mb-1">
-                  <p
-                    class="font-medium text-sm text-gray-900 dark:text-gray-100"
-                  >
-                    {{ comment.autor.full_name }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ formatDate(comment.criado_em) }}
-                  </p>
-                </div>
-                <p class="text-gray-700 dark:text-gray-300 text-sm">
-                  {{ comment.texto }}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div>
@@ -254,8 +264,14 @@ const priorityDisplayMap = {
                 <dd class="mt-1">
                   <span
                     class="px-2 py-1 rounded-full text-xs font-medium"
-                    :class="statusDisplayMap[task.status!]?.class"
-                    >{{ statusDisplayMap[task.status!]?.label }}</span
+                    :class="
+                      task?.status ? statusDisplayMap[task.status]?.class : ''
+                    "
+                    >{{
+                      task?.status
+                        ? statusDisplayMap[task.status]?.label
+                        : "N/A"
+                    }}</span
                   >
                 </dd>
               </div>
@@ -268,19 +284,27 @@ const priorityDisplayMap = {
                 <dd class="mt-1">
                   <span
                     class="font-medium"
-                    :class="priorityDisplayMap[task.prioridade!]?.class"
-                    >{{ priorityDisplayMap[task.prioridade!]?.label }}</span
+                    :class="
+                      task?.prioridade
+                        ? priorityDisplayMap[task.prioridade]?.class
+                        : ''
+                    "
+                    >{{
+                      task?.prioridade
+                        ? priorityDisplayMap[task.prioridade]?.label
+                        : "N/A"
+                    }}</span
                   >
                 </dd>
               </div>
-              <div v-if="task.projeto_nome">
+              <div>
                 <dt
                   class="text-sm font-medium text-gray-500 dark:text-gray-400"
                 >
-                  Projeto
+                  Projeto ID
                 </dt>
                 <dd class="mt-1 font-medium text-gray-900 dark:text-gray-100">
-                  {{ task.projeto_nome }}
+                  {{ task?.projeto }}
                 </dd>
               </div>
               <div>
@@ -290,7 +314,7 @@ const priorityDisplayMap = {
                   Responsáveis
                 </dt>
                 <dd
-                  v-if="task.atribuicoes?.length"
+                  v-if="task?.atribuicoes?.length"
                   class="mt-1 font-medium text-gray-900 dark:text-gray-100"
                 >
                   <span
@@ -314,7 +338,7 @@ const priorityDisplayMap = {
                   Prazo
                 </dt>
                 <dd class="mt-1 font-medium text-gray-900 dark:text-gray-100">
-                  {{ formatDate(task.data_termino) }}
+                  {{ formatDate(task?.data_termino || "") }}
                 </dd>
               </div>
             </dl>
@@ -322,7 +346,7 @@ const priorityDisplayMap = {
               <button
                 @click="handleUpdateStatus('FEITO')"
                 class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                :disabled="task.status === 'FEITO'"
+                :disabled="task?.status === 'FEITO'"
               >
                 Marcar como Concluída
               </button>
@@ -330,6 +354,37 @@ const priorityDisplayMap = {
           </div>
         </div>
       </div>
+
+      <!-- Debug section for development -->
+      <div
+        class="mt-8 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border-l-4 border-blue-500"
+      >
+        <h3 class="font-bold text-lg mb-2">Debug Info (Development Only)</h3>
+        <div class="space-y-2 text-sm">
+          <p><strong>Task ID:</strong> {{ taskId }}</p>
+          <p><strong>Task Status:</strong> {{ task?.status }}</p>
+          <p>
+            <strong>User Permissions:</strong> Check console for token details
+          </p>
+          <div class="flex gap-2 mt-3">
+            <button
+              @click="debugAuthToken()"
+              class="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+            >
+              Debug Token
+            </button>
+            <button
+              @click="checkTaskPermissions(taskId)"
+              class="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+            >
+              Check Permissions
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Debug Panel for development -->
+  <DebugAuthPanel :task-id="taskId" />
 </template>
