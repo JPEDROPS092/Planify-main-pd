@@ -47,6 +47,13 @@ export default defineNuxtConfig({
   // Adicionar `stores` explicitamente aqui é uma boa prática para clareza.
   imports: {
     dirs: ["stores"],
+    global: true,
+    presets: [
+      {
+        from: "#app",
+        imports: ["useRoute", "useRouter"]
+      }
+    ]
   },
 
   // --- CSS GLOBAL ---
