@@ -31,22 +31,24 @@ const {
   isLoading,
   error,
   refetch,
-} = useQuery<PaginatedNotificacaoList>({
-  queryKey: ["notifications", currentPage],
-  queryFn: () =>
-    useCommunicationsNotificacoesList({ page: currentPage.value }).then(
-      (res) => res.data
-    ),
-  placeholderData: (previousData) => previousData,
-});
+} = useCommunicationsNotificacoesList(
+  computed(() => ({
+    page: currentPage.value,
+  })),
+  {
+    query: {
+      placeholderData: (previousData) => previousData,
+    },
+  }
+);
 
 // Calcula o total de páginas e extrai os resultados
 const totalPages = computed(() => {
-  if (!paginatedNotifications.value?.count) return 1;
-  return Math.ceil(paginatedNotifications.value.count / pageSize);
+  if (!paginatedNotifications.value?.data?.count) return 1;
+  return Math.ceil(paginatedNotifications.value.data.count / pageSize);
 });
 const notifications = computed(
-  () => paginatedNotifications.value?.results || []
+  () => paginatedNotifications.value?.data?.results || []
 );
 
 // 3. Mutação para marcar uma notificação como lida
@@ -56,6 +58,7 @@ const markAsReadMutation = useCommunicationsNotificacoesMarcarComoLidaCreate({
       toast({
         title: "Sucesso",
         description: "Notificação marcada como lida.",
+        type: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       // Invalide também outras queries que dependem do status de leitura, se houver
@@ -64,7 +67,7 @@ const markAsReadMutation = useCommunicationsNotificacoesMarcarComoLidaCreate({
       toast({
         title: "Erro",
         description: err.response?.data?.detail || "Falha ao marcar como lida.",
-        variant: "destructive",
+        type: "error",
       });
     },
   },
@@ -78,6 +81,7 @@ const markAllAsReadMutation =
         toast({
           title: "Sucesso",
           description: "Todas as notificações foram marcadas como lidas.",
+          type: "success",
         });
         queryClient.invalidateQueries({ queryKey: ["notifications"] });
       },
@@ -86,7 +90,7 @@ const markAllAsReadMutation =
           title: "Erro",
           description:
             err.response?.data?.detail || "Falha ao marcar todas como lidas.",
-          variant: "destructive",
+          type: "error",
         });
       },
     },
@@ -151,7 +155,7 @@ const getIconBgClass = (type: Notificacao["tipo"]) => {
           @click="handleMarkAllAsRead"
           :disabled="
             !notifications.length ||
-            notifications.every((n) => n.lida) ||
+            notifications.every((n: Notificacao) => n.lida) ||
             markAllAsReadMutation.isPending.value
           "
           class="text-sm font-medium text-primary-600 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -270,7 +274,7 @@ const getIconBgClass = (type: Notificacao["tipo"]) => {
       >
         <button
           @click="currentPage--"
-          :disabled="!paginatedNotifications?.previous"
+          :disabled="!paginatedNotifications?.data?.previous"
           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Anterior
@@ -282,7 +286,7 @@ const getIconBgClass = (type: Notificacao["tipo"]) => {
         </span>
         <button
           @click="currentPage++"
-          :disabled="!paginatedNotifications?.next"
+          :disabled="!paginatedNotifications?.data?.next"
           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Próximo

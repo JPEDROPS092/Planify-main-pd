@@ -48,6 +48,31 @@ export default defineNuxtPlugin((nuxtApp) => {
     async (error) => {
       const originalRequest = error.config;
 
+      // Enhanced error logging for debugging
+      console.error("[Axios Plugin] API Error Details:", {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        requestHeaders: error.config?.headers,
+      });
+
+      // Handle 403 Forbidden errors specifically
+      if (error.response?.status === 403) {
+        console.error(
+          "[Axios Plugin] 403 Forbidden Error - Permission denied for:",
+          {
+            url: error.config?.url,
+            method: error.config?.method,
+            userToken:
+              error.config?.headers?.Authorization?.substring(0, 30) + "...",
+            errorDetail: error.response?.data?.detail,
+          }
+        );
+      }
+
       // Se o erro é 401 e ainda não tentamos renovar o token
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;

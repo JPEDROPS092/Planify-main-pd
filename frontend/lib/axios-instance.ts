@@ -11,6 +11,58 @@ export const axiosInstance = axios.create({
   timeout: 15000,
 });
 
+// Enhanced request interceptor for debugging
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Get token from storage
+    const token =
+      localStorage.getItem("auth-token") ||
+      sessionStorage.getItem("auth-token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log(
+        `Making ${config.method?.toUpperCase()} request to:`,
+        config.url
+      );
+      console.log("With token:", token.substring(0, 20) + "...");
+    } else {
+      console.warn("No auth token available for request:", config.url);
+    }
+    return config;
+  },
+  (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// Enhanced response interceptor for debugging
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API Error Details:", {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      headers: error.response?.headers,
+    });
+
+    if (error.response?.status === 401) {
+      console.error("Unauthorized - token may be expired or invalid");
+      // Clear token if unauthorized
+      localStorage.removeItem("auth-token");
+      sessionStorage.removeItem("auth-token");
+    } else if (error.response?.status === 403) {
+      console.error("Forbidden - user lacks permissions for this resource");
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // ======================= A CORREÇÃO ESTÁ AQUI =======================
 
 // Tipagem explícita para a configuração que o Orval passa

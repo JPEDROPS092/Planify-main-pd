@@ -18,16 +18,17 @@ import {
   useProjectsProjectsDestroy,
 } from "@/api/projetos/projetos";
 
-definePageMeta({
-  middleware: "auth",
-});
-
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
 const { toast } = useToast();
 
-const projectId = computed(() => parseInt(route.params.id as string, 10));
+const projectId = computed(() => {
+  if (typeof route.params.id === 'string') {
+    return parseInt(route.params.id, 10);
+  }
+  return 1; // fallback
+});
 const activeTab = ref("overview");
 const showEditModal = ref(false);
 
@@ -227,14 +228,12 @@ const formatDate = (date: string | undefined) => {
         </div>
 
         <!-- Conteúdo da Aba Ativa -->
-        <keep-alive>
-          <component
-            :is="currentTabComponent"
-            v-if="currentTabComponent && project"
-            :project-id="projectId"
-            :project="project"
-          />
-        </keep-alive>
+        <component
+          :is="currentTabComponent"
+          v-if="currentTabComponent && project"
+          :project-id="projectId"
+          :project="project"
+        />
 
         <!-- Modal de Edição -->
         <ProjectModal
