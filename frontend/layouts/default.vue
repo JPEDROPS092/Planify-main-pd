@@ -23,6 +23,7 @@ const navigation = [
   { name: "Equipes", href: "/teams", icon: "lucide:users" },
   { name: "Usuários", href: "/users", icon: "lucide:user-cog" },
   { name: "Documentos", href: "/documents", icon: "lucide:file-text" },
+  { name: "Comunicações", href: "/communications", icon: "lucide:message-square" },
   { name: "Custos", href: "/costs", icon: "lucide:dollar-sign" },
   { name: "Riscos", href: "/risks", icon: "lucide:alert-triangle" },
   { name: "Notificações", href: "/notifications", icon: "lucide:bell" },
