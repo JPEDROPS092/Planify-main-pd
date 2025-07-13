@@ -15,8 +15,14 @@ import { ptBR } from "date-fns/locale";
 import {
   useCostsAlertasList,
   costsAlertasResolverCreate,
+  getCostsAlertasListQueryKey,
 } from "@/api/custo/custo";
-import type { PaginatedAlertaList, Alerta } from "@/api/schemas";
+import type {
+  PaginatedAlertaList,
+  Alerta,
+  AlertaRequest,
+  AlertaTipoEnum,
+} from "@/api/schemas";
 
 const queryClient = useQueryClient();
 const { toast } = useToast();
@@ -30,37 +36,56 @@ const {
   isLoading,
   error,
   refetch,
-} = useQuery<PaginatedAlertaList>({
-  queryKey: ["alerts", currentPage],
-  queryFn: () => costsAlertasList({ page: currentPage.value }),
-  placeholderData: (previousData) => previousData, // Mantém os dados antigos enquanto busca novos
-});
+} = useCostsAlertasList(
+  computed(() => ({ page: currentPage.value })),
+  {
+    query: {
+      placeholderData: (previousData) => previousData, // Mantém os dados antigos enquanto busca novos
+    },
+  }
+);
 
 // Calcula o total de páginas a partir do 'count' da API
 const totalPages = computed(() => {
-  if (!paginatedAlerts.value?.count) return 1;
-  return Math.ceil(paginatedAlerts.value.count / pageSize);
+  if (!paginatedAlerts.value?.data.count) return 1;
+  return Math.ceil(paginatedAlerts.value.data.count / pageSize);
 });
 
 // Extrai a lista de resultados para facilitar o uso no template
-const alerts = computed(() => paginatedAlerts.value?.results || []);
+const alerts = computed(() => paginatedAlerts.value?.data.results || []);
+
+// Helpers para navegação
+const hasNextPage = computed(() => currentPage.value < totalPages.value);
+const hasPreviousPage = computed(() => currentPage.value > 1);
 
 // 3. Usar a função correta do Orval para a mutação de resolver o alerta
 const resolveAlertMutation = useMutation({
-  mutationFn: (alertId: number) => {
-    // A função do Orval não precisa de um corpo, apenas o ID
-    return costsAlertasResolverCreate(alertId);
+  mutationFn: (alert: Alerta) => {
+    const minimalRequest: AlertaRequest = {
+      tipo: alert.tipo as AlertaTipoEnum,
+      projeto: alert.projeto,
+      tarefa: alert.tarefa,
+      percentual: "0.00",
+      mensagem: "Alerta resolvido",
+      status: "RESOLVIDO",
+      resolvido_por: null,
+    };
+    return costsAlertasResolverCreate(alert.id, minimalRequest);
   },
   onSuccess: () => {
-    toast({ title: "Sucesso", description: "Alerta marcado como resolvido." });
+    toast({
+      title: "Sucesso",
+      description: "Alerta marcado como resolvido.",
+      type: "success",
+    });
     // Invalida a query para forçar o refetch dos dados atualizados
-    queryClient.invalidateQueries({ queryKey: ["alerts"] });
+    queryClient.invalidateQueries({ queryKey: getCostsAlertasListQueryKey() });
   },
   onError: (err: any) => {
     toast({
       title: "Erro",
       description: err.response?.data?.detail || "Falha ao resolver o alerta.",
-      variant: "destructive",
+      type: "error",
     });
   },
 });
@@ -177,11 +202,8 @@ const getAlertIcon = (status?: Alerta["status"]) => {
           </div>
           <button
             v-if="alert.status === 'ATIVO'"
-            @click="resolveAlertMutation.mutate(alert.id)"
-            :disabled="
-              resolveAlertMutation.isPending.value &&
-              resolveAlertMutation.variables.value === alert.id
-            "
+            @click="resolveAlertMutation.mutate(alert)"
+            :disabled="resolveAlertMutation.isPending.value"
             class="ml-4 flex-shrink-0 px-3 py-1 text-xs font-medium rounded-full bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
             title="Marcar como resolvido"
           >
@@ -199,7 +221,7 @@ const getAlertIcon = (status?: Alerta["status"]) => {
       >
         <button
           @click="currentPage--"
-          :disabled="!paginatedAlerts?.previous"
+          :disabled="!hasPreviousPage"
           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Anterior
@@ -211,7 +233,7 @@ const getAlertIcon = (status?: Alerta["status"]) => {
         </span>
         <button
           @click="currentPage++"
-          :disabled="!paginatedAlerts?.next"
+          :disabled="!hasNextPage"
           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Próximo
