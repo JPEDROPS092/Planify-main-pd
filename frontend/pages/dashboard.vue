@@ -31,13 +31,14 @@ const user = computed(() => authStore.user);
 // --- BUSCA DE DADOS ---
 
 // 2. Query para projetos recentes
-const { data: projectsResponse, isLoading: projectsLoading } = useProjectsProjectsList(
-  computed(() => ({
-    pageSize: 4,
-    ordering: "-criado_em",
-    responsavel: user.value?.id,
-  }))
-);
+const { data: projectsResponse, isLoading: projectsLoading } =
+  useProjectsProjectsList(
+    computed(() => ({
+      pageSize: 4,
+      ordering: "-criado_em",
+      responsavel: user.value?.id,
+    }))
+  );
 
 // 3. Query para tarefas do usuário
 const { data: tasksResponse, isLoading: tasksLoading } = useTasksTarefasList(
@@ -49,16 +50,18 @@ const { data: tasksResponse, isLoading: tasksLoading } = useTasksTarefasList(
 );
 
 // 4. Query para alertas pendentes
-const { data: alertsResponse, isLoading: alertsLoading } = useCostsAlertasPendentesRetrieve();
+const { data: alertsResponse, isLoading: alertsLoading } =
+  useCostsAlertasPendentesRetrieve();
 
 // 5. Query para notificações recentes
-const { data: notificationsResponse, isLoading: notificationsLoading } = useCommunicationsNotificacoesList(
-  computed(() => ({
-    pageSize: 5,
-    lida: false,
-    ordering: "-criado_em",
-  }))
-);
+const { data: notificationsResponse, isLoading: notificationsLoading } =
+  useCommunicationsNotificacoesList(
+    computed(() => ({
+      pageSize: 5,
+      lida: false,
+      ordering: "-criado_em",
+    }))
+  );
 
 // --- DADOS COMPUTADOS ---
 
@@ -79,13 +82,13 @@ const pendingAlerts = computed(() => alertsResponse.value?.data || []);
 
 // 5. Estatísticas calculadas
 const projectStats = computed(() => {
-  if (!projectsResponse.value?.data) return { active: 0, completed: 0, total: 0 };
+  if (!projectsResponse.value?.data)
+    return { active: 0, completed: 0, total: 0 };
 
   const total = projectsResponse.value.data.count || 0;
   const active = projects.value.filter(
     (p) =>
-      !p.arquivado &&
-      ["EM_ANDAMENTO", "PLANEJADO"].includes(p.status || "")
+      !p.arquivado && ["EM_ANDAMENTO", "PLANEJADO"].includes(p.status || "")
   ).length;
   const completed = projects.value.filter(
     (p) => !p.arquivado && p.status === "CONCLUIDO"
@@ -312,7 +315,9 @@ const handleLogout = async () => {
               class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <div class="flex items-center justify-between mb-1">
-                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <div
+                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
                   {{ project.titulo }}
                 </div>
                 <span
@@ -325,12 +330,14 @@ const handleLogout = async () => {
                     'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
                       project.status === 'PLANEJADO',
                     'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
-                      project.status === 'CANCELADO'
+                      project.status === 'CANCELADO',
                   }"
-                >{{ project.status }}</span
+                  >{{ project.status }}</span
                 >
               </div>
-              <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
+              <div
+                class="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4"
+              >
                 <span class="flex items-center">
                   <Icon icon="lucide:users" class="w-4 h-4 mr-1" />
                   {{ project.membros_count || 0 }} membros
@@ -379,7 +386,9 @@ const handleLogout = async () => {
               class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <div class="flex items-center justify-between mb-1">
-                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <div
+                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
                   {{ task.titulo }}
                 </div>
                 <span
@@ -390,12 +399,14 @@ const handleLogout = async () => {
                     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200':
                       task.status === 'EM_ANDAMENTO',
                     'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
-                      task.status === 'A_FAZER'
+                      task.status === 'A_FAZER',
                   }"
-                >{{ task.status }}</span
+                  >{{ task.status }}</span
                 >
               </div>
-              <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
+              <div
+                class="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4"
+              >
                 <span class="flex items-center">
                   <Icon icon="lucide:folder" class="w-4 h-4 mr-1" />
                   {{ task.projeto_titulo }}
@@ -456,7 +467,9 @@ const handleLogout = async () => {
                   class="w-5 h-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0"
                 />
                 <div>
-                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <p
+                    class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
                     {{ alert.mensagem }}
                   </p>
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -490,10 +503,7 @@ const handleLogout = async () => {
             v-else-if="notifications.length === 0"
             class="p-6 text-center text-gray-500"
           >
-            <Icon
-              icon="lucide:bell"
-              class="w-12 h-12 mx-auto text-gray-400"
-            />
+            <Icon icon="lucide:bell" class="w-12 h-12 mx-auto text-gray-400" />
             <p class="mt-2">Nenhuma notificação nova.</p>
           </div>
           <ul v-else class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -508,7 +518,9 @@ const handleLogout = async () => {
                   class="w-5 h-5 text-primary-500 mt-0.5 mr-2 flex-shrink-0"
                 />
                 <div>
-                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <p
+                    class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
                     {{ notification.titulo }}
                   </p>
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
