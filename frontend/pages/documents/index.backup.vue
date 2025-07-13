@@ -50,38 +50,25 @@ const form = ref(getInitialFormState());
 // --- QUERIES ---
 const {
   data: paginatedDocs,
-  isLoading: docsIsLoading,
-  error: docsError
-} = useDocumentsList(
-  { page: currentPage.value, page_size: pageSize },
-  {
-    query: {
-      keepPreviousData: true,
-      queryKey: ["documents-list", { page: currentPage.value, page_size: pageSize }]
-    }
-  }
-);
-
-const {
-  data: paginatedProjects,
-  isLoading: projectsIsLoading,
-  error: projectsError
-} = useProjectsProjectsList(
-  { page: currentPage.value, page_size: pageSize },
-  {
-    query: {
-      keepPreviousData: true,
-      queryKey: ["projects-list", { page: currentPage.value, page_size: pageSize }]
-    }
-  }
-);
-
-const projectsList = computed(() => paginatedProjects.value?.data.results || []);
-
-const documents = computed(() => {
-  return paginatedDocs.value?.data.results || []
+  isLoading,
+  error,
+  refetch,
+} = useQuery<PaginatedDocumentoListList>({
+  queryKey: ["documents", currentPage],
+  queryFn: () =>
+    useDocumentsList({ page: currentPage.value, page_size: pageSize }).then(
+      (res) => res.data
+    ),
 });
 
+const { data: projectsList } = useQuery<PaginatedProjetoListList>({
+  queryKey: ["projectsForDocs"],
+  queryFn: () =>
+    useProjectsProjectsList({ page_size: 100 }).then((res) => res.data),
+  staleTime: 1000 * 60 * 5,
+});
+
+const documents = computed(() => paginatedDocs.value?.results || []);
 const totalPages = computed(() =>
   paginatedDocs.value?.count
     ? Math.ceil(paginatedDocs.value.count / pageSize)
@@ -98,7 +85,7 @@ const uploadMutation = useDocumentsCreate({
         title: "Sucesso",
         description: "Documento enviado com sucesso!",
       });
-      queryClient.invalidateQueries({ queryKey: ["documents-list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
       closeModal();
     },
     onError: (err: any) => {
@@ -120,7 +107,7 @@ const deleteMutation = useDocumentsDestroy({
         title: "Sucesso",
         description: "Documento excluído com sucesso!",
       });
-      queryClient.invalidateQueries({ queryKey: ["documents-list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
     onError: (err: any) => {
       toast({
@@ -134,10 +121,6 @@ const deleteMutation = useDocumentsDestroy({
 });
 
 // --- FUNÇÕES DE MANIPULAÇÃO ---
-
-const handleUploadAxios = () => {
-  console.log("Dados do Form:", form.value, "Dados do Arquivo", selectedFile.value);
-}
 
 const onFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -232,7 +215,7 @@ const getFileIcon = (fileType: string | undefined) => {
       </div>
       <button
         @click="showUploadModal = true"
-        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       >
         <Icon icon="lucide:upload" class="mr-2 h-5 w-5" />
         Novo Upload
@@ -240,18 +223,17 @@ const getFileIcon = (fileType: string | undefined) => {
     </div>
 
     <!-- Estados da UI -->
-    <div v-if="docsIsLoading" class="text-center py-20">
+    <div v-if="isLoading" class="text-center py-20">
       <Icon
         icon="svg-spinners:180-ring-with-bg"
         class="w-16 h-16 mx-auto text-primary-600"
       />
     </div>
     <div
-      v-else-if="docsError"
+      v-else-if="error"
       class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md"
       role="alert"
     >
-      <pre>{{docsError}}</pre>
       Erro ao carregar documentos.
     </div>
     <div
@@ -329,7 +311,7 @@ const getFileIcon = (fileType: string | undefined) => {
       <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
         <button
           @click="currentPage--"
-          :disabled="!documents?.previous"
+          :disabled="!paginatedDocs?.previous"
           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Anterior
@@ -340,7 +322,7 @@ const getFileIcon = (fileType: string | undefined) => {
         >
         <button
           @click="currentPage++"
-          :disabled="!documents?.next"
+          :disabled="!paginatedDocs?.next"
           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           Próximo
@@ -358,7 +340,7 @@ const getFileIcon = (fileType: string | undefined) => {
         <div
           class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full"
         >
-          <form @submit.prevent="handleUploadAxios">
+          <form @submit.prevent="handleUpload">
             <div class="px-4 pt-5 pb-4 sm:p-6">
               <h3
                 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
@@ -394,7 +376,7 @@ const getFileIcon = (fileType: string | undefined) => {
                   >
                     <option disabled :value="0">Selecione um projeto</option>
                     <option
-                      v-for="project in projectsList"
+                      v-for="project in projectsList?.results"
                       :key="project.id"
                       :value="project.id"
                     >
@@ -451,7 +433,7 @@ const getFileIcon = (fileType: string | undefined) => {
               <button
                 type="submit"
                 :disabled="uploadMutation.isPending.value"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-800 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               >
                 <Icon
                   v-if="uploadMutation.isPending.value"
