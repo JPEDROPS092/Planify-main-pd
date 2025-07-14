@@ -48,7 +48,8 @@ const projectMetrics = computed(() => {
 const projectProgress = computed(() => {
   if (projectMetrics.value.totalTasks === 0) return 0;
   return Math.round(
-    (projectMetrics.value.completedTasks / projectMetrics.value.totalTasks) * 100
+    (projectMetrics.value.completedTasks / projectMetrics.value.totalTasks) *
+      100
   );
 });
 </script>

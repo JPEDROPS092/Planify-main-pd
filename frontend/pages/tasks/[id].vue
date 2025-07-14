@@ -14,6 +14,12 @@ import {
   testTaskAPIDirectly,
 } from "@/utils/auth-debug";
 import DebugAuthPanel from "@/components/DebugAuthPanel.vue";
+import {
+  useTasksTarefasRetrieve,
+  useTasksTarefasAddCommentCreate,
+  useTasksTarefasUpdateStatusCreate,
+  useTasksTarefasUnassignUserCreate,
+} from "@/api/tasks/tasks";
 
 // Força o uso do middleware de autenticação
 definePageMeta({

@@ -14,6 +14,7 @@ from drf_spectacular.types import OpenApiTypes
 from .models import Tarefa, AtribuicaoTarefa, ComentarioTarefa, HistoricoStatusTarefa
 from .filters import TarefaFilter
 from .permissions import (
+    CanViewTask,
     CanEditTask,
     CanAssignTask,
     CanCommentOnTask,
@@ -49,6 +50,17 @@ class TarefaViewSet(viewsets.ModelViewSet):
     queryset = Tarefa.objects.all()
     serializer_class = TarefaSerializer
     permission_classes = [permissions.IsAuthenticated, CanEditTask]
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        Uses CanViewTask for safe methods (GET) and CanEditTask for unsafe methods.
+        """
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated, CanViewTask]
+        else:
+            permission_classes = [permissions.IsAuthenticated, CanEditTask]
+        return [permission() for permission in permission_classes]
 
     # Configuração dos backends de filtro, busca e ordenação
     filter_backends = [
