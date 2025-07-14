@@ -1,9 +1,14 @@
 <!-- filepath: pages/costs/index.vue -->
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
+import { saveAs } from "file-saver";
+import { useRouter } from "vue-router";
+
+// Definindo o tipo para o definePageMeta do Nuxt
+declare function definePageMeta(meta: { middleware: string }): void;
 
 // 1. Importar as funções e tipos corretos do Orval
 import {
@@ -11,8 +16,10 @@ import {
   useCostsCustosCreate,
   useCostsCustosUpdate,
   useCostsCustosDestroy,
+  useCostsCategoriasList,
+  useCostsCustosRetrieve,
 } from "@/api/custo/custo";
-import { useProjectsProjectsList } from "@/api/projetos/projetos";
+import { useProjectsProjectsMyProjectsList } from "@/api/projetos/projetos";
 import type {
   Custo,
   CustoRequest,
@@ -25,14 +32,11 @@ definePageMeta({
 });
 
 // --- HOOKS E ESTADO INICIAL ---
+const router = useRouter();
 const queryClient = useQueryClient();
 const { toast } = useToast();
 
-const currentPage = ref(1);
-const pageSize = 10;
-const showModal = ref(false);
-const editingCost = ref<Custo | null>(null);
-
+// Função para inicializar o estado do formulário
 const getInitialFormState = (): CustoRequest => ({
   descricao: "",
   projeto: 0, // Iniciar com um valor inválido para forçar a seleção
@@ -43,37 +47,104 @@ const getInitialFormState = (): CustoRequest => ({
   categoria: null,
 });
 
+const currentPage = ref(1);
+const pageSize = 10;
+const showModal = ref(false);
+const editingCost = ref<Custo | null>(null);
+// Adicionando a declaração do form que estava faltando
 const form = ref<CustoRequest>(getInitialFormState());
 
-// --- QUERIES (BUSCA DE DADOS) ---
+// --- ESTADO DOS FILTROS ---
+const filterProjeto = ref<number | null>(null);
+const filterCategoria = ref<number | null>(null);
+const filterDataInicio = ref<string | null>(null);
+const filterDataFim = ref<string | null>(null);
 
-// 2. Query para buscar a lista de custos com paginação
+// --- BUSCA DE CATEGORIAS ---
+const categoriasList = ref<any>(null);
+const categoriesQuery = useCostsCategoriasList();
+// Configurar os dados quando estiverem disponíveis
+onMounted(() => {
+  // Observar mudanças nos dados das categorias
+  if (categoriesQuery.data.value) {
+    categoriasList.value = categoriesQuery.data.value.data;
+  }
+});
+
+// --- BUSCA DE PROJETOS ---
+// Usando a API de "meus projetos" para evitar erro 403
+const projectsList = ref<any>(null);
+const projectsQuery = useProjectsProjectsMyProjectsList();
+
+// Configurar os dados quando estiverem disponíveis
+onMounted(() => {
+  // Observar mudanças nos dados dos projetos
+  if (projectsQuery.data.value) {
+    projectsList.value = projectsQuery.data.value.data;
+  }
+});
+
+// Definindo o tipo para a resposta paginada de custos
+interface PaginatedResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: CostItem[];
+}
+
+// --- QUERY DE CUSTOS COM FILTROS ---
 const {
   data: paginatedCosts,
   isLoading,
   error,
   refetch,
-} = useQuery<PaginatedCustoListList>({
-  queryKey: ["costs", currentPage],
-  queryFn: () =>
-    useCostsCustosList({ page: currentPage.value, page_size: pageSize }).then(
-      (res) => res.data
-    ),
-});
-
-// 3. Query para buscar a lista de projetos para o modal (apenas os 100 primeiros)
-const { data: projectsList } = useQuery<PaginatedProjetoListList>({
-  queryKey: ["projectsForCosts"],
-  queryFn: () =>
-    useProjectsProjectsList({ page_size: 100 }).then((res) => res.data),
-  staleTime: 1000 * 60 * 5, // Cache por 5 minutos
+} = useQuery<PaginatedResponse>({
+  queryKey: [
+    "costs",
+    currentPage,
+    filterProjeto,
+    filterCategoria,
+    filterDataInicio,
+    filterDataFim,
+  ],
+  queryFn: async () => {
+    // Criar um objeto de parâmetros dinâmico para evitar erros de tipo
+    const params: Record<string, any> = {
+      page: currentPage.value,
+    };
+    
+    // Adicionar parâmetros opcionais apenas quando existirem
+    if (filterProjeto.value) params.projeto = filterProjeto.value;
+    if (filterCategoria.value) params.categoria = filterCategoria.value;
+    if (filterDataInicio.value) params.data__gte = filterDataInicio.value;
+    if (filterDataFim.value) params.data__lte = filterDataFim.value;
+    
+    const response = await useCostsCustosList(params as any);
+    return response.data;
+  },
+  retry: (failureCount, error: any) => {
+    // Não tentar novamente para erros 401, 403 ou 404
+    if (error?.response?.status === 401) {
+      // Erro de autenticação - redirecionar para login
+      router.push('/login');
+      return false;
+    }
+    if ([403, 404].includes(error?.response?.status)) {
+      return false;
+    }
+    return failureCount < 3;
+  },
 });
 
 // Dados computados para a UI
-const costs = computed(() => paginatedCosts.value?.results || []);
+const costs = computed(() => {
+  if (!paginatedCosts) return [];
+  return paginatedCosts.results || [];
+});
+
 const totalPages = computed(() => {
-  if (!paginatedCosts.value?.count) return 1;
-  return Math.ceil(paginatedCosts.value.count / pageSize);
+  if (!paginatedCosts || !paginatedCosts.count) return 1;
+  return Math.ceil(paginatedCosts.count / pageSize);
 });
 
 // --- MUTAÇÕES (CRIAR, ATUALIZAR, DELETAR) ---
@@ -82,7 +153,7 @@ const totalPages = computed(() => {
 const createCostMutation = useCostsCustosCreate({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Custo criado com sucesso!" });
+      toast({ title: "Sucesso", description: "Custo criado com sucesso!", type: "success" });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       closeModal();
     },
@@ -90,7 +161,7 @@ const createCostMutation = useCostsCustosCreate({
       toast({
         title: "Erro",
         description: err.response?.data?.detail || "Falha ao criar o custo.",
-        variant: "destructive",
+        type: "error",
       });
     },
   },
@@ -100,7 +171,7 @@ const createCostMutation = useCostsCustosCreate({
 const updateCostMutation = useCostsCustosUpdate({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Custo atualizado com sucesso!" });
+      toast({ title: "Sucesso", description: "Custo atualizado com sucesso!", type: "success" });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
       closeModal();
     },
@@ -109,7 +180,7 @@ const updateCostMutation = useCostsCustosUpdate({
         title: "Erro",
         description:
           err.response?.data?.detail || "Falha ao atualizar o custo.",
-        variant: "destructive",
+        type: "error",
       });
     },
   },
@@ -119,14 +190,14 @@ const updateCostMutation = useCostsCustosUpdate({
 const deleteCostMutation = useCostsCustosDestroy({
   mutation: {
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Custo excluído com sucesso!" });
+      toast({ title: "Sucesso", description: "Custo excluído com sucesso!", type: "success" });
       queryClient.invalidateQueries({ queryKey: ["costs"] });
     },
     onError: (err: any) => {
       toast({
         title: "Erro",
         description: err.response?.data?.detail || "Falha ao excluir o custo.",
-        variant: "destructive",
+        type: "error",
       });
     },
   },
@@ -134,23 +205,63 @@ const deleteCostMutation = useCostsCustosDestroy({
 
 // --- FUNÇÕES DE MANIPULAÇÃO ---
 
-const openModal = (cost: Custo | null = null) => {
+const openModal = async (cost: Custo | null = null) => {
   if (cost) {
-    editingCost.value = cost;
-    form.value = {
-      descricao: cost.descricao,
-      projeto: cost.projeto,
-      valor: cost.valor, // API espera string, então mantemos como string
-      data: cost.data,
-      tipo: cost.tipo || "VARIAVEL",
-      tarefa: cost.tarefa || null,
-      categoria: cost.categoria || null,
-    };
+    // Buscar detalhes do custo para edição usando o hook corretamente dentro de um try/catch
+    try {
+      // Chamar a API diretamente em vez de usar o hook Vue Query
+      const response = await fetch(`/api/costs/custos/${cost.id}/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include', // Para enviar cookies de autenticação
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          throw new Error('Não autenticado');
+        }
+        if (response.status === 403) {
+          throw new Error('Acesso negado');
+        }
+        throw new Error(`Erro ${response.status}`);
+      }
+      
+      const data = await response.json();
+      editingCost.value = data as Custo;
+      form.value = {
+        descricao: data.descricao,
+        projeto: data.projeto,
+        valor: data.valor,
+        data: data.data,
+        tipo: data.tipo || "VARIAVEL",
+        tarefa: data.tarefa || null,
+        categoria: data.categoria || null,
+      };
+      showModal.value = true;
+    } catch (err: any) {
+      console.error("Erro ao buscar detalhes do custo:", err);
+      toast({
+        title: "Erro",
+        description: err?.message || "Não foi possível carregar os detalhes do custo.",
+        type: "error",
+      });
+      
+      if (err?.message === 'Acesso negado') {
+        toast({
+          title: "Acesso negado",
+          description: "Você não tem permissão para acessar este custo.",
+          type: "error",
+        });
+      }
+    }
   } else {
     editingCost.value = null;
     form.value = getInitialFormState();
+    showModal.value = true;
   }
-  showModal.value = true;
 };
 
 const closeModal = () => {
@@ -175,6 +286,33 @@ const confirmDelete = (id: number) => {
   }
 };
 
+// --- EXPORTAÇÃO CSV ---
+function exportarCSV() {
+  const rows = [
+    ["Descrição", "Projeto", "Valor", "Data", "Categoria"],
+    ...costs.value.map((c: CostItem) => [
+      c.descricao,
+      c.projeto_nome,
+      c.valor,
+      formatDate(c.data),
+      c.categoria_nome,
+    ]),
+  ];
+  const csv = rows
+    .map((r) => r.map((v: any) => `"${String(v || '').replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, `custos_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+// --- TOASTS AJUSTADOS ---
+function showToastSuccess(msg: string) {
+  toast({ title: "Sucesso", description: msg, type: "success" });
+}
+function showToastError(msg: string) {
+  toast({ title: "Erro", description: msg, type: "error" });
+}
+
 // Funções de formatação
 const formatCurrency = (value: string | number) => {
   const numberValue = typeof value === "string" ? parseFloat(value) : value;
@@ -190,10 +328,120 @@ const formatDate = (dateString: string) => {
   // Adiciona um horário para evitar problemas de fuso horário
   return new Date(`${dateString}T12:00:00`).toLocaleDateString("pt-BR");
 };
+
+// Tipo para os itens da tabela de custos
+type CostItem = {
+  id: number;
+  descricao: string;
+  projeto: number;
+  projeto_nome: string;
+  valor: string;
+  data: string;
+  categoria?: number | null;
+  categoria_nome?: string | null;
+  [key: string]: any; // Para permitir outras propriedades
+};
+
+// Função para upload de comprovante (mock, ajuste conforme backend)
+function onComprovanteChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  // Aqui você deve fazer upload para o backend e obter a URL
+  // Exemplo mock:
+  const reader = new FileReader();
+  reader.onload = () => {
+    // Verificar se comprovante existe no tipo antes de atribuir
+    if (form.value) {
+      // @ts-ignore - Ignorando erro de tipo aqui já que comprovante pode não estar definido no tipo
+      form.value.comprovante = reader.result as string;
+    }
+  };
+  reader.readAsDataURL(file);
+}
 </script>
 
 <template>
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- FILTROS -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+      <div class="flex-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Projeto</label
+        >
+        <select
+          v-model="filterProjeto"
+          class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+        >
+          <option :value="null">Todos</option>
+          <option
+            v-for="proj in projectsList?.results || []"
+            :key="proj.id"
+            :value="proj.id"
+          >
+            {{ proj.titulo }}
+          </option>
+        </select>
+      </div>
+      <div class="flex-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Categoria</label
+        >
+        <select
+          v-model="filterCategoria"
+          class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+        >
+          <option :value="null">Todas</option>
+          <option
+            v-for="cat in categoriasList?.results || []"
+            :key="cat.id"
+            :value="cat.id"
+          >
+            {{ cat.nome }}
+          </option>
+        </select>
+      </div>
+      <div class="flex-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Data início</label
+        >
+        <input
+          type="date"
+          v-model="filterDataInicio"
+          class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+        />
+      </div>
+      <div class="flex-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Data fim</label
+        >
+        <input
+          type="date"
+          v-model="filterDataFim"
+          class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+        />
+      </div>
+      <div class="flex-none">
+        <button
+          @click="refetch()"
+          class="mt-6 px-4 py-2 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700"
+        >
+          Filtrar
+        </button>
+      </div>
+      <div class="flex-none">
+        <button
+          @click="exportarCSV"
+          class="mt-6 px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700"
+        >
+          Exportar CSV
+        </button>
+      </div>
+    </div>
+
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
         Gerenciamento de Custos
@@ -256,7 +504,9 @@ const formatDate = (dateString: string) => {
       v-else
       class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg"
     >
-      <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+      <table
+        class="min-w-full divide-y divide-gray-300 dark:divide-gray-700 text-xs md:text-sm"
+      >
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th
@@ -348,149 +598,139 @@ const formatDate = (dateString: string) => {
       </table>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="mt-6 flex justify-center">
-      <nav
-        class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-        aria-label="Pagination"
-      >
-        <button
-          @click="currentPage--"
-          :disabled="!paginatedCosts?.previous"
-          class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-        >
-          Anterior
-        </button>
-        <span
-          class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200"
-        >
-          Página {{ currentPage }} de {{ totalPages }}
-        </span>
-        <button
-          @click="currentPage++"
-          :disabled="!paginatedCosts?.next"
-          class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-        >
-          Próximo
-        </button>
-      </nav>
-    </div>
-
-    <!-- Cost Form Modal -->
-    <div v-if="showModal" class="fixed z-50 inset-0 overflow-y-auto">
+    <!-- Modal para edição/criação de custo -->
+    <transition name="modal">
       <div
-        class="flex items-end sm:items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+        v-if="showModal"
+        class="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-30 flex items-center justify-center"
       >
         <div
-          class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          @click="closeModal"
-        ></div>
-        <div
-          class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full p-6"
         >
+          <h2
+            class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4"
+          >
+            {{ editingCost ? "Editar Custo" : "Novo Custo" }}
+          </h2>
           <form @submit.prevent="handleSubmit">
-            <div
-              class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4"
-            >
-              <h3
-                class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
-              >
-                {{ editingCost ? "Editar Custo" : "Adicionar Novo Custo" }}
-              </h3>
-              <div class="mt-5 space-y-4">
-                <div>
-                  <label
-                    for="descricao"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >Descrição</label
+            <div class="space-y-4">
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Descrição</label
+                >
+                <input
+                  v-model="form.descricao"
+                  required
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Projeto</label
+                >
+                <select
+                  v-model="form.projeto"
+                  required
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                >
+                  <option value="">Selecione um projeto</option>
+                  <option
+                    v-for="proj in projectsList?.value?.results"
+                    :key="proj.id"
+                    :value="proj.id"
                   >
-                  <input
-                    type="text"
-                    v-model="form.descricao"
-                    id="descricao"
-                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    for="projeto"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >Projeto</label
+                    {{ proj.titulo }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Categoria</label
+                >
+                <select
+                  v-model="form.categoria"
+                  required
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                >
+                  <option value="">Selecione uma categoria</option>
+                  <option
+                    v-for="cat in categoriasList?.value?.results"
+                    :key="cat.id"
+                    :value="cat.id"
                   >
-                  <select
-                    v-model="form.projeto"
-                    id="projeto"
-                    class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-                    required
-                  >
-                    <option disabled :value="0">Selecione um projeto</option>
-                    <option
-                      v-for="proj in projectsList?.results"
-                      :key="proj.id"
-                      :value="proj.id"
-                    >
-                      {{ proj.titulo }}
-                    </option>
-                  </select>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      for="valor"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Valor (R$)</label
-                    >
-                    <input
-                      type="number"
-                      step="0.01"
-                      v-model="form.valor"
-                      id="valor"
-                      class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      for="data"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Data</label
-                    >
-                    <input
-                      type="date"
-                      v-model="form.data"
-                      id="data"
-                      class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
-                      required
-                    />
-                  </div>
+                    {{ cat.nome }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Valor</label
+                >
+                <input
+                  type="number"
+                  v-model.number="form.valor"
+                  required
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Data</label
+                >
+                <input
+                  type="date"
+                  v-model="form.data"
+                  required
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Tipo</label
+                >
+                <select
+                  v-model="form.tipo"
+                  class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700"
+                >
+                  <option value="VARIAVEL">Variável</option>
+                  <option value="FIXO">Fixo</option>
+                </select>
+              </div>
+              <!-- CAMPO DE UPLOAD NO MODAL (opcional, mock) -->
+              <!--
+              <div class="mt-4">
+                <label for="comprovante" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comprovante (opcional)</label>
+                <input type="file" id="comprovante" @change="onComprovanteChange" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700" />
+                <div v-if="form.comprovante" class="mt-2">
+                  <a :href="form.comprovante" target="_blank" class="text-blue-600 hover:underline">Arquivo atual</a>
                 </div>
               </div>
+              -->
             </div>
-            <div
-              class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
-            >
-              <button
-                type="submit"
-                :disabled="
-                  createCostMutation.isPending.value ||
-                  updateCostMutation.isPending.value
-                "
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-              >
-                Salvar Custo
-              </button>
+            <div class="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 @click="closeModal"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm"
+                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md shadow-sm hover:bg-gray-300 dark:hover:bg-gray-600"
               >
                 Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-primary-600 text-white rounded-md shadow-sm hover:bg-primary-700"
+              >
+                Salvar
               </button>
             </div>
           </form>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>

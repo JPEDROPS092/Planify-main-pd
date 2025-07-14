@@ -4,7 +4,8 @@ import { ref, computed, watch } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import type { AxiosResponse } from "axios";
-import { definePageMeta, useRouter } from "#imports";
+import { useRouter } from "vue-router";
+
 import BlueButton from "@/components/ui/button/Button.vue";
 import Badge from "@/components/ui/Badge.vue";
 import Progress from "@/components/ui/Progress.vue";
@@ -25,15 +26,16 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner.vue";
 
 import {
   projectsProjectsList,
+  useProjectsProjectsMyProjectsList,
   useProjectsProjectsCreate,
   useProjectsProjectsUpdate,
   useProjectsProjectsArchiveCreate,
   useProjectsProjectsDestroy,
 } from "@/api/projetos/projetos";
 
-definePageMeta({
-  middleware: ["auth"],
-});
+// definePageMeta({
+//   middleware: ["auth"],
+// });
 
 const router = useRouter();
 const { toast } = useToast();
@@ -59,22 +61,25 @@ const filters = ref({
   ordering: "",
 });
 
-// Query principal para listar projetos
+// Query principal para listar projetos - apenas projetos do usuário autenticado
 const {
   data: paginatedProjectsResponse,
   isLoading,
   error,
   refetch,
-} = useQuery({
-  queryKey: ["projects", currentPage, filters],
-  queryFn: () =>
-    projectsProjectsList({
-      pageSize,
-      page: currentPage.value,
-      ...filters.value,
-    } as ProjectsProjectsListParams),
-  enabled: true,
-});
+} = useProjectsProjectsMyProjectsList(computed(() => ({
+  page: currentPage.value,
+  search: filters.value.search || undefined,
+  status: filters.value.status || undefined,
+  prioridade: filters.value.prioridade || undefined,
+  arquivado: filters.value.arquivado === 'true' ? true : filters.value.arquivado === 'false' ? false : undefined,
+  atrasado: filters.value.atrasado || undefined,
+  data_inicio_apos_after: filters.value.data_inicio_apos_after || undefined,
+  data_inicio_antes_before: filters.value.data_inicio_antes_before || undefined,
+  data_fim_apos_after: filters.value.data_fim_apos_after || undefined,
+  data_fim_antes_before: filters.value.data_fim_antes_before || undefined,
+  ordering: filters.value.ordering || undefined,
+})));
 
 const projects = computed(
   () => paginatedProjectsResponse.value?.data.results || []
@@ -260,7 +265,8 @@ watch(
 );
 
 // Helper functions para UI
-const getProjectIcon = (status: string) => {
+const getProjectIcon = (status: string | undefined) => {
+  if (!status) return "lucide:folder";
   const icons = {
     PLANEJADO: "lucide:calendar",
     EM_ANDAMENTO: "lucide:play-circle",
@@ -271,7 +277,8 @@ const getProjectIcon = (status: string) => {
   return icons[status as keyof typeof icons] || "lucide:folder";
 };
 
-const getStatusIconBg = (status: string) => {
+const getStatusIconBg = (status: string | undefined) => {
+  if (!status) return "bg-gray-500";
   const colors = {
     PLANEJADO: "bg-blue-500",
     EM_ANDAMENTO: "bg-green-500",
@@ -282,7 +289,8 @@ const getStatusIconBg = (status: string) => {
   return colors[status as keyof typeof colors] || "bg-gray-500";
 };
 
-const getStatusVariant = (status: string) => {
+const getStatusVariant = (status: string | undefined) => {
+  if (!status) return "default" as const;
   const variants = {
     PLANEJADO: "status-planejado" as const,
     EM_ANDAMENTO: "status-andamento" as const,
@@ -293,7 +301,8 @@ const getStatusVariant = (status: string) => {
   return variants[status as keyof typeof variants] || ("default" as const);
 };
 
-const getStatusLabel = (status: string) => {
+const getStatusLabel = (status: string | undefined) => {
+  if (!status) return "Sem status";
   const labels = {
     PLANEJADO: "Planejado",
     EM_ANDAMENTO: "Em Andamento",
@@ -304,7 +313,8 @@ const getStatusLabel = (status: string) => {
   return labels[status as keyof typeof labels] || status;
 };
 
-const getPriorityVariant = (priority: string) => {
+const getPriorityVariant = (priority: string | undefined) => {
+  if (!priority) return "default" as const;
   const variants = {
     BAIXA: "priority-baixa" as const,
     MEDIA: "priority-media" as const,
@@ -314,7 +324,8 @@ const getPriorityVariant = (priority: string) => {
   return variants[priority as keyof typeof variants] || ("default" as const);
 };
 
-const getPriorityLabel = (priority: string) => {
+const getPriorityLabel = (priority: string | undefined) => {
+  if (!priority) return "Sem prioridade";
   const labels = {
     BAIXA: "Baixa",
     MEDIA: "Média",
@@ -688,7 +699,7 @@ const visiblePages = computed(() => {
               <template v-for="page in visiblePages" :key="page">
                 <button
                   v-if="page !== '...'"
-                  @click="currentPage = page"
+                  @click="currentPage = typeof page === 'number' ? page : parseInt(page.toString())"
                   :class="[
                     'px-4 py-2 min-w-[40px] rounded-lg text-sm font-medium transition-all duration-150 outline-none focus:ring-2 focus:ring-primary-400 focus:z-10',
                     currentPage === page

@@ -1,30 +1,31 @@
 <!-- filepath: pages/tasks/[id].vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
+import type {
+  NovoStatusBbcEnum,
+  TasksAddCommentRequest,
+  TasksUpdateStatusRequest,
+  TasksAssignUserRequest,
+} from "@/api/schemas";
 import { useApiErrorHandler } from "@/composables/useApiErrorHandler";
 import { useAuthStore } from "@/stores/auth";
 import { format } from "date-fns";
-import {
-  debugAuthToken,
-  checkTaskPermissions,
-  testTaskAPIDirectly,
-} from "@/utils/auth-debug";
-import DebugAuthPanel from "@/components/DebugAuthPanel.vue";
 import {
   useTasksTarefasRetrieve,
   useTasksTarefasAddCommentCreate,
   useTasksTarefasUpdateStatusCreate,
   useTasksTarefasUnassignUserCreate,
 } from "@/api/tasks/tasks";
+import { useProjectsProjectsRetrieve } from "@/api/projetos/projetos";
 
-// Força o uso do middleware de autenticação
-definePageMeta({
-  middleware: ["auth"],
-});
+// Habilita middleware de autenticação seguindo o padrão do index.vue
+// definePageMeta({
+//   middleware: "auth",
+// });
 
 // Estado do componente
 const router = useRouter();
@@ -38,7 +39,7 @@ const { handleApiError } = useApiErrorHandler();
 
 const newComment = ref("");
 
-// 2. Query para buscar os detalhes da tarefa
+// Query para buscar os detalhes da tarefa
 const {
   data: taskResponse,
   isLoading,
@@ -46,18 +47,96 @@ const {
 } = useTasksTarefasRetrieve(taskId, {
   query: {
     enabled: computed(() => !!taskId.value),
+    retry: (failureCount, error: any) => {
+      // Não tenta novamente para erros 403/404
+      if (error?.response?.status === 403 || error?.response?.status === 404) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   },
+});
+
+// Query para buscar os membros do projeto da tarefa
+const projectId = computed(() => taskResponse.value?.data?.projeto ?? null);
+const {
+  data: projectResponse,
+  isLoading: isLoadingProject,
+  error: errorProject,
+} = useProjectsProjectsRetrieve(projectId, {
+  query: { enabled: computed(() => !!projectId.value) },
+});
+const project = computed(() => projectResponse.value?.data);
+
+// Tratamento de erros seguindo o padrão do index.vue
+watch(error, (newError: any) => {
+  if (newError) {
+    console.error("Erro ao buscar tarefa:", newError);
+
+    if (newError?.response?.status === 403) {
+      toast({
+        title: "Acesso Negado",
+        description:
+          "Você não tem permissão para acessar esta tarefa. Redirecionando para a lista de tarefas.",
+        type: "error",
+      });
+      router.push("/tasks");
+    } else if (newError?.response?.status === 404) {
+      toast({
+        title: "Tarefa Não Encontrada",
+        description:
+          "A tarefa solicitada não foi encontrada. Redirecionando para a lista de tarefas.",
+        type: "error",
+      });
+      router.push("/tasks");
+    } else if (newError?.response?.status === 401) {
+      toast({
+        title: "Não Autorizado",
+        description: "Sua sessão expirou. Faça login novamente.",
+        type: "error",
+      });
+      authStore.logout();
+      router.push("/login");
+    } else {
+      handleApiError(newError);
+    }
+  }
 });
 
 const task = computed(() => taskResponse.value?.data);
 
-// Add debugging when component mounts
-onMounted(() => {
-  console.log("Task detail page mounted for task:", taskId.value);
-  checkTaskPermissions(taskId.value);
-  // Test direct API call to see raw response
-  testTaskAPIDirectly(taskId.value);
+// Verificação adicional de permissão baseada no usuário logado
+const canAccessTask = computed(() => {
+  if (!task.value || !authStore.user) return false;
+
+  // Verifica se o usuário é o responsável pela tarefa ou tem permissão de admin
+  const isAssigned = task.value.atribuicoes?.some(
+    (atribuicao: any) => atribuicao.usuario.id === authStore.user?.id
+  );
+  const isCreator = task.value.criado_por?.id === authStore.user?.id;
+  const isAdmin = authStore.user?.is_staff || authStore.user?.is_superuser;
+  // Novo: verifica se é membro do projeto
+  const isProjectMember = project.value?.membros?.some(
+    (m: any) => m.usuario_id === authStore.user?.id
+  );
+  return isAssigned || isCreator || isAdmin || isProjectMember;
 });
+
+// Watch para verificar permissões quando a tarefa é carregada
+watch(
+  [task, () => authStore.user],
+  ([newTask, newUser]) => {
+    if (newTask && newUser && !canAccessTask.value) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Você não tem permissão para visualizar esta tarefa.",
+        type: "warning",
+      });
+      router.push("/tasks");
+    }
+  },
+  { immediate: true }
+);
 
 // --- MUTAÇÕES ---
 
@@ -128,7 +207,6 @@ const handleAddComment = () => {
   if (!newComment.value.trim()) return;
 
   console.log(`Attempting to add comment to task ${taskId.value}`);
-  checkTaskPermissions(taskId.value);
 
   const payload: TasksAddCommentRequest = { texto: newComment.value };
   addCommentMutation.mutate({ id: taskId.value, data: payload });
@@ -138,7 +216,6 @@ const handleUpdateStatus = (newStatus: NovoStatusBbcEnum) => {
   console.log(
     `Attempting to update status of task ${taskId.value} to ${newStatus}`
   );
-  checkTaskPermissions(taskId.value);
 
   const payload: TasksUpdateStatusRequest = { status: newStatus };
   updateStatusMutation.mutate({ id: taskId.value, data: payload });
@@ -177,9 +254,26 @@ const priorityDisplayMap = {
         icon="svg-spinners:180-ring-with-bg"
         class="w-16 h-16 mx-auto text-primary-600"
       />
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Carregando tarefa...</p>
     </div>
     <div v-else-if="error" class="text-center py-20">
-      Erro ao carregar a tarefa.
+      <Icon
+        icon="lucide:alert-circle"
+        class="w-16 h-16 mx-auto text-red-500 mb-4"
+      />
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        Erro ao carregar a tarefa
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Você pode não ter permissão para acessar esta tarefa ou ela pode não
+        existir.
+      </p>
+      <button
+        @click="router.push('/tasks')"
+        class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors"
+      >
+        Voltar para Tarefas
+      </button>
     </div>
     <div
       v-else-if="task"
@@ -344,34 +438,6 @@ const priorityDisplayMap = {
                 Marcar como Concluída
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Debug section for development -->
-      <div
-        class="mt-8 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border-l-4 border-blue-500"
-      >
-        <h3 class="font-bold text-lg mb-2">Debug Info (Development Only)</h3>
-        <div class="space-y-2 text-sm">
-          <p><strong>Task ID:</strong> {{ taskId }}</p>
-          <p><strong>Task Status:</strong> {{ task?.status }}</p>
-          <p>
-            <strong>User Permissions:</strong> Check console for token details
-          </p>
-          <div class="flex gap-2 mt-3">
-            <button
-              @click="debugAuthToken()"
-              class="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-            >
-              Debug Token
-            </button>
-            <button
-              @click="checkTaskPermissions(taskId)"
-              class="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-            >
-              Check Permissions
-            </button>
           </div>
         </div>
       </div>

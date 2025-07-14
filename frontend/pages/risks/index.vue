@@ -4,16 +4,14 @@ import { ref, computed } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
-
-// 1. Importar funções e tipos corretos do Orval
-// 1. Importar funções e tipos corretos do Orval
 import {
-  useRisksRiscosList,
-  useRisksRiscosCreate,
-  useRisksRiscosUpdate,
-  useRisksRiscosDestroy,
+  risksRiscosList,
+  risksRiscosCreate,
+  risksRiscosUpdate,
+  risksRiscosDestroy,
+  risksRiscosRetrieve,
 } from "@/api/riscos/riscos";
-import { useProjectsProjectsList } from "@/api/projetos/projetos";
+import { projectsProjectsList } from "@/api/projetos/projetos";
 import type {
   Risco,
   RiscoRequest,
@@ -22,18 +20,13 @@ import type {
   PaginatedProjetoListList,
 } from "@/api/schemas";
 
-definePageMeta({
-  middleware: "auth",
-});
-
 // --- HOOKS E ESTADO INICIAL ---
 const queryClient = useQueryClient();
 const { toast } = useToast();
-
 const currentPage = ref(1);
 const pageSize = 10;
 const showModal = ref(false);
-const editingRisk = ref<RiscoList | null>(null);
+const editingRisk = ref<Risco | null>(null);
 
 const getInitialFormState = (): RiscoRequest => ({
   descricao: "",
@@ -45,11 +38,9 @@ const getInitialFormState = (): RiscoRequest => ({
   plano_mitigacao: null,
   plano_contingencia: null,
 });
-
 const form = ref<RiscoRequest>(getInitialFormState());
 
-// --- QUERIES ---
-// 2. Query para buscar a lista de riscos
+// Query para buscar a lista de riscos
 const {
   data: paginatedRisks,
   isLoading,
@@ -58,16 +49,13 @@ const {
 } = useQuery<PaginatedRiscoList>({
   queryKey: ["risks", currentPage],
   queryFn: () =>
-    useRisksRiscosList({ page: currentPage.value, page_size: pageSize }).then(
-      (res) => res.data
-    ),
+    risksRiscosList({ page: currentPage.value }).then((res) => res.data),
 });
 
-// 3. Query para buscar projetos para o modal
+// Query para buscar projetos
 const { data: projectsList } = useQuery<PaginatedProjetoListList>({
   queryKey: ["projectsForRisks"],
-  queryFn: () =>
-    useProjectsProjectsList({ page_size: 100 }).then((res) => res.data),
+  queryFn: () => projectsProjectsList({ page: 1 }).then((res) => res.data),
   staleTime: 1000 * 60 * 5,
 });
 
@@ -79,30 +67,79 @@ const totalPages = computed(() =>
 );
 
 // --- MUTAÇÕES ---
-// 4. Mutações separadas para cada ação CRUD
-const createRiskMutation = useRisksRiscosCreate({
-  /* ... onSuccess/onError handlers ... */
+const createRiskMutation = useMutation({
+  mutationFn: (payload: { data: RiscoRequest }) =>
+    risksRiscosCreate(payload.data),
+  onSuccess: () => {
+    toast({
+      title: "Sucesso",
+      description: "Risco criado com sucesso!",
+      type: "success",
+    });
+    queryClient.invalidateQueries({ queryKey: ["risks"] });
+    closeModal();
+  },
+  onError: (err: any) => {
+    toast({
+      title: "Erro",
+      description: err?.response?.data?.detail || "Falha ao criar risco.",
+      type: "error",
+    });
+  },
 });
-const updateRiskMutation = useRisksRiscosUpdate({
-  /* ... onSuccess/onError handlers ... */
+const updateRiskMutation = useMutation({
+  mutationFn: (payload: { id: number; data: RiscoRequest }) =>
+    risksRiscosUpdate(payload.id, payload.data),
+  onSuccess: () => {
+    toast({
+      title: "Sucesso",
+      description: "Risco atualizado com sucesso!",
+      type: "success",
+    });
+    queryClient.invalidateQueries({ queryKey: ["risks"] });
+    closeModal();
+  },
+  onError: (err: any) => {
+    toast({
+      title: "Erro",
+      description: err?.response?.data?.detail || "Falha ao atualizar risco.",
+      type: "error",
+    });
+  },
 });
-const deleteMutation = useRisksRiscosDestroy({
-  /* ... onSuccess/onError handlers ... */
+const deleteMutation = useMutation({
+  mutationFn: (payload: { id: number }) => risksRiscosDestroy(payload.id),
+  onSuccess: () => {
+    toast({
+      title: "Sucesso",
+      description: "Risco excluído com sucesso!",
+      type: "success",
+    });
+    queryClient.invalidateQueries({ queryKey: ["risks"] });
+  },
+  onError: (err: any) => {
+    toast({
+      title: "Erro",
+      description: err?.response?.data?.detail || "Falha ao excluir risco.",
+      type: "error",
+    });
+  },
 });
 
-// --- FUNÇÕES DE MANIPULAÇÃO ---
-const openModal = (risk: RiscoList | null = null) => {
+const openModal = async (risk: RiscoList | null = null) => {
   if (risk) {
-    editingRisk.value = risk;
+    const res = await risksRiscosRetrieve(risk.id);
+    const data = res.data;
+    editingRisk.value = data;
     form.value = {
-      descricao: risk.descricao,
-      projeto: risk.projeto,
-      probabilidade: risk.probabilidade,
-      impacto: risk.impacto,
-      status: risk.status,
-      responsavel_mitigacao: (risk as any).responsavel_mitigacao || null,
-      plano_mitigacao: (risk as any).plano_mitigacao || null,
-      plano_contingencia: (risk as any).plano_contingencia || null,
+      descricao: data.descricao,
+      projeto: data.projeto,
+      probabilidade: data.probabilidade,
+      impacto: data.impacto,
+      status: data.status,
+      responsavel_mitigacao: data.responsavel_mitigacao || null,
+      plano_mitigacao: data.plano_mitigacao || null,
+      plano_contingencia: data.plano_contingencia || null,
     };
   } else {
     editingRisk.value = null;
@@ -112,7 +149,6 @@ const openModal = (risk: RiscoList | null = null) => {
 };
 
 const closeModal = () => (showModal.value = false);
-
 const handleSubmit = () => {
   if (editingRisk.value?.id) {
     updateRiskMutation.mutate({ id: editingRisk.value.id, data: form.value });
@@ -120,14 +156,12 @@ const handleSubmit = () => {
     createRiskMutation.mutate({ data: form.value });
   }
 };
-
 const confirmDelete = (id: number) => {
   if (window.confirm("Tem certeza?")) {
     deleteMutation.mutate({ id });
   }
 };
 
-// --- FUNÇÕES DE ESTILO ---
 const getStatusClass = (status?: RiscoList["status"]) => {
   const classes: Record<string, string> = {
     IDENTIFICADO:
@@ -142,7 +176,6 @@ const getStatusClass = (status?: RiscoList["status"]) => {
   };
   return classes[status || ""] || "bg-gray-100 text-gray-800";
 };
-
 const getNivelRiscoClass = (nivel: string) => {
   const nivelNormalizado = nivel.toUpperCase();
   if (nivelNormalizado.includes("ALTO")) return "text-red-600 font-bold";
@@ -161,13 +194,12 @@ const getNivelRiscoClass = (nivel: string) => {
       </h1>
       <button
         @click="openModal()"
-        class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
       >
-        <Icon icon="lucide:plus" class="mr-2 h-5 w-5" />
+        <Icon icon="lucide:plus" class="h-5 w-5" />
         Novo Risco
       </button>
     </div>
-
     <!-- Tabela de Riscos -->
     <div v-if="isLoading" class="text-center py-20">
       <Icon
@@ -197,7 +229,6 @@ const getNivelRiscoClass = (nivel: string) => {
         Excelente! Continue monitorando seus projetos.
       </p>
     </div>
-
     <div
       v-else
       class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg"
@@ -290,7 +321,6 @@ const getNivelRiscoClass = (nivel: string) => {
         </tbody>
       </table>
     </div>
-
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-6 flex justify-center">
       <nav
@@ -317,7 +347,6 @@ const getNivelRiscoClass = (nivel: string) => {
         </button>
       </nav>
     </div>
-
     <!-- Risk Form Modal -->
     <div v-if="showModal" class="fixed z-50 inset-0 overflow-y-auto">
       <div class="flex items-center justify-center min-h-screen">
@@ -419,14 +448,14 @@ const getNivelRiscoClass = (nivel: string) => {
                   createRiskMutation.isPending.value ||
                   updateRiskMutation.isPending.value
                 "
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
               >
-                Salvar
+                > Salvar
               </button>
               <button
                 type="button"
                 @click="closeModal"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
               >
                 Cancelar
               </button>
