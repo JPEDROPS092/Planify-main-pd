@@ -358,6 +358,11 @@ function onComprovanteChange(e: Event) {
   };
   reader.readAsDataURL(file);
 }
+
+// Função para navegar para a página de relatórios
+function navigateToReports() {
+  router.push('/costs/reports');
+}
 </script>
 
 <template>
@@ -446,13 +451,22 @@ function onComprovanteChange(e: Event) {
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
         Gerenciamento de Custos
       </h1>
-      <button
-        @click="openModal()"
-        class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-      >
-        <Icon icon="lucide:plus" class="mr-2 h-5 w-5" />
-        Novo Custo
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="navigateToReports()"
+          class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+        >
+          <Icon icon="heroicons:chart-bar" class="mr-2 h-5 w-5" />
+          Relatórios
+        </button>
+        <button
+          @click="openModal()"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          <Icon icon="lucide:plus" class="mr-2 h-5 w-5" />
+          Novo Custo
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
