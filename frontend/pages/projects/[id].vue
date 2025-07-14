@@ -24,7 +24,7 @@ const queryClient = useQueryClient();
 const { toast } = useToast();
 
 const projectId = computed(() => {
-  if (typeof route.params.id === 'string') {
+  if (typeof route.params.id === "string") {
     return parseInt(route.params.id, 10);
   }
   return 1; // fallback

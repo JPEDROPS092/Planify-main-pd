@@ -690,10 +690,10 @@ const visiblePages = computed(() => {
                   v-if="page !== '...'"
                   @click="currentPage = page"
                   :class="[
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'px-4 py-2 min-w-[40px] rounded-lg text-sm font-medium transition-all duration-150 outline-none focus:ring-2 focus:ring-primary-400 focus:z-10',
                     currentPage === page
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100',
+                      ? 'bg-primary-600 text-white shadow-md border border-primary-700'
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100',
                   ]"
                 >
                   {{ page }}
