@@ -262,7 +262,7 @@ const handleAddMember = () => {
               </button>
             </div>
           </div>
-
+          
           <!-- Progresso -->
           <div class="mt-4">
           </div>

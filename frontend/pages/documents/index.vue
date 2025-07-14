@@ -7,6 +7,8 @@ import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
 import { axiosInstance } from "@/lib/axios-instance";
 
+import DocumentModal from "@/components/documents/DocumentModal.vue"
+
 // 1. Importar as funções e tipos corretos do Orval
 import { 
   useDocumentsList,
@@ -34,8 +36,14 @@ const { toast } = useToast();
 
 const currentPage = ref(1);
 const pageSize = 10;
+
 const showUploadModal = ref(false);
+const showDocumentModal = ref(false);
+
+const selectedDocumentId = ref(0);
+
 const selectedFile = ref<File | null>(null);
+
 
 const uploadDocumento = async (formData: FormData) => {
   // Use sua instância do axios, mas sobrescreva os cabeçalhos para esta chamada específica.
@@ -340,14 +348,14 @@ const getFileIcon = (fileType: string | undefined) => {
                 class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block"
                 >{{ formatBytes(doc.tamanho_arquivo) }}</span
               >
-              <a
-                :href="doc.arquivo"
+              <button
+                @click ="() => { showDocumentModal = true; selectedDocumentId = doc.id }"
                 target="_blank"
-                class="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+                class="text-gray-500 hover:text-cyan-600 dark:text-gray-400 dark:hover:text-cyan-400"
                 title="Baixar"
               >
                 <Icon icon="lucide:download" class="h-5 w-5" />
-              </a>
+              </button>
               <button
                 @click.stop="confirmDelete(doc.id)"
                 class="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500"
@@ -509,5 +517,11 @@ const getFileIcon = (fileType: string | undefined) => {
         </div>
       </div>
     </div>
+
+    <DocumentModal 
+      :show="showDocumentModal"
+      :documento_id="selectedDocumentId"
+      @close="showDocumentModal = false"
+    />
   </div>
 </template>
