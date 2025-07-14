@@ -6,6 +6,7 @@ import { Icon } from "@iconify/vue";
 import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import { useApiErrorHandler } from "@/composables/useApiErrorHandler";
+import { useAuthStore } from "@/stores/auth";
 import { format } from "date-fns";
 
 import AssociatedDocuments from "@/components/documents/AssociatedDocuments.vue";
@@ -16,30 +17,22 @@ import {
   testTaskAPIDirectly,
 } from "@/utils/auth-debug";
 import DebugAuthPanel from "@/components/DebugAuthPanel.vue";
-
-// Nuxt-specific function for page metadata (available globally)
-// definePageMeta({
-//   middleware: "auth",
-// });
-
-// 1. Importar funções e tipos do Orval
 import {
   useTasksTarefasRetrieve,
   useTasksTarefasAddCommentCreate,
   useTasksTarefasUpdateStatusCreate,
   useTasksTarefasUnassignUserCreate,
 } from "@/api/tasks/tasks";
-import type {
-  Tarefa,
-  TasksAddCommentRequest,
-  TasksUpdateStatusRequest,
-  TasksAssignUserRequest,
-  NovoStatusBbcEnum,
-  PrioridadeEnum,
-} from "@/api/schemas";
 
+// Força o uso do middleware de autenticação
+definePageMeta({
+  middleware: ["auth"],
+});
+
+// Estado do componente
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 const taskId = computed(() => Number(route.params.id));
 
 const queryClient = useQueryClient();
