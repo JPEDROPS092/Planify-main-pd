@@ -14,6 +14,7 @@ interface Props {
 }
 
 const queryClient = useQueryClient();
+
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
@@ -21,8 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const documentoIdParam = computed(() => props.documento_id)
-
-console.log("documentoIdParam.value:", documentoIdParam.value)
 
 const { data, isLoading, error } = useDocumentsRetrieve(documentoIdParam,  { 
   query: {
@@ -32,7 +31,7 @@ const { data, isLoading, error } = useDocumentsRetrieve(documentoIdParam,  {
 });
 
 const documento: ComputedRef<Documento> = computed(() => {
-  console.log(data.value)
+  //console.log(data.value)
   return data.value?.data
 });
 
@@ -91,7 +90,6 @@ const handleDownload = () => {
             <pre>{{ error }}</pre>
           </div>
           <div v-else-if="documento">
-            <pre>{{ console.log(documento) }}</pre>
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
               <h3 class="text-lg text-center leading-6 font-medium text-gray-900" id="modal-title">
                 Informações do Documento
@@ -108,15 +106,7 @@ const handleDownload = () => {
                   <div v-else class="text-center text-bold text-red-600">Arquivo não encontrado</div>
                   <p class="text-sm font-light">{{ documento.descricao || "Sem descrição"}}</p>
                   <!-- Botões -->
-                  <div class="mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button
-                      type="button"
-                      @click="handleDownload"
-                      class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800"
-                      :disabled="loading"
-                    >
-                      Baixar
-                    </button>
+                  <div class="mt-6 sm:grid sm:gap-3 sm:grid-flow-row-dense">
                     <button
                       type="button"
                       @click="emit('close')"
