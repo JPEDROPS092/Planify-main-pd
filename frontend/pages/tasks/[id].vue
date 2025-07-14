@@ -7,6 +7,9 @@ import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import { useApiErrorHandler } from "@/composables/useApiErrorHandler";
 import { format } from "date-fns";
+
+import AssociatedDocuments from "@/components/documents/AssociatedDocuments.vue";
+
 import {
   debugAuthToken,
   checkTaskPermissions,
@@ -239,12 +242,16 @@ const priorityDisplayMap = {
                 :disabled="
                   !newComment.trim() || addCommentMutation.isPending.value
                 "
-                class="mt-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
+                class="mt-2 px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 dark:border dark:border-white"
               >
                 Enviar
               </button>
             </form>
           </div>
+
+          <AssociatedDocuments 
+            :tarefa-id="taskId"
+          />
         </div>
 
         <div class="space-y-6">
