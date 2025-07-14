@@ -1,9 +1,11 @@
 <!-- filepath: pages/documents/index.vue -->
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import axios from 'axios'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { Icon } from "@iconify/vue";
 import { useToast } from "@/composables/useToast";
+import { axiosInstance } from "@/lib/axios-instance";
 
 // 1. Importar as funções e tipos corretos do Orval
 import { 
@@ -34,6 +36,17 @@ const currentPage = ref(1);
 const pageSize = 10;
 const showUploadModal = ref(false);
 const selectedFile = ref<File | null>(null);
+
+const uploadDocumento = async (formData: FormData) => {
+  // Use sua instância do axios, mas sobrescreva os cabeçalhos para esta chamada específica.
+  // O 'undefined' é crucial para deixar o navegador definir o Content-Type com o boundary correto.
+  const { data } = await axiosInstance.post('/api/documents/', formData, {
+    headers: {
+      'Content-Type': undefined,
+    },
+  });
+  return data;
+};
 
 const getInitialFormState = (): Omit<
   DocumentoRequest,
@@ -91,8 +104,8 @@ const totalPages = computed(() =>
 // --- MUTAÇÕES ---
 
 // 2. Mutação para UPLOAD (criar) um documento
-const uploadMutation = useDocumentsCreate({
-  mutation: {
+const uploadMutation = useMutation({
+    mutationFn: uploadDocumento,
     onSuccess: () => {
       toast({
         title: "Sucesso",
@@ -109,7 +122,6 @@ const uploadMutation = useDocumentsCreate({
         variant: "destructive",
       });
     },
-  },
 });
 
 // 3. Mutação para DELETAR um documento
@@ -135,8 +147,11 @@ const deleteMutation = useDocumentsDestroy({
 
 // --- FUNÇÕES DE MANIPULAÇÃO ---
 
-const handleUploadAxios = () => {
+const handleUploadAxios = async () => {
   console.log("Dados do Form:", form.value, "Dados do Arquivo", selectedFile.value);
+
+  const response = await axios.get('/api/auth/users/me/');
+  console.log(response);
 }
 
 const onFileChange = (e: Event) => {
@@ -168,18 +183,40 @@ const handleUpload = () => {
     versao: "1.0", // Definir uma versão inicial
   };
 
-  uploadMutation.mutate(
-    { data: payload },
-    {
-      // Importante: O Orval e o Axios cuidam do 'Content-Type: multipart/form-data'
-      // quando o corpo da requisição é uma instância de FormData, mas como nosso
-      // payload gerado pelo Orval é um objeto, precisamos de um pequeno ajuste no
-      // nosso plugin do Axios ou aqui para garantir o header correto.
-      // A forma mais fácil é deixar o Axios inferir pelo FormData.
-      // Vamos ajustar o Orval para lidar com isso melhor no futuro.
-      // Por enquanto, a mutação do Orval deve ser capaz de lidar com Blob.
-    }
-  );
+  // 1. Crie um objeto FormData
+  const formData = new FormData();
+
+  // 2. Adicione todos os campos do seu formulário ao FormData.
+  // É crucial que as chaves aqui ("titulo", "projeto", etc.)
+  // correspondam ao que sua API espera.
+  formData.append('titulo', form.value.titulo);
+  formData.append('projeto', form.value.projeto.toString()); // Converta números para string
+  
+  if (form.value.descricao) {
+    formData.append('descricao', form.value.descricao);
+  }
+  if (form.value.tipo) {
+    formData.append('tipo', form.value.tipo);
+  }
+  if (form.value.enviado_por) {
+    formData.append('enviado_por', form.value.enviado_por.toString());
+  }
+
+  // Adicione a versão
+  formData.append('versao', '1.2');
+
+  // 3. Adicione o arquivo. O terceiro argumento (o nome do arquivo) é importante.
+  formData.append('arquivo', selectedFile.value, selectedFile.value.name);
+
+  // 4. Chame a mutação com o FormData.
+  // Note que agora você está passando o formData diretamente.
+  // A tipagem do Orval pode esperar { data: DocumentoRequest }, mas ao usar FormData,
+  // você precisa ajustar a chamada. Se o Orval/axios for configurado corretamente,
+  // ele deve lidar com o FormData diretamente.
+  // Caso ocorra um erro de tipo, pode ser necessário usar um "as any".
+
+  console.log(formData);
+  uploadMutation.mutate(formData);
 };
 
 const confirmDelete = (id: number) => {
@@ -358,7 +395,7 @@ const getFileIcon = (fileType: string | undefined) => {
         <div
           class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full"
         >
-          <form @submit.prevent="handleUploadAxios">
+          <form @submit.prevent="handleUpload">
             <div class="px-4 pt-5 pb-4 sm:p-6">
               <h3
                 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"

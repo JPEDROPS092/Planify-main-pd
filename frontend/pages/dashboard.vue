@@ -10,7 +10,7 @@ import { useAuth } from "@/composables/useAuth";
 import { useProjectsProjectsList } from "@/api/projetos/projetos";
 import { useTasksTarefasList } from "@/api/tasks/tasks";
 import { useCostsAlertasPendentesRetrieve } from "@/api/custo/custo";
-import { useCommunicationsNotificacoesList } from "@/api/communications/communications";
+import { useCommunicationsNotificacoesList } from "@/api/comunicação/comunicação";
 import type {
   ProjetoList,
   TarefaList,
