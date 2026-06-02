@@ -278,7 +278,30 @@ Data local: 2026-06-01
 
 Branch: `Dev-tenant`
 
-Status: parcial.
+Status: concluída.
+
+Encerramento (2026-06-01): o objetivo da fase — isolamento multi-tenant com
+membership e autorização por papel — está implementado e validado de ponta a
+ponta. Resumo do que fecha a fase:
+
+- `TenantMembership` + matriz de papéis (owner/admin/manager/member/viewer).
+- Gate de membership no `PermissionMiddleware` para rotas tenant-scoped; bypass
+  apenas para `is_superuser`.
+- RLS de aplicação (`apply_tenant_rls`/`apply_member_rls`) nos viewsets e em
+  queries manuais relevantes.
+- Regra "um usuário = uma empresa" (constraint parcial + `clean()`).
+- Vazamento cross-tenant via `users.User` (model shared) corrigido
+  (`tenant_users_queryset`).
+- `seed_data.py` multi-tenant; management commands revisados.
+- Permissão DRF reutilizável `customers.permissions.IsTenantMember`.
+- Teste HTTP ponta-a-ponta de negação cross-tenant (`scripts/e2e_cross_tenant.py`,
+  9/9) e suíte de API migrada para o stack multi-tenant real (27 passed).
+
+Follow-up (escopo de fase futura, não bloqueia o fechamento da Fase 6):
+
+- Autorização a nível de objeto / por entidade (ex.: `member` editar apenas a
+  tarefa atribuída a ele, não qualquer tarefa do projeto que acessa). É
+  refinamento de regra de produto sobre a base de isolamento já estabelecida.
 
 Resultado até agora:
 
@@ -480,5 +503,7 @@ Pendências:
   (Observação menor: o `ConfiguracaoNotificacaoSerializer.create` tem lógica de
   upsert que é inalcançável por causa do `UniqueValidator` — código morto, sem
   impacto funcional; não alterado.)
-- Refinar permissões por entidade e regra de negócio na nova suite de testes.
-- Escrever testes de isolamento depois que os contratos forem estabilizados.
+- Follow-up (fase futura): autorização a nível de objeto / por entidade,
+  refinada sobre a nova suíte de testes. Não bloqueia a Fase 6.
+- (Concluído) Testes de isolamento: cobertos pelo e2e cross-tenant
+  (`scripts/e2e_cross_tenant.py`) e pela suíte de API rodando em tenants reais.
