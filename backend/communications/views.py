@@ -4,8 +4,6 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
-# Removed unused import
-from django.core.exceptions import ValidationError
 
 from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import ChatMensagem, ChatMensagemLeitura, Notificacao, ConfiguracaoNotificacao, Comunicacao
@@ -380,23 +378,15 @@ class ConfiguracaoNotificacaoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewS
     def perform_create(self, serializer):
         """
         Define o usuário atual como proprietário da configuração.
-        
-        Verifica se já existe uma configuração para o tipo especificado antes de criar.
-        
+
+        ``ConfiguracaoNotificacao.usuario`` é ``OneToOneField`` (uma única
+        configuração por usuário), e ``ConfiguracaoNotificacaoSerializer.create``
+        já faz upsert por usuário (atualiza a existente em vez de duplicar).
+        Basta, portanto, fixar o usuário atual.
+
         Args:
             serializer: O serializer com os dados validados
-            
-        Raises:
-            ValidationError: Se já existir uma configuração para o tipo especificado
         """
-        tipo = serializer.validated_data.get('tipo')
-        
-        # Verifica se já existe uma configuração para este tipo
-        if apply_tenant_rls(ConfiguracaoNotificacao.objects.filter(usuario=self.request.user, tipo=tipo), self.request).exists():
-            raise ValidationError({
-                'tipo': f'Já existe uma configuração para o tipo "{tipo}"'
-            })
-            
         serializer.save(usuario=self.request.user)
 
 

@@ -1,18 +1,10 @@
-from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
+
 from users.models import User
+from tests.tenant_base import SuperuserAPITestCase
 
-class UserAPITests(APITestCase):
-    def setUp(self):
-        self.admin = User.objects.create_superuser(
-            email='admin@planify.com',
-            username='admin',
-            full_name='Administrador',
-            password='admin123',
-        )
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.admin)
 
+class UserAPITests(SuperuserAPITestCase):
     def test_create_user(self):
         url = reverse('user-list')
         data = {
@@ -20,7 +12,7 @@ class UserAPITests(APITestCase):
             'username': 'user1',
             'full_name': 'Usuário Um',
             'role': 'TEAM_MEMBER',
-            'password': 'teste1234'
+            'password': 'teste1234',
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
@@ -33,6 +25,7 @@ class UserAPITests(APITestCase):
 
     def test_user_permissions(self):
         url = reverse('user-list')
-        self.client.logout()
+        # Sem credencial JWT, o PermissionMiddleware deve barrar com 401.
+        self.client.credentials()
         response = self.client.get(url)
         self.assertEqual(response.status_code, 401)

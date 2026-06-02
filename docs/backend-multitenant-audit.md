@@ -416,11 +416,69 @@ Arquivos principais alterados nesta etapa parcial:
 - `backend/documents/views.py`
 - `backend/communications/views.py`
 
-Pendências:
+## Permissão DRF reutilizável e teste HTTP ponta-a-ponta (concluído)
 
-- Avaliar se a regra deve virar também uma permissão DRF reutilizável além do middleware.
-- Validar acesso negado entre tenants de ponta a ponta via HTTP. Parcialmente coberto: o isolamento de usuários compartilhados por `tenant_users_queryset` foi validado com dois tenants reais; falta o teste HTTP completo dos endpoints de negócio entre tenants.
+- **Permissão DRF `customers.permissions.IsTenantMember`**: encapsula a regra
+  "usuário precisa de `TenantMembership` ativa no tenant da requisição" numa
+  `BasePermission` declarável por viewset. Mesmo critério de bypass do RLS
+  (superuser e schema público liberados). Acompanham `HasTenantRole`
+  (fábrica `with_roles(*roles)`) e `IsTenantReader` para casos por papel.
+  - O middleware (`PermissionMiddleware.check_tenant_membership`) foi
+    refatorado para reutilizar `customers.querysets.get_request_membership`,
+    deixando uma única fonte de verdade para a resolução do vínculo,
+    compartilhada entre middleware (gate global por prefixo) e permissão DRF
+    (gate por view, defesa-em-profundidade).
+  - Aplicada explicitamente em `ProjetoViewSet`, `SprintViewSet`,
+    `EquipeViewSet`, `MembroEquipeViewSet` e `PermissaoEquipeViewSet`.
+
+- **Teste HTTP ponta-a-ponta**: `backend/scripts/e2e_cross_tenant.py` cria dois
+  tenants reais (schemas separados) e exercita o stack HTTP completo
+  (`TenantMainMiddleware` por host + JWT + `PermissionMiddleware` + RLS) via
+  `django.test.Client` com `HTTP_HOST` por domínio e `Authorization: Bearer`.
+  Idempotente e com teardown que dropa schemas/usuários. 9/9 asserções OK:
+  - acesso legítimo do dono ao próprio tenant (lista e detalha);
+  - **negação cross-tenant** (usuário de A em B → `403` na lista, no detalhe e
+    em endpoint de teams);
+  - **isolamento por schema** (dono de B não vê projeto de A; pk de A → `404`).
+
+Pendências:
 - Revisão de usos restantes de `.objects` concluída para serializers/views/admin/services: models tenant ficam cobertos pelo isolamento físico de schema; o único vazamento cross-tenant real (usuário compartilhado em `teams.usuarios_disponiveis` e `projects.adicionar_membro`) foi corrigido com `tenant_users_queryset`. Resta revisar `seed_data.py` e management commands quanto a escopo de tenant.
 - Repetir a compilação ORM dos filtros RLS por model com conexão real ao PostgreSQL e registrar o resultado.
+## Migração da suíte de testes para o stack multi-tenant (concluído)
+
+- **Base tenant-aware** em `backend/tests/tenant_base.py`:
+  - `TenantAPITestCase` (sobre `django_tenants.test.cases.TenantTestCase`):
+    cria um schema de tenant de teste, um usuário com `TenantMembership` ativa
+    e um `APIClient` autenticado por **JWT Bearer** e roteado para o **domínio
+    do tenant** (`HTTP_HOST`). Substitui `force_authenticate` (que ignorava o
+    `PermissionMiddleware`), exercitando o caminho HTTP real
+    (`TenantMainMiddleware` + JWT + membership + RLS), idêntico ao do e2e.
+  - `SuperuserAPITestCase`: superusuário via JWT para endpoints
+    administrativos (`/api/users/`), que dependem de `HasModulePermission`.
+- **Suíte canônica `tests/` reescrita e verde** (25 passed, PostgreSQL real):
+  teams, projects, tasks, risks, costs, users, documents e communications.
+  Além do auth/tenant, os testes legados usavam modelos/campos/rotas
+  inexistentes (`Project`/`Task`, `name`/`start_date`, `data_termino`,
+  `reverse('project-list')`); foram corrigidos para o contrato atual
+  (`Projeto`, `titulo`/`data_inicio`/`data_fim`, `projects:projects-list`,
+  `tarefas-list`, etc.). O teste de communications foi reescrito contra o
+  contrato vigente (`mensagem`, custom actions de leitura/não-lidas,
+  `configuracao-minha-configuracao`), com asserções por existência (robustas a
+  paginação) no lugar de contagens exatas.
+- **Diretórios de teste duplicados removidos** (`projects/tests`, `costs/tests`,
+  `communications/tests`, `documents/tests`): eram scaffold quebrado, não
+  coletado pelo pytest (`testpaths=tests`) e sem `__init__.py` (quebravam o
+  `manage.py test`). Consolidado em `tests/`; histórico preservado no git.
+- **Como rodar**: `pytest tests/ --create-db` (1ª vez) / `--reuse-db` (demais).
+  Requer PostgreSQL; não usar `USE_SQLITE=True` (sem django_tenants/schema).
+- **Bug corrigido**: `ConfiguracaoNotificacaoViewSet.perform_create` filtrava por
+  um campo `tipo` inexistente no model/serializer atual (`ConfiguracaoNotificacao.usuario`
+  é `OneToOneField`), causando `FieldError` em **todo POST** de configuração.
+  Simplificado para apenas fixar `usuario=request.user` (uma config por usuário;
+  duplicatas barradas pelo `UniqueValidator` → `400`). Coberto por
+  `test_create_notification_config` e `test_post_config_duplicate_rejected`.
+  (Observação menor: o `ConfiguracaoNotificacaoSerializer.create` tem lógica de
+  upsert que é inalcançável por causa do `UniqueValidator` — código morto, sem
+  impacto funcional; não alterado.)
 - Refinar permissões por entidade e regra de negócio na nova suite de testes.
 - Escrever testes de isolamento depois que os contratos forem estabilizados.

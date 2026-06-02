@@ -1,19 +1,10 @@
-from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from users.models import User
+
 from teams.models import Equipe
+from tests.tenant_base import TenantAPITestCase
 
-class TeamAPITests(APITestCase):
-    def setUp(self):
-        self.admin = User.objects.create_superuser(
-            email='admin@planify.com',
-            username='admin',
-            full_name='Administrador',
-            password='admin123',
-        )
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.admin)
 
+class TeamAPITests(TenantAPITestCase):
     def test_create_team(self):
         url = reverse('equipe-list')
         data = {

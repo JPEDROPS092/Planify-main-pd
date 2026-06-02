@@ -1,28 +1,23 @@
-from rest_framework.test import APITestCase, APIClient
-from django.urls import reverse
-from users.models import User
-from projects.models import Projeto
-from risks.models import Risco
 from datetime import date, timedelta
 
-class RiskAPITests(APITestCase):
+from django.urls import reverse
+
+from projects.models import Projeto
+from risks.models import Risco
+from tests.tenant_base import TenantAPITestCase
+
+
+class RiskAPITests(TenantAPITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(
-            email='admin@planify.com',
-            username='admin',
-            full_name='Administrador',
-            password='admin123',
-        )
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.admin)
+        super().setUp()
         self.project = Projeto.objects.create(
-            nome='Projeto Risco',
+            titulo='Projeto Risco',
             descricao='Teste',
             data_inicio=date.today(),
-            data_termino=date.today() + timedelta(days=10),
+            data_fim=date.today() + timedelta(days=10),
             status='PLANEJADO',
             prioridade='MEDIA',
-            criado_por=self.admin
+            criado_por=self.user,
         )
 
     def test_create_risk(self):
@@ -31,7 +26,7 @@ class RiskAPITests(APITestCase):
             'projeto': self.project.id,
             'descricao': 'Risco Teste',
             'probabilidade': 'ALTA',
-            'impacto': 'ALTO'
+            'impacto': 'ALTO',
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
