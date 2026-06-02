@@ -566,9 +566,9 @@ Validação:
 
 Pendências/ressalvas:
 
-- Bug pré-existente fora do escopo: `users/views.py::reset_password` usa
-  `User.objects.make_random_password()` (removido no Django 5.1; projeto no 5.2).
-  Trocar por `get_random_string`.
+- Bug pré-existente corrigido: `users/views.py::reset_password` usava
+  `User.objects.make_random_password()` (removido no Django 5.1; projeto no 5.2);
+  trocado por `get_random_string(12)`.
 - Restrição/curadoria do cadastro público (`registro.vue`) é decisão de produto.
 - Integração de frontend (tela de gestão de convites, rota de aceite, baseURL
   por subdomínio) fica para a Fase 12, conforme plano de migração na ADR.

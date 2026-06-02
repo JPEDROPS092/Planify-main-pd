@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
@@ -99,7 +100,8 @@ class UserViewSet(viewsets.ModelViewSet):
         """Redefine a senha do usuário para uma senha temporária e envia por e-mail."""
         user = self.get_object()
         # Generate a temporary password
-        temp_password = User.objects.make_random_password()
+        # (make_random_password foi removido no Django 5.1; usar get_random_string)
+        temp_password = get_random_string(12)
         
         # Usar a função utilitária para atualizar a senha
         user = update_user_password(user, temp_password)

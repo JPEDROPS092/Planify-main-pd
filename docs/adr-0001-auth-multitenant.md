@@ -129,11 +129,11 @@ habilitar o fluxo completo:
 
 ## Pendências e follow-ups
 
-- **Bug pré-existente (fora do escopo desta rodada):**
-  `users/views.py::UserViewSet.reset_password` usa
+- **Bug pré-existente (corrigido):**
+  `users/views.py::UserViewSet.reset_password` usava
   `User.objects.make_random_password()`, removido no Django 5.1 (o projeto está
-  no 5.2). O endpoint quebraria em runtime; trocar por
-  `django.utils.crypto.get_random_string`.
+  no 5.2) — o endpoint quebraria em runtime. Trocado por
+  `django.utils.crypto.get_random_string(12)`.
 - Aceite de usuário existente assume verificação de e-mail pela posse do link;
   se/quando houver verificação de e-mail formal, alinhar.
 - Restrição/curadoria do cadastro público (item 4 acima) é decisão de produto.
