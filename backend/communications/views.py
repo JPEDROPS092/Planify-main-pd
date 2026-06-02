@@ -7,6 +7,7 @@ from django.utils import timezone
 # Removed unused import
 from django.core.exceptions import ValidationError
 
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import ChatMensagem, ChatMensagemLeitura, Notificacao, ConfiguracaoNotificacao, Comunicacao
 from .serializers import (
     ChatMensagemSerializer, ChatMensagemLeituraSerializer,
@@ -15,7 +16,7 @@ from .serializers import (
 )
 
 
-class ChatMensagemViewSet(viewsets.ModelViewSet):
+class ChatMensagemViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de mensagens de chat.
     
@@ -95,7 +96,7 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
         if texto:
             queryset = queryset.filter(texto__icontains=texto)
         
-        return queryset
+        return self.apply_rls(queryset)
     
     @action(detail=True, methods=['post'])
     def marcar_como_lida(self, request, pk=None):  # noqa: Unused parameter
@@ -114,7 +115,7 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
             usuario = request.user
             
             # Verifica se já foi marcada como lida
-            if ChatMensagemLeitura.objects.filter(mensagem=mensagem, usuario=usuario).exists():
+            if apply_tenant_rls(ChatMensagemLeitura.objects.filter(mensagem=mensagem, usuario=usuario), request).exists():
                 return Response(
                     {'mensagem': 'Esta mensagem já foi marcada como lida.'}, 
                     status=status.HTTP_200_OK
@@ -162,12 +163,12 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
                     pass
             
             # Obtém IDs de mensagens já lidas pelo usuário
-            mensagens_lidas = ChatMensagemLeitura.objects.filter(
+            mensagens_lidas = apply_tenant_rls(ChatMensagemLeitura.objects.filter(
                 usuario=usuario
-            ).values_list('mensagem_id', flat=True)
+            ), request).values_list('mensagem_id', flat=True)
             
             # Filtra mensagens não lidas com select_related para otimização
-            mensagens_nao_lidas = ChatMensagem.objects.select_related(
+            mensagens_nao_lidas = apply_tenant_rls(ChatMensagem.objects.select_related(
                 'projeto', 'autor'
             ).filter(
                 filtro_projeto
@@ -175,7 +176,7 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
                 id__in=mensagens_lidas
             ).exclude(
                 autor=usuario  # Exclui mensagens enviadas pelo próprio usuário
-            )
+            ), request)
             
             serializer = self.get_serializer(mensagens_nao_lidas, many=True)
             return Response(serializer.data)
@@ -187,7 +188,7 @@ class ChatMensagemViewSet(viewsets.ModelViewSet):
             )
 
 
-class NotificacaoViewSet(viewsets.ModelViewSet):
+class NotificacaoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de notificações.
     
@@ -221,9 +222,10 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
             return Notificacao.objects.none()
             
         # Usa select_related para otimizar consultas relacionadas
-        return Notificacao.objects.select_related(
+        queryset = Notificacao.objects.select_related(
             'usuario', 'projeto', 'tarefa'
         ).filter(usuario=self.request.user)
+        return self.apply_rls(queryset)
     
     @action(detail=True, methods=['post'])
     def marcar_como_lida(self, request, pk=None):
@@ -277,7 +279,7 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
         """
         try:
             # Filtra notificações não lidas do usuário atual
-            notificacoes = Notificacao.objects.filter(usuario=request.user, lida=False)
+            notificacoes = apply_tenant_rls(Notificacao.objects.filter(usuario=request.user, lida=False), request)
             count = notificacoes.count()
             
             # Atualiza em massa (operação eficiente no banco de dados)
@@ -309,9 +311,9 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
         """
         try:
             # Inicia com select_related para otimizar consultas
-            notificacoes = Notificacao.objects.select_related(
+            notificacoes = apply_tenant_rls(Notificacao.objects.select_related(
                 'usuario', 'projeto', 'tarefa'
-            ).filter(usuario=request.user, lida=False)
+            ).filter(usuario=request.user, lida=False), request)
             
             # Filtra por tipo, se fornecido
             tipo = request.query_params.get('tipo')
@@ -343,7 +345,7 @@ class NotificacaoViewSet(viewsets.ModelViewSet):
             )
 
 
-class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
+class ConfiguracaoNotificacaoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de configurações de notificações.
     
@@ -372,7 +374,8 @@ class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return ConfiguracaoNotificacao.objects.none()
             
-        return ConfiguracaoNotificacao.objects.select_related('usuario').filter(usuario=self.request.user)
+        queryset = ConfiguracaoNotificacao.objects.select_related('usuario').filter(usuario=self.request.user)
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         """
@@ -389,7 +392,7 @@ class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
         tipo = serializer.validated_data.get('tipo')
         
         # Verifica se já existe uma configuração para este tipo
-        if ConfiguracaoNotificacao.objects.filter(usuario=self.request.user, tipo=tipo).exists():
+        if apply_tenant_rls(ConfiguracaoNotificacao.objects.filter(usuario=self.request.user, tipo=tipo), self.request).exists():
             raise ValidationError({
                 'tipo': f'Já existe uma configuração para o tipo "{tipo}"'
             })
@@ -404,7 +407,7 @@ class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
         Retorna a configuração do usuário atual ou cria uma padrão se não existir.
         """
         try:
-            config = ConfiguracaoNotificacao.objects.get(usuario=request.user)
+            config = apply_tenant_rls(ConfiguracaoNotificacao.objects.filter(usuario=request.user), request).get()
         except ConfiguracaoNotificacao.DoesNotExist:
             # Cria configuração padrão
             config = ConfiguracaoNotificacao.objects.create(usuario=request.user)
@@ -413,7 +416,7 @@ class ConfiguracaoNotificacaoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ComunicacaoViewSet(viewsets.ModelViewSet):
+class ComunicacaoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de comunicações formais.
     
@@ -474,7 +477,7 @@ class ComunicacaoViewSet(viewsets.ModelViewSet):
         if data_fim:
             queryset = queryset.filter(criada_em__lte=data_fim)
             
-        return queryset
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         """

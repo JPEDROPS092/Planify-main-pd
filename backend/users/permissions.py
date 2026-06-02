@@ -100,8 +100,7 @@ def check_user_permission(user, module, action):
     Returns:
         bool: True se o usuário tem permissão, False caso contrário
     """
-    # Administradores têm acesso total
-    if user.is_superuser or user.role == 'ADMIN':
+    if user.is_superuser:
         return True
     
     # Verificar permissão específica

@@ -6,7 +6,8 @@ from django.db.models import Q, Sum, F, DecimalField, Value, Case, When, Express
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import Categoria, Custo, OrcamentoProjeto, OrcamentoTarefa, Alerta
 from .serializers import (
     CategoriaSerializer, CustoSerializer, CustoListSerializer,
@@ -17,7 +18,7 @@ from projects.models import Projeto
 from tasks.models import Tarefa
 
 
-class CategoriaViewSet(viewsets.ModelViewSet):
+class CategoriaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de categorias de custos.
     """
@@ -29,7 +30,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['nome']
 
 
-class CustoViewSet(viewsets.ModelViewSet):
+class CustoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de custos.
     Permite criar, listar, atualizar e excluir custos.
@@ -120,7 +121,7 @@ class CustoViewSet(viewsets.ModelViewSet):
                 Q(descricao__icontains=texto) | Q(observacoes__icontains=texto)
             )
         
-        return queryset
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         custo = serializer.save(criado_por=self.request.user)
@@ -151,12 +152,12 @@ class CustoViewSet(viewsets.ModelViewSet):
                 # Obter orçamento e calcular valor utilizado em uma única query
                 from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Case, When, Value
                 
-                orcamento_projeto = OrcamentoProjeto.objects.filter(projeto=custo.projeto).annotate(
-                    valor_utilizado=Coalesce(Sum('projeto__custos__valor'), Value(0), output_field=DecimalField()),
+                orcamento_projeto = self.apply_rls(OrcamentoProjeto.objects.filter(projeto=custo.projeto)).annotate(
+                    valor_utilizado=Coalesce(Sum('projeto__custos_do_projeto__valor'), Value(0), output_field=DecimalField()),
                     percentual_calculado=Case(
                         When(valor_total=0, then=Value(0, output_field=DecimalField())),
                         default=ExpressionWrapper(
-                            Coalesce(Sum('projeto__custos__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor_total'),
+                            Coalesce(Sum('projeto__custos_do_projeto__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor_total'),
                             output_field=DecimalField(max_digits=5, decimal_places=2)
                         )
                     )
@@ -168,11 +169,11 @@ class CustoViewSet(viewsets.ModelViewSet):
                 percentual = getattr(orcamento_projeto, 'percentual_calculado', 0)
                 
                 # Verificar se já existe alerta ativo
-                alertas_ativos_projeto = Alerta.objects.filter(
+                alertas_ativos_projeto = self.apply_rls(Alerta.objects.filter(
                     projeto=custo.projeto, 
                     tipo='PROJETO', 
                     status='ATIVO'
-                ).exists()
+                )).exists()
                 
                 # Se ultrapassou 80% e não existir alerta ativo
                 if percentual >= 80 and not alertas_ativos_projeto:
@@ -180,7 +181,7 @@ class CustoViewSet(viewsets.ModelViewSet):
                         tipo='PROJETO',
                         projeto=custo.projeto,
                         percentual=percentual,
-                        mensagem=f"O projeto {custo.projeto.name} atingiu {percentual:.2f}% do orçamento planejado."
+                        mensagem=f"O projeto {custo.projeto.titulo} atingiu {percentual:.2f}% do orçamento planejado."
                     )
             except Exception as e:
                 # Registrar o erro para depuração
@@ -191,12 +192,12 @@ class CustoViewSet(viewsets.ModelViewSet):
         if custo.tarefa:
             try:
                 # Obter orçamento e calcular valor utilizado em uma única query
-                orcamento_tarefa = OrcamentoTarefa.objects.filter(tarefa=custo.tarefa).annotate(
-                    valor_utilizado=Coalesce(Sum('tarefa__custos__valor'), Value(0), output_field=DecimalField()),
+                orcamento_tarefa = self.apply_rls(OrcamentoTarefa.objects.filter(tarefa=custo.tarefa)).annotate(
+                    valor_utilizado=Coalesce(Sum('tarefa__custos_da_tarefa__valor'), Value(0), output_field=DecimalField()),
                     percentual_calculado=Case(
                         When(valor=0, then=Value(0, output_field=DecimalField())),
                         default=ExpressionWrapper(
-                            Coalesce(Sum('tarefa__custos__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor'),
+                            Coalesce(Sum('tarefa__custos_da_tarefa__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor'),
                             output_field=DecimalField(max_digits=5, decimal_places=2)
                         )
                     )
@@ -208,11 +209,11 @@ class CustoViewSet(viewsets.ModelViewSet):
                 percentual = getattr(orcamento_tarefa, 'percentual_calculado', 0)
                 
                 # Verificar se já existe alerta ativo
-                alerta_existe = Alerta.objects.filter(
+                alerta_existe = self.apply_rls(Alerta.objects.filter(
                     tarefa=custo.tarefa, 
                     tipo='TAREFA', 
                     status='ATIVO'
-                ).exists()
+                )).exists()
                 
                 # Se ultrapassou 80% e não existir alerta ativo
                 if percentual >= 80 and not alerta_existe:
@@ -239,7 +240,10 @@ class CustoViewSet(viewsets.ModelViewSet):
         filtro_projeto = Q(projeto_id=projeto_id) if projeto_id else Q()
         
         # Total gasto (todos os custos)
-        total_gasto = Custo.objects.filter(filtro_projeto).aggregate(
+        custos = apply_tenant_rls(Custo.objects.filter(filtro_projeto), request)
+        alertas = apply_tenant_rls(Alerta.objects.filter(filtro_projeto), request)
+
+        total_gasto = custos.aggregate(
             total=Coalesce(Sum('valor'), Value(0), output_field=DecimalField())
         )['total'] or Decimal('0.00')
         
@@ -249,10 +253,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         data_limite = timezone.now().date().replace(day=1) - timedelta(days=365)
 
         
-        gastos_mensais = Custo.objects.filter(
-            filtro_projeto, 
-            data__gte=data_limite
-        ).annotate(
+        gastos_mensais = custos.filter(data__gte=data_limite).annotate(
             mes=TruncMonth('data')
         ).values(
             'mes'
@@ -261,18 +262,14 @@ class CustoViewSet(viewsets.ModelViewSet):
         ).order_by('mes')
         
         # Top 5 categorias de custos
-        top_categorias = Custo.objects.filter(
-            filtro_projeto
-        ).values(
+        top_categorias = custos.values(
             'categoria', 'categoria__nome'
         ).annotate(
             total=Sum('valor')
         ).order_by('-total')[:5]
         
         # Alertas recentes (últimos 5)
-        alertas_recentes = Alerta.objects.filter(
-            filtro_projeto
-        ).order_by('-data_criacao')[:5]
+        alertas_recentes = alertas.order_by('-data_criacao')[:5]
         
         # Serializa alertas recentes
         # Removed unused import
@@ -298,7 +295,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         Gera um relatório de gastos por projeto.
         """
         # Obtém todos os projetos
-        projetos = Projeto.objects.all()
+        projetos = apply_tenant_rls(Projeto.objects.all(), request)
         
         # Filtra por projeto específico, se fornecido
         projeto_id = request.query_params.get('projeto_id')
@@ -308,7 +305,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         # Prepara dados do relatório
         dados_relatorio = []
         # Prefetch aggregated values for all projects
-        valores_gastos = Custo.objects.values('projeto').annotate(
+        valores_gastos = apply_tenant_rls(Custo.objects.all(), request).values('projeto').annotate(
             total_gasto=Coalesce(Sum('valor'), Value(0), output_field=DecimalField())
         )
         valores_gastos_dict = {item['projeto']: item['total_gasto'] for item in valores_gastos}
@@ -316,7 +313,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         for projeto in projetos:
             # Obtém orçamento total (ou 0 se não existir)
             try:
-                orcamento = OrcamentoProjeto.objects.get(projeto=projeto)
+                orcamento = apply_tenant_rls(OrcamentoProjeto.objects.filter(projeto=projeto), request).get()
                 orcamento_total = orcamento.valor_total
             except OrcamentoProjeto.DoesNotExist:
                 orcamento_total = Decimal('0.00')
@@ -327,7 +324,7 @@ class CustoViewSet(viewsets.ModelViewSet):
             # Adiciona ao relatório
             dados_relatorio.append({
                 'projeto_id': getattr(projeto, 'id', None),
-                'projeto_nome': getattr(projeto, 'name', 'Unknown'),
+                'projeto_nome': getattr(projeto, 'titulo', 'Unknown'),
                 'orcamento_total': orcamento_total,
                 'valor_gasto': valor_gasto
             })
@@ -360,18 +357,15 @@ class CustoViewSet(viewsets.ModelViewSet):
         from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Value, CharField, Case, When
         from django.db.models.functions import Coalesce
         
-        total_gastos = Custo.objects.filter(
-            filtro_projeto & filtro_data
-        ).aggregate(total=Coalesce(Sum('valor'), Value(0), output_field=DecimalField()))['total']
+        custos = apply_tenant_rls(Custo.objects.filter(filtro_projeto & filtro_data), request)
+        total_gastos = custos.aggregate(total=Coalesce(Sum('valor'), Value(0), output_field=DecimalField()))['total']
         
         # Se não houver gastos, retorna lista vazia
         if not total_gastos or total_gastos == 0:
             return Response([])
         
         # Agrupa gastos por categoria e calcula percentuais diretamente no banco de dados
-        gastos_por_categoria = Custo.objects.filter(
-            filtro_projeto & filtro_data
-        ).values(
+        gastos_por_categoria = custos.values(
             'categoria', 'categoria__nome'
         ).annotate(
             valor_total=Sum('valor'),
@@ -426,8 +420,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         # Consulta custos agrupados por mês
         from django.db.models.functions import TruncMonth
         
-        gastos_mensais = Custo.objects.filter(
-            filtro_projeto,
+        gastos_mensais = apply_tenant_rls(Custo.objects.filter(filtro_projeto), request).filter(
             data__gte=data_inicial,
             data__lte=data_final
         ).annotate(
@@ -462,7 +455,7 @@ class CustoViewSet(viewsets.ModelViewSet):
         return Response(resultado)
 
 
-class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
+class OrcamentoProjetoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de orçamentos de projetos.
     Inclui anotações para calcular campos derivados diretamente no banco de dados.
@@ -480,15 +473,16 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
         - valor_restante: diferença entre valor_total e valor_utilizado
         - percentual_utilizado: percentual do orçamento já utilizado
         """
-        return OrcamentoProjeto.objects.annotate(
-            valor_utilizado=Coalesce(Sum('projeto__custos__valor'), Value(0), output_field=DecimalField()),
-            valor_restante=F('valor_total') - Coalesce(Sum('projeto__custos__valor'), Value(0), output_field=DecimalField()),
+        queryset = OrcamentoProjeto.objects.annotate(
+            valor_utilizado=Coalesce(Sum('projeto__custos_do_projeto__valor'), Value(0), output_field=DecimalField()),
+            valor_restante=F('valor_total') - Coalesce(Sum('projeto__custos_do_projeto__valor'), Value(0), output_field=DecimalField()),
             percentual_utilizado=Case(
                 When(valor_total=0, then=Value(0, output_field=DecimalField())),
-                default=Coalesce(Sum('projeto__custos__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor_total'),
+                default=Coalesce(Sum('projeto__custos_do_projeto__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor_total'),
                 output_field=DecimalField()
             )
         ).select_related('projeto', 'aprovado_por')
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         serializer.save(aprovado_por=self.request.user)
@@ -499,14 +493,14 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
         Retorna a lista de projetos que ainda não possuem orçamento definido.
         """
         # Obtém IDs de projetos que já têm orçamento
-        projetos_com_orcamento = OrcamentoProjeto.objects.values_list('projeto_id', flat=True)
+        projetos_com_orcamento = apply_tenant_rls(OrcamentoProjeto.objects.all(), request).values_list('projeto_id', flat=True)
         
         # Filtra projetos sem orçamento
-        projetos_sem_orcamento = Projeto.objects.exclude(id__in=projetos_com_orcamento)
+        projetos_sem_orcamento = apply_tenant_rls(Projeto.objects.exclude(id__in=projetos_com_orcamento), request)
         
         # Retorna lista simplificada
         dados = [
-            {'id': getattr(p, 'id', None), 'nome': getattr(p, 'name', 'Unknown')}
+            {'id': getattr(p, 'id', None), 'nome': getattr(p, 'titulo', 'Unknown')}
             for p in projetos_sem_orcamento
         ]
         
@@ -575,9 +569,9 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
         """
         # Calcula percentual atual de utilização
         try:
-            valor_utilizado = Custo.objects.filter(
+            valor_utilizado = self.apply_rls(Custo.objects.filter(
                 projeto=orcamento.projeto
-            ).aggregate(
+            )).aggregate(
                 total=Coalesce(Sum('valor'), Value(0), output_field=DecimalField())
             )['total'] or Decimal('0.00')
             
@@ -588,18 +582,18 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
             
             # Se percentual >= 80% e não existir alerta ativo
             if percentual >= 80:
-                alerta_existe = Alerta.objects.filter(
+                alerta_existe = self.apply_rls(Alerta.objects.filter(
                     projeto=orcamento.projeto,
                     tipo='PROJETO',
                     status='ATIVO'
-                ).exists()
+                )).exists()
                 
                 if not alerta_existe:
                     Alerta.objects.create(
                         tipo='PROJETO',
                         projeto=orcamento.projeto,
                         percentual=percentual,
-                        mensagem=f"O projeto {orcamento.projeto.name} atingiu {percentual:.2f}% do orçamento planejado após ajuste."
+                        mensagem=f"O projeto {orcamento.projeto.titulo} atingiu {percentual:.2f}% do orçamento planejado após ajuste."
                     )
         except Exception as e:
             # Registrar erro para depuração
@@ -607,7 +601,7 @@ class OrcamentoProjetoViewSet(viewsets.ModelViewSet):
             pass
 
 
-class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
+class OrcamentoTarefaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de orçamentos de tarefas.
     Inclui anotações para calcular campos derivados diretamente no banco de dados.
@@ -627,15 +621,16 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
         """
         from django.db.models import Case, When
         
-        return OrcamentoTarefa.objects.annotate(
-            valor_utilizado=Coalesce(Sum('tarefa__custos__valor'), Value(0), output_field=DecimalField()),
-            valor_restante=F('valor') - Coalesce(Sum('tarefa__custos__valor'), Value(0), output_field=DecimalField()),
+        queryset = OrcamentoTarefa.objects.annotate(
+            valor_utilizado=Coalesce(Sum('tarefa__custos_da_tarefa__valor'), Value(0), output_field=DecimalField()),
+            valor_restante=F('valor') - Coalesce(Sum('tarefa__custos_da_tarefa__valor'), Value(0), output_field=DecimalField()),
             percentual_utilizado=Case(
                 When(valor=0, then=Value(0, output_field=DecimalField())),
-                default=Coalesce(Sum('tarefa__custos__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor'),
+                default=Coalesce(Sum('tarefa__custos_da_tarefa__valor'), Value(0), output_field=DecimalField()) * 100 / F('valor'),
                 output_field=DecimalField()
             )
         ).select_related('tarefa', 'aprovado_por', 'tarefa__projeto')
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         serializer.save(aprovado_por=self.request.user)
@@ -650,14 +645,17 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
         filtro_projeto = Q(projeto_id=projeto_id) if projeto_id else Q()
         
         # Obtém IDs de tarefas que já têm orçamento
-        tarefas_com_orcamento = OrcamentoTarefa.objects.values_list('tarefa_id', flat=True)
+        tarefas_com_orcamento = apply_tenant_rls(OrcamentoTarefa.objects.all(), request).values_list('tarefa_id', flat=True)
         
         # Filtra tarefas sem orçamento
-        tarefas_sem_orcamento = Tarefa.objects.filter(filtro_projeto).exclude(id__in=tarefas_com_orcamento).select_related('projeto')
+        tarefas_sem_orcamento = apply_tenant_rls(
+            Tarefa.objects.filter(filtro_projeto).exclude(id__in=tarefas_com_orcamento).select_related('projeto'),
+            request
+        )
         
         # Retorna lista simplificada
         dados = [
-            {'id': getattr(t, 'id', None), 'titulo': getattr(t, 'titulo', 'Unknown'), 'projeto_id': getattr(t, 'projeto_id', None), 'projeto_nome': getattr(getattr(t, 'projeto', None), 'name', 'Unknown')}
+            {'id': getattr(t, 'id', None), 'titulo': getattr(t, 'titulo', 'Unknown'), 'projeto_id': getattr(t, 'projeto_id', None), 'projeto_nome': getattr(getattr(t, 'projeto', None), 'titulo', 'Unknown')}
             for t in tarefas_sem_orcamento
         ]
         
@@ -727,9 +725,9 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
         """
         # Calcula percentual atual de utilização
         try:
-            valor_utilizado = Custo.objects.filter(
+            valor_utilizado = self.apply_rls(Custo.objects.filter(
                 tarefa=orcamento.tarefa
-            ).aggregate(
+            )).aggregate(
                 total=Coalesce(Sum('valor'), Value(0), output_field=DecimalField())
             )['total'] or Decimal('0.00')
             
@@ -740,11 +738,11 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
             
             # Se percentual >= 80% e não existir alerta ativo
             if percentual >= 80:
-                alerta_existe = Alerta.objects.filter(
+                alerta_existe = self.apply_rls(Alerta.objects.filter(
                     tarefa=orcamento.tarefa,
                     tipo='TAREFA',
                     status='ATIVO'
-                ).exists()
+                )).exists()
                 
                 if not alerta_existe:
                     Alerta.objects.create(
@@ -760,7 +758,7 @@ class OrcamentoTarefaViewSet(viewsets.ModelViewSet):
             pass
 
 
-class AlertaViewSet(viewsets.ModelViewSet):
+class AlertaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de alertas de orçamento.
     """
@@ -775,9 +773,10 @@ class AlertaViewSet(viewsets.ModelViewSet):
         """
         Retorna queryset com relacionamentos já carregados para evitar N+1 queries.
         """
-        return Alerta.objects.select_related(
+        queryset = Alerta.objects.select_related(
             'projeto', 'tarefa', 'resolvido_por'
         ).all()
+        return self.apply_rls(queryset)
     
     @action(detail=True, methods=['post'])
     def resolver(self, request, pk=None):

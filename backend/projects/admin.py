@@ -4,18 +4,39 @@ from .models import Projeto, MembroProjeto, HistoricoStatusProjeto, Sprint
 def get_all_fields(model):
     return [field.name for field in model._meta.fields]
 
+class MembroProjetoInline(admin.TabularInline):
+    model = MembroProjeto
+    extra = 1
+    autocomplete_fields = ['usuario']
+
+class SprintInline(admin.TabularInline):
+    model = Sprint
+    extra = 0
+    fields = ['nome', 'status', 'data_inicio', 'data_fim']
+    show_change_link = True
+
 @admin.register(Projeto)
 class ProjetoAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'status', 'prioridade', 'data_inicio', 'data_fim', 'criado_por', 'arquivado']
+    list_display = ['titulo', 'status', 'prioridade', 'data_inicio', 'data_fim', 'criado_por', 'get_membros_count', 'get_tarefas_count']
     list_filter = ['status', 'prioridade', 'arquivado']
     search_fields = ['titulo', 'descricao']
     date_hierarchy = 'data_inicio'
-    readonly_fields = ['criado_em', 'atualizado_em']
+    readonly_fields = ['criado_em', 'atualizado_em', 'get_membros_count', 'get_tarefas_count']
+    inlines = [MembroProjetoInline, SprintInline]
     fieldsets = [
         ('Informações Básicas', {'fields': ['titulo', 'descricao', 'status', 'prioridade', 'arquivado']}),
         ('Datas', {'fields': ['data_inicio', 'data_fim']}),
         ('Metadados', {'fields': ['criado_por', 'criado_em', 'atualizado_em']}),
+        ('Estatísticas', {'fields': ['get_membros_count', 'get_tarefas_count'], 'classes': ['collapse']}),
     ]
+
+    def get_membros_count(self, obj):
+        return obj.membros.count()
+    get_membros_count.short_description = 'Total de Membros'
+
+    def get_tarefas_count(self, obj):
+        return obj.tarefas.count()
+    get_tarefas_count.short_description = 'Total de Tarefas'
 
 @admin.register(MembroProjeto)
 class ProjectMemberAdmin(admin.ModelAdmin):
@@ -34,7 +55,7 @@ class ProjectStatusHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(Sprint)
 class SprintAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'projeto', 'status', 'data_inicio', 'data_fim', 'criado_por']
+    list_display = ['nome', 'projeto', 'status', 'data_inicio', 'data_fim', 'get_tarefas_count']
     list_filter = ['status', 'data_inicio', 'data_fim']
     search_fields = ['nome', 'projeto__titulo', 'descricao']
     date_hierarchy = 'data_inicio'
@@ -44,3 +65,7 @@ class SprintAdmin(admin.ModelAdmin):
         ('Datas', {'fields': ['data_inicio', 'data_fim']}),
         ('Metadados', {'fields': ['criado_por']}),
     ]
+
+    def get_tarefas_count(self, obj):
+        return obj.tarefas.count()
+    get_tarefas_count.short_description = 'Total de Tarefas'

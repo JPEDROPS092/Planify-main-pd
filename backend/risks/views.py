@@ -3,11 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import Risco, HistoricoRisco
 from .serializers import RiscoSerializer, RiscoListSerializer, HistoricoRiscoSerializer
 
 
-class RiscoViewSet(viewsets.ModelViewSet):
+class RiscoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de riscos.
     Permite criar, listar, atualizar e excluir riscos.
@@ -68,20 +69,20 @@ class RiscoViewSet(viewsets.ModelViewSet):
                 Q(plano_contingencia__icontains=texto)
             )
         
-        return queryset
+        return self.apply_rls(queryset)
     
     @action(detail=True, methods=['get'])
-    def historico(self, pk=None):
+    def historico(self, request, pk=None):
         """
         Retorna o histórico de alterações do risco.
         """
         risco = self.get_object()
-        historico = risco.historico.all()
+        historico = apply_tenant_rls(risco.historico.all(), request)
         serializer = HistoricoRiscoSerializer(historico, many=True)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
-    def atualizar_status(self, pk=None):
+    def atualizar_status(self, request, pk=None):
         """
         Atualiza o status de um risco.
         """
@@ -139,7 +140,7 @@ class RiscoViewSet(viewsets.ModelViewSet):
             )
         
         # Filtra os riscos pelos IDs fornecidos
-        riscos = Risco.objects.filter(id__in=ids)
+        riscos = apply_tenant_rls(Risco.objects.filter(id__in=ids), request)
         
         # Verifica se todos os IDs foram encontrados
         if len(riscos) != len(ids):
@@ -158,7 +159,7 @@ class RiscoViewSet(viewsets.ModelViewSet):
         )
 
 
-class HistoricoRiscoViewSet(viewsets.ReadOnlyModelViewSet):
+class HistoricoRiscoViewSet(TenantRLSQuerysetMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet para visualização do histórico de riscos.
     Somente leitura.

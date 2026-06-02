@@ -1,5 +1,6 @@
 import re
 import logging
+from django.conf import settings
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
@@ -9,6 +10,19 @@ from .permissions import get_required_permission, check_user_permission, log_una
 from users.models import AccessAttempt
 
 logger = logging.getLogger(__name__)
+
+SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
+TENANT_ROLE_METHOD_RULES = {
+    'owner': {'*': ('*',)},
+    'admin': {'*': ('*',)},
+    'manager': {'*': ('*',)},
+    'member': {
+        '/api/tasks/': SAFE_METHODS + ('POST', 'PUT', 'PATCH'),
+        '/api/documents/': SAFE_METHODS + ('POST', 'PUT', 'PATCH'),
+        '/api/communications/': SAFE_METHODS + ('POST', 'PUT', 'PATCH'),
+    },
+    'viewer': {'*': SAFE_METHODS},
+}
 
 class PermissionMiddleware(MiddlewareMixin):
     """Middleware para verificar permissões de acesso."""
@@ -60,13 +74,16 @@ class PermissionMiddleware(MiddlewareMixin):
         if not user.is_authenticated:
             return JsonResponse({"detail": "Autenticação necessária"}, status=401)
         
-        # Administradores têm acesso total
-        if user.is_superuser or user.role == 'ADMIN':
+        if user.is_superuser:
             return None
         
         # Verificar se a conta está bloqueada
         if hasattr(user, 'is_locked') and user.is_locked:
             return JsonResponse({"detail": "Conta bloqueada. Entre em contato com o administrador."}, status=403)
+
+        tenant_response = self.check_tenant_membership(request)
+        if tenant_response is not None:
+            return tenant_response
         
         # Obter permissão necessária para o caminho
         permission = get_required_permission(path)
@@ -103,6 +120,54 @@ class PermissionMiddleware(MiddlewareMixin):
             }, status=403)
         
         return None
+
+    def check_tenant_membership(self, request):
+        tenant = getattr(request, 'tenant', None)
+        schema_name = getattr(tenant, 'schema_name', settings.PUBLIC_SCHEMA_NAME)
+
+        if schema_name == settings.PUBLIC_SCHEMA_NAME:
+            return None
+
+        protected_prefixes = getattr(settings, 'TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES', ())
+        if not request.path_info.startswith(protected_prefixes):
+            return None
+
+        # Mesma resolução de vínculo usada pela permissão DRF IsTenantMember
+        # e pelo RLS (customers.querysets.get_request_membership), mantendo
+        # uma única fonte de verdade para "vínculo ativo em (user, tenant)".
+        from customers.querysets import get_request_membership
+
+        membership = get_request_membership(request)
+
+        if not membership:
+            return JsonResponse({
+                'error': 'Forbidden',
+                'message': 'Usuário não possui acesso a este tenant.'
+            }, status=403)
+
+        if self.is_tenant_role_allowed(membership.role, request.path_info, request.method):
+            return None
+
+        return JsonResponse({
+            'error': 'Forbidden',
+            'message': 'Papel do usuário não permite esta ação neste tenant.'
+        }, status=403)
+
+    def is_tenant_role_allowed(self, role, path, method):
+        rules = TENANT_ROLE_METHOD_RULES.get(role, {})
+        allowed_methods = rules.get('*')
+
+        for prefix, methods in rules.items():
+            if prefix == '*':
+                continue
+            if path.startswith(prefix):
+                allowed_methods = methods
+                break
+
+        if not allowed_methods:
+            allowed_methods = SAFE_METHODS
+
+        return '*' in allowed_methods or method in allowed_methods
 
     def get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

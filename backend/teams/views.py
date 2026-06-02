@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls, tenant_users_queryset
+from customers.permissions import IsTenantMember
 from .models import Equipe, MembroEquipe, PermissaoEquipe
 from .serializers import (
     EquipeSerializer, EquipeListSerializer, MembroEquipeSerializer, 
@@ -13,14 +15,14 @@ from .serializers import (
 User = get_user_model()
 
 
-class EquipeViewSet(viewsets.ModelViewSet):
+class EquipeViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de equipes.
     Permite criar, listar, atualizar e excluir equipes.
     """
     queryset = Equipe.objects.all()
     serializer_class = EquipeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsTenantMember]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['nome', 'descricao']
     ordering_fields = ['nome', 'criado_em']
@@ -56,7 +58,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
                 Q(nome__icontains=texto) | Q(descricao__icontains=texto)
             )
         
-        return queryset.distinct()
+        return self.apply_rls(queryset.distinct())
     
     @action(detail=True, methods=['get'])
     def membros(self, request, pk=None):
@@ -64,7 +66,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
         Retorna a lista de membros da equipe.
         """
         equipe = self.get_object()
-        membros = equipe.membros.all()
+        membros = self.apply_rls(equipe.membros.all())
         serializer = MembroEquipeSerializer(membros, many=True)
         return Response(serializer.data)
     
@@ -98,7 +100,7 @@ class EquipeViewSet(viewsets.ModelViewSet):
             )
         
         # Verifica se o usuário já é membro da equipe
-        if MembroEquipe.objects.filter(equipe=equipe, usuario_id=usuario_id).exists():
+        if apply_tenant_rls(MembroEquipe.objects.filter(equipe=equipe, usuario_id=usuario_id), request).exists():
             return Response(
                 {'erro': 'Este usuário já é membro desta equipe.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -131,7 +133,10 @@ class EquipeViewSet(viewsets.ModelViewSet):
         
         # Verifica se o usuário é membro da equipe
         try:
-            membro = MembroEquipe.objects.get(equipe=equipe, usuario_id=usuario_id)
+            membro = apply_tenant_rls(
+                MembroEquipe.objects.filter(equipe=equipe, usuario_id=usuario_id),
+                request
+            ).get()
             
             # Não permite remover o último membro da equipe
             if equipe.membros.count() <= 1:
@@ -180,7 +185,10 @@ class EquipeViewSet(viewsets.ModelViewSet):
         
         # Verifica se o usuário é membro da equipe
         try:
-            membro = MembroEquipe.objects.get(equipe=equipe, usuario_id=usuario_id)
+            membro = apply_tenant_rls(
+                MembroEquipe.objects.filter(equipe=equipe, usuario_id=usuario_id),
+                request
+            ).get()
             
             # Se estiver alterando de PO para outro papel, verifica se há outro PO
             if membro.papel == 'PO' and papel != 'PO' and equipe.membros.filter(papel='PO').count() <= 1:
@@ -214,10 +222,20 @@ class EquipeViewSet(viewsets.ModelViewSet):
             )
         
         # Obtém os IDs dos usuários que já são membros da equipe
-        membros_ids = MembroEquipe.objects.filter(equipe_id=equipe_id).values_list('usuario_id', flat=True)
+        equipe = self.get_queryset().filter(id=equipe_id).first()
+        if equipe is None:
+            return Response(
+                {'erro': 'Equipe não encontrada.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        membros_ids = apply_tenant_rls(
+            MembroEquipe.objects.filter(equipe=equipe),
+            request
+        ).values_list('usuario_id', flat=True)
         
-        # Filtra os usuários que não são membros da equipe
-        usuarios = User.objects.exclude(id__in=membros_ids)
+        # Filtra os usuários que não são membros da equipe, restritos ao tenant atual
+        usuarios = tenant_users_queryset(request).exclude(id__in=membros_ids)
         
         # Filtra por texto de busca
         texto = request.query_params.get('texto')
@@ -232,13 +250,13 @@ class EquipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class MembroEquipeViewSet(viewsets.ModelViewSet):
+class MembroEquipeViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de membros de equipe.
     """
     queryset = MembroEquipe.objects.all()
     serializer_class = MembroEquipeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsTenantMember]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['equipe', 'usuario', 'papel']
     
@@ -246,12 +264,12 @@ class MembroEquipeViewSet(viewsets.ModelViewSet):
         serializer.save(adicionado_por=self.request.user)
 
 
-class PermissaoEquipeViewSet(viewsets.ModelViewSet):
+class PermissaoEquipeViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de permissões de equipe.
     """
     queryset = PermissaoEquipe.objects.all()
     serializer_class = PermissaoEquipeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsTenantMember]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['equipe', 'papel', 'modulo', 'permissao']

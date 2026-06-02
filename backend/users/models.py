@@ -92,8 +92,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def has_permission(self, module, action):
         """Verifica se o usuário tem permissão para realizar uma ação em um módulo"""
-        # Administradores têm acesso total
-        if self.role == 'ADMIN' or self.is_superuser:
+        if self.is_superuser:
             return True
             
         # Verificar permissões específicas através dos perfis de acesso

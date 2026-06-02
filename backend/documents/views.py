@@ -7,6 +7,7 @@ from django.db.models import Q
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
 from drf_spectacular.types import OpenApiTypes # Adicionado para tipos de parâmetros
 # from core.utils import swagger_schema_with_examples # Será removido ao final se não for mais usado
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import Documento, HistoricoDocumento, Comentario
 from .serializers import (
     DocumentoSerializer, DocumentoListSerializer, 
@@ -14,7 +15,7 @@ from .serializers import (
 )
 
 
-class DocumentoViewSet(viewsets.ModelViewSet):
+class DocumentoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de documentos.
     Permite criar, listar, atualizar e excluir documentos.
@@ -170,7 +171,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         #         Q(titulo__icontains=texto) | Q(descricao__icontains=texto)
         #     )
         
-        return queryset
+        return self.apply_rls(queryset)
     
     @extend_schema(
         summary="Histórico do documento",
@@ -187,7 +188,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         Retorna o histórico de versões do documento.
         """
         documento = self.get_object()
-        historico = documento.historico.all()
+        historico = apply_tenant_rls(documento.historico.all(), request)
         serializer = HistoricoDocumentoSerializer(historico, many=True)
         return Response(serializer.data)
     
@@ -264,7 +265,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class HistoricoDocumentoViewSet(viewsets.ReadOnlyModelViewSet):
+class HistoricoDocumentoViewSet(TenantRLSQuerysetMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet para visualização do histórico de documentos.
     Somente leitura.
@@ -303,7 +304,7 @@ class HistoricoDocumentoViewSet(viewsets.ReadOnlyModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
-class ComentarioViewSet(viewsets.ModelViewSet):
+class ComentarioViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de comentários em documentos.
     """

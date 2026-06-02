@@ -23,8 +23,41 @@ from risks.models import Risco, HistoricoRisco
 from costs.models import Categoria, Custo, OrcamentoProjeto, OrcamentoTarefa, Alerta
 from documents.models import Documento, HistoricoDocumento, Comentario
 from communications.models import Comunicacao, Notificacao, ConfiguracaoNotificacao, ChatMensagem, ChatMensagemLeitura
+from django_tenants.utils import schema_context, get_tenant_model
+from customers.models import TenantMembership
 
 User = get_user_model()
+
+# Mapeia o papel global legado (users.User.role) para o papel por tenant
+# (customers.TenantMembership.role) usado pela autorização multi-tenant.
+LEGACY_ROLE_TO_TENANT_ROLE = {
+    'ADMIN': TenantMembership.ROLE_OWNER,
+    'PROJECT_MANAGER': TenantMembership.ROLE_MANAGER,
+    'TEAM_LEADER': TenantMembership.ROLE_MANAGER,
+    'TEAM_MEMBER': TenantMembership.ROLE_MEMBER,
+    'STAKEHOLDER': TenantMembership.ROLE_VIEWER,
+}
+
+
+def create_memberships(tenant, users):
+    """Vincula os usuários semeados ao tenant alvo via TenantMembership.
+
+    Sem esse vínculo, os usuários tomam 403 nos endpoints tenant-scoped na
+    arquitetura multi-tenant, já que a autorização passou a depender de
+    TenantMembership.role (e não mais do users.User.role legado).
+    """
+    created = 0
+    for user in users:
+        role = LEGACY_ROLE_TO_TENANT_ROLE.get(getattr(user, 'role', None), TenantMembership.ROLE_MEMBER)
+        _, was_created = TenantMembership.objects.get_or_create(
+            user=user,
+            tenant=tenant,
+            defaults={'role': role, 'is_active': True},
+        )
+        if was_created:
+            created += 1
+            print(f"Membership criada: {user.username} -> {tenant.schema_name} ({role})")
+    print(f"{created} membership(s) criada(s) no tenant '{tenant.schema_name}'.")
 
 def create_users():
     """Criar usuários de exemplo com diferentes papéis"""
@@ -645,17 +678,46 @@ def create_document_comments():
 
 def run_seeds():
     print("Iniciando seed do banco de dados...")
-    
+
+    schema_name = os.environ.get('SEED_TENANT_SCHEMA', 'demo')
+    Client = get_tenant_model()
+    tenant = Client.objects.filter(schema_name=schema_name).first()
+    if tenant is None:
+        print(f"\n[ERRO] Tenant com schema '{schema_name}' não encontrado.")
+        print("Crie o tenant antes de semear, por exemplo:")
+        print(f"  python manage.py create_dev_tenant --schema {schema_name} "
+              f"--name {schema_name.capitalize()} --domain {schema_name}.localhost")
+        print("Ou defina SEED_TENANT_SCHEMA para um tenant existente.\n")
+        return
+
+    # Fase compartilhada (schema public): usuários globais e vínculos de tenant.
+    seeded_users = []
     try:
-        print("Criando usuários...")
-        create_users()
+        print("Criando usuários (schema public)...")
+        seeded_users = create_users()
         print("Usuários criados com sucesso!")
     except Exception as e:
         print(f"\n[ERRO] Erro ao criar usuários: {str(e)}")
         print("Traceback completo:")
         traceback.print_exc()
         print("\n")
-    
+
+    try:
+        print(f"Vinculando usuários ao tenant '{schema_name}'...")
+        create_memberships(tenant, seeded_users)
+    except Exception as e:
+        print(f"\n[ERRO] Erro ao criar memberships: {str(e)}")
+        print("Traceback completo:")
+        traceback.print_exc()
+        print("\n")
+
+    # Fase tenant: dados de negócio são gravados no schema do tenant alvo.
+    print(f"Semeando dados de negócio no schema '{schema_name}'...")
+    with schema_context(schema_name):
+        run_tenant_seeds()
+
+
+def run_tenant_seeds():
     try:
         print("Criando equipes...")
         create_teams()
