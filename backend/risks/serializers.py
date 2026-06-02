@@ -31,7 +31,7 @@ class RiscoSerializer(serializers.ModelSerializer):
     probabilidade_display = serializers.CharField(source='get_probabilidade_display', read_only=True)
     impacto_display = serializers.CharField(source='get_impacto_display', read_only=True)
     nivel_risco = serializers.CharField(read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     
     class Meta:
         model = Risco
@@ -102,7 +102,7 @@ class RiscoListSerializer(serializers.ModelSerializer):
     probabilidade_display = serializers.CharField(source='get_probabilidade_display', read_only=True)
     impacto_display = serializers.CharField(source='get_impacto_display', read_only=True)
     nivel_risco = serializers.CharField(read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     responsavel_mitigacao_nome = serializers.CharField(source='responsavel_mitigacao.full_name', read_only=True)
     
     class Meta:

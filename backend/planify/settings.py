@@ -19,13 +19,18 @@ SECRET_KEY = 'django-insecure-p1e@s3ch@ng3th1sk3y1npr0duct10n' # OK para DEV, MU
 # Define se o projeto está em modo DEBUG (exibe erros detalhados, usando em desenvolvimento)
 DEBUG = True # MANTENHA TRUE PARA DESENVOLVIMENTO
 
+USE_SQLITE = os.environ.get('USE_SQLITE', 'False').lower() in ('1', 'true', 'yes')
+
 # Define quais hosts podem acessar a aplicação (em produção deve conter o domínio real)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # OK para DESENVOLVIMENTO LOCAL
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,.localhost,.planify.local'
+).split(',')
 
 # Application definition
-# Lista de apps registrados no projeto, incluindo apps padrão, de terceiros e locais
-INSTALLED_APPS = [
-    # Apps padrão do Django
+
+SHARED_APPS = [
+    'customers',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,8 +49,15 @@ INSTALLED_APPS = [
     'django_seed',                 # Para popular banco com dados de teste
     'drf_spectacular',             # Documentação automática da API
 
-    # Apps locais do projeto
     'users',
+    'core',
+]
+
+if not USE_SQLITE:
+    SHARED_APPS.insert(0, 'django_tenants')
+
+TENANT_APPS = [
+    'django.contrib.contenttypes',
     'projects',
     'tasks',
     'teams',
@@ -53,8 +65,13 @@ INSTALLED_APPS = [
     'risks',
     'costs',
     'documents',
-    'core', # Adicionei o app 'core' aqui, pois ele aparece na sua estrutura e tem utils/openapi
 ]
+
+# Lista de apps registrados no projeto, incluindo apps padrão, de terceiros e locais.
+INSTALLED_APPS = []
+for app in SHARED_APPS + TENANT_APPS:
+    if app not in INSTALLED_APPS:
+        INSTALLED_APPS.append(app)
 
 # Middleware são componentes que processam requisições e respostas
 MIDDLEWARE = [
@@ -70,6 +87,9 @@ MIDDLEWARE = [
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
 ]
+
+if not USE_SQLITE:
+    MIDDLEWARE.insert(0, 'django_tenants.middleware.main.TenantMainMiddleware')
 
 # Arquivo raiz de URLs do projeto
 ROOT_URLCONF = 'planify.urls'
@@ -94,13 +114,48 @@ TEMPLATES: List[Dict[str, Any]] = [
 # WSGI application entry point
 WSGI_APPLICATION = 'planify.wsgi.application'
 
-# Configuração do banco de dados (SQLite para desenvolvimento)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Motor SQLite
-        'NAME': BASE_DIR / 'db.sqlite3',
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django_tenants.postgresql_backend',
+            'NAME': os.environ.get('POSTGRES_DB', 'planify'),
+            'USER': os.environ.get('POSTGRES_USER', 'planify'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'planify'),
+            'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('POSTGRES_PORT', '15432'),
+        }
+    }
+
+DATABASE_ROUTERS = () if USE_SQLITE else (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
+TENANT_MODEL = 'customers.Client'
+TENANT_DOMAIN_MODEL = 'customers.Domain'
+PUBLIC_SCHEMA_NAME = 'public'
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = os.environ.get(
+    'SHOW_PUBLIC_IF_NO_TENANT_FOUND',
+    'True' if DEBUG else 'False',
+).lower() in ('1', 'true', 'yes')
+
+TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES = (
+    '/api/projects/',
+    '/api/tasks/',
+    '/api/teams/',
+    '/api/risks/',
+    '/api/costs/',
+    '/api/documents/',
+    '/api/communications/',
+    '/api/dashboard/',
+    '/api/user/dashboard/',
+)
 
 # Validação de senhas para o usuário
 AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
@@ -262,7 +317,7 @@ LOGGING = {
         },
         'django.db.backends': {
             'handlers': ['console'],
-            'level': 'DEBUG', # Para ver queries SQL no console quando DEBUG=True
+            'level': os.environ.get('SQL_LOG_LEVEL', 'WARNING'),
             'propagate': False,
         },
     }

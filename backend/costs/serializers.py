@@ -27,7 +27,7 @@ class CustoSerializer(serializers.ModelSerializer):
     """
     # Campos de leitura para exibir nomes relacionados
     criado_por_nome = serializers.CharField(source='criado_por.full_name', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
     
@@ -55,7 +55,7 @@ class CustoListSerializer(serializers.ModelSerializer):
     """
     # Campos de leitura para exibir nomes relacionados e o valor 'display' do tipo
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
     
@@ -75,7 +75,7 @@ class OrcamentoProjetoSerializer(serializers.ModelSerializer):
     """
     # Campos de leitura para exibir nomes relacionados
     aprovado_por_nome = serializers.CharField(source='aprovado_por.full_name', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     
     # Campos calculados dinamicamente no modelo/view/queryset, tornados read_only
     valor_utilizado = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
@@ -104,7 +104,7 @@ class OrcamentoTarefaSerializer(serializers.ModelSerializer):
     aprovado_por_nome = serializers.CharField(source='aprovado_por.full_name', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     # Acessa o nome do projeto através da tarefa relacionada
-    projeto_nome = serializers.CharField(source='tarefa.projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='tarefa.projeto.titulo', read_only=True)
     
     # Campos calculados dinamicamente no modelo/view/queryset, tornados read_only
     valor_utilizado = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
@@ -134,7 +134,7 @@ class AlertaSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     # Campos de leitura para exibir nomes relacionados
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     resolvido_por_nome = serializers.CharField(source='resolvido_por.full_name', read_only=True)
     

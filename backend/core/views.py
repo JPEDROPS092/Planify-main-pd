@@ -15,6 +15,7 @@ from projects.models import Projeto
 from tasks.models import Tarefa
 from risks.models import Risco
 from costs.models import Custo
+from customers.querysets import apply_tenant_rls
 from .decorators import swagger_schema_with_examples
 from .openapi import dashboard_schema, health_check_schema
 
@@ -177,9 +178,12 @@ def visao_geral_dashboard(request):
     Inclui contagem de projetos, tarefas e distribuição de tarefas por status.
     Esta visão é independente do usuário e mostra métricas de todo o sistema.
     """
-    total_projetos = Projeto.objects.count()
-    total_tarefas = Tarefa.objects.count()
-    tarefas_por_status = Tarefa.objects.values('status').annotate(count=Count('id'))
+    projetos = apply_tenant_rls(Projeto.objects.all(), request)
+    tarefas = apply_tenant_rls(Tarefa.objects.all(), request)
+
+    total_projetos = projetos.count()
+    total_tarefas = tarefas.count()
+    tarefas_por_status = tarefas.values('status').annotate(count=Count('id'))
     
     # Converter os status para nomes amigáveis usando o mapeamento centralizado
     tarefas_por_status_formatado = [
@@ -262,7 +266,7 @@ def metricas_projeto(request, id_projeto):
     Este endpoint está disponível publicamente para facilitar integrações.
     """
     try:
-        projeto = Projeto.objects.get(id=id_projeto)
+        projeto = apply_tenant_rls(Projeto.objects.filter(id=id_projeto), request).get()
     except Projeto.DoesNotExist:
         return Response(
             {"error": "Projeto não encontrado"},
@@ -270,7 +274,7 @@ def metricas_projeto(request, id_projeto):
         )
     
     # Tarefas do projeto por status
-    tarefas = Tarefa.objects.filter(projeto=projeto)
+    tarefas = apply_tenant_rls(Tarefa.objects.filter(projeto=projeto), request)
     tarefas_por_status = tarefas.values('status').annotate(count=Count('id'))
     
     # Progresso do projeto (% de tarefas concluídas)
@@ -279,16 +283,17 @@ def metricas_projeto(request, id_projeto):
     progresso = (tarefas_concluidas / total_tarefas * 100) if total_tarefas > 0 else 0
     
     # Riscos ativos
-    riscos_ativos = Risco.objects.filter(
+    riscos_ativos = apply_tenant_rls(Risco.objects.filter(
         projeto=projeto,
         status__in=['IDENTIFICADO', 'EM_ANALISE']
-    ).count()
+    ), request).count()
     
     # Custos totais
-    custos_totais = Custo.objects.filter(projeto=projeto).aggregate(total=Sum('valor'))
+    custos_totais = apply_tenant_rls(Custo.objects.filter(projeto=projeto), request).aggregate(total=Sum('valor'))
     
     # Dias restantes
-    dias_restantes = (projeto.data_fim - timezone.now()).days if projeto.data_fim > timezone.now() else 0
+    hoje = timezone.now().date()
+    dias_restantes = (projeto.data_fim - hoje).days if projeto.data_fim > hoje else 0
     
     # Converter os status para nomes amigáveis usando o mapeamento centralizado
     tarefas_por_status_formatado = [
@@ -362,16 +367,19 @@ def dashboard_usuario(request):
     """
     user = request.user
     
-    # Projetos onde o usuário é gerente
-    projetos_gerenciados = Projeto.objects.filter(gerente=user).count()
+    # Projetos onde o usuário tem papel de gerente.
+    projetos_gerenciados = apply_tenant_rls(
+        Projeto.objects.filter(membros__usuario=user, membros__papel='GERENTE'),
+        request
+    ).distinct().count()
     
     # Tarefas atribuídas ao usuário
-    tarefas_usuario = Tarefa.objects.filter(responsavel=user)
+    tarefas_usuario = apply_tenant_rls(Tarefa.objects.filter(atribuicoes__usuario=user), request).distinct()
     tarefas_por_status = tarefas_usuario.values('status').annotate(count=Count('id'))
     
     # Tarefas atrasadas
     tarefas_atrasadas = tarefas_usuario.filter(
-        data_fim__lt=timezone.now(),
+        data_termino__lt=timezone.now().date(),
         status__in=['A_FAZER', 'EM_ANDAMENTO']
     ).count()
     

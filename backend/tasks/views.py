@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls
 from .models import Tarefa, AtribuicaoTarefa, ComentarioTarefa, HistoricoStatusTarefa
 from .serializers import (
     TarefaSerializer, TarefaListSerializer, AtribuicaoTarefaSerializer, 
@@ -144,7 +145,7 @@ class TarefaFilter(FilterSet):
         responses={204: None}
     )
 )
-class TarefaViewSet(viewsets.ModelViewSet):
+class TarefaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de tarefas.
     
@@ -200,7 +201,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 total_comentarios=Count('comentarios')
             )
             
-        return queryset
+        return self.apply_rls(queryset)
     
     @extend_schema(
         summary="Atribuir responsável à tarefa",
@@ -241,7 +242,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
             )
         
         # Verifica se a atribuição já existe
-        if AtribuicaoTarefa.objects.filter(tarefa=tarefa, usuario_id=usuario_id).exists():
+        if apply_tenant_rls(AtribuicaoTarefa.objects.filter(tarefa=tarefa, usuario_id=usuario_id), request).exists():
             return Response(
                 {'erro': 'Este usuário já está atribuído a esta tarefa.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -297,7 +298,10 @@ class TarefaViewSet(viewsets.ModelViewSet):
         
         # Verifica se a atribuição existe
         try:
-            atribuicao = AtribuicaoTarefa.objects.get(tarefa=tarefa, usuario_id=usuario_id)
+            atribuicao = apply_tenant_rls(
+                AtribuicaoTarefa.objects.filter(tarefa=tarefa, usuario_id=usuario_id),
+                request
+            ).get()
             atribuicao.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except AtribuicaoTarefa.DoesNotExist:
@@ -505,7 +509,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
         incluindo quem fez a alteração, quando e comentários associados.
         """
         tarefa = self.get_object()
-        historico = HistoricoStatusTarefa.objects.filter(tarefa=tarefa)\
+        historico = apply_tenant_rls(HistoricoStatusTarefa.objects.filter(tarefa=tarefa), request)\
             .select_related('alterado_por')\
             .order_by('-alterado_em')
         
@@ -539,7 +543,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
         responses={204: None}
     )
 )
-class AtribuicaoTarefaViewSet(viewsets.ModelViewSet):
+class AtribuicaoTarefaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de atribuições de tarefas a usuários.
     
@@ -557,7 +561,8 @@ class AtribuicaoTarefaViewSet(viewsets.ModelViewSet):
         """
         Retorna o queryset otimizado com select_related para tarefa e usuário.
         """
-        return AtribuicaoTarefa.objects.select_related('tarefa', 'usuario', 'atribuido_por')
+        queryset = AtribuicaoTarefa.objects.select_related('tarefa', 'usuario', 'atribuido_por')
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         """
@@ -603,7 +608,7 @@ class AtribuicaoTarefaViewSet(viewsets.ModelViewSet):
         responses={204: None}
     )
 )
-class ComentarioTarefaViewSet(viewsets.ModelViewSet):
+class ComentarioTarefaViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de comentários de tarefas.
     
@@ -622,7 +627,8 @@ class ComentarioTarefaViewSet(viewsets.ModelViewSet):
         """
         Retorna o queryset otimizado com select_related para tarefa e autor.
         """
-        return ComentarioTarefa.objects.select_related('tarefa', 'autor')
+        queryset = ComentarioTarefa.objects.select_related('tarefa', 'autor')
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         """

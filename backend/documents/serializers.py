@@ -27,7 +27,7 @@ class DocumentoSerializer(serializers.ModelSerializer):
     historico = HistoricoDocumentoSerializer(many=True, read_only=True)
     enviado_por_nome = serializers.CharField(source='enviado_por.full_name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     
     class Meta:
@@ -74,7 +74,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listagem de documentos"""
     enviado_por_nome = serializers.CharField(source='enviado_por.full_name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     
     class Meta:

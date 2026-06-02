@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
+from customers.querysets import TenantRLSQuerysetMixin, apply_tenant_rls, tenant_users_queryset
+from customers.permissions import IsTenantMember
 from .models import Projeto, MembroProjeto, Sprint, HistoricoStatusProjeto
 from .serializers import ProjetoSerializer, ProjetoListSerializer, MembroProjetoSerializer, SprintSerializer, HistoricoStatusProjetoSerializer
 from tasks.models import Tarefa
@@ -102,7 +104,7 @@ class ProjetoFilter(FilterSet):
         responses={204: None}
     )
 )
-class ProjetoViewSet(viewsets.ModelViewSet):
+class ProjetoViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de projetos.
     
@@ -111,6 +113,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     """
     queryset = Projeto.objects.all()  # Adicionado para resolver o erro de basename
     serializer_class = ProjetoSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTenantMember]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProjetoFilter
     search_fields = ['titulo', 'descricao']
@@ -138,7 +141,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
             )
         ).prefetch_related(membros_prefetch)
         
-        return queryset
+        return self.apply_rls(queryset)
     
     def get_serializer_class(self):
         """
@@ -178,7 +181,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         
         if serializer.is_valid():
             try:
-                usuario = User.objects.get(pk=request.data.get('usuario'))
+                usuario = tenant_users_queryset(request).get(pk=request.data.get('usuario'))
                 # Verifica se o usuário já é membro
                 if MembroProjeto.objects.filter(projeto=projeto, usuario=usuario).exists():
                     return Response(
@@ -207,7 +210,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         Lista todos os membros do projeto.
         """
         projeto = self.get_object()
-        membros = MembroProjeto.objects.filter(projeto=projeto).select_related('usuario')
+        membros = self.apply_rls(MembroProjeto.objects.filter(projeto=projeto).select_related('usuario'))
         serializer = MembroProjetoSerializer(membros, many=True)
         return Response(serializer.data)
     
@@ -241,7 +244,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
             )
         
         try:
-            membro = MembroProjeto.objects.get(pk=membro_id, projeto=projeto)
+            membro = self.apply_rls(MembroProjeto.objects.filter(pk=membro_id, projeto=projeto)).get()
             
             # Impede a remoção do criador do projeto
             if membro.usuario == projeto.criado_por:
@@ -265,7 +268,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         Lista os membros do projeto.
         """
         project = self.get_object()
-        membros = project.membros.all()
+        membros = self.apply_rls(project.membros.all())
         serializer = MembroProjetoSerializer(membros, many=True)
         return Response(serializer.data)
     
@@ -288,7 +291,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         Retorna os projetos dos quais o usuário é membro.
         """
         user = request.user
-        projects = Projeto.objects.filter(membros__usuario=user)
+        projects = self.apply_rls(Projeto.objects.filter(membros__usuario=user))
         
         # Aplicar filtros
         projects = self.filter_queryset(projects)
@@ -326,7 +329,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     def historico_status(self, request, pk=None):
         """Histórico de status do projeto"""
         projeto = self.get_object()
-        historico = HistoricoStatusProjeto.objects.filter(projeto=projeto)
+        historico = self.apply_rls(HistoricoStatusProjeto.objects.filter(projeto=projeto))
         serializer = HistoricoStatusProjetoSerializer(historico, many=True)
         return Response(serializer.data)
 
@@ -334,7 +337,7 @@ class ProjetoViewSet(viewsets.ModelViewSet):
     def sprints(self, request, pk=None):
         """Listar sprints do projeto"""
         projeto = self.get_object()
-        sprints = Sprint.objects.filter(projeto=projeto)
+        sprints = self.apply_rls(Sprint.objects.filter(projeto=projeto))
         serializer = SprintSerializer(sprints, many=True)
         return Response(serializer.data)
 
@@ -380,8 +383,9 @@ class ProjetoViewSet(viewsets.ModelViewSet):
         projeto = self.get_object()
         
         # Cálculo das métricas
-        total_tarefas = Tarefa.objects.filter(projeto=projeto).count()
-        tarefas_concluidas = Tarefa.objects.filter(projeto=projeto, status='CONCLUIDA').count()
+        tarefas = apply_tenant_rls(Tarefa.objects.filter(projeto=projeto), request)
+        total_tarefas = tarefas.count()
+        tarefas_concluidas = tarefas.filter(status='CONCLUIDA').count()
         
         # Cálculo do progresso
         progresso = (tarefas_concluidas / total_tarefas * 100) if total_tarefas > 0 else 0
@@ -486,7 +490,7 @@ class SprintFilter(FilterSet):
         responses={204: None}
     )
 )
-class SprintViewSet(viewsets.ModelViewSet):
+class SprintViewSet(TenantRLSQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gerenciamento de sprints.
     
@@ -495,6 +499,7 @@ class SprintViewSet(viewsets.ModelViewSet):
     """
     queryset = Sprint.objects.all()  # Adicionado para resolver o erro de basename
     serializer_class = SprintSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTenantMember]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SprintFilter
     search_fields = ['titulo', 'descricao']
@@ -521,7 +526,7 @@ class SprintViewSet(viewsets.ModelViewSet):
             )
         ).select_related('projeto', 'criado_por')
         
-        return queryset
+        return self.apply_rls(queryset)
     
     def perform_create(self, serializer):
         """
@@ -556,7 +561,7 @@ class SprintViewSet(viewsets.ModelViewSet):
         Lista todas as tarefas da sprint com opções de filtragem.
         """
         sprint = self.get_object()
-        tarefas = Tarefa.objects.filter(sprint=sprint)
+        tarefas = apply_tenant_rls(Tarefa.objects.filter(sprint=sprint), request)
         
         # Aplica filtros opcionais
         status = request.query_params.get('status')
@@ -592,7 +597,7 @@ class SprintViewSet(viewsets.ModelViewSet):
         Fornece um resumo estatístico da sprint.
         """
         sprint = self.get_object()
-        tarefas = Tarefa.objects.filter(sprint=sprint)
+        tarefas = apply_tenant_rls(Tarefa.objects.filter(sprint=sprint), request)
         
         # Contagem de tarefas por status
         tarefas_por_status = {
@@ -694,6 +699,7 @@ class HistoricoStatusProjetoFilter(FilterSet):
 )
 class HistoricoStatusProjetoViewSet(mixins.ListModelMixin,
                                    mixins.RetrieveModelMixin,
+                                   TenantRLSQuerysetMixin,
                                    viewsets.GenericViewSet):
     """
     ViewSet para histórico de alterações de status de projetos.
@@ -712,7 +718,8 @@ class HistoricoStatusProjetoViewSet(mixins.ListModelMixin,
         """
         Retorna o queryset otimizado com select_related para projeto e usuário.
         """
-        return HistoricoStatusProjeto.objects.select_related('projeto', 'alterado_por')
+        queryset = HistoricoStatusProjeto.objects.select_related('projeto', 'alterado_por')
+        return self.apply_rls(queryset)
     
     @extend_schema(
         summary="Resumo de alterações por projeto",
@@ -724,7 +731,7 @@ class HistoricoStatusProjetoViewSet(mixins.ListModelMixin,
         Fornece um resumo estatístico das alterações de status agrupadas por projeto.
         """
         # Agrupa as alterações por projeto e conta
-        resumo = HistoricoStatusProjeto.objects.values('projeto', 'projeto__titulo')\
+        resumo = apply_tenant_rls(HistoricoStatusProjeto.objects.all(), request).values('projeto', 'projeto__titulo')\
             .annotate(total_alteracoes=Count('id'))\
             .order_by('-total_alteracoes')
         

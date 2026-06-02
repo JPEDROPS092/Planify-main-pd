@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: planify-postgres
+    environment:
+      POSTGRES_DB: planify
+      POSTGRES_USER: planify
+      POSTGRES_PASSWORD: planify
+    ports:
+      - "${PLANIFY_POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - planify_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planify -d planify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  planify_postgres_data:

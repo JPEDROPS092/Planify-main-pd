@@ -15,7 +15,7 @@ class ChatMensagemSerializer(serializers.ModelSerializer):
     autor_nome = serializers.CharField(source='autor.full_name', read_only=True)
     autor_username = serializers.CharField(source='autor.username', read_only=True)
     leituras = ChatMensagemLeituraSerializer(many=True, read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     
     class Meta:
         model = ChatMensagem
@@ -27,7 +27,7 @@ class ChatMensagemSerializer(serializers.ModelSerializer):
 class NotificacaoSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tarefa_titulo = serializers.CharField(source='tarefa.titulo', read_only=True)
     
     class Meta:
@@ -77,7 +77,7 @@ class ComunicacaoSerializer(serializers.ModelSerializer):
     """
     remetente_nome = serializers.CharField(source='remetente.full_name', read_only=True)
     remetente_username = serializers.CharField(source='remetente.username', read_only=True)
-    projeto_nome = serializers.CharField(source='projeto.name', read_only=True)
+    projeto_nome = serializers.CharField(source='projeto.titulo', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     destinatarios_info = serializers.SerializerMethodField(read_only=True)
     

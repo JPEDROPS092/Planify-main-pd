@@ -9,14 +9,16 @@ Backend da API Planify, desenvolvido com Django, Django REST Framework e autenti
 - Django REST Framework 3.14
 - Simple JWT
 - Djoser
+- PostgreSQL
+- django-tenants
 - drf-spectacular
-- SQLite em desenvolvimento
 
 ## Estrutura
 
 ```text
 backend/
 ├── planify/          # Configurações principais do projeto Django
+├── customers/        # Tenants, domínios e memberships
 ├── core/             # Saúde da API, dashboard e métricas
 ├── users/            # Usuários, autenticação, perfis e permissões
 ├── projects/         # Projetos
@@ -43,7 +45,7 @@ python -m venv venv
 source venv/bin/activate
 
 pip install -r requirements.txt
-python manage.py migrate
+python manage.py migrate_schemas --shared
 python manage.py createsuperuser
 ```
 
@@ -130,10 +132,57 @@ Comandos comuns:
 
 ```bash
 python manage.py makemigrations
-python manage.py migrate
+python manage.py migrate_schemas --shared
+python manage.py migrate_schemas
 python manage.py createsuperuser
 python manage.py collectstatic
 ```
+
+## PostgreSQL e Tenants
+
+O backend agora usa PostgreSQL com `django-tenants`. O schema `public` guarda dados compartilhados, como usuários, tenants e memberships. Os apps de negócio rodam dentro do schema de cada empresa.
+
+Variáveis principais:
+
+```bash
+POSTGRES_DB=planify
+POSTGRES_USER=planify
+POSTGRES_PASSWORD=planify
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=15432
+```
+
+Subir PostgreSQL local com Docker, a partir da raiz do repositório:
+
+```bash
+docker compose up -d postgres
+```
+
+Depois rode, em `backend/`:
+
+```bash
+python manage.py migrate_schemas --shared
+```
+
+Para manter uma execução legada temporária com SQLite, use:
+
+```bash
+USE_SQLITE=True python manage.py check
+```
+
+Esse modo existe apenas para inspeção local durante a transição. A refatoração multi-tenant deve ser validada em PostgreSQL.
+
+Criar um tenant local de desenvolvimento:
+
+```bash
+python manage.py create_dev_tenant \
+  --schema demo \
+  --name Demo \
+  --domain demo.localhost \
+  --owner-username admin
+```
+
+Com `SHOW_PUBLIC_IF_NO_TENANT_FOUND=True`, hosts sem domínio cadastrado caem no schema público em desenvolvimento. Em produção, mantenha esse comportamento desabilitado.
 
 Gerar novamente o schema OpenAPI:
 
@@ -141,10 +190,16 @@ Gerar novamente o schema OpenAPI:
 python manage.py spectacular --file openapi.json
 ```
 
-Popular dados de exemplo, quando necessário:
+Popular dados de exemplo, quando necessário. O seed exige um tenant existente:
+os usuários/memberships são criados no schema `public` e os dados de negócio são
+gravados no schema do tenant alvo (`SEED_TENANT_SCHEMA`, padrão `demo`).
 
 ```bash
+# usa o tenant padrão "demo" (crie-o antes com create_dev_tenant)
 python seed_data.py
+
+# ou aponte para outro tenant existente
+SEED_TENANT_SCHEMA=outra_empresa python seed_data.py
 ```
 
 ## Testes
@@ -174,7 +229,7 @@ pytest communications/tests
 As configurações atuais em `planify/settings.py` estão preparadas para ambiente local:
 
 - `DEBUG=True`
-- Banco SQLite em `backend/db.sqlite3`
+- PostgreSQL via variáveis de ambiente
 - CORS liberado para desenvolvimento
 - E-mails enviados para o console
 - Documentação Swagger/Redoc pública
