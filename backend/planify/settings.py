@@ -155,6 +155,21 @@ TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES = (
     '/api/communications/',
     '/api/dashboard/',
     '/api/user/dashboard/',
+    # Gestão de convites do tenant (owner/admin). O aceite público fica sob
+    # /api/invitations/ e é liberado por PUBLIC_PATHS.
+    '/api/tenant/',
+)
+
+# === Convites multi-tenant ===
+# Validade (em dias) de um convite pendente.
+TENANT_INVITATION_TTL_DAYS = int(os.environ.get('TENANT_INVITATION_TTL_DAYS', '7'))
+# Template do caminho de aceite no frontend (montado no domínio do tenant).
+TENANT_INVITATION_ACCEPT_PATH = os.environ.get(
+    'TENANT_INVITATION_ACCEPT_PATH', '/convite/{token}'
+)
+# Esquema usado para montar a URL de aceite (http em dev, https em produção).
+TENANT_INVITATION_URL_SCHEME = os.environ.get(
+    'TENANT_INVITATION_URL_SCHEME', 'http' if DEBUG else 'https'
 )
 
 # Validação de senhas para o usuário

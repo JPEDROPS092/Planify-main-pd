@@ -25,7 +25,7 @@ Para cada fase concluída, registrar:
 | Fase 4: Introdução do django-tenants | Concluída inicialmente | `django-tenants`, tenant demo e migrations shared/tenant validados. |
 | Fase 5: Classificação e Movimentação dos Apps | Parcial validada | `SHARED_APPS` e `TENANT_APPS` configurados; referências antigas a `Projeto.name` corrigidas; revisão fina de views/admin ainda pendente. |
 | Fase 6: Membership, Permissões e Isolamento | Parcial validada | `TenantMembership`, roles, bloqueio `403`, remoção do bypass global por `User.role == ADMIN` e RLS de aplicação em querysets principais validados parcialmente. |
-| Fase 7: Refatoração de Autenticação | Não iniciada | Auth atual mantida. |
+| Fase 7: Refatoração de Autenticação | Concluída inicialmente | ADR `docs/adr-0001-auth-multitenant.md`. Djoser+JWT mantidos; provisionamento de owner por superuser e fluxo de convite implementados e validados (e2e 13/13). |
 | Fase 8: Migração de Dados Existentes | Não iniciada | Tenant destino e script de migração ainda pendentes. |
 | Fase 9: Testes | Não iniciada | Suite será refeita após contratos multi-tenant. |
 | Fase 10: Admin, Docs e Operação | Parcial | README e comando de criação de tenant adicionados; guia completo de operação ainda pendente. |
@@ -507,3 +507,68 @@ Pendências:
   refinada sobre a nova suíte de testes. Não bloqueia a Fase 6.
 - (Concluído) Testes de isolamento: cobertos pelo e2e cross-tenant
   (`scripts/e2e_cross_tenant.py`) e pela suíte de API rodando em tenants reais.
+
+### Fase 7: Refatoração de Autenticação
+
+Data local: 2026-06-01
+
+Branch: `Dev-tenant`
+
+Status: concluída inicialmente.
+
+Decisões formalizadas na ADR `docs/adr-0001-auth-multitenant.md`:
+
+- **Manter Djoser + Simple JWT** nesta fase (não migrar para
+  allauth/tenant-users), seguindo a recomendação do plano. Menor risco e sem
+  quebra do frontend.
+- **Provisionamento de tenant + primeiro owner é do superuser**; o owner popula
+  e gerencia a própria empresa e convida os demais membros. Sem self-service de
+  criação de empresa no cadastro público.
+- **Fluxo de convite** owner/admin → membros, via `customers.TenantInvitation`.
+
+Implementação:
+
+- `customers.TenantInvitation` (modelo compartilhado no `public`): token opaco,
+  expiração configurável (`TENANT_INVITATION_TTL_DAYS`), papéis convidáveis
+  `admin/manager/member/viewer` (owner é provisionado), constraint de no máximo
+  um convite pendente por `(tenant, email)`. Migração `customers/0003`.
+- Gestão tenant-scoped (`owner`/`admin`): `TenantInvitationViewSet` em
+  `/api/tenant/invitations/` (list/create/retrieve + actions `revoke`/`resend`),
+  protegida por `HasTenantRole.with_roles('owner','admin')`. Prefixo `/api/tenant/`
+  adicionado a `TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES`.
+- Aceite público por token: `GET /api/invitations/<token>/` (inspeção) e
+  `POST /api/invitations/<token>/accept/` (aceite), liberados em `PUBLIC_PATHS`.
+  Aceite cria conta nova **ou** vincula usuário existente sem vínculo ativo,
+  respeitando "um usuário = uma empresa" (defesa pela constraint do banco).
+- E-mail de convite (`customers/emails.py`) com URL de aceite no domínio do
+  próprio tenant.
+- Management command `customers/provision_tenant`: cria tenant + domínio +
+  conta/designação do owner + `TenantMembership(owner)`; senha temporária
+  autogerada quando não informada.
+- `TenantInvitation` registrado no admin.
+
+Arquivos principais:
+
+- `backend/customers/models.py` (+ `migrations/0003_tenantinvitation.py`)
+- `backend/customers/serializers.py`, `views.py`, `urls.py`, `emails.py`, `admin.py`
+- `backend/customers/management/commands/provision_tenant.py`
+- `backend/planify/urls.py`, `backend/planify/settings.py`
+- `backend/users/permissions.py` (PUBLIC_PATHS)
+- `backend/scripts/e2e_invitations.py`
+- `docs/adr-0001-auth-multitenant.md`
+
+Validação:
+
+- `manage.py check`: sem issues.
+- `migrate_schemas --shared`: `customers.0003` aplicado.
+- `scripts/e2e_invitations.py`: 13/13 asserções OK (PostgreSQL real).
+- Regressão: `scripts/e2e_cross_tenant.py` 9/9; `pytest tests/` 27 passed.
+
+Pendências/ressalvas:
+
+- Bug pré-existente fora do escopo: `users/views.py::reset_password` usa
+  `User.objects.make_random_password()` (removido no Django 5.1; projeto no 5.2).
+  Trocar por `get_random_string`.
+- Restrição/curadoria do cadastro público (`registro.vue`) é decisão de produto.
+- Integração de frontend (tela de gestão de convites, rota de aceite, baseURL
+  por subdomínio) fica para a Fase 12, conforme plano de migração na ADR.

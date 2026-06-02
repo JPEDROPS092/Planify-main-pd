@@ -45,6 +45,10 @@ urlpatterns = [
     path('api/auth/', include('users.urls')),  # Nossa implementação customizada
     path('api/auth/', include('djoser.urls')),  # Endpoints adicionais do Djoser
     
+    # === MULTI-TENANT (convites/membership) ===
+    # Gestão de convites (tenant) e aceite público de convite
+    path('api/', include('customers.urls')),
+
     # === MÓDULOS DO SISTEMA ===
     # Core (saúde, dashboard, métricas)
     path('api/', include('core.urls')),

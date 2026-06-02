@@ -43,6 +43,10 @@ PUBLIC_PATHS = [
     r'^/api/auth/register/?$',
     r'^/api/auth/forgot-password/?$',
     r'^/api/auth/reset-password-confirm/?$',
+
+    # Convites multi-tenant (inspeção e aceite por token, sem autenticação)
+    r'^/api/invitations/[^/]+/?$',
+    r'^/api/invitations/[^/]+/accept/?$',
     
     # Documentação
     r'^/api/docs/?$',

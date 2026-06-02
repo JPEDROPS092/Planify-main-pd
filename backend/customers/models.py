@@ -1,5 +1,9 @@
+import secrets
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django_tenants.models import DomainMixin, TenantMixin
 
 
@@ -92,3 +96,118 @@ class TenantMembership(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.tenant} ({self.role})'
+
+
+def _default_invitation_expiry():
+    days = getattr(settings, 'TENANT_INVITATION_TTL_DAYS', 7)
+    return timezone.now() + timedelta(days=days)
+
+
+def _generate_invitation_token():
+    return secrets.token_urlsafe(32)
+
+
+class TenantInvitation(models.Model):
+    """Convite para um usuário entrar em um tenant com um papel definido.
+
+    Modelo compartilhado (schema ``public``), pois envolve a identidade global
+    (``users.User``) e a empresa (``Client``). O owner/admin do tenant cria o
+    convite; o convidado o aceita e ganha uma ``TenantMembership`` ativa,
+    respeitando a regra "um usuário = uma empresa".
+
+    O papel ``owner`` não é convidável: o primeiro owner é provisionado pelo
+    superuser (management command ``provision_tenant``).
+    """
+
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REVOKED = 'revoked'
+
+    STATUS_CHOICES = (
+        (STATUS_PENDING, 'Pendente'),
+        (STATUS_ACCEPTED, 'Aceito'),
+        (STATUS_REVOKED, 'Revogado'),
+    )
+
+    # Papéis que podem ser atribuídos via convite (owner é provisionado, não convidado).
+    INVITABLE_ROLES = (
+        TenantMembership.ROLE_ADMIN,
+        TenantMembership.ROLE_MANAGER,
+        TenantMembership.ROLE_MEMBER,
+        TenantMembership.ROLE_VIEWER,
+    )
+
+    tenant = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='invitations',
+    )
+    email = models.EmailField()
+    role = models.CharField(
+        max_length=20,
+        choices=TenantMembership.ROLE_CHOICES,
+        default=TenantMembership.ROLE_MEMBER,
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        default=_generate_invitation_token,
+        editable=False,
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_tenant_invitations',
+    )
+    accepted_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_tenant_invitations',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(default=_default_invitation_expiry)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Convite de tenant'
+        verbose_name_plural = 'Convites de tenant'
+        ordering = ['-created_at']
+        constraints = [
+            # No máximo um convite pendente por (tenant, email).
+            models.UniqueConstraint(
+                fields=['tenant', 'email'],
+                condition=models.Q(status='pending'),
+                name='unique_pending_invitation_per_tenant_email',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['tenant', 'status']),
+            models.Index(fields=['email', 'status']),
+        ]
+
+    @property
+    def is_expired(self):
+        return self.status == self.STATUS_PENDING and self.expires_at < timezone.now()
+
+    @property
+    def is_pending(self):
+        return self.status == self.STATUS_PENDING and not self.is_expired
+
+    def revoke(self):
+        self.status = self.STATUS_REVOKED
+        self.save(update_fields=['status', 'updated_at'])
+
+    def mark_accepted(self, user):
+        self.status = self.STATUS_ACCEPTED
+        self.accepted_user = user
+        self.accepted_at = timezone.now()
+        self.save(update_fields=['status', 'accepted_user', 'accepted_at', 'updated_at'])
+
+    def __str__(self):
+        return f'Convite {self.email} -> {self.tenant} ({self.role}, {self.status})'

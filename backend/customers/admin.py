@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Client, Domain, TenantMembership
+from .models import Client, Domain, TenantInvitation, TenantMembership
 
 
 class DomainInline(admin.TabularInline):
@@ -29,3 +29,12 @@ class TenantMembershipAdmin(admin.ModelAdmin):
     list_filter = ['role', 'is_active', 'tenant']
     search_fields = ['user__username', 'user__email', 'tenant__name', 'tenant__schema_name']
     autocomplete_fields = ['user', 'tenant']
+
+
+@admin.register(TenantInvitation)
+class TenantInvitationAdmin(admin.ModelAdmin):
+    list_display = ['email', 'tenant', 'role', 'status', 'invited_by', 'created_at', 'expires_at']
+    list_filter = ['status', 'role', 'tenant']
+    search_fields = ['email', 'tenant__name', 'tenant__schema_name']
+    autocomplete_fields = ['tenant', 'invited_by', 'accepted_user']
+    readonly_fields = ['token', 'status', 'accepted_user', 'accepted_at', 'created_at', 'updated_at']
