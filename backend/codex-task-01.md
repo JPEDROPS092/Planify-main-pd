@@ -2,6 +2,21 @@
 
 **Projeto:** Planify
 
+> **STATUS (2026-06-03): re-arquitetura shared schema R0–R10 CONCLUÍDA.** O modelo
+> vigente é **shared schema + `tenant_id`** (não schema-per-tenant). O checklist
+> autoritativo é o **"Plano da Re-arquitetura para Shared Schema" (fases R0–R10)**
+> no fim deste arquivo; a auditoria fase-a-fase está em
+> `docs/backend-multitenant-audit.md` e o passo a passo em
+> `docs/rearquitetura-shared-schema-plano.md`.
+>
+> As seções abaixo até "Plano da Re-arquitetura" (Decisão Arquitetural original,
+> Resultado Esperado, **Fases 0–12**, Ordem de Execução, Critérios de Aceite,
+> Recomendação Final) descrevem o **caminho schema-per-tenant original** e ficam
+> como **registro histórico** — exceto onde anotado. **Trabalho restante** (fora de
+> R0–R10): autorização a nível de objeto, **Fase 11** (observabilidade/segurança) e
+> **Fase 12** (frontend) — ambas reinterpretadas para shared schema nas próprias
+> seções abaixo.
+
 ## Objetivo
 
 Planejar e executar, em fases, a refatoração do backend do Planify para uma arquitetura SaaS multi-tenant usando PostgreSQL, `django-tenants` e, em etapa posterior, uma camada de autenticação mais robusta com `django-allauth` e/ou `django-tenant-users`.
@@ -97,15 +112,31 @@ PostgreSQL RLS nativo como rede de segurança futura.
 
 ## Resultado Esperado
 
-- Cada empresa terá seu próprio schema no PostgreSQL.
-- Projetos, tarefas, equipes, riscos, custos, documentos e comunicações ficarão isolados por tenant.
-- Usuários poderão acessar apenas tenants permitidos.
-- APIs resolverão o tenant por domínio/subdomínio.
-- Testes cobrirão criação de tenant, migrações, autenticação e isolamento de dados.
-- O admin Django funcionará respeitando o contexto de tenant.
-- A documentação explicará como criar, migrar, testar e operar tenants.
+> **Atualizado para o modelo vigente (shared schema).** A redação original
+> (schema-per-tenant/subdomínio) foi substituída.
 
-## Fases
+- Há **um único schema** PostgreSQL; cada linha de negócio carrega **`tenant_id`**
+  (FK para `customers.Client`).
+- Projetos, tarefas, equipes, riscos, custos, documentos e comunicações ficam
+  isolados por `tenant_id` (manager central + RLS de aplicação + RLS nativo).
+- Usuários acessam apenas o tenant da sua `TenantMembership` ativa.
+- As APIs resolvem o tenant pela **membership** (sem domínio/subdomínio); superuser
+  escopa via header `X-Tenant-ID`.
+- Testes cobrem provisionamento, autenticação e isolamento por `tenant_id` (dois
+  tenants, dados homônimos, negação cross-tenant).
+- O admin Django opera global para staff/superuser (bypass do escopo de tenant).
+- A documentação explica como provisionar, migrar, testar e operar tenants.
+
+## Fases (0–12) — caminho schema-per-tenant (HISTÓRICO)
+
+> ⚠️ **Histórico.** Estas Fases descrevem o plano **schema-per-tenant** original.
+> As Fases **0–8** foram executadas (ver `docs/backend-multitenant-audit.md`) e
+> depois **superadas** pela re-arquitetura shared schema (R0–R10); os checkboxes
+> `[ ]` aqui **não** são pendências. As Fases **11 (observabilidade/segurança)** e
+> **12 (frontend)** são o **trabalho que ainda resta**, mas **reinterpretadas para
+> shared schema** — ver as anotações nelas. Os itens com pressuposto de
+> schema/subdomínio (backup por schema, migrations por tenant, URLs por subdomínio)
+> **não se aplicam** ao modelo atual.
 
 ### Fase 0: Preparação e Baseline
 
@@ -309,38 +340,56 @@ PostgreSQL RLS nativo como rede de segurança futura.
 - README atualizado.
 - Comandos administrativos documentados.
 
-### Fase 11: Observabilidade e Segurança
+### Fase 11: Observabilidade e Segurança (TRABALHO RESTANTE — shared schema)
+
+> Reinterpretada para shared schema. Sem schema/migrations por tenant; o tenant é
+> uma dimensão (`tenant_id`/`request.tenant_id`), não um schema.
 
 **Checklist**
 
-- [ ] Garantir logs com identificador do tenant.
-- [ ] Garantir auditoria de ações sensíveis.
+- [ ] Logs com `tenant_id` (ex.: filtro de logging que injeta o tenant do contexto
+      da request — `customers.context.get_tenant_id`).
+- [ ] Auditoria de ações sensíveis (criar/remover membership, provisionar tenant,
+      aceitar convite) carimbando o tenant.
 - [ ] Revisar CORS, `ALLOWED_HOSTS`, cookies, JWT e HTTPS para produção.
-- [ ] Definir rate limiting.
-- [ ] Definir backup por tenant.
-- [ ] Definir monitoramento de migrations por tenant.
+- [ ] Rate limiting (por usuário e/ou por tenant).
+- [ ] **Rodar a web como `app_user`** em produção (RLS nativo ativo); manter
+      migrations/seed pela role dona. Documentar a separação de credenciais.
+- [ ] Refino de privilégios do `app_user` por tabela (hoje recebe CRUD em todo
+      `public`).
+- [ ] Particionamento de `MEDIA_ROOT` por tenant (arquivos de documentos/anexos).
+- [ ] Backup/restauração: backup padrão do banco único + estratégia de
+      export/delete por `tenant_id` para offboarding (não há backup por schema).
 
 **Entregáveis**
 
 - Checklist de segurança para produção.
-- Logs com tenant.
-- Plano de backup/restauração.
+- Logs/auditoria com `tenant_id`.
+- Plano de backup/restauração e de offboarding por tenant.
 
-### Fase 12: Frontend e Integração
+### Fase 12: Frontend e Integração (TRABALHO RESTANTE — shared schema)
+
+> Reinterpretada para shared schema: **baseURL única** (sem subdomínio). O tenant
+> vem do JWT/membership no backend; o frontend não precisa escolher schema/host.
 
 **Checklist**
 
-- [ ] Definir como o frontend escolhe ou recebe o tenant.
-- [ ] Ajustar URLs por subdomínio.
-- [ ] Ajustar login para contexto de empresa.
-- [ ] Ajustar armazenamento de token considerando tenant.
-- [ ] Ajustar telas de administração de organização.
-- [ ] Testar fluxo completo: cadastro, login, criar projeto, criar tarefa.
+- [ ] baseURL única do backend (sem subdomínio por tenant). Corrigir bugs
+      conhecidos em `frontend/plugins/api.ts` (`os.BACKEND_URL` → `runtimeConfig`;
+      `authStore.token` → `authStore.accessToken`).
+- [ ] Login: após autenticar, o tenant é implícito (membership ativa); tratar
+      `403` "sem vínculo" e `401` adequadamente.
+- [ ] Tela de gestão de convites (owner/admin): `/api/tenant/invitations/`.
+- [ ] Rota pública de aceite de convite por token: `GET /api/invitations/<token>/`
+      + `POST /api/invitations/<token>/accept/` (cria conta ou vincula existente).
+- [ ] (Opcional) Superuser/painel: enviar `X-Tenant-ID` para operar escopado.
+- [ ] Regenerar o cliente OpenAPI e testar o fluxo: convite → aceite → login →
+      criar projeto/tarefa.
 
 **Entregáveis**
 
-- Frontend consumindo API tenant-aware.
-- Fluxo de troca/acesso de empresa documentado.
+- Frontend consumindo a API tenant-aware (membership-based, sem subdomínio).
+- Telas de convite/aceite e fluxo de acesso à empresa documentados.
 
 ## Ordem de Execução
 
@@ -358,16 +407,20 @@ PostgreSQL RLS nativo como rede de segurança futura.
 
 ## Critérios de Aceite
 
-- [ ] `python manage.py check` passa.
-- [ ] Migrações shared passam.
-- [ ] Migrações tenant passam.
-- [ ] Pelo menos dois tenants podem existir simultaneamente.
-- [ ] Dados de tenant A não aparecem em tenant B.
-- [ ] Usuário sem membership não acessa tenant.
-- [ ] Admin funciona no contexto esperado.
-- [ ] Swagger/docs continuam acessíveis.
-- [ ] Testes principais passam.
-- [ ] README e docs operacionais estão atualizados.
+> Os critérios da re-arquitetura vigente estão em
+> `docs/rearquitetura-shared-schema-plano.md` ("Critérios de aceite") e foram
+> atingidos (R0–R10). A lista abaixo é a original (schema-per-tenant); os itens de
+> "migrações shared/tenant" não se aplicam (banco único, `migrate`).
+
+- [x] `python manage.py check` passa.
+- [x] Migração do banco único (`migrate`) passa. _(substitui "shared/tenant")_
+- [x] Pelo menos dois tenants podem existir simultaneamente.
+- [x] Dados de tenant A não aparecem em tenant B (`e2e_r4` 16/16, `e2e_r7` 7/7).
+- [x] Usuário sem membership não acessa tenant (`403`).
+- [x] Admin funciona no contexto esperado (global p/ staff/superuser).
+- [x] Swagger/docs continuam acessíveis.
+- [x] Testes principais passam (`pytest tests/` 27 passed).
+- [x] README e docs operacionais estão atualizados (R10).
 
 ## Riscos Principais
 
