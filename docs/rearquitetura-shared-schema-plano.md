@@ -15,7 +15,7 @@
 - Isolamento **centralizado** num manager/queryset default + RLS de aplicação
   recriada sobre `tenant_id`. PostgreSQL RLS nativo como rede de segurança (R7).
 - Tenant da request derivado da **`TenantMembership` ativa** do usuário (sem
-  subdomínio). Superuser informa o tenant explicitamente.
+  subdomínio). Superuser administra o SaaS, sem bypass nas APIs de negócio.
 - Customização por empresa via **config/feature-flags** (`TenantSettings`); schema
   físico separado só como exceção dura.
 
@@ -209,7 +209,7 @@ host/subdomínio.
 3. **Recriar `apply_tenant_rls`/`apply_member_rls`** sobre `tenant_id` (hoje
    assumem schema). Manter a matriz de papéis (`owner/admin/manager/viewer` =
    tenant inteiro; `member` = recursos ligados a ele; sem membership = vazio;
-   superuser = bypass com tenant explícito).
+   bypass administrativo restrito a `/admin/`/ferramentas internas).
 4. **Auditoria**: varrer `.objects` cru, `raw()`, agregações e `values()` nos 7
    apps + `core` (dashboards) e garantir que passam pelo manager/filtro. Listar e
    corrigir cada escape.

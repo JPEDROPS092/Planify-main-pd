@@ -27,6 +27,7 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 
 from customers.models import Client, TenantMembership
+from customers.provisioning import ensure_owner_membership, ensure_user, normalize_slug
 
 
 class Command(BaseCommand):
@@ -34,6 +35,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--name', required=True, help='Nome visível da empresa (tenant).')
+        parser.add_argument('--slug', help='Slug único da empresa (default: gerado a partir do nome).')
         parser.add_argument('--owner-email', required=True, help='E-mail do owner.')
         parser.add_argument('--owner-username', help='Username do owner (default: parte local do e-mail).')
         parser.add_argument('--owner-full-name', help='Nome completo do owner.')
@@ -46,12 +48,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         name = options['name']
+        slug = normalize_slug(options.get('slug'))
         owner_email = User.objects.normalize_email(options['owner_email'])
 
         # ``name`` é o identificador usado para resolver o tenant (ex.:
         # migrate_legacy_data --tenant <nome>); evitamos nomes duplicados.
         if Client.objects.filter(name=name).exists():
             raise CommandError(f'Já existe um tenant com o nome "{name}".')
+        if slug and Client.objects.filter(slug=slug).exists():
+            raise CommandError(f'Já existe um tenant com o slug "{slug}".')
 
         # Resolve/cria o owner antes de criar o tenant para falhar cedo.
         owner = User.objects.filter(email__iexact=owner_email).first()
@@ -64,15 +69,14 @@ class Command(BaseCommand):
                 raise CommandError(f'O username "{username}" já está em uso. Informe --owner-username.')
             full_name = options.get('owner_full_name') or username
             temp_password = options.get('owner_password') or get_random_string(12)
-            owner = User.objects.create_user(
-                email=owner_email,
+            owner = ensure_user(
                 username=username,
+                email=owner_email,
                 full_name=full_name,
                 password=temp_password,
+                role='PROJECT_MANAGER',
+                password_change_required=bool(not options.get('owner_password')),
             )
-            owner.is_active = True
-            owner.password_change_required = bool(not options.get('owner_password'))
-            owner.save(update_fields=['is_active', 'password_change_required'])
             created_owner = True
         else:
             if TenantMembership.objects.filter(user=owner, is_active=True).exists():
@@ -81,13 +85,9 @@ class Command(BaseCommand):
                     '(regra: um usuário = uma empresa).'
                 )
 
-        tenant = Client.objects.create(name=name)
+        tenant = Client.objects.create(name=name, slug=slug or '')
 
-        TenantMembership.objects.create(
-            user=owner,
-            tenant=tenant,
-            role=TenantMembership.ROLE_OWNER,
-        )
+        ensure_owner_membership(user=owner, tenant=tenant)
 
         self.stdout.write(self.style.SUCCESS(
             f'Tenant "{tenant.name}" provisionado (id={tenant.id}).'

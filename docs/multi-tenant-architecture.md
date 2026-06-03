@@ -14,9 +14,11 @@
 - **Banco:** PostgreSQL, **um único schema** (`public`); SQLite só p/ inspeção legada.
 - **Isolamento:** `tenant_id` inteiro (FK para `customers.Client`) em **todos** os
   26 models de negócio, com filtro **central** (não por schema).
-- **App de tenancy:** `customers`. Model de empresa: `Client` (sem `Domain`/schema).
+- **App de tenancy:** `customers`. Model de empresa: `Client` (`name`, `slug`,
+  `status`; sem `Domain`/schema).
 - **Resolução de tenant:** **sem subdomínio** — vem da `TenantMembership` ativa do
-  usuário autenticado. Superuser informa o tenant via header `X-Tenant-ID`.
+  usuário autenticado. Superuser administra a plataforma, mas não ganha bypass
+  nas APIs de negócio dos tenants.
 - **Identidade:** `users.User` global (login único; `email`/`username` únicos
   globalmente). Autorização dentro do tenant por `TenantMembership.role`.
 - **Customização por empresa:** `customers.TenantSettings` (feature-flags/config);
@@ -39,7 +41,7 @@ O isolamento por `tenant_id` é garantido em **três camadas**:
    **explicitamente** na camada de viewset (o `queryset` de classe é avaliado no
    import, sem contexto) e narrowa por papel: `owner/admin/manager/viewer` veem o
    tenant inteiro; `member` vê só recursos ligados a ele (autoria/atribuição/
-   membership); sem membership ativa → vazio; superuser → bypass.
+   membership); sem membership ativa → vazio, inclusive para superuser.
 3. **RLS nativo do PostgreSQL (banco)** — `ENABLE`+`FORCE ROW LEVEL SECURITY` +
    policy `tenant_isolation` nas 26 tabelas (`customers/migrations/0006_native_rls`),
    dirigida pela GUC `app.current_tenant` (setada por transação pelo
@@ -65,8 +67,9 @@ Ao listar usuários para um tenant, use `customers.querysets.tenant_users_querys
 
 ## Autorização global vs tenant
 
-- Apenas `is_superuser=True` tem acesso operacional global (seed, provisionamento,
-  manutenção). `users.User.role` é legado/global e **não** concede acesso cross-tenant.
+- Apenas `is_superuser=True` tem acesso operacional de plataforma (seed,
+  provisionamento, manutenção e `/admin/`). Ele **não** concede acesso
+  cross-tenant às APIs de negócio.
 - Autorização dentro do tenant usa `TenantMembership.role`.
 - Usuário autenticado sem `TenantMembership` ativa → **403** em rotas tenant-scoped.
 
@@ -80,9 +83,9 @@ Ao listar usuários para um tenant, use `customers.querysets.tenant_users_querys
 ## Fluxo de uma request (ordem de defesa)
 
 1. **`users.middleware.PermissionMiddleware`**: autentica o JWT, resolve a
-   `TenantMembership` ativa (ou `X-Tenant-ID` p/ superuser), seta
-   `request.tenant`/`request.tenant_id` e **ativa o contexto de tenant da thread**
-   (deny-by-default; bypass p/ `/admin/` e superuser-global). Para prefixos
+   `TenantMembership` ativa, seta `request.tenant`/`request.tenant_id` e **ativa
+   o contexto de tenant da thread** (deny-by-default; bypass só p/ `/admin/` e
+   ferramentas internas). Para prefixos
    tenant-scoped (`TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES`), sem vínculo → **403**.
    Limpa o contexto em `process_response`/`process_exception`.
 2. **`customers.rls.TenantDatabaseRLSMiddleware`**: abre a transação e faz
@@ -97,9 +100,10 @@ Respostas: não autenticado em rota privada → **401**; autenticado sem members
 ## Provisionamento e convites
 
 - **Provisionar empresa (superuser):** `manage.py provision_tenant --name "ACME"
-  --owner-email owner@acme.com` cria a linha `Client` (dispara o `post_save` que
-  cria as `TenantSettings`), a conta/owner e a `TenantMembership(owner)`. Não há
-  schema nem `Domain`. `create_dev_tenant` é o atalho de dev.
+  --slug acme --owner-email owner@acme.com` cria a linha `Client` (dispara o
+  `post_save` que cria as `TenantSettings`), a conta/owner e a
+  `TenantMembership(owner)`. Não há schema nem `Domain`. Para um boot de dev
+  rápido (superuser + tenant `Demo` + owner), use `seed_initial`.
 - **Convidar (owner/admin):** `POST /api/tenant/invitations/` (`customers.TenantInvitation`,
   token opaco). O e-mail leva ao **domínio único** do app (`FRONTEND_URL` +
   `TENANT_INVITATION_ACCEPT_PATH`); o tenant é resolvido pelo **token**, não pelo host.
@@ -119,10 +123,10 @@ idempotente; `--dry-run` simula. Ver `docs/backend-multitenant-audit.md` (R6/R8)
 
 ```bash
 python manage.py migrate                 # banco único (NÃO migrate_schemas)
-python manage.py create_dev_tenant --name Demo
-python manage.py provision_tenant --name "ACME" --owner-email owner@acme.com
+python manage.py seed_initial            # superuser SaaS + Demo/owner idempotentes
+python manage.py provision_tenant --name "ACME" --slug acme --owner-email owner@acme.com
 python manage.py setup_rls               # cria a role app_user (RLS nativo)
-python seed_data.py                      # SEED_TENANT (default "Demo")
+python manage.py seed_demo_data          # dados de negócio idempotentes; default tenant=demo
 ```
 
 ## Testes e validação

@@ -28,10 +28,12 @@ PostgreSQL como rede de segurança no banco.
 
 - **`tenant_id` é FK inteiro** para `customers.Client` (mantém os PKs atuais;
   escolha p/ migração mais leve — UUID reavaliável depois, se o id vazar em URL/API).
-- **`customers.Client`** é o registro da empresa (tenant). **Sem** `Domain`,
-  schema por tenant, `TenantMainMiddleware`, `SHARED_APPS`/`TENANT_APPS` ou router.
+- **`customers.Client`** é o registro da empresa (tenant), com `name`, `slug`
+  único e `status` (`active`/`suspended`). **Sem** `Domain`, schema por tenant,
+  `TenantMainMiddleware`, `SHARED_APPS`/`TENANT_APPS` ou router.
 - **Tenant da request vem da `TenantMembership` ativa** do usuário autenticado (sem
-  subdomínio). Superuser informa o tenant explicitamente (header `X-Tenant-ID`).
+  subdomínio). Superuser é administrador do SaaS e não tem bypass nas APIs de
+  negócio tenant-scoped.
 - **Isolamento centralizado num manager/queryset default** — "auditar queries"
   significa garantir que nada escape do filtro (`.objects` cru, `raw()`, agregações
   soltas), **não** espalhar `WHERE tenant_id = ?` manualmente.
@@ -77,7 +79,8 @@ PostgreSQL como rede de segurança no banco.
 
 - [x] `customers/tenancy.resolve_request_tenant` + `PermissionMiddleware._set_request_tenant`
       definem `request.tenant`/`tenant_id` pela `TenantMembership` ativa.
-- [x] Superuser: tenant via header `X-Tenant-ID` (ou query `?tenant=`).
+- [x] Superuser sem membership não acessa APIs de negócio tenant-scoped; o antigo
+      `X-Tenant-ID` não concede bypass de tenant.
 - [x] `querysets.py`/`permissions.py`/`middleware.py` sem `schema_name`; sem tenant
       resolvido → `none()`/403. URL de convite por `FRONTEND_URL` + token.
 

@@ -19,9 +19,10 @@ Planify é um **SaaS de gerenciamento de projetos de P&D** (Pesquisa &
 Desenvolvimento). Cobre projetos, tarefas (com Kanban), equipes, riscos, custos,
 documentos e comunicação, com autenticação e controle de acesso por papel.
 
-O projeto está em meio a uma **refatoração grande para multi-tenant** (uma
-empresa = um schema PostgreSQL isolado). Entender essa refatoração é o que mais
-importa para trabalhar no backend hoje — veja a seção 4.
+O projeto é **multi-tenant em shared schema**: um único schema PostgreSQL onde
+cada empresa (`Client`) isola seus dados por **`tenant_id`**. Essa arquitetura
+foi consolidada nas fases **R0–R10** (todas concluídas) — entender esse modelo de
+isolamento é o que mais importa para trabalhar no backend hoje; veja a seção 4.
 
 ---
 
@@ -96,8 +97,8 @@ Documento completo: `docs/multi-tenant-architecture.md`. Plano da re-arquitetura
 - Cada linha de **dados de negócio** carrega **`tenant_id`** (FK para
   `customers.Client`) — presente nos **26 models** dos 7 apps de negócio (R2).
 - O tenant da request **não** vem do host/subdomínio: vem da **`TenantMembership`
-  ativa** do usuário autenticado (R3). Superuser informa o tenant via header
-  `X-Tenant-ID`.
+  ativa** do usuário autenticado (R3). Superuser é administrador do SaaS e não
+  ganha acesso implícito aos dados de negócio dos tenants.
 
 ### Três camadas de isolamento (defesa em profundidade)
 1. **`TenantManager`** (`customers/managers.py`) — manager default dos 26 models;
@@ -119,7 +120,8 @@ Documento completo: `docs/multi-tenant-architecture.md`. Plano da re-arquitetura
   globalmente; login único na plataforma).
 - A autorização **dentro** de um tenant usa `customers.TenantMembership.role`,
   **não** o `users.User.role` (legado/global).
-- **Só `is_superuser=True`** tem acesso operacional global (seed, provisionamento).
+- **Só `is_superuser=True`** tem acesso operacional de plataforma (seed,
+  provisionamento e `/admin/`), sem bypass nas APIs tenant-scoped.
 
 ---
 
@@ -141,11 +143,12 @@ Documento completo: `docs/multi-tenant-architecture.md`. Plano da re-arquitetura
    | `member` | leitura geral + escrita operacional (tarefas, documentos, comunicações) |
    | `viewer` | apenas leitura |
 
-3. **RLS de aplicação** (além do isolamento físico por schema): em
-   `customers/querysets.py` (`apply_tenant_rls`, `apply_member_rls`,
+3. **RLS de aplicação** (além do filtro por `tenant_id` do `TenantManager` e da
+   RLS nativa do PostgreSQL): em `customers/querysets.py` (`apply_tenant_rls`, `apply_member_rls`,
    `tenant_users_queryset`). `member` enxerga apenas recursos ligados a ele
    (autoria/atribuição/membership de projeto-equipe); papéis altos veem o tenant
-   inteiro; sem membership ativa → queryset vazio; superuser → bypass.
+   inteiro; sem membership ativa → queryset vazio; superuser sem membership
+   também não acessa dados de negócio.
 
 4. **Quem cria empresa:** **superuser provisiona** o tenant e designa o 1º
    `owner` (não há self-service de criação de empresa). O `owner`/`admin` então
@@ -175,8 +178,9 @@ Documento completo: `docs/multi-tenant-architecture.md`. Plano da re-arquitetura
   **`AccessAttempt`**.
 
 ### `customers` — o coração do multi-tenant
-- **`Client`** (= tenant; `models.Model` simples, `name`). Sem `schema_name`; o
-  model `Domain` foi **removido** (R1).
+- **`Client`** (= tenant; empresa no SaaS) guarda `name`, `slug` único e
+  `status` (`active`/`suspended`). Sem `schema_name`; o model `Domain` foi
+  **removido** (R1).
 - **`TenantMembership`** (user × tenant × role × is_active).
 - **`TenantInvitation`** (convite por token).
 - **`TenantSettings`** (1-1 com `Client`; `features`/`config` JSON — customização
@@ -211,10 +215,9 @@ Documento completo: `docs/multi-tenant-architecture.md`. Plano da re-arquitetura
 Ordem de defesa em uma requisição à API:
 
 1. **`users.middleware.PermissionMiddleware`** (`users/middleware.py`): autentica
-   o JWT (`Authorization: Bearer`), resolve a **`TenantMembership` ativa** (ou
-   `X-Tenant-ID` p/ superuser), seta `request.tenant`/`tenant_id` e **ativa o
-   contexto de tenant da thread** (deny-by-default; bypass p/ `/admin/` e
-   superuser-global). Para caminhos tenant-scoped
+   o JWT (`Authorization: Bearer`), resolve a **`TenantMembership` ativa**, seta
+   `request.tenant`/`tenant_id` e **ativa o contexto de tenant da thread**
+   (deny-by-default; bypass só p/ `/admin/`/ferramentas internas). Para caminhos tenant-scoped
    (`TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES`), sem vínculo → **403**. Rotas em
    `PUBLIC_PATHS` (login, refresh, register, aceite de convite) ficam liberadas.
    Limpa o contexto em `process_response`/`process_exception`.
@@ -269,22 +272,22 @@ cp .env.example .env                      # USE_SQLITE=False; aponta p/ o Postgr
 
 # 2) Migrações (banco único — migrate normal, NÃO migrate_schemas)
 python manage.py migrate
-python manage.py createsuperuser          # operador global (provisiona empresas)
-python manage.py create_dev_tenant --name Demo   # cria a linha Client "Demo"
+python manage.py seed_initial             # só o superuser SaaS (seguro p/ dev e prod)
 
 # 3) (opcional) RLS nativo: cria a role app_user p/ a web conectar sem bypass
 python manage.py setup_rls
 
-# 4) (opcional) dados de exemplo no tenant Demo
-python seed_data.py                       # exige um Client; default SEED_TENANT=Demo
+# 4) (opcional, só dev) tenant Demo + owner Demo + dados de exemplo
+python manage.py seed_demo_data           # idempotente; cria o tenant "demo"
 
 # 5) Subir a API
 python manage.py runserver
 ```
 
 Acesse a API em **`http://localhost:8000/`** (sem subdomínio por tenant). O tenant
-de cada request é resolvido pela `TenantMembership` ativa do usuário autenticado;
-o superuser opera global (ou escopa com o header `X-Tenant-ID`).
+de cada request é resolvido pela `TenantMembership` ativa do usuário autenticado.
+O superuser provisiona e administra a plataforma, mas não opera projetos/tarefas
+de um tenant sem vínculo e papel naquele tenant.
 
 > ⚠️ Use **`migrate`** (banco único), **não** `migrate_schemas` (era do
 > `django-tenants`, removido na R1). Para ativar a RLS nativa em runtime, rode a
@@ -343,15 +346,19 @@ python scripts/e2e_migrate_legacy.py        # migração de dados legados (23/23
 ## 12. Comandos de gestão úteis (`manage.py`)
 
 - `migrate` — migrações do banco único (substitui o antigo `migrate_schemas`).
-- `create_dev_tenant --name <nome>` — cria tenant de desenvolvimento (conveniência).
-- `provision_tenant --name <nome> --owner-email <e>` — caminho **canônico** de
-  provisionar empresa + owner (superuser).
+- `seed_initial` — boot idempotente: garante **apenas o superuser SaaS**. Roda em
+  dev **e** prod (não cria empresas). Complementa o `provision_tenant`.
+- `provision_tenant --name <nome> [--slug <slug>] --owner-email <e>` — caminho
+  **canônico** de provisionar empresa + owner em prod (superuser).
 - `setup_rls` — cria/atualiza a role `app_user` (sem `BYPASSRLS`) p/ a RLS nativa.
 - `migrate_legacy_data --tenant <id|nome>` — onboarding de base single-tenant
   legada (SQLite) p/ o shared schema: identidade → `users`, negócio carimbado com
   `tenant_id`, com `--dry-run`, relatório de contagens e idempotência (ver R6/R8).
 - `create_access_profiles` — semeia RBAC legado global.
-- `seed_data.py` — dados de exemplo (script na raiz do backend, não é `manage.py`).
+- `seed_demo_data` — **só dev**: cria/garante o tenant `Demo` (`slug=demo`) + o
+  owner Demo (antes ficavam no `seed_initial`) e popula dados de negócio
+  idempotentes. `seed_data.py` permanece como wrapper compatível
+  (`SEED_TENANT=<slug>`).
 
 ---
 
@@ -410,14 +417,16 @@ frontend — baseURL única, tela de convites, aceite; corrigir bugs conhecidos 
 
 ## 15. Glossário
 
-- **Tenant / `Client`**: uma empresa = um schema PostgreSQL isolado.
+- **Tenant / `Client`**: uma empresa no SaaS; no banco único, seus dados de
+  negócio são isolados por `tenant_id`.
 - **`Domain`**: host que resolve para um tenant (ex.: `acme.localhost`).
 - **`TenantMembership`**: vínculo usuário↔empresa com papel; no máx. 1 ativo/usuário.
 - **`public`**: schema compartilhado (identidade, tenants).
 - **RLS de aplicação**: filtro por papel/relacionamento nas queries (não é o RLS
   nativo do PostgreSQL).
 - **owner**: 1º responsável da empresa (provisionado por superuser).
-- **superuser**: operador global da plataforma (bypass total).
+- **superuser**: operador da plataforma/SaaS (provisionamento, manutenção e
+  `/admin/`), sem bypass nas APIs de negócio do tenant.
 
 ---
 

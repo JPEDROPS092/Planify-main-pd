@@ -45,7 +45,7 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_initial
 ```
 
 No Windows, ative o ambiente virtual com:
@@ -175,16 +175,21 @@ USE_SQLITE=True python manage.py check
 Esse modo existe apenas para inspeção local. A re-arquitetura multi-tenant deve ser
 validada em PostgreSQL.
 
-Criar um tenant local de desenvolvimento (uma linha `Client`):
+Garantir o operador SaaS (superuser) — seguro para dev **e** prod:
 
 ```bash
-python manage.py create_dev_tenant --name Demo
+python manage.py seed_initial
 ```
+
+Esse comando é idempotente e garante **apenas o superuser SaaS**. Ele não cria
+empresas: o tenant Demo de dev fica em `seed_demo_data` e os tenants reais são
+criados via `provision_tenant`. Em prod, rode `seed_initial` (superuser) e depois
+`provision_tenant` para cada empresa.
 
 Provisionar empresa + owner de forma canônica (superuser):
 
 ```bash
-python manage.py provision_tenant --name "ACME" --owner-email owner@acme.com
+python manage.py provision_tenant --name "ACME" --slug acme --owner-email owner@acme.com
 ```
 
 ### RLS nativo do PostgreSQL (opcional em runtime)
@@ -193,14 +198,16 @@ A RLS nativa (`FORCE ROW LEVEL SECURITY` nas 26 tabelas) é a rede de segurança
 banco. Para ativá-la em runtime, crie a role sem bypass e rode a web como ela:
 
 ```bash
-python manage.py setup_rls                 # cria/atualiza a role app_user
-POSTGRES_USER=app_user POSTGRES_PASSWORD=<senha> python manage.py runserver
+APP_DB_PASSWORD=app_user python manage.py setup_rls   # cria/atualiza a role app_user
+POSTGRES_USER=app_user POSTGRES_PASSWORD=app_user python manage.py runserver
 ```
 
 Sob a role dona do banco (`planify`, superuser) a RLS é inócua — migrations, seed e
 testes seguem por ela; a camada de aplicação (`TenantManager` + RLS de app) já
-isola. Acesse a API por `http://localhost:8000/` (o tenant vem da membership; o
-superuser escopa com o header `X-Tenant-ID`).
+isola. Portanto, use `planify` para comandos administrativos (`migrate`, `seed`,
+`setup_rls`, testes) e `app_user` para o processo web. Acesse a API por
+`http://localhost:8000/` (o tenant vem da membership; superuser não tem bypass
+nas APIs de negócio tenant-scoped).
 
 Gerar novamente o schema OpenAPI:
 
@@ -208,16 +215,21 @@ Gerar novamente o schema OpenAPI:
 python manage.py spectacular --file openapi.json
 ```
 
-Popular dados de exemplo, quando necessário. O seed exige um `Client` existente:
-os usuários/memberships são criados na identidade global e os dados de negócio são
-gravados carimbando `tenant_id` do tenant alvo (`SEED_TENANT`, padrão `Demo`).
+Popular o ambiente de **desenvolvimento** com o tenant Demo. `seed_demo_data`
+cria/garante o tenant `Demo` (`slug=demo`) e o owner Demo e então popula dados de
+negócio idempotentes carimbando `tenant_id`. Pré-requisito: o superuser SaaS
+(`seed_initial`). Não use em produção (lá os tenants vêm do `provision_tenant`).
 
 ```bash
-# usa o tenant padrão "Demo" (crie-o antes com create_dev_tenant)
-python seed_data.py
+# cria o tenant "demo" + owner + dados de negócio
+python manage.py seed_demo_data
 
-# ou aponte para outro tenant existente (id ou nome)
-SEED_TENANT="ACME" python seed_data.py
+# customizar nome/slug/owner do tenant demo
+python manage.py seed_demo_data --tenant-slug demo2 --tenant-name "Demo 2" \
+    --owner-email owner@demo2.local --owner-username demo2_owner
+
+# compatibilidade com o fluxo antigo (SEED_TENANT vira o --tenant-slug)
+SEED_TENANT=demo python seed_data.py
 ```
 
 ### Migrar uma base legada (single-tenant) para o shared schema

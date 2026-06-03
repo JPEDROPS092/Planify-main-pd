@@ -7,7 +7,8 @@ essa GUC para filtrar/checar as linhas — a garantia dura, independente da app.
 
 Valores da GUC (espelham o contexto):
 
-- bypass (superuser global / ``/admin/``) -> ``''`` (todas as linhas).
+- bypass administrativo (``/admin/``/ferramentas internas) -> ``''`` (todas as
+  linhas).
 - tenant resolvido                        -> ``str(tenant_id)``.
 - sem tenant / contexto inativo           -> ``'-1'`` (nenhuma linha; fail-closed).
 

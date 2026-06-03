@@ -10,7 +10,7 @@ Cenário (dois tenants no mesmo schema):
 
     alpha  ->  alice (owner), mallory (member)
     beta   ->  bob   (owner)
-    root   ->  superuser sem membership (opera global / por X-Tenant-ID)
+    root   ->  superuser sem membership (admin SaaS; sem acesso a dados de tenant)
 
 Dados homônimos de propósito: alpha e beta têm um projeto "Projeto Compartilhado"
 (títulos iguais, tenants distintos) — só possível com o ``unique`` reescopado por
@@ -23,8 +23,8 @@ Asserções:
     4.  bob lista -> só os de beta
     5.  mallory (member) lista -> só o projeto em que é membro (RLS por papel
         sobre o limite de tenant)
-    6.  root sem header -> vê todos os tenants (bypass)
-    7.  root com X-Tenant-ID=alpha -> só alpha ; =beta -> só beta
+    6.  root sem membership -> 403 em API tenant-scoped
+    7.  root com X-Tenant-ID legado -> continua 403 (sem bypass de negócio)
     8.  alice cria projeto com título que já existe em beta -> 201 (manager
         escopa a unicidade) e o projeto nasce carimbado com tenant=alpha
     9.  carimbo no create fora de HTTP: context.scope(beta) -> tenant=beta
@@ -178,14 +178,13 @@ def run_assertions(ctx):
     check('mallory NÃO vê a1 (não é membro nem criador)', a1 not in ids, f'ids={ids}')
     check('mallory NÃO vê b1 (outro tenant)', b1 not in ids, f'ids={ids}')
 
-    print('\n[6-7] root (superuser):')
-    ids = _ids(get('/api/projects/', root_t))
-    check('root sem header vê todos os tenants (a1,a2,b1)',
-          set(ids) >= {a1, a2, b1}, f'ids={ids}')
-    ids = _ids(get('/api/projects/', root_t, tenant_id=ctx['alpha'].id))
-    check('root X-Tenant-ID=alpha -> só alpha', a1 in ids and b1 not in ids, f'ids={ids}')
-    ids = _ids(get('/api/projects/', root_t, tenant_id=ctx['beta'].id))
-    check('root X-Tenant-ID=beta -> só beta', b1 in ids and a1 not in ids, f'ids={ids}')
+    print('\n[6-7] root (superuser SaaS, sem membership):')
+    resp = get('/api/projects/', root_t)
+    check('root sem membership em /api/projects/ -> 403', resp.status_code == 403,
+          f'status={resp.status_code}')
+    resp = get('/api/projects/', root_t, tenant_id=ctx['alpha'].id)
+    check('root com X-Tenant-ID legado também -> 403', resp.status_code == 403,
+          f'status={resp.status_code}')
 
     print('\n[8] create: título duplicado entre tenants + carimbo automático:')
     resp = http.post(

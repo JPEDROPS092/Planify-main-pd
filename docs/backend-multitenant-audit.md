@@ -46,16 +46,97 @@ Para cada fase concluída, registrar:
 | **R0: Registro da decisão (shared schema)** | Concluída | Pivô schema-per-tenant → shared + `tenant_id` registrado. |
 | **R1: Desativar `django-tenants` (banco único)** | Concluída | Banco único `public`; `check`/`migrate` verdes; `Domain`/schema removidos. **Isolamento desligado até R4.** |
 | **R2: `tenant_id` nos models de negócio** | Concluída | `tenant = FK(customers.Client, CASCADE)` NOT NULL nos 26 models dos 7 apps; `Projeto.titulo` reescopado por tenant; índices compostos `(tenant, …)`; 7 migrations; `check`/`migrate` verdes. **Isolamento ainda desligado até R4.** |
-| **R3: Resolução de tenant por membership** | Concluída | `request.tenant`/`tenant_id` resolvidos pela `TenantMembership` ativa (superuser via header `X-Tenant-ID`); `querysets`/`permissions`/`middleware`/`emails` sem `schema_name`/`.domains`; validado 9/9. **Filtro real por `tenant_id` ainda é R4.** |
-| **R4: Isolamento centralizado (manager/queryset) + RLS** | Concluída | `TenantManager` (contexto thread-local por request) filtra `tenant_id` em toda query `.objects` de runtime nos 26 models; `pre_save` carimba `tenant_id` no create; `apply_tenant_rls` aplica o limite duro de tenant na camada de viewset (queryset de classe não passa pelo manager) + RLS por papel preservada; middleware ativa/limpa o contexto (deny-by-default, bypass admin/superuser-global). e2e 16/16. **Isolamento restabelecido.** Rede de segurança no banco (RLS nativo) é a R7. |
+| **R3: Resolução de tenant por membership** | Concluída | `request.tenant`/`tenant_id` resolvidos pela `TenantMembership` ativa; superuser é admin SaaS e não recebe tenant por `X-Tenant-ID` nas APIs de negócio. `querysets`/`permissions`/`middleware`/`emails` sem `schema_name`/`.domains`; validado. **Filtro real por `tenant_id` ainda é R4.** |
+| **R4: Isolamento centralizado (manager/queryset) + RLS** | Concluída | `TenantManager` (contexto thread-local por request) filtra `tenant_id` em toda query `.objects` de runtime nos 26 models; `pre_save` carimba `tenant_id` no create; `apply_tenant_rls` aplica o limite duro de tenant na camada de viewset (queryset de classe não passa pelo manager) + RLS por papel preservada; middleware ativa/limpa o contexto (deny-by-default, bypass só `/admin`/ferramentas internas). e2e validado. **Isolamento restabelecido.** Rede de segurança no banco (RLS nativo) é a R7. |
 | **R5: Customização por tenant (config/feature-flags)** | Concluída | `customers.TenantSettings` (1-1 com `Client`, JSON `features`/`config`); ponto único de leitura `customers.config.get_tenant_settings`/`tenant_feature_enabled`; auto-criação via `post_save` em `Client`; admin. `migrations/0005`. Schema físico separado documentado como exceção dura. |
 | **R6: Migração de dados (schemas → shared)** | Concluída | `seed_data.py` e `migrate_legacy_data.py` reescritos para o shared schema (sem `schema_context`/`get_tenant_model`); tenant resolvido por `Client` (nome/id), negócio gravado no schema único carimbando `tenant_id` (seed via `context.scope`; migração via carimbo explícito + colisão de PK tenant-aware). Validado: seed → 504 linhas, 0 `tenant_id` nulo/fora do tenant; `migrate_legacy_data --users-only --dry-run` OK. |
 | **R7: RLS nativo do PostgreSQL** | Concluída | `ENABLE`+`FORCE ROW LEVEL SECURITY` + policy `tenant_isolation` (`FOR ALL`, USING+WITH CHECK por `app.current_tenant`) nas **26 tabelas de negócio** (`migrations/0006`); `TenantDatabaseRLSMiddleware` faz `SET LOCAL app.current_tenant` por transação a partir do contexto R4; `manage.py setup_rls` cria a role `app_user` (sem `BYPASSRLS`) com CRUD. Validado conectando como `app_user`: 7/7 (isolamento em query crua, `''`=global, deny/fail-closed, WITH CHECK bloqueia troca de tenant). Default segue `planify` (superuser, bypassa); RLS vale ao rodar a web como `app_user`. |
 | **R8: Testes** | Concluída | `tests/tenant_base.py` reescrito sem `django-tenants` (`APITestCase` + `Client` + `TenantMembership` + JWT; tenant por membership; cliente restaura o contexto de tenant pós-request). Suíte `pytest tests/` **27 passed**. `scripts/e2e_invitations.py` (13/13) e `scripts/e2e_migrate_legacy.py` (23/23) reescritos p/ shared schema; `e2e_cross_tenant.py` removido (substituído por `e2e_r4_tenant_isolation.py`, 16/16). `e2e_r7_native_rls.py` 7/7. |
 | **R9: Provisionamento e convites** | Concluída | `provision_tenant` e `create_dev_tenant` reescritos: criam só a linha `Client` (dispara `TenantSettings` via `post_save`) + owner + `TenantMembership`, sem `Domain`/`schema_name`/`auto_create_schema`. Convites já sem subdomínio desde a R3 (aceite por token em `FRONTEND_URL`). Validado fim-a-fim por `e2e_invitations.py` (provisionar → convidar → aceitar → acessar) e smoke de `create_dev_tenant`. |
 | **R10: Docs e onboarding** | Concluída | `ONBOARDING.md`, `backend/readme-backend.md`, `docs/multi-tenant-architecture.md` e `backend/tests/README.txt` atualizados de schema-per-tenant → shared + `tenant_id` (comandos `migrate`/`setup_rls`, sem subdomínio, role `app_user`, provisionamento por `--name`). Fases R0–R10 fechadas neste audit. |
+| **R11a: Superuser sem bypass tenant-scoped** | Concluída | Superuser passa a ser admin SaaS: provisionamento/manutenção/`/admin`, sem acesso livre a projetos/tarefas/dados de tenant. APIs tenant-scoped exigem `TenantMembership` e papel; `X-Tenant-ID` legado não concede bypass. |
+| **R11b: Metadata SaaS mínima de tenant** | Concluída | `Client` ganhou `slug` único e `status` (`active`/`suspended`) para painel SaaS/admin. Plano/MRR ficam fora por enquanto. |
+| **R11c: Seeds de dev** | Concluída | `seed_initial` idempotente garante superuser SaaS, tenant `Demo` (`slug=demo`, `status=active`), owner do Demo e `TenantMembership(owner)`. `seed_demo_data` semeia dados de negócio idempotentes; `seed_data.py` fica como wrapper. |
 
 ## Registros
+
+### Fase R11c: Seeds de dev
+
+Data local: 2026-06-03
+
+Status: concluída.
+
+Objetivo: estabilizar o boot local depois da separação entre administração SaaS
+e operação por tenant. O ambiente de desenvolvimento passa a ter um comando para
+criar/garantir o operador global, a empresa Demo ativa e o owner, e outro comando
+para dados de negócio demo, idempotente e escopado ao tenant.
+
+Arquivos:
+
+- `customers/management/commands/seed_initial.py`: cria/garante superuser SaaS,
+  tenant `Demo` com `slug=demo`/`status=active`, owner Demo e
+  `TenantMembership(owner)`.
+- `customers/management/commands/seed_demo_data.py`: cria/garante dados demo de
+  projeto, sprint, tarefas, equipes, custos, documentos, riscos, comunicacoes e
+  notificacoes usando apenas usuarios com membership ativa no tenant.
+- `seed_data.py`: deixa de criar superuser, tenant e usuários globais; passa a
+  delegar para `seed_demo_data`, preservando `SEED_TENANT`.
+- Docs vivos atualizados (`ONBOARDING`, arquitetura e README do backend).
+
+Validação: `manage.py check`; `seed_initial` idempotente; `seed_demo_data`
+executado repetidamente sem duplicar os registros principais; wrapper
+`python seed_data.py` validado.
+
+### Fase R11a: Superuser sem bypass em APIs tenant-scoped
+
+Data local: 2026-06-03
+
+Status: concluída.
+
+Objetivo: separar administração da plataforma de operação de negócio do tenant.
+`is_superuser=True` continua adequado para provisionamento, manutenção, comandos e
+`/admin/`, mas não pode listar, criar ou alterar projetos/tarefas/dados internos
+de uma empresa sem um vínculo/papel de tenant. Essa autoridade pertence ao
+`owner`/`admin` do tenant.
+
+Arquivos:
+
+- `customers/tenancy.py`: tenant da request volta a ser exclusivamente a
+  `TenantMembership` ativa; `X-Tenant-ID` fica legado e não concede bypass.
+- `users/middleware.py`: superuser não retorna antes do gate de membership em
+  prefixos tenant-scoped.
+- `customers/permissions.py` e `customers/querysets.py`: removido bypass de
+  superuser nas permissões e RLS de aplicação.
+- `scripts/e2e_r4_tenant_isolation.py`: root sem membership agora espera `403`,
+  inclusive com `X-Tenant-ID`.
+- Docs vivos atualizados (`ONBOARDING`, arquitetura, plano e README).
+
+Validação: `manage.py check` verde; e2e R4 deve provar que owner/member seguem
+escopados e que superuser sem membership recebe `403` em `/api/projects/`.
+
+### Fase R11b: Metadata SaaS mínima de tenant
+
+Data local: 2026-06-03
+
+Status: concluída.
+
+Objetivo: preparar o painel SaaS/admin sem misturar operação de plataforma com
+dados de negócio do tenant. Nesta etapa só entram os campos necessários agora:
+`slug` único e `status` (`active`/`suspended`). Plano, MRR e billing ficam fora
+por decisão de escopo.
+
+Arquivos:
+
+- `customers/models.py`: `Client.slug`, `Client.status` e geração automática de
+  slug quando omitido.
+- `customers/migrations/0007_client_slug_status.py`: adiciona os campos e popula
+  slugs únicos para tenants existentes.
+- `customers/admin.py`: lista, busca e filtra por `slug`/`status`.
+- `create_dev_tenant` e `provision_tenant`: aceitam `--slug` opcional.
+
+Validação: migration aplicada no PostgreSQL local; `Demo` ficou com
+`slug=demo`, `status=active`; comandos de smoke criaram/removeram tenants com
+slug explícito; `manage.py check` e `makemigrations --check --dry-run` verdes.
 
 ### Fase 0: Preparação e Baseline
 

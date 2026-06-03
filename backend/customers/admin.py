@@ -5,9 +5,10 @@ from .models import Client, TenantInvitation, TenantMembership, TenantSettings
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'on_trial', 'paid_until', 'created_on']
-    list_filter = ['on_trial', 'created_on']
-    search_fields = ['name']
+    list_display = ['name', 'slug', 'status', 'on_trial', 'paid_until', 'created_on']
+    list_filter = ['status', 'on_trial', 'created_on']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(TenantMembership)

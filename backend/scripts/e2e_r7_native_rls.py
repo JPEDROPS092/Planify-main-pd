@@ -10,7 +10,7 @@ Cenário: dois tenants (A, B), cada um com um projeto, criados via ORM (conexão
 
     1. GUC = A   -> SELECT projects_projeto vê só o projeto de A (não o de B)
     2. GUC = B   -> vê só o de B
-    3. GUC = ''  -> vê os dois (bypass global de superuser/admin)
+    3. GUC = ''  -> vê os dois (bypass administrativo interno)
     4. GUC = -1  -> não vê nada (deny-by-default)
     5. GUC ausente (sessão nova) -> não vê nada (fail-closed)
     6. GUC = A, UPDATE movendo o projeto de A para tenant B -> bloqueado (WITH CHECK)

@@ -10,10 +10,10 @@ Estados do contexto:
 - **inativo** (``is_active() is False``): fora de uma request — shell, management
   commands, migrations, seed. O manager **não filtra** (comportamento normal do
   Django), para não quebrar essas operações.
-- **ativo, ``bypass=True``**: superuser operando global ou ``/admin/`` — o manager
-  não filtra (acesso global controlado).
-- **ativo, ``tenant_id`` setado**: usuário normal (ou superuser com tenant
-  explícito) — o manager filtra por esse ``tenant_id``.
+- **ativo, ``bypass=True``**: `/admin/` e ferramentas internas de plataforma — o
+  manager não filtra (acesso administrativo fora das APIs de negócio).
+- **ativo, ``tenant_id`` setado**: request de usuário com membership ativa — o
+  manager filtra por esse ``tenant_id``.
 - **ativo, ``tenant_id is None`` e ``bypass=False``**: request sem tenant resolvido
   (anônimo / sem membership) — o manager devolve ``none()`` (deny-by-default).
 

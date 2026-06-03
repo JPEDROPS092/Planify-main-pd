@@ -12,7 +12,8 @@ Regras:
 - Só carimba quando ``tenant_id`` está ausente (nunca sobrescreve um valor já
   definido — ex.: criação explícita com tenant em scripts/migração R6).
 - Só carimba dentro de um contexto ativo e não-bypass com tenant resolvido. Em
-  bypass (superuser global) a criação de dado de negócio exige tenant explícito;
+  bypass administrativo (`/admin/`/ferramentas internas), a criação de dado de
+  negócio exige tenant explícito;
   sem ele a FK NOT NULL falha — comportamento desejado (não adivinhamos o tenant).
 """
 from django.apps import apps

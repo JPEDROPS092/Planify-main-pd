@@ -255,7 +255,7 @@ class Command(BaseCommand):
             if tenant is None:
                 raise CommandError(
                     f'Client destino "{raw}" não existe. Provisione-o antes '
-                    '(provision_tenant / create_dev_tenant) ou crie via admin.'
+                    '(provision_tenant / seed_initial) ou crie via admin.'
                 )
 
         User = get_user_model()

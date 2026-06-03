@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
+from django.utils.text import slugify
 from django.utils import timezone
 
 
@@ -14,7 +15,17 @@ class Client(models.Model):
     negócio passa a ser por ``tenant_id`` (FK para este model) a partir da R2.
     """
 
+    STATUS_ACTIVE = 'active'
+    STATUS_SUSPENDED = 'suspended'
+
+    STATUS_CHOICES = (
+        (STATUS_ACTIVE, 'Ativo'),
+        (STATUS_SUSPENDED, 'Suspenso'),
+    )
+
     name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     paid_until = models.DateField(null=True, blank=True)
     on_trial = models.BooleanField(default=True)
     created_on = models.DateField(auto_now_add=True)
@@ -26,6 +37,30 @@ class Client(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_slug(self):
+        base = slugify(self.name) or 'tenant'
+        slug = base[:120]
+        suffix = 2
+
+        queryset = Client.objects.filter(slug=slug)
+        if self.pk:
+            queryset = queryset.exclude(pk=self.pk)
+
+        while queryset.exists():
+            suffix_text = f'-{suffix}'
+            slug = f'{base[:120 - len(suffix_text)]}{suffix_text}'
+            queryset = Client.objects.filter(slug=slug)
+            if self.pk:
+                queryset = queryset.exclude(pk=self.pk)
+            suffix += 1
+
+        return slug
 
 
 class TenantMembership(models.Model):

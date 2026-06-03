@@ -7,13 +7,13 @@ partir do tenant resolvido (fonte confiável: o JWT, nunca o frontend).
 
 Semântica da GUC:
 
-- ``''`` (string vazia)  -> acesso global (superuser/admin), todas as linhas.
+- ``''`` (string vazia)  -> bypass administrativo interno, todas as linhas.
 - ``'<id>'``            -> apenas o tenant ``<id>``.
 - ``'-1'`` / não setada -> nenhuma linha (deny-by-default / fail-closed).
 
 As tabelas ``customers_*`` (membership/invitation/settings) **não** recebem RLS:
 a resolução do tenant consulta ``TenantMembership`` antes de a GUC existir, e a
-infra de tenancy precisa ser legível para o bypass de superuser funcionar.
+infra de tenancy precisa ser legível para administração de plataforma.
 
 Só tem efeito quando a app conecta como uma role **sem** ``BYPASSRLS`` e que não
 seja superuser nem dona das tabelas (ver ``manage.py setup_rls`` → ``app_user``).

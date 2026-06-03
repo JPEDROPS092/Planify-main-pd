@@ -38,7 +38,7 @@ class TenantManager(models.Manager):
         if not context.is_active():
             return queryset
 
-        # Superuser global / admin: acesso sem escopo de tenant.
+        # Admin Django / ferramentas internas: acesso sem escopo de tenant.
         if context.is_bypass():
             return queryset
 

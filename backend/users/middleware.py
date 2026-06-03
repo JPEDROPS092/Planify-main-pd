@@ -82,12 +82,9 @@ class PermissionMiddleware(MiddlewareMixin):
         if not user.is_authenticated:
             return JsonResponse({"detail": "Autenticação necessária"}, status=401)
 
-        # R3: resolver o tenant da request a partir da TenantMembership ativa
-        # (superuser informa o tenant explicitamente via header X-Tenant-ID).
+        # R3/R11: resolver o tenant da request a partir da TenantMembership ativa.
+        # Superuser é administrador da plataforma, não owner implícito de tenant.
         self._set_request_tenant(request)
-
-        if user.is_superuser:
-            return None
         
         # Verificar se a conta está bloqueada
         if hasattr(user, 'is_locked') and user.is_locked:
@@ -160,16 +157,10 @@ class PermissionMiddleware(MiddlewareMixin):
         request.tenant_id = tenant.id if tenant is not None else None
         request._tenant_membership = membership
 
-        if request.user.is_superuser and tenant is None:
-            # Superuser sem tenant explícito: opera global (bypass do filtro).
-            context.activate(tenant_id=None, bypass=True)
-        else:
-            # Usuário normal (ou superuser com X-Tenant-ID): escopa ao tenant.
-            # Sem tenant resolvido, tenant_id=None → manager devolve none().
-            context.activate(tenant_id=request.tenant_id, bypass=False)
+        # Sem tenant resolvido, tenant_id=None -> manager devolve none().
+        context.activate(tenant_id=request.tenant_id, bypass=False)
 
     def check_tenant_membership(self, request):
-        # Chamado apenas para usuários não-superuser (superuser já retornou acima).
         protected_prefixes = getattr(settings, 'TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES', ())
         if not request.path_info.startswith(protected_prefixes):
             return None

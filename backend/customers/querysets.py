@@ -34,9 +34,8 @@ def get_request_membership(request):
 def tenant_users_queryset(request, base_queryset=None):
     """Usuários (model público) com vínculo ativo no tenant atual.
 
-    Mantém o mesmo critério de bypass de ``apply_tenant_rls``:
+    Mantém o mesmo critério de ``apply_tenant_rls``:
 
-    - ``is_superuser=True``: todos os usuários (bypass operacional global).
     - sem tenant resolvido: nenhum usuário (``none()``).
     - com tenant: apenas usuários com ``TenantMembership`` ativa no tenant.
 
@@ -47,9 +46,6 @@ def tenant_users_queryset(request, base_queryset=None):
 
     User = get_user_model()
     queryset = base_queryset if base_queryset is not None else User.objects.all()
-
-    if getattr(request, 'user', None) and request.user.is_superuser:
-        return queryset
 
     tenant = getattr(request, 'tenant', None)
     if tenant is None:
@@ -88,10 +84,6 @@ def _scope_to_tenant(queryset, tenant):
 def apply_tenant_rls(queryset, request):
     user = getattr(request, 'user', None)
     tenant = getattr(request, 'tenant', None)
-
-    if user and user.is_superuser:
-        # Superuser sem tenant explícito opera global; com X-Tenant-ID, escopa.
-        return _scope_to_tenant(queryset, tenant)
 
     if tenant is None:
         return queryset.none()

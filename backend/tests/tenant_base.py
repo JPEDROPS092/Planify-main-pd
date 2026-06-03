@@ -106,10 +106,12 @@ class TenantAPITestCase(APITestCase):
 class SuperuserAPITestCase(APITestCase):
     """Superusuário autenticado via JWT.
 
-    Superuser tem bypass do escopo de tenant (opera global), adequado a
-    endpoints administrativos não escopados por tenant (ex.: ``/api/users/``)
-    que exigem ``HasModulePermission``. Continua passando pelo middleware real
-    (JWT obrigatório), diferente do antigo ``force_authenticate``.
+    Superuser é administrador SaaS, adequado a endpoints administrativos não
+    escopados por tenant (ex.: ``/api/users/``) que exigem
+    ``HasModulePermission``. Rotas de negócio tenant-scoped não têm bypass:
+    exigem ``TenantMembership`` como qualquer outro usuário. Continua passando
+    pelo middleware real (JWT obrigatório), diferente do antigo
+    ``force_authenticate``.
     """
 
     def setUp(self):
@@ -120,7 +122,7 @@ class SuperuserAPITestCase(APITestCase):
             full_name='Administrador',
             password='Senha-Teste-123',
         )
-        # Superuser sem tenant explícito opera em bypass (sem escopo).
+        # Para asserts diretos de endpoints/plataforma fora de tenant.
         context.activate(tenant_id=None, bypass=True)
         self.addCleanup(context.deactivate)
         self.client = bearer_client(self.admin, bypass=True)

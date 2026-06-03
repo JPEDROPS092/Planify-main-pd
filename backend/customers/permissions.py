@@ -11,11 +11,12 @@ permissão é a versão escopada por view: serve como defesa-em-profundidade,
 deixa a intenção explícita no próprio viewset e protege rotas que por
 ventura não estejam cobertas pela lista de prefixos do middleware.
 
-Critério de bypass é idêntico ao de ``apply_tenant_rls``/``tenant_users_queryset``:
+Critério é idêntico ao de ``apply_tenant_rls``/``tenant_users_queryset``:
 
-- ``is_superuser=True``: acesso liberado (bypass operacional global);
-- demais usuários: exigem ``TenantMembership`` ativa no tenant da request (R3:
-  o tenant é resolvido pela membership ativa do usuário).
+- usuários exigem ``TenantMembership`` ativa no tenant da request (R3:
+  o tenant é resolvido pela membership ativa do usuário);
+- superuser não tem bypass nas rotas de negócio tenant-scoped. A administração
+  de plataforma fica em `/admin/` e comandos de gestão.
 """
 from rest_framework.permissions import BasePermission
 
@@ -31,8 +32,6 @@ class IsTenantMember(BasePermission):
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser:
-            return True
         return get_request_membership(request) is not None
 
 
@@ -44,7 +43,7 @@ class HasTenantRole(BasePermission):
         class MinhaView(APIView):
             permission_classes = [HasTenantRole.with_roles('owner', 'admin')]
 
-    Superuser mantém o bypass de ``IsTenantMember``.
+    Superuser segue a mesma regra: precisa de membership e papel no tenant.
     """
 
     required_roles = frozenset()
@@ -62,8 +61,6 @@ class HasTenantRole(BasePermission):
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser:
-            return True
         membership = get_request_membership(request)
         if membership is None:
             return False
