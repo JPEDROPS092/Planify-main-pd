@@ -1,8 +1,16 @@
 from django.db import models
 from django.conf import settings
 
+from customers.managers import TenantManager
+
 
 class Equipe(models.Model):
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
     criado_por = models.ForeignKey(
@@ -21,6 +29,9 @@ class Equipe(models.Model):
         verbose_name = 'Equipe'
         verbose_name_plural = 'Equipes'
         ordering = ['nome']
+        indexes = [
+            models.Index(fields=['tenant', 'nome']),
+        ]
 
 
 class MembroEquipe(models.Model):
@@ -33,6 +44,12 @@ class MembroEquipe(models.Model):
         ('ANALISTA', 'Analista'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     equipe = models.ForeignKey(Equipe, on_delete=models.CASCADE, related_name='membros')
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='equipes')
     papel = models.CharField(max_length=20, choices=PAPEL_CHOICES)
@@ -79,6 +96,12 @@ class PermissaoEquipe(models.Model):
         ('CUSTOS', 'Custos'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     papel = models.CharField(max_length=20, choices=MembroEquipe.PAPEL_CHOICES)
     equipe = models.ForeignKey(Equipe, on_delete=models.CASCADE, related_name='permissoes')
     modulo = models.CharField(max_length=20, choices=MODULO_CHOICES)

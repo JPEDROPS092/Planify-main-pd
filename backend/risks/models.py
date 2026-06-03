@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from projects.models import Projeto
 
+from customers.managers import TenantManager
+
 
 class Risco(models.Model):
     PROBABILIDADE_CHOICES = (
@@ -24,6 +26,12 @@ class Risco(models.Model):
         ('ELIMINADO', 'Eliminado'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='riscos')
     descricao = models.TextField()
     probabilidade = models.CharField(max_length=10, choices=PROBABILIDADE_CHOICES)
@@ -74,9 +82,18 @@ class Risco(models.Model):
         verbose_name = 'Risco'
         verbose_name_plural = 'Riscos'
         ordering = ['-data_identificacao']
+        indexes = [
+            models.Index(fields=['tenant', '-data_identificacao']),
+        ]
 
 
 class HistoricoRisco(models.Model):
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     risco = models.ForeignKey(Risco, on_delete=models.CASCADE, related_name='historico')
     status_anterior = models.CharField(max_length=20, choices=Risco.STATUS_CHOICES)
     novo_status = models.CharField(max_length=20, choices=Risco.STATUS_CHOICES)
@@ -92,6 +109,9 @@ class HistoricoRisco(models.Model):
         verbose_name = 'Histórico de Risco'
         verbose_name_plural = 'Históricos de Riscos'
         ordering = ['-alterado_em']
+        indexes = [
+            models.Index(fields=['tenant', '-alterado_em']),
+        ]
     
     def __str__(self):
         return f"Alteração em {self.risco} - {self.alterado_em.strftime('%d/%m/%Y %H:%M')}"

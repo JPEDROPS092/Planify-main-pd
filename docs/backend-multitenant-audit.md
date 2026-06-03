@@ -2,6 +2,18 @@
 
 Este documento deve ser atualizado sempre que uma fase da `backend/codex-task-01.md` for concluída ou quando uma fase avançar com ressalvas relevantes.
 
+> **⚠️ Revisão de decisão arquitetural (2026-06-03).** A estratégia de isolamento
+> foi alterada de **schema-per-tenant (`django-tenants`)** para **shared schema +
+> `tenant_id`** (FK inteiro para `customers.Client`). As Fases 4–8 abaixo
+> permanecem como **registro histórico** do caminho percorrido, mas o isolamento
+> físico por schema dos dados de negócio será **substituído** pela camada
+> `tenant_id`, com isolamento centralizado em manager/queryset e RLS de aplicação
+> recriada. Resolução de tenant **sem subdomínio** (via `TenantMembership` ativa).
+> Customização por empresa via config/feature-flags; schema físico separado só
+> como exceção dura. Plano completo em `backend/codex-task-01.md` ("Revisão de
+> Decisão Arquitetural" + "Plano da Re-arquitetura para Shared Schema", fases
+> R0–R10). O acompanhamento das fases `R` é feito na seção "Registros".
+
 ## Protocolo de atualização
 
 Para cada fase concluída, registrar:
@@ -23,14 +35,19 @@ Para cada fase concluída, registrar:
 | Fase 2: Desenho da Nova Arquitetura | Concluída inicialmente | Arquitetura documentada em `docs/multi-tenant-architecture.md`; pode evoluir após permissões e testes. |
 | Fase 3: Migração para PostgreSQL | Concluída com ressalvas | PostgreSQL local via Docker validado. Testes automatizados foram adiados por decisão do projeto até refazer contratos. |
 | Fase 4: Introdução do django-tenants | Concluída inicialmente | `django-tenants`, tenant demo e migrations shared/tenant validados. |
-| Fase 5: Classificação e Movimentação dos Apps | Parcial validada | `SHARED_APPS` e `TENANT_APPS` configurados; referências antigas a `Projeto.name` corrigidas; revisão fina de views/admin ainda pendente. |
+| Fase 5: Classificação e Movimentação dos Apps | Concluída | `SHARED_APPS`/`TENANT_APPS` configurados; revisão de imports shared↔tenant, views/querysets e admin concluída. Override de admin index do app shared `core` (que consultava models tenant e quebrava `/admin/` no public) removido; admin valida 200 em public e tenant. |
 | Fase 6: Membership, Permissões e Isolamento | Parcial validada | `TenantMembership`, roles, bloqueio `403`, remoção do bypass global por `User.role == ADMIN` e RLS de aplicação em querysets principais validados parcialmente. |
 | Fase 7: Refatoração de Autenticação | Concluída inicialmente | ADR `docs/adr-0001-auth-multitenant.md`. Djoser+JWT mantidos; provisionamento de owner por superuser e fluxo de convite implementados e validados (e2e 13/13). |
-| Fase 8: Migração de Dados Existentes | Não iniciada | Tenant destino e script de migração ainda pendentes. |
+| Fase 8: Migração de Dados Existentes | Concluída | Comando `migrate_legacy_data` (idempotente, com `--dry-run` e relatório de contagens), validado por e2e sintético (22/22) e executado contra o SQLite legado real (1 superusuário migrado para o `public`). Plano de rollback documentado. |
 | Fase 9: Testes | Não iniciada | Suite será refeita após contratos multi-tenant. |
 | Fase 10: Admin, Docs e Operação | Parcial | README e comando de criação de tenant adicionados; guia completo de operação ainda pendente. |
 | Fase 11: Observabilidade e Segurança | Não iniciada | Logs com tenant, auditoria e hardening pendentes. |
 | Fase 12: Frontend e Integração | Não iniciada | Integração por subdomínio ainda pendente. |
+| **R0: Registro da decisão (shared schema)** | Concluída | Pivô schema-per-tenant → shared + `tenant_id` registrado. |
+| **R1: Desativar `django-tenants` (banco único)** | Concluída | Banco único `public`; `check`/`migrate` verdes; `Domain`/schema removidos. **Isolamento desligado até R4.** |
+| **R2: `tenant_id` nos models de negócio** | Concluída | `tenant = FK(customers.Client, CASCADE)` NOT NULL nos 26 models dos 7 apps; `Projeto.titulo` reescopado por tenant; índices compostos `(tenant, …)`; 7 migrations; `check`/`migrate` verdes. **Isolamento ainda desligado até R4.** |
+| **R3: Resolução de tenant por membership** | Concluída | `request.tenant`/`tenant_id` resolvidos pela `TenantMembership` ativa (superuser via header `X-Tenant-ID`); `querysets`/`permissions`/`middleware`/`emails` sem `schema_name`/`.domains`; validado 9/9. **Filtro real por `tenant_id` ainda é R4.** |
+| **R4: Isolamento centralizado (manager/queryset) + RLS** | Concluída | `TenantManager` (contexto thread-local por request) filtra `tenant_id` em toda query `.objects` de runtime nos 26 models; `pre_save` carimba `tenant_id` no create; `apply_tenant_rls` aplica o limite duro de tenant na camada de viewset (queryset de classe não passa pelo manager) + RLS por papel preservada; middleware ativa/limpa o contexto (deny-by-default, bypass admin/superuser-global). e2e 16/16. **Isolamento restabelecido.** Rede de segurança no banco (RLS nativo) é a R7. |
 
 ## Registros
 
@@ -243,9 +260,9 @@ Data local: 2026-06-01
 
 Branch: `Dev-tenant`
 
-Status: parcial.
+Status: concluída.
 
-Resultado até agora:
+Resultado inicial (2026-06-01):
 
 - Apps compartilhados configurados em `SHARED_APPS`.
 - Apps de negócio configurados em `TENANT_APPS`.
@@ -266,11 +283,49 @@ Resultado:
 - `manage.py check` passou.
 - `makemigrations --check --dry-run` retornou sem mudanças pendentes.
 
-Pendências:
+Encerramento (2026-06-02): revisão fina concluída.
 
-- Revisar imports diretos entre apps tenant e shared.
-- Revisar views, filters e querysets que assumem banco único.
-- Validar admin dos apps tenant no schema correto.
+- **Imports shared ↔ tenant**: auditados todos os apps shared (`users`, `core`,
+  `customers`). O único acoplamento shared→tenant era em `core`
+  (`views.py`, `services.py`, `admin.py` importando `Projeto`/`Tarefa`/`Risco`/
+  `Custo`). Imports em si não tocam o banco; o que importa é o schema em runtime.
+  - `core/views.py` (dashboards): já tratado na Fase 6 (`apply_tenant_rls`) e os
+    endpoints estão sob prefixos tenant-scoped
+    (`/api/dashboard/`, `/api/user/dashboard/`, `/api/projects/.../metrics/`),
+    então no schema public o `PermissionMiddleware` devolve `403` antes da query.
+  - Apps tenant importando apps tenant (`tasks→projects`, `costs→projects/tasks`,
+    `documents`/`risks`/`communications→projects/tasks`): correto, todos no mesmo
+    escopo de schema.
+- **Admin** (entregável "admin sem erro de registro ou schema"): `core/admin.py`
+  sobrescrevia `admin.site.index` agregando métricas de `Projeto`/`Tarefa` a cada
+  carga do admin. Como `core` é app SHARED e `/admin/` não é tenant-scoped,
+  acessar pelo host público (schema public) quebrava a página inicial com
+  `ProgrammingError` (tabelas tenant inexistentes no public). Além disso, o
+  template do admin não renderizava nenhuma das variáveis de contexto produzidas
+  — era código morto. O override foi **removido**. As métricas de negócio
+  permanecem nos endpoints de dashboard tenant-scoped de `core/views.py`.
+  - Bug de queryset latente no mesmo override (`Tarefa.objects.filter(status='concluida')`,
+    valor inexistente nos choices — o correto é `FEITO`) eliminado junto.
+- **Registros de admin dos apps tenant**: `@admin.register(...)` é lazy (não
+  consulta o banco no import); os contadores em métodos de exibição
+  (`projects/admin.py`, `users/admin.py`) rodam por linha no schema da
+  requisição. Sem ajuste necessário.
+- **Signals/managers/`.using()`**: nenhum `signals.py`; o único `ready()`
+  (`users/apps.py`) só carrega OpenAPI e config de admin; nenhum manager custom
+  em apps tenant; nenhum `.using()`/`connections[...]` hardcoded em apps de
+  negócio (o único uso de `.using()` é intencional, no comando da Fase 8).
+
+Validação (2026-06-02):
+
+- `manage.py check`: sem issues.
+- `/admin/` com superusuário autenticado: **200** tanto em `localhost` (public)
+  quanto em `demo.localhost` (tenant); changelist de model tenant
+  (`/admin/projects/projeto/`) **200** no host do tenant.
+- Comportamento esperado documentado: dados de models tenant são administrados
+  pelo **domínio do tenant** (no host público as tabelas tenant não existem, como
+  é próprio do django-tenants).
+- Regressão: `scripts/e2e_cross_tenant.py` 9/9; `scripts/e2e_invitations.py` 13/13;
+  `scripts/e2e_migrate_legacy.py` 22/22.
 
 ### Fase 6: Membership, Permissões e Isolamento
 
@@ -572,3 +627,513 @@ Pendências/ressalvas:
 - Restrição/curadoria do cadastro público (`registro.vue`) é decisão de produto.
 - Integração de frontend (tela de gestão de convites, rota de aceite, baseURL
   por subdomínio) fica para a Fase 12, conforme plano de migração na ADR.
+
+### Fase 8: Migração de Dados Existentes
+
+Data local: 2026-06-02
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: fazer o *onboarding* do acervo single-tenant legado (SQLite) para o
+stack multi-tenant (identidade global no `public`; dados de negócio no schema de
+um tenant destino), com contagens antes/depois e plano de rollback.
+
+Diagnóstico do dado legado real (`backend/db.sqlite3`, idêntico ao backup
+baseline da Fase 0): **apenas 1 superusuário** (`caio.beniel55@gmail.com`) e
+tabelas auto-geradas do Django (`auth_permission`, `django_content_type`,
+`django_migrations`). **Nenhum dado de negócio** (0 projetos/tarefas/etc.). Isso
+confirma a nota da Fase 0 de que não havia dados de negócio a preservar.
+
+Entregáveis:
+
+- **Comando versionado** `customers/management/commands/migrate_legacy_data.py`:
+  - Registra o SQLite legado como conexão `legacy_source` em runtime
+    (`sqlite_connection_settings`).
+  - **Identidade global → `public`**: copia `users.User` com **dedup por e-mail**
+    (usuário já existente é reutilizado, não duplicado) e **preserva o hash de
+    senha** (sem re-hash). NÃO preserva PK de usuário — devolve um mapa
+    `{id_legado: id_novo}` usado para remapear todas as FKs de negócio.
+  - **Satélites do usuário** (`UserProfile`, `PasswordHistory`, `AccessAttempt`):
+    copiados sem preservar PK (o `public` é compartilhado e já populado),
+    remapeando a FK de usuário, com idempotência por usuário.
+  - **RBAC legado** (`AccessProfile`/`Permission`/`UserAccessProfile`): **não
+    migrado automaticamente** (configuração global semeada por
+    `create_access_profiles`; decisão "global vs por tenant" segue em aberto na
+    arquitetura). Reportado como pulado — **nunca dropado**.
+  - **Memberships**: cada usuário não-superusuário migrado ganha uma
+    `TenantMembership` ativa no tenant destino (mapa de papel legado → papel de
+    tenant: `ADMIN→admin`, `PROJECT_MANAGER/TEAM_LEADER→manager`,
+    `TEAM_MEMBER→member`, `STAKEHOLDER/AUDITOR→viewer`; `owner` é provisionado,
+    não migrado). Superusuário não recebe membership (bypass global). Respeita
+    "um usuário = uma empresa".
+  - **Dados de negócio → schema do tenant**: copiados em ordem de dependência de
+    FK, **preservando PK e timestamps** (`save_base(raw=True)`), remapeando FKs e
+    M2M de usuário. A dependência circular `projects.Projeto.custos → costs.Custo`
+    é resolvida com gravação diferida (projeto entra com `custos=NULL` e é
+    atualizado após os custos).
+  - **Idempotente**: linhas de negócio cujo PK já existe no destino são puladas;
+    re-rodar é no-op. Guarda contra colisão: aborta se o destino tiver linhas com
+    PK *fora* da origem legada (a menos de `--allow-nonempty`).
+  - **`--dry-run`**: roda em transação revertida e só reporta contagens.
+  - Tolerante a *drift* de schema do legado: tabela ausente na origem é pulada
+    com aviso, sem abortar.
+
+- **Relatório de contagens antes/depois** (execução real, `--users-only`):
+  - `public.users_user`: **16 → 17** (1 superusuário legado criado).
+  - Satélites/`RBAC`: 0 na origem (nada a migrar / pulado).
+  - Re-execução: `criados=0 reutilizados=1`, total estável em 17 (idempotência).
+  - Hash de senha do usuário migrado **idêntico** ao do SQLite; flags
+    `is_superuser/is_staff` e `role` preservados (login com a senha original).
+
+- **Validação do caminho de dados de negócio** (sintética, verificável):
+  `backend/scripts/e2e_migrate_legacy.py` constrói um SQLite legado temporário
+  (schema atual via `schema_editor`) com base representativa (2 usuários +
+  equipe/membro + projeto/sprint/tarefa + risco + categoria/custo + documento +
+  comunicação com M2M `destinatarios`), provisiona um tenant descartável, roda o
+  comando e verifica: dedup/criação de usuários e memberships por papel;
+  contagens por tabela == origem; **remapeamento de FK de usuário** (ex.:
+  `Tarefa.criado_por/atualizado_por`, `Comunicacao.destinatarios`); PKs de
+  negócio preservados; FK circular `Projeto.custos` restaurada; idempotência da
+  2ª execução. **22/22 asserções OK** (PostgreSQL real). Teardown completo.
+
+Comandos/validação:
+
+```bash
+./venv/bin/python manage.py check
+./venv/bin/python scripts/e2e_migrate_legacy.py              # 22/22
+./venv/bin/python manage.py migrate_legacy_data --users-only --dry-run
+./venv/bin/python manage.py migrate_legacy_data --users-only # 16 -> 17
+./venv/bin/python manage.py migrate_legacy_data --users-only # idempotente
+# Regressão:
+./venv/bin/python scripts/e2e_cross_tenant.py               # 9/9
+./venv/bin/python scripts/e2e_invitations.py                # 13/13
+```
+
+#### Plano de rollback (Fase 8)
+
+A migração é **transacional por execução** (em `--dry-run`, revertida ao final) e
+**idempotente**, então re-rodar é seguro. Para desfazer:
+
+- **Identidade global (public)**: remover os usuários recém-criados, listados ao
+  final do relatório ("Usuários criados no public"). Pré-requisito: nenhum dado
+  de negócio em schema de tenant deve referenciar esses usuários (drope os
+  schemas de tenant antes, ver abaixo), pois o cascade do ORM consultaria tabelas
+  tenant a partir do `public`. Com os schemas tenant já removidos, o delete
+  direto é seguro:
+
+  ```sql
+  DELETE FROM users_user WHERE email = ANY(ARRAY['caio.beniel55@gmail.com']);
+  ```
+
+  Satélites (`UserProfile`/`PasswordHistory`/`AccessAttempt`) caem por cascade.
+  As `TenantMembership` criadas caem junto com o usuário (ou com o tenant).
+
+- **Dados de negócio (tenant)**: como os dados entram em um schema dedicado,
+  basta dropar/recriar o tenant destino:
+
+  ```bash
+  ./venv/bin/python manage.py delete_tenant   # interativo, ou:
+  # no schema public: DROP SCHEMA <schema> CASCADE; + remover Client/Domain.
+  ```
+
+- **Restauração total do estado pré-migração**: o backup
+  `backend/backups/db.sqlite3.codex-task-01-baseline` (Fase 0) preserva o acervo
+  legado original; o ambiente PostgreSQL pode ser recriado do zero com
+  `migrate_schemas --shared` + `provision_tenant`/`create_dev_tenant` + `seed_data`.
+
+Pendências/ressalvas:
+
+- Migração de **arquivos de media** (`comprovante`, `arquivo` de documentos,
+  `anexo` de chat) não foi exercitada com binários reais porque o acervo legado
+  não possui registros de negócio nem arquivos; o comando copia os campos
+  `FileField` (caminho relativo) fielmente, mas o particionamento físico de
+  `MEDIA_ROOT` por tenant segue como item da Fase 11 (operação/segurança).
+- RBAC legado permanece fora do escopo automático por decisão de arquitetura
+  ainda aberta (ver `docs/multi-tenant-architecture.md`).
+
+### Fase R0: Registro da decisão (Re-arquitetura Shared Schema)
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: registrar formalmente a virada de **schema-per-tenant** para **shared
+schema + `tenant_id`**, antes de qualquer alteração de código, seguindo o fluxo do
+projeto (plano em `codex-task-01.md`, acompanhamento neste audit).
+
+Decisões fixadas:
+
+- **Estratégia:** único schema compartilhado; `tenant_id` em todos os dados de
+  negócio. Isolamento por **camada central de aplicação** (manager/queryset que
+  injeta o filtro) + RLS de aplicação recriada sobre `tenant_id`; PostgreSQL RLS
+  nativo como rede de segurança futura (Fase R7).
+- **`tenant_id` inteiro** (FK para `customers.Client`, mantendo PKs atuais) — para
+  reduzir o tamanho da migração; UUID reavaliável depois.
+- **Sem subdomínio:** o `tenant_id` da request vem da `TenantMembership` ativa do
+  usuário autenticado (evita dependência de DNS/wildcard/certificado por tenant).
+  Superuser informa o tenant explicitamente.
+- **Customização por empresa** via config/feature-flags por tenant; schema físico
+  separado só como exceção dura (contrato/lei).
+- `customers.Client` permanece como registro da empresa; `django-tenants`,
+  `Domain` e o middleware de schema serão removidos a partir da Fase R1.
+
+Motivação: evitar inflar o banco com muitos tenants padronizados (cada schema
+duplica ~30 tabelas + índices) e remover a dependência de subdomínio.
+
+Playbook de migração de dados (a ser seguido na R2/R6): adicionar coluna
+**nullable → backfill → `NOT NULL` + FK**; índices recriados começando por
+`tenant_id`; uniques reescopados por tenant; auditoria garante que nenhuma query
+escapa do manager central.
+
+Arquivos alterados nesta fase:
+
+- `backend/codex-task-01.md` (seção "Revisão de Decisão Arquitetural" + "Plano da
+  Re-arquitetura para Shared Schema", fases R0–R10).
+- `docs/backend-multitenant-audit.md` (banner de revisão + este registro).
+
+Próximo passo: Fase R1 (desativar `django-tenants`, consolidar em banco único).
+
+Pendências/ressalvas:
+
+- Fases 4–8 originais permanecem documentadas como histórico; serão parcialmente
+  revertidas/substituídas a partir da R1.
+- `migrate_legacy_data` precisa ser reavaliado para o novo alvo (R6).
+- `ONBOARDING.md` e `multi-tenant-architecture.md` ainda descrevem o modelo
+  schema-per-tenant; atualização planejada para a Fase R10.
+
+### Fase R1: Desativar `django-tenants` (banco único)
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: rodar num único schema PostgreSQL (`public`), sem `django-tenants`, com
+`manage.py check` e `migrate` verdes. **Isolamento intencionalmente desligado até
+a R4** (ver "Janela sem isolamento" em `docs/rearquitetura-shared-schema-plano.md`).
+
+Arquivos principais alterados:
+
+- `backend/planify/settings.py`: removidos `django_tenants` (de `SHARED_APPS`),
+  `TenantMainMiddleware`, engine `django_tenants.postgresql_backend` (→
+  `django.db.backends.postgresql`), `DATABASE_ROUTERS` (`TenantSyncRouter`),
+  `TENANT_MODEL`/`TENANT_DOMAIN_MODEL`/`SHOW_PUBLIC_IF_NO_TENANT_FOUND`.
+  `PUBLIC_SCHEMA_NAME = 'public'` **mantido** como constante (querysets/middleware
+  ainda a referenciam como ramo de bypass público — comportamento temporário até
+  R3/R4). `SHARED_APPS`/`TENANT_APPS` mantidos só como documentação; o
+  `INSTALLED_APPS` efetivo não depende mais da divisão.
+- `backend/customers/models.py`: `Client` deixou de herdar `TenantMixin`
+  (vira `models.Model`), removidos `auto_create_schema` e `schema_name`. Model
+  `Domain` removido. Import de `django_tenants.models` removido.
+- `backend/customers/admin.py`: removidos `DomainInline`, `DomainAdmin`, import de
+  `Domain` e `schema_name` de `list_display`/`search_fields`.
+- `backend/customers/migrations/0004_remove_client_schema_name_delete_domain.py`
+  (gerada): `RemoveField(client.schema_name)` + `DeleteModel(Domain)`.
+
+Comandos executados:
+
+```bash
+./venv/bin/python manage.py check                 # sem issues
+./venv/bin/python manage.py makemigrations customers
+# Recriar o banco de dev (tinha o schema de tenant `demo` do django-tenants):
+docker exec planify-postgres psql -U planify -d postgres -c "DROP DATABASE planify;"
+docker exec planify-postgres psql -U planify -d postgres -c "CREATE DATABASE planify OWNER planify;"
+./venv/bin/python manage.py migrate               # banco limpo, schema único
+```
+
+Resultado da validação (gate R1):
+
+- `manage.py check`: sem issues.
+- `migrate` aplicou todas as migrações no schema único `public` (incluindo os apps
+  de negócio `projects/tasks/teams/risks/costs/documents/communications`, que antes
+  ficavam no schema do tenant).
+- Antes da recriação o banco tinha os schemas `demo` + `public`; depois, apenas
+  `public`.
+- Tabelas confirmadas em `public`: `customers_client`,
+  `customers_tenantmembership`, `customers_tenantinvitation`, além de
+  `projects_projeto`, `tasks_tarefa`, `costs_custo` etc. `customers_domain` **não
+  existe** (0 ocorrências).
+- Admin (superuser via test client, `HTTP_HOST=localhost`): `GET /admin/` **200**;
+  `/admin/customers/client/`, `/admin/customers/tenantmembership/` e
+  `/admin/customers/tenantinvitation/` **200**; `/admin/customers/domain/` **404**
+  (model removido). `Domain` ausente do registro do admin.
+
+Pendências/ressalvas:
+
+- **Isolamento desligado (R1→R4):** sem `request.tenant`, `customers/querysets.py`
+  e `users/middleware.py` caem no ramo de bypass público (`PUBLIC_SCHEMA_NAME`) e
+  **liberam tudo**. Esperado e intencional; **não fazer deploy** antes da R4.
+- Comando operacional de migração passou a ser `python manage.py migrate` (não mais
+  `migrate_schemas --shared`). README/ONBOARDING serão atualizados na R10.
+- `pytest` fica **vermelho** até a R8 (`tests/tenant_base.py` importa
+  `TenantTestCase` no nível de módulo). Esperado e documentado.
+- Arquivos de runtime/scripts/commands ainda acoplados ao `django-tenants` serão
+  tratados nas fases indicadas: `seed_data.py` e `migrate_legacy_data` (R6);
+  `scripts/e2e_*.py` e `tests/tenant_base.py` (R8); `create_dev_tenant` e
+  `provision_tenant` (R9). Todos com imports lazy — não quebram o `check`.
+- Superuser de validação `r1admin` criado no banco de dev recriado (conveniência;
+  dados de exemplo serão re-semeados na R6).
+
+Próximo passo: Fase R2 (`tenant_id` nos models de negócio).
+
+### Fase R2: `tenant_id` nos models de negócio
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: toda tabela de negócio passa a ter `tenant_id` (FK inteiro para
+`customers.Client`), com índices compostos começando por `tenant` e o único
+`unique=True` global reescopado por tenant.
+
+Decisões fixadas nesta fase (com o usuário):
+
+- **`on_delete=CASCADE`** na FK `tenant` (não `PROTECT` como rascunhado no plano):
+  apagar um `Client` apaga em cascata os dados de negócio do tenant. Trava
+  server-side contra exclusão acidental fica para R5/R9 (offboarding dedicado);
+  guard de frontend sozinho não cobre admin/shell/API.
+- **Single-step `NOT NULL`** em vez do playbook nullable→backfill→NOT NULL: o
+  banco estava **vazio** (0 `Client`, 0 linhas de negócio — confirmado por
+  contagem), então não há linha para proteger nem backfill a fazer. O carimbo
+  real de `tenant_id` em dados legados acontece na R6 (no insert). Cada
+  `makemigrations` pediu um default one-off para a FK não-nula; informado `1`
+  (nunca aplicado, pois 0 linhas), com `preserve_default=False` na migração.
+- **Escopo: todos os 26 models** recebem `tenant_id` (denormalizado, inclusive
+  filhos como `ComentarioTarefa`/`HistoricoRisco` e os user-scoped `Notificacao`/
+  `ConfiguracaoNotificacao`). É o que o manager central da R4 precisa para
+  filtrar qualquer model direto por `tenant_id` sem JOIN.
+- **Uniques**: só `Projeto.titulo` (único `unique=True` global) foi reescopado
+  para `UniqueConstraint(['tenant','titulo'], name='uniq_projeto_titulo_por_tenant')`.
+  Os demais `unique_together`/`UniqueConstraint` referenciam uma FK pai que já
+  carrega o tenant (`MembroProjeto`, `Sprint`, `AtribuicaoTarefa`, `MembroEquipe`,
+  `PermissaoEquipe`, `ChatMensagemLeitura`) → não colidem cross-tenant; mantidos
+  como estão. Ressalva conhecida: `Sprint.unique_together(projeto,nome)` tem
+  `projeto` nullable; o caso de sprint órfã (sem projeto) não tem uniqueness
+  garantida por tenant — revisar se virar requisito.
+
+Models tocados (26): `projects` (Projeto, MembroProjeto, HistoricoStatusProjeto,
+Sprint), `tasks` (Tarefa, AtribuicaoTarefa, ComentarioTarefa,
+HistoricoStatusTarefa), `teams` (Equipe, MembroEquipe, PermissaoEquipe), `risks`
+(Risco, HistoricoRisco), `costs` (Categoria, Custo, OrcamentoProjeto,
+OrcamentoTarefa, Alerta), `documents` (Documento, HistoricoDocumento,
+Comentario), `communications` (ChatMensagem, ChatMensagemLeitura, Notificacao,
+ConfiguracaoNotificacao, Comunicacao).
+
+Índices compostos `Index(fields=['tenant', <ordering>])` adicionados em todo
+model com `Meta.ordering`; models sem ordering ficam com o índice implícito da
+FK em `tenant_id`. Campo `tenant` declarado com `related_name='+'` (sem reverse
+accessor em `Client`).
+
+Migrations geradas (uma por app):
+
+- `communications/0004_chatmensagem_tenant_chatmensagemleitura_tenant_and_more.py`
+- `costs/0003_alerta_tenant_categoria_tenant_custo_tenant_and_more.py`
+- `documents/0002_comentario_tenant_documento_tenant_and_more.py`
+- `projects/0003_historicostatusprojeto_tenant_membroprojeto_tenant_and_more.py`
+- `risks/0002_historicorisco_tenant_risco_tenant_and_more.py`
+- `tasks/0003_atribuicaotarefa_tenant_comentariotarefa_tenant_and_more.py`
+- `teams/0002_equipe_tenant_membroequipe_tenant_and_more.py`
+
+Comandos executados:
+
+```bash
+docker exec planify-postgres psql -U planify -d planify -c "<contagem: 0 linhas>"
+printf '1\n1\n%.0s' $(seq 40) | ./venv/bin/python manage.py makemigrations \
+  projects tasks teams risks costs documents communications
+./venv/bin/python manage.py check          # sem issues
+./venv/bin/python manage.py migrate         # 7 migrations OK
+```
+
+Validação (gate R2):
+
+- `manage.py check`: sem issues. `migrate`: as 7 migrações aplicaram em banco limpo.
+- Schema conferido: 28 colunas `tenant_id` NOT NULL (`bigint`) — 26 de negócio +
+  `tenantmembership`/`tenantinvitation` pré-existentes; 28 FKs apontando para
+  `customers_client`.
+- `projects_projeto`: índice `(tenant_id, criado_em DESC)`, índice da FK
+  `(tenant_id)`, e `uniq_projeto_titulo_por_tenant UNIQUE (tenant_id, titulo)`;
+  o `unique` global em `titulo` deixou de existir.
+
+Pendências/ressalvas:
+
+- **Isolamento ainda desligado (R1→R4):** a coluna existe mas nenhum filtro a usa
+  ainda. Isolamento só volta na R4 (manager/queryset central). **Não fazer deploy.**
+- Validação funcional "título repetido entre tenants distintos" não foi exercida
+  (0 tenants/dados); está garantida estruturalmente pela constraint
+  `(tenant_id, titulo)` e será coberta no e2e da R8 (dois tenants).
+- `Sprint` órfã (projeto nullable): uniqueness por tenant não garantida — ver acima.
+- Serializers/views/admin ainda não setam nem expõem `tenant`; ajuste no create e
+  no manager é da R3/R4. `pytest` segue vermelho até R8.
+
+Próximo passo: Fase R3 (resolução de tenant por `TenantMembership` ativa, sem subdomínio).
+
+### Fase R3: Resolução de tenant por membership (sem subdomínio)
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: definir o tenant da request sem host/subdomínio. Com o `django-tenants`
+removido na R1, `request.tenant` deixou de ser setado (caía no bypass público).
+Agora vem da `TenantMembership` **ativa** do usuário autenticado.
+
+Arquivos principais alterados:
+
+- `customers/tenancy.py` (novo): `resolve_request_tenant(request)` → `(Client, membership)`.
+  Usuário normal: tenant da membership ativa; superuser: tenant explícito via header
+  `X-Tenant-ID` (ou query `?tenant=`); anônimo: `(None, None)`.
+- `users/middleware.py`: `PermissionMiddleware._set_request_tenant` seta
+  `request.tenant`/`request.tenant_id`/`request._tenant_membership` logo após a auth
+  (antes do bypass de superuser). `check_tenant_membership` reescrito: removido o
+  ramo de bypass por `schema_name == PUBLIC`; para prefixos protegidos, sem vínculo
+  ativo → 403.
+- `customers/querysets.py`: `get_request_membership` usa o cache
+  `request._tenant_membership`; `apply_tenant_rls`/`tenant_users_queryset` trocaram
+  `schema_name == PUBLIC` por `request.tenant is None` → **`none()`** (inverte o
+  bypass perigoso da janela R1→R3 para negação por padrão). Removido o import de
+  `settings`.
+- `customers/permissions.py`: removido `_is_public_schema`; `IsTenantMember`/
+  `HasTenantRole` agora liberam só superuser, senão exigem membership ativa.
+- `customers/emails.py` + `customers/views.py`: URL de aceite de convite montada por
+  `FRONTEND_URL` + `TENANT_INVITATION_ACCEPT_PATH` (token), sem `tenant.domains`
+  (removido na R1) nem `schema_name` (corrige `AttributeError` latente); resposta do
+  aceite não devolve mais `domain`.
+- `planify/settings.py`: `FRONTEND_URL` (default `http://localhost:5173`);
+  `PUBLIC_SCHEMA_NAME` mantido só como referência vestigial (sem uso no código).
+
+Validação (gate R3): script ad-hoc descartável via `django.test.Client` (middleware
+real + JWT), banco de dev. **9/9 OK**:
+
+- `resolve_request_tenant`: usuário com membership → seu `Client`; sem membership →
+  `None`; superuser sem header → `None`; superuser com `X-Tenant-ID` válido → tenant
+  alvo; com id inexistente → `None`.
+- E2E middleware em `/api/projects/`: membro (owner) → `200`; usuário sem membership
+  → `403`; superuser (bypass) → `200`; anônimo (sem token) → `401`.
+- `manage.py check`: sem issues.
+
+Pendências/ressalvas:
+
+- **Filtro real por `tenant_id` ainda é R4.** Hoje um usuário com papel amplo
+  (owner/admin/manager/viewer) passa o gate e o `apply_tenant_rls` devolve o
+  queryset **inteiro** (todos os tenants) — o `WHERE tenant_id = X` central entra na
+  R4. Sem deploy até lá.
+- Viewsets de negócio ainda não setam `tenant` no `perform_create` (R4). Criar
+  recurso de negócio via API ainda falharia (FK `tenant` NOT NULL) — coberto na R4/R8.
+- `TENANT_INVITATION_URL_SCHEME` ficou sem uso (era para subdomínio); mantido por ora.
+- Management commands (`create_dev_tenant`, `provision_tenant`, `migrate_legacy_data`)
+  e `seed_data.py` ainda usam `schema_name`/`Domain` — R6/R9. `pytest` vermelho até R8.
+
+Próximo passo: Fase R4 (isolamento centralizado em manager/queryset + RLS sobre `tenant_id`).
+
+### Fase R4: Isolamento centralizado (manager/queryset) + RLS
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída. **Marco: isolamento por `tenant_id` restabelecido.**
+
+Objetivo: garantir que **nenhuma** query de negócio escape do filtro por
+`tenant_id`, de forma central — em vez de depender de cada call site lembrar de
+filtrar. A auditoria (varredura dos 7 apps + `core`) encontrou **~90 chamadas
+`.objects` diretas** fora dos viewsets (serializers, dashboards, exports, métodos
+de model, admin) que não passavam por nenhum filtro de tenant.
+
+Decisão de arquitetura (com o usuário): **híbrido em duas camadas**, mantendo
+`tenant_id` **inteiro** (não UUID):
+
+- **`TenantManager` (manager default dos 26 models) = limite duro automático.**
+  Em runtime, dentro de uma request, toda query `Model.objects...` ganha
+  `WHERE tenant_id = <atual>` sem intervenção do call site. É o que fecha os ~90
+  escapes (validação de unicidade de serializer, dashboards, exports, etc.).
+- **RLS por papel preservada por cima** (`apply_member_rls`): `member` continua
+  vendo só os recursos ligados a ele (autoria/atribuição/membership). É
+  autorização de leitura intra-tenant, não isolamento físico.
+
+O RLS **nativo do PostgreSQL** (a garantia no banco, independente da app) é a
+**Fase R7**, decidida para vir logo em seguida como rede de segurança.
+
+Arquivos principais alterados/criados:
+
+- `customers/context.py` (novo): contexto de tenant por thread
+  (`activate`/`deactivate`/`is_active`/`get_tenant_id`/`is_bypass` + context
+  manager `scope()` para scripts/testes/R6). Estados: inativo (fora de request →
+  sem filtro), ativo+bypass (superuser global/`/admin/` → sem filtro), ativo com
+  `tenant_id` (filtra), ativo sem tenant e sem bypass (deny → `none()`).
+- `customers/managers.py` (novo): `TenantManager.get_queryset` consulta o contexto
+  e aplica `filter(tenant_id=...)`/`none()`. `use_in_migrations=False` (não gera
+  migration). O `_base_manager` do Django permanece um `Manager` simples
+  não-filtrado, preservando cascade de delete, validação de forms e resolução de
+  FKs internas.
+- `customers/scoping.py` (novo): `pre_save` que carimba `tenant_id` a partir do
+  contexto quando ausente (cobre `serializer.save()`, `perform_create`,
+  `.objects.create()`, admin e shell em `scope()`); registry dos 26 models.
+  Conectado em `customers/apps.py::CustomersConfig.ready()`.
+- Os 7 `models.py` (`projects`/`tasks`/`teams`/`risks`/`costs`/`documents`/
+  `communications`): `objects = TenantManager()` nos **26 models** de negócio.
+- `customers/querysets.py`: `apply_tenant_rls` passou a aplicar o filtro de tenant
+  **explicitamente** (`_scope_to_tenant`) antes do narrowing por papel — porque o
+  viewset usa `queryset = Model.objects.all()` de nível de classe, avaliado no
+  import (sem contexto) e apenas clonado pelo DRF por request; o manager não
+  re-filtra esse caminho. Superuser sem tenant → global; com `X-Tenant-ID` → escopa.
+- `users/middleware.py`: `PermissionMiddleware` ativa o contexto (deny-by-default)
+  no início da request, escopa após resolver o tenant (bypass para `/admin/` e
+  superuser-global), e **limpa** em `process_response`/`process_exception` (evita
+  vazamento entre requests por reuso de thread).
+
+Limitação conhecida (endereçada pela R7): `queryset=` de **campo de serializer**
+(`PrimaryKeyRelatedField`) declarado no nível de classe também é avaliado no
+import; um pk cross-tenant poderia validar como FK. O `WITH CHECK` das policies
+nativas da R7 é o backstop definitivo para escrita cross-tenant. Os caminhos de
+leitura/listagem/detalhe e de create estão cobertos pela R4.
+
+Comandos/validação:
+
+```bash
+./venv/bin/python manage.py check                      # sem issues
+./venv/bin/python manage.py makemigrations --check --dry-run  # No changes detected
+./venv/bin/python scripts/e2e_r4_tenant_isolation.py   # 16/16
+```
+
+`scripts/e2e_r4_tenant_isolation.py` (novo, descartável até a R8): dois tenants no
+mesmo schema com **dados homônimos** (mesmo título em tenants distintos), exercendo
+o stack HTTP real (middleware + JWT + manager + `apply_tenant_rls`) via
+`django.test.Client`. **16/16 asserções OK**:
+
+- alice (owner alpha) só vê projetos de alpha; detalhe de projeto de beta → 404.
+- bob (owner beta) só vê beta.
+- mallory (`member` alpha) só vê o projeto em que é membro (RLS de papel sobre o
+  limite de tenant); não vê outro projeto de alpha nem nada de beta.
+- root (superuser) sem header vê todos os tenants; com `X-Tenant-ID=alpha`/`beta`
+  vê só o tenant indicado.
+- alice cria projeto com título que **só existe em beta** → `201` (unicidade
+  escopada pelo manager) e o projeto + o `MembroProjeto` auto-criado nascem
+  carimbados com `tenant=alpha`.
+- carimbo fora de HTTP via `context.scope(beta)` → `tenant=beta`.
+- "filtro esquecido": `Projeto.objects.filter(titulo=...)` dentro de `scope(alpha)`
+  conta só o de alpha.
+
+Pendências/ressalvas:
+
+- **`pytest` segue vermelho até a R8** (`tests/tenant_base.py` importa
+  `TenantTestCase` no nível de módulo). Esperado e documentado. A suíte e os
+  `scripts/e2e_*.py` antigos (django-tenants) serão reescritos na R8.
+- Limitação dos `queryset=` de serializer no nível de classe (acima) → R7.
+- `admin` opera em modo global (bypass) para staff/superuser, como antes; RLS por
+  tenant no admin não é objetivo da R4.
+- Sem deploy até a R7 fechar a rede de segurança no banco (recomendado), embora a
+  R4 já restabeleça o isolamento na aplicação.
+
+Próximo passo: Fase R7 (RLS nativo do PostgreSQL: `ENABLE`+`FORCE ROW LEVEL
+SECURITY`, policies SELECT/INSERT/UPDATE/DELETE sobre `tenant_id`,
+`SET LOCAL app.current_tenant` por transação, role `app_user` sem bypass + role de
+migration com `BYPASSRLS`).

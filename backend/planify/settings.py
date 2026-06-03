@@ -28,7 +28,14 @@ ALLOWED_HOSTS = os.environ.get(
 ).split(',')
 
 # Application definition
+#
+# Re-arquitetura R1 (2026-06-03): o isolamento por schema (django-tenants) foi
+# removido. Agora há um único schema PostgreSQL (`public`) e o isolamento passa a
+# ser por `tenant_id` (fases R2–R4). As listas SHARED_APPS/TENANT_APPS são
+# mantidas apenas como documentação da origem de cada app; o INSTALLED_APPS
+# efetivo não depende mais dessa divisão.
 
+# Apps compartilhados/de plataforma (identidade global, tenants, infra, terceiros).
 SHARED_APPS = [
     'customers',
     'django.contrib.admin',
@@ -53,11 +60,8 @@ SHARED_APPS = [
     'core',
 ]
 
-if not USE_SQLITE:
-    SHARED_APPS.insert(0, 'django_tenants')
-
+# Apps de negócio (escopados por `tenant_id` a partir da fase R2).
 TENANT_APPS = [
-    'django.contrib.contenttypes',
     'projects',
     'tasks',
     'teams',
@@ -87,9 +91,6 @@ MIDDLEWARE = [
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
 ]
-
-if not USE_SQLITE:
-    MIDDLEWARE.insert(0, 'django_tenants.middleware.main.TenantMainMiddleware')
 
 # Arquivo raiz de URLs do projeto
 ROOT_URLCONF = 'planify.urls'
@@ -124,7 +125,7 @@ if USE_SQLITE:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django_tenants.postgresql_backend',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('POSTGRES_DB', 'planify'),
             'USER': os.environ.get('POSTGRES_USER', 'planify'),
             'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'planify'),
@@ -133,17 +134,16 @@ else:
         }
     }
 
-DATABASE_ROUTERS = () if USE_SQLITE else (
-    'django_tenants.routers.TenantSyncRouter',
-)
+# Re-arquitetura R1: banco único, sem router de schema (django-tenants removido).
 
-TENANT_MODEL = 'customers.Client'
-TENANT_DOMAIN_MODEL = 'customers.Domain'
+# Nome do schema único do PostgreSQL. Vestigial a partir da R3: o código de
+# isolamento deixou de depender de `schema_name`/`PUBLIC_SCHEMA_NAME` (o tenant da
+# request é resolvido pela TenantMembership ativa). Mantido apenas como referência.
 PUBLIC_SCHEMA_NAME = 'public'
-SHOW_PUBLIC_IF_NO_TENANT_FOUND = os.environ.get(
-    'SHOW_PUBLIC_IF_NO_TENANT_FOUND',
-    'True' if DEBUG else 'False',
-).lower() in ('1', 'true', 'yes')
+
+# Domínio único do frontend (sem subdomínio por tenant a partir da R3). Usado para
+# montar a URL de aceite de convites; o tenant é resolvido pelo token, não pelo host.
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES = (
     '/api/projects/',

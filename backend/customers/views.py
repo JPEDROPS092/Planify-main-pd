@@ -138,16 +138,14 @@ class InvitationAcceptView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        domain = invitation.tenant.domains.filter(is_primary=True).first()
         logger.info(
             'Convite aceito: email=%s tenant=%s role=%s user_id=%s',
-            invitation.email, invitation.tenant.schema_name, invitation.role, user.pk,
+            invitation.email, invitation.tenant.name, invitation.role, user.pk,
         )
         return Response(
             {
                 'detail': 'Convite aceito com sucesso.',
                 'tenant': invitation.tenant.name,
-                'domain': domain.domain if domain else None,
                 'username': user.username,
                 'created_account': existing_user is None,
             },

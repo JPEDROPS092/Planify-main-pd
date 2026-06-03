@@ -34,12 +34,20 @@ class PermissionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Obter o caminho da requisição
         path = request.path_info
-        
+
+        # R4: ativa o contexto de tenant da thread, deny-by-default. O TenantManager
+        # consulta este contexto para filtrar toda query .objects de runtime. O
+        # contexto é desativado em process_response/process_exception.
+        from customers import context
+        context.activate(tenant_id=None, bypass=False)
+
         # Verificar se é um caminho administrativo do Django
         if path.startswith('/admin/'):
-            # Deixa o sistema de autenticação do admin do Django lidar com isso
+            # Admin é ferramenta de staff/superuser: opera global (sem escopo de
+            # tenant). Deixa o sistema de autenticação do admin do Django seguir.
+            context.activate(tenant_id=None, bypass=True)
             return None
-        
+
         # Verificar se é um caminho público
         for pattern in PUBLIC_PATHS:
             if re.match(pattern, path):
@@ -73,7 +81,11 @@ class PermissionMiddleware(MiddlewareMixin):
         user = request.user
         if not user.is_authenticated:
             return JsonResponse({"detail": "Autenticação necessária"}, status=401)
-        
+
+        # R3: resolver o tenant da request a partir da TenantMembership ativa
+        # (superuser informa o tenant explicitamente via header X-Tenant-ID).
+        self._set_request_tenant(request)
+
         if user.is_superuser:
             return None
         
@@ -121,20 +133,50 @@ class PermissionMiddleware(MiddlewareMixin):
         
         return None
 
+    def process_response(self, request, response):
+        # R4: limpa o contexto de tenant da thread ao fim da request (evita que uma
+        # thread reaproveitada carregue o tenant de uma request anterior).
+        from customers import context
+        context.deactivate()
+        return response
+
+    def process_exception(self, request, exception):
+        from customers import context
+        context.deactivate()
+        return None
+
+    def _set_request_tenant(self, request):
+        """Resolve e fixa o tenant da request (R3).
+
+        Seta ``request.tenant`` (o ``Client`` ou ``None``), ``request.tenant_id``
+        e ``request._tenant_membership`` (cache para o RLS/permissões). Atualiza
+        também o contexto de tenant da thread (R4) que dirige o ``TenantManager``.
+        """
+        from customers import context
+        from customers.tenancy import resolve_request_tenant
+
+        tenant, membership = resolve_request_tenant(request)
+        request.tenant = tenant
+        request.tenant_id = tenant.id if tenant is not None else None
+        request._tenant_membership = membership
+
+        if request.user.is_superuser and tenant is None:
+            # Superuser sem tenant explícito: opera global (bypass do filtro).
+            context.activate(tenant_id=None, bypass=True)
+        else:
+            # Usuário normal (ou superuser com X-Tenant-ID): escopa ao tenant.
+            # Sem tenant resolvido, tenant_id=None → manager devolve none().
+            context.activate(tenant_id=request.tenant_id, bypass=False)
+
     def check_tenant_membership(self, request):
-        tenant = getattr(request, 'tenant', None)
-        schema_name = getattr(tenant, 'schema_name', settings.PUBLIC_SCHEMA_NAME)
-
-        if schema_name == settings.PUBLIC_SCHEMA_NAME:
-            return None
-
+        # Chamado apenas para usuários não-superuser (superuser já retornou acima).
         protected_prefixes = getattr(settings, 'TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES', ())
         if not request.path_info.startswith(protected_prefixes):
             return None
 
-        # Mesma resolução de vínculo usada pela permissão DRF IsTenantMember
-        # e pelo RLS (customers.querysets.get_request_membership), mantendo
-        # uma única fonte de verdade para "vínculo ativo em (user, tenant)".
+        # Fonte única de verdade do vínculo "(user, tenant) ativo", compartilhada
+        # com a permissão DRF IsTenantMember e o RLS (usa request._tenant_membership
+        # já resolvido em _set_request_tenant). Sem tenant resolvido → sem vínculo.
         from customers.querysets import get_request_membership
 
         membership = get_request_membership(request)

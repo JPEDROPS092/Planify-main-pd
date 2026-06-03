@@ -1,33 +1,20 @@
 from django.contrib import admin
 
-from .models import Client, Domain, TenantInvitation, TenantMembership
-
-
-class DomainInline(admin.TabularInline):
-    model = Domain
-    extra = 1
+from .models import Client, TenantInvitation, TenantMembership
 
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'schema_name', 'on_trial', 'paid_until', 'created_on']
+    list_display = ['name', 'on_trial', 'paid_until', 'created_on']
     list_filter = ['on_trial', 'created_on']
-    search_fields = ['name', 'schema_name']
-    inlines = [DomainInline]
-
-
-@admin.register(Domain)
-class DomainAdmin(admin.ModelAdmin):
-    list_display = ['domain', 'tenant', 'is_primary']
-    list_filter = ['is_primary']
-    search_fields = ['domain', 'tenant__name', 'tenant__schema_name']
+    search_fields = ['name']
 
 
 @admin.register(TenantMembership)
 class TenantMembershipAdmin(admin.ModelAdmin):
     list_display = ['user', 'tenant', 'role', 'is_active', 'created_at']
     list_filter = ['role', 'is_active', 'tenant']
-    search_fields = ['user__username', 'user__email', 'tenant__name', 'tenant__schema_name']
+    search_fields = ['user__username', 'user__email', 'tenant__name']
     autocomplete_fields = ['user', 'tenant']
 
 
@@ -35,6 +22,6 @@ class TenantMembershipAdmin(admin.ModelAdmin):
 class TenantInvitationAdmin(admin.ModelAdmin):
     list_display = ['email', 'tenant', 'role', 'status', 'invited_by', 'created_at', 'expires_at']
     list_filter = ['status', 'role', 'tenant']
-    search_fields = ['email', 'tenant__name', 'tenant__schema_name']
+    search_fields = ['email', 'tenant__name']
     autocomplete_fields = ['tenant', 'invited_by', 'accepted_user']
     readonly_fields = ['token', 'status', 'accepted_user', 'accepted_at', 'created_at', 'updated_at']

@@ -4,15 +4,20 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django_tenants.models import DomainMixin, TenantMixin
 
 
-class Client(TenantMixin):
+class Client(models.Model):
+    """Registro de uma empresa (tenant).
+
+    Re-arquitetura R1 (2026-06-03): deixou de herdar ``TenantMixin`` do
+    django-tenants. Não há mais schema por tenant; o isolamento dos dados de
+    negócio passa a ser por ``tenant_id`` (FK para este model) a partir da R2.
+    """
+
     name = models.CharField(max_length=100)
     paid_until = models.DateField(null=True, blank=True)
     on_trial = models.BooleanField(default=True)
     created_on = models.DateField(auto_now_add=True)
-    auto_create_schema = True
 
     class Meta:
         verbose_name = 'Cliente'
@@ -21,15 +26,6 @@ class Client(TenantMixin):
 
     def __str__(self):
         return self.name
-
-
-class Domain(DomainMixin):
-    class Meta:
-        verbose_name = 'Domínio'
-        verbose_name_plural = 'Domínios'
-
-    def __str__(self):
-        return self.domain
 
 
 class TenantMembership(models.Model):

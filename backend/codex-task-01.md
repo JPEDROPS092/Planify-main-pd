@@ -45,6 +45,56 @@ Os dados estão no mesmo banco/schema sem fronteira formal de tenant/empresa, au
 - Autenticação atual mantida na primeira fase para reduzir risco.
 - Avaliação posterior de `django-allauth` e `django-tenant-users`.
 
+## Revisão de Decisão Arquitetural (2026-06-03) — Shared Schema + `tenant_id`
+
+> Esta seção **supersede** a "Decisão Arquitetural" original (schema-per-tenant via
+> `django-tenants`) para os dados de negócio. O histórico das Fases 0–8 fica
+> preservado como registro do caminho percorrido; a partir daqui o alvo é
+> **um único schema compartilhado com coluna `tenant_id`**. O acompanhamento da
+> execução é feito pelas fases `R0–R10` (ver "Plano da Re-arquitetura" abaixo) e
+> registrado em `docs/backend-multitenant-audit.md`.
+
+**Decisão:** abandonar o isolamento por schema (`django-tenants`) e adotar um
+**único schema compartilhado com `tenant_id` em todos os dados de negócio**, com
+isolamento garantido por uma **camada central de aplicação** (manager/queryset que
+injeta o filtro por `tenant_id` + RLS de aplicação recriada sobre essa coluna), e
+PostgreSQL RLS nativo como rede de segurança futura.
+
+**Motivação:**
+
+- **Volume de tenants padronizados.** O produto é um SaaS onde muitas empresas
+  usam o mesmo serviço, da mesma forma. Schema-per-tenant infla o banco (cada
+  empresa duplica ~30 tabelas + índices + sequences; com milhares de empresas o
+  catálogo do PostgreSQL explode e as migrations rodam uma vez por schema).
+  Shared schema escala melhor nesse eixo.
+- **Menos dependência de infra externa.** Resolver o tenant por subdomínio exige
+  DNS/wildcard/certificado por tenant. Resolver por `tenant_id` (derivado da
+  `TenantMembership` ativa do usuário autenticado) remove essa dependência.
+- **Customização por tenant não exige schema separado.** Regras de negócio
+  diferentes por empresa são resolvidas com **config/feature-flags por tenant**
+  (settings ligados ao `Client`). Schema físico separado fica como **exceção
+  rara**, só sob exigência dura (contrato/lei de separação física dos dados).
+
+**Decisões técnicas fixadas:**
+
+- **`tenant_id` é FK inteiro** para `customers.Client` (mantém os PKs inteiros
+  atuais). Escolha deliberada para **reduzir o tamanho da migração** (sem troca de
+  PK para UUID). A não-enumerabilidade (UUID) pode ser reavaliada depois, se o id
+  de tenant passar a vazar em URL/API.
+- **`customers.Client` permanece como registro da empresa (tenant)**;
+  `customers.Domain` deixa de ser necessário (sem resolução por host).
+- `django-tenants`, `TenantMainMiddleware`, `SHARED_APPS`/`TENANT_APPS` e o router
+  de schema são **removidos**; tudo passa a viver num único schema (`public`).
+- `TenantMembership` continua sendo a fonte do vínculo usuário↔empresa e do papel;
+  o `tenant_id` da request vem da membership **ativa** do usuário (sem subdomínio).
+  Superuser informa o tenant explicitamente (header/param) para operação global.
+- A "RLS de aplicação" (`apply_tenant_rls`/`apply_member_rls`) é **recriada** sobre
+  `tenant_id` (hoje ela assume o isolamento físico por schema).
+- O isolamento é **centralizado num manager/queryset default**; "auditar as
+  queries" significa garantir que nenhuma query escape desse filtro
+  (`.objects` cru, `raw()`, agregações soltas) — **não** espalhar `WHERE
+  tenant_id = ?` manualmente (caminho que vaza ao esquecer um ponto).
+
 ## Resultado Esperado
 
 - Cada empresa terá seu próprio schema no PostgreSQL.
@@ -333,3 +383,92 @@ Os dados estão no mesmo banco/schema sem fronteira formal de tenant/empresa, au
 ## Recomendação Final
 
 Não iniciar pela troca para `django-allauth`. Primeiro estabilizar PostgreSQL e `django-tenants` com a autenticação atual. Depois, com isolamento por tenant validado, executar a refatoração de auth como uma segunda frente controlada.
+
+## Plano da Re-arquitetura para Shared Schema (a partir de 2026-06-03)
+
+> **Plano de execução detalhado (passo a passo, arquivos, validação, riscos) em
+> `docs/rearquitetura-shared-schema-plano.md`.** Esta seção é o checklist resumido.
+
+Numeração `R` para distinguir das fases originais (schema-per-tenant). Cada fase
+segue o mesmo protocolo: executar → validar → registrar no
+`docs/backend-multitenant-audit.md`. O *playbook* de migração de dados segue a
+ordem segura: **adicionar coluna nullable → backfill → só então `NOT NULL` + FK**.
+
+### Fase R0 — Registro da decisão
+
+- [x] Documentar o pivô em `codex-task-01.md` (seção "Revisão de Decisão
+      Arquitetural") e em `docs/backend-multitenant-audit.md`.
+- [x] Fixar decisões: `tenant_id` inteiro, manager central, sem subdomínio,
+      customização por config/feature-flags.
+
+### Fase R1 — Desativar `django-tenants` (banco único) ✅
+
+- [x] Remover `django_tenants` de `INSTALLED/SHARED/TENANT_APPS`,
+      `TenantMainMiddleware`, `TENANT_MODEL`/`TENANT_DOMAIN_MODEL`, `DATABASE_ROUTERS`.
+- [x] Consolidar tudo num único schema (`public`).
+- [x] `Client` deixa de herdar `TenantMixin`/`auto_create_schema`; vira registro
+      puro da empresa. `Domain` **removido**.
+- [x] Critério: `manage.py check` + `migrate` em banco limpo. Validado e
+      registrado em `docs/backend-multitenant-audit.md` (Fase R1).
+
+### Fase R2 — `tenant_id` nos models de negócio (passos 1, 2, 3, 4 do playbook) ✅
+
+- [x] **(passo 1)** `Client` como tabela raiz de tenant (já existe; reusado).
+- [x] **(passo 2)** `tenant = FK(customers.Client, CASCADE)` em todos os 26 models
+      de `projects/tasks/teams/risks/costs/documents/communications`. Banco vazio
+      → **single-step `NOT NULL`** (sem nullable→backfill; backfill real fica na R6).
+      Decisão: `on_delete=CASCADE` (apaga dados do tenant junto com o `Client`).
+- [x] **(passo 3)** Índices compostos `Index(['tenant', <ordering>])` em todo model
+      com `Meta.ordering`.
+- [x] **(passo 4)** `Projeto.titulo` (único `unique=True` global) →
+      `UniqueConstraint(['tenant','titulo'])`. Demais uniques já são tenant-safe via
+      FK pai; mantidos. Registrado em `docs/backend-multitenant-audit.md` (Fase R2).
+
+### Fase R3 — Resolução de tenant por membership (sem subdomínio) ✅
+
+- [x] `customers/tenancy.resolve_request_tenant` + `PermissionMiddleware._set_request_tenant`
+      definem `request.tenant`/`tenant_id`/`_tenant_membership` a partir da
+      `TenantMembership` ativa do usuário autenticado.
+- [x] Superuser: tenant explícito via header `X-Tenant-ID` (ou query `?tenant=`).
+- [x] `querysets.py`/`permissions.py`/`middleware.py` deixaram de depender de
+      `schema_name`/`PUBLIC_SCHEMA_NAME`; sem tenant resolvido → `none()`/403.
+- [x] `emails.py`/`views.py`: URL de convite por `FRONTEND_URL` + token (sem
+      `.domains`/subdomínio). Validado 9/9. Registrado no audit (Fase R3).
+
+### Fase R4 — Isolamento centralizado (manager/queryset) + RLS (passo 5 do playbook)
+
+- [ ] Manager/QuerySet default que filtra por `tenant_id` da request
+      automaticamente; mixin de viewset; set automático de `tenant_id` no create.
+- [ ] Recriar `apply_tenant_rls`/`apply_member_rls` sobre `tenant_id`.
+- [ ] **(passo 5)** Auditar e eliminar queries que escapam do manager
+      (`.objects` cru, `raw()`, agregações soltas).
+
+### Fase R5 — Customização por tenant
+
+- [ ] Model `TenantSettings`/campos no `Client` para config/feature-flags por
+      empresa. Schema físico separado só como exceção documentada.
+
+### Fase R6 — Migração de dados (schemas → shared)
+
+- [ ] Trazer dados dos schemas existentes (`demo`) para as tabelas compartilhadas,
+      populando `tenant_id`. Custo baixo (sem empresas reais em produção).
+- [ ] Adaptar/aposentar `migrate_legacy_data` para o novo alvo.
+
+### Fase R7 — PostgreSQL RLS nativo (rede de segurança)
+
+- [ ] Policies nativas por `tenant_id` como segunda camada, após contratos estáveis.
+
+### Fase R8 — Testes
+
+- [ ] Reescrever base de testes e e2e para isolamento por `tenant_id` (sem
+      schema/host): dois tenants, dados homônimos, negação cross-tenant.
+
+### Fase R9 — Provisionamento e convites
+
+- [ ] `provision_tenant` cria só a linha `Client` (sem schema) + owner +
+      membership. Fluxo de convites mantido.
+
+### Fase R10 — Docs e onboarding
+
+- [ ] Atualizar `ONBOARDING.md`, `readme-backend.md` e
+      `docs/multi-tenant-architecture.md` para o modelo shared.

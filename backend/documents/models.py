@@ -3,6 +3,8 @@ from django.conf import settings
 from projects.models import Projeto
 from tasks.models import Tarefa
 
+from customers.managers import TenantManager
+
 
 class Documento(models.Model):
     """Modelo para armazenar documentos associados a projetos e tarefas"""
@@ -15,12 +17,18 @@ class Documento(models.Model):
         ('OUTRO', 'Outro'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='documentos')
     tarefa = models.ForeignKey(
-        Tarefa, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        Tarefa,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='documentos'
     )
     titulo = models.CharField(max_length=200)
@@ -50,10 +58,19 @@ class Documento(models.Model):
         verbose_name = 'Documento'
         verbose_name_plural = 'Documentos'
         ordering = ['-data_upload']
+        indexes = [
+            models.Index(fields=['tenant', '-data_upload']),
+        ]
 
 
 class HistoricoDocumento(models.Model):
     """Histórico de versões de documentos"""
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name='historico')
     versao_anterior = models.CharField(max_length=20)
     arquivo_anterior = models.FileField(upload_to='documentos/historico/')
@@ -69,19 +86,31 @@ class HistoricoDocumento(models.Model):
         verbose_name = 'Histórico de Documento'
         verbose_name_plural = 'Históricos de Documentos'
         ordering = ['-data_alteracao']
+        indexes = [
+            models.Index(fields=['tenant', '-data_alteracao']),
+        ]
 
 
 class Comentario(models.Model):
     """Comentários em documentos"""
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name='comentarios')
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     texto = models.TextField()
     criado_em = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"Comentário em {self.documento.titulo} por {self.autor.username}"
-    
+
     class Meta:
         verbose_name = 'Comentário'
         verbose_name_plural = 'Comentários'
         ordering = ['-criado_em']
+        indexes = [
+            models.Index(fields=['tenant', '-criado_em']),
+        ]

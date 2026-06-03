@@ -1,19 +1,25 @@
-from django.conf import settings
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 
 
 FULL_TENANT_READ_ROLES = {'owner', 'admin', 'manager', 'viewer'}
 LIMITED_TENANT_READ_ROLES = {'member'}
 
+_UNSET = object()
+
 
 def get_request_membership(request):
-    tenant = getattr(request, 'tenant', None)
-    schema_name = getattr(tenant, 'schema_name', settings.PUBLIC_SCHEMA_NAME)
+    # R3: usa o cache populado por PermissionMiddleware._set_request_tenant
+    # (request._tenant_membership) quando disponível, evitando reconsulta.
+    cached = getattr(request, '_tenant_membership', _UNSET)
+    if cached is not _UNSET:
+        return cached
 
-    if schema_name == settings.PUBLIC_SCHEMA_NAME:
+    tenant = getattr(request, 'tenant', None)
+    if tenant is None:
         return None
 
-    if not request.user or not request.user.is_authenticated:
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
         return None
 
     from customers.models import TenantMembership
@@ -31,11 +37,11 @@ def tenant_users_queryset(request, base_queryset=None):
     Mantém o mesmo critério de bypass de ``apply_tenant_rls``:
 
     - ``is_superuser=True``: todos os usuários (bypass operacional global).
-    - schema público: todos os usuários (sem escopo de tenant).
-    - schema tenant: apenas usuários com ``TenantMembership`` ativa no tenant.
+    - sem tenant resolvido: nenhum usuário (``none()``).
+    - com tenant: apenas usuários com ``TenantMembership`` ativa no tenant.
 
     Evita enumeração cross-tenant em endpoints que listam ou resolvem usuários,
-    já que ``users.User`` vive no schema ``public`` e é compartilhado.
+    já que ``users.User`` é compartilhado (schema único).
     """
     from django.contrib.auth import get_user_model
 
@@ -46,9 +52,8 @@ def tenant_users_queryset(request, base_queryset=None):
         return queryset
 
     tenant = getattr(request, 'tenant', None)
-    schema_name = getattr(tenant, 'schema_name', settings.PUBLIC_SCHEMA_NAME)
-    if schema_name == settings.PUBLIC_SCHEMA_NAME:
-        return queryset
+    if tenant is None:
+        return queryset.none()
 
     from customers.models import TenantMembership
 
@@ -59,14 +64,40 @@ def tenant_users_queryset(request, base_queryset=None):
     return queryset.filter(id__in=member_ids)
 
 
-def apply_tenant_rls(queryset, request):
-    if getattr(request, 'user', None) and request.user.is_superuser:
-        return queryset
+def _has_tenant_field(model):
+    try:
+        model._meta.get_field('tenant')
+        return True
+    except FieldDoesNotExist:
+        return False
 
+
+def _scope_to_tenant(queryset, tenant):
+    """Aplica o limite duro ``WHERE tenant_id = X`` quando o model tem ``tenant``.
+
+    O ``TenantManager`` já escopa as queries montadas em runtime, mas os viewsets
+    usam ``queryset = Model.objects.all()`` de nível de classe (avaliado no import,
+    sem contexto) e o DRF apenas clona esse queryset por request — então o manager
+    não re-filtra esse caminho. Aqui garantimos o filtro de tenant explicitamente.
+    """
+    if tenant is not None and _has_tenant_field(queryset.model):
+        return queryset.filter(tenant=tenant)
+    return queryset
+
+
+def apply_tenant_rls(queryset, request):
+    user = getattr(request, 'user', None)
     tenant = getattr(request, 'tenant', None)
-    schema_name = getattr(tenant, 'schema_name', settings.PUBLIC_SCHEMA_NAME)
-    if schema_name == settings.PUBLIC_SCHEMA_NAME:
-        return queryset
+
+    if user and user.is_superuser:
+        # Superuser sem tenant explícito opera global; com X-Tenant-ID, escopa.
+        return _scope_to_tenant(queryset, tenant)
+
+    if tenant is None:
+        return queryset.none()
+
+    # Limite duro de tenant antes de qualquer narrowing por papel.
+    queryset = _scope_to_tenant(queryset, tenant)
 
     membership = get_request_membership(request)
     if membership is None:

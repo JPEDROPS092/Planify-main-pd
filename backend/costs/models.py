@@ -10,18 +10,29 @@ from tasks.models import Tarefa
 from decimal import Decimal
 from django.db.models import Sum
 
+from customers.managers import TenantManager
+
 class Categoria(models.Model):
     """Categoria de custos para classificação"""
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
-    
+
     def __str__(self):
         return self.nome
-    
+
     class Meta:
         verbose_name = 'Categoria'
         verbose_name_plural = 'Categorias'
         ordering = ['nome']
+        indexes = [
+            models.Index(fields=['tenant', 'nome']),
+        ]
 
 
 class Custo(models.Model):
@@ -32,6 +43,12 @@ class Custo(models.Model):
         ('RECORRENTE', 'Custo Recorrente'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='custos_do_projeto') # Changed related_name
     tarefa = models.ForeignKey(
         Tarefa, 
@@ -69,10 +86,19 @@ class Custo(models.Model):
         verbose_name = 'Custo'
         verbose_name_plural = 'Custos'
         ordering = ['-data']
+        indexes = [
+            models.Index(fields=['tenant', '-data']),
+        ]
 
 
 class OrcamentoProjeto(models.Model):
     """Orçamento planejado para um projeto"""
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.OneToOneField(Projeto, on_delete=models.CASCADE, related_name='orcamento')
     valor_total = models.DecimalField(max_digits=12, decimal_places=2)
     data_aprovacao = models.DateField(auto_now_add=True)
@@ -94,6 +120,12 @@ class OrcamentoProjeto(models.Model):
 
 class OrcamentoTarefa(models.Model):
     """Orçamento planejado para uma tarefa específica"""
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     tarefa = models.OneToOneField(Tarefa, on_delete=models.CASCADE, related_name='orcamento')
     valor = models.DecimalField(max_digits=12, decimal_places=2)
     data_aprovacao = models.DateField(auto_now_add=True)
@@ -129,6 +161,12 @@ class Alerta(models.Model):
         ('IGNORADO', 'Ignorado'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='alertas')
     tarefa = models.ForeignKey(
@@ -160,3 +198,6 @@ class Alerta(models.Model):
         verbose_name = 'Alerta de Orçamento'
         verbose_name_plural = 'Alertas de Orçamento'
         ordering = ['-data_criacao']
+        indexes = [
+            models.Index(fields=['tenant', '-data_criacao']),
+        ]

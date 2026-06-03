@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from projects.models import Projeto
 from tasks.models import Tarefa
 
+from customers.managers import TenantManager
+
 class ChatMensagem(models.Model):
     """
     Modelo para mensagens de chat em projetos.
@@ -13,15 +15,21 @@ class ChatMensagem(models.Model):
     Pode conter texto e anexos opcionais. Registra quando a mensagem foi enviada
     e se foi editada posteriormente.
     """
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(
-        Projeto, 
-        on_delete=models.CASCADE, 
+        Projeto,
+        on_delete=models.CASCADE,
         related_name='mensagens',
         help_text='Projeto ao qual a mensagem pertence'
     )
     autor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='mensagens_enviadas',
         help_text='Usuário que enviou a mensagem'
     )
@@ -48,6 +56,9 @@ class ChatMensagem(models.Model):
         verbose_name = 'Mensagem de Chat'
         verbose_name_plural = 'Mensagens de Chat'
         ordering = ['enviado_em']
+        indexes = [
+            models.Index(fields=['tenant', 'enviado_em']),
+        ]
 
 
 class ChatMensagemLeitura(models.Model):
@@ -57,9 +68,15 @@ class ChatMensagemLeitura(models.Model):
     Rastreia quando um usuário específico leu uma determinada mensagem.
     Cada combinação de mensagem e usuário deve ser única (garantido por Meta.unique_together).
     """
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     mensagem = models.ForeignKey(
-        ChatMensagem, 
-        on_delete=models.CASCADE, 
+        ChatMensagem,
+        on_delete=models.CASCADE,
         related_name='leituras',
         help_text='Mensagem que foi lida'
     )
@@ -106,9 +123,15 @@ class Notificacao(models.Model):
         ('ALTA', 'Alta'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='notificacoes',
         help_text='Usuário que receberá a notificação'
     )
@@ -182,6 +205,9 @@ class Notificacao(models.Model):
         verbose_name = 'Notificação'
         verbose_name_plural = 'Notificações'
         ordering = ['-criada_em']
+        indexes = [
+            models.Index(fields=['tenant', '-criada_em']),
+        ]
 
 
 class ConfiguracaoNotificacao(models.Model):
@@ -199,9 +225,15 @@ class ConfiguracaoNotificacao(models.Model):
         ('NENHUM', 'Nenhum'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     usuario = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='config_notificacoes',
         help_text='Usuário ao qual estas configurações pertencem'
     )
@@ -280,9 +312,15 @@ class Comunicacao(models.Model):
         ('COMUNICADO', 'Comunicado Geral'),
         ('OUTRO', 'Outro'),
     )
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(
-        Projeto, 
-        on_delete=models.CASCADE, 
+        Projeto,
+        on_delete=models.CASCADE,
         related_name='comunicacoes',
         help_text='Projeto ao qual esta comunicação está associada'
     )
@@ -321,6 +359,9 @@ class Comunicacao(models.Model):
         ordering = ['-criada_em']
         verbose_name = 'Comunicação'
         verbose_name_plural = 'Comunicações'
+        indexes = [
+            models.Index(fields=['tenant', '-criada_em']),
+        ]
     
     def __str__(self):
         return self.titulo

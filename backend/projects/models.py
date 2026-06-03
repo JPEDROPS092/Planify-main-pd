@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from customers.managers import TenantManager
+
 
 DEFAULT_STATUS = 'PLANEJADO'
 DEFAULT_PRIORITY = 'MEDIA'
@@ -20,7 +22,13 @@ class Projeto(models.Model):
         ('ALTA', 'Alta'),
     )
     
-    titulo = models.CharField(max_length=100, unique=True)
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
+    titulo = models.CharField(max_length=100)
     descricao = models.TextField()
     data_inicio = models.DateField()
     data_fim = models.DateField()
@@ -55,6 +63,15 @@ class Projeto(models.Model):
         ordering = ['-criado_em']
         verbose_name = 'Projeto'
         verbose_name_plural = 'Projetos'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tenant', 'titulo'],
+                name='uniq_projeto_titulo_por_tenant',
+            )
+        ]
+        indexes = [
+            models.Index(fields=['tenant', '-criado_em']),
+        ]
 
 
 class MembroProjeto(models.Model):
@@ -66,6 +83,12 @@ class MembroProjeto(models.Model):
         ('DESIGNER', 'Designer'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='membros')
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL,
                                                          on_delete=models.CASCADE,
@@ -89,6 +112,12 @@ class MembroProjeto(models.Model):
 
 
 class HistoricoStatusProjeto(models.Model):
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='historico_status')
     status_anterior = models.CharField(max_length=20, choices=Projeto.STATUS_CHOICES)
     alterado_em = models.DateTimeField(auto_now_add=True)
@@ -99,7 +128,10 @@ class HistoricoStatusProjeto(models.Model):
         ordering = ['-alterado_em']
         verbose_name = 'Histórico de Status'
         verbose_name_plural = 'Históricos de Status'
-    
+        indexes = [
+            models.Index(fields=['tenant', '-alterado_em']),
+        ]
+
     def __str__(self):
         return f"{self.projeto.titulo}: {self.status_anterior} -> {getattr(self, 'novo_status', 'N/A')} ({self.alterado_em})"
 
@@ -112,6 +144,12 @@ class Sprint(models.Model):
         ('CANCELADO', 'Cancelado'),
     )
     
+    tenant = models.ForeignKey(
+        'customers.Client',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = TenantManager()
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='sprints', null=True, blank=True)
     nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
@@ -131,8 +169,9 @@ class Sprint(models.Model):
         ordering = ['data_inicio']
         verbose_name = 'Sprint'
         verbose_name_plural = 'Sprints'
-        verbose_name = 'Sprint'
-        verbose_name_plural = 'Sprints'
+        indexes = [
+            models.Index(fields=['tenant', 'data_inicio']),
+        ]
     
     def __str__(self):
         projeto_titulo = self.projeto.titulo if self.projeto else "Projeto Desconhecido"
