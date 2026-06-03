@@ -1,10 +1,13 @@
 #!/usr/bin/env python
-"""Teste ponta-a-ponta do fluxo de auth multi-tenant da Fase 7.
+"""Teste ponta-a-ponta do fluxo de auth multi-tenant (provisionamento + convites).
 
-Exercita o stack HTTP real (TenantMainMiddleware + JWT + PermissionMiddleware +
-HasTenantRole) e o management command ``provision_tenant``:
+Re-arquitetura R8/R9 (2026-06-03): **shared schema**, sem subdomínio. O tenant é
+uma linha ``customers.Client`` (sem schema/``Domain``); o tenant da request vem da
+``TenantMembership`` ativa (não do host). Exercita o stack HTTP real
+(``PermissionMiddleware`` resolve o tenant pela membership + JWT + ``HasTenantRole``
++ ``TenantManager``) e o management command ``provision_tenant``:
 
-    1. Superuser provisiona tenant + owner (command provision_tenant).
+    1. Superuser provisiona empresa + owner (command provision_tenant).
     2. Owner cria um convite (member) em /api/tenant/invitations/  -> 201.
     3. Inspeção pública do convite por token                       -> 200.
     4. Aceite público cria conta nova + TenantMembership ativa     -> 201.
@@ -28,18 +31,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'planify.settings')
 django.setup()
 
+from django.conf import settings  # noqa: E402
+
+# Script standalone (fora do test-runner): 'testserver' não entra no ALLOWED_HOSTS.
+if 'testserver' not in settings.ALLOWED_HOSTS:
+    settings.ALLOWED_HOSTS = list(settings.ALLOWED_HOSTS) + ['testserver']
+
 from django.contrib.auth import get_user_model  # noqa: E402
 from django.core.management import call_command  # noqa: E402
-from django.db import connection  # noqa: E402
-from rest_framework_simplejwt.tokens import RefreshToken  # noqa: E402
 from django.test import Client as HttpClient  # noqa: E402
+from rest_framework_simplejwt.tokens import RefreshToken  # noqa: E402
 
 from customers.models import Client, TenantInvitation, TenantMembership  # noqa: E402
 
 User = get_user_model()
 
-SCHEMA = 'e2e_inv'
-DOMAIN = 'e2e-inv.localhost'
+TENANT_NAME = 'E2E Invites'
 OWNER_EMAIL = 'owner.inv@planify.test'
 INVITEE_EMAIL = 'invitee.inv@planify.test'
 OUTSIDER_EMAIL = 'outsider.inv@planify.test'
@@ -61,49 +68,36 @@ def token_for(user):
 
 
 def cleanup():
-    connection.set_schema_to_public()
-    for tenant in Client.objects.filter(schema_name=SCHEMA):
-        tenant.auto_drop_schema = True
-        tenant.delete(force_drop=True)
-    with connection.cursor() as cur:
-        cur.execute('DROP SCHEMA IF EXISTS %s CASCADE' % SCHEMA)
-        # Ordem importa por causa das FKs (sem ON DELETE CASCADE no nível do banco).
-        cur.execute(
-            'DELETE FROM customers_tenantinvitation WHERE email = ANY(%s)', [ALL_EMAILS]
-        )
-        cur.execute(
-            'DELETE FROM customers_tenantmembership WHERE user_id IN '
-            '(SELECT id FROM users_user WHERE email = ANY(%s))', [ALL_EMAILS]
-        )
-        cur.execute(
-            'DELETE FROM users_userprofile WHERE user_id IN '
-            '(SELECT id FROM users_user WHERE email = ANY(%s))', [ALL_EMAILS]
-        )
-        cur.execute('DELETE FROM users_user WHERE email = ANY(%s)', [ALL_EMAILS])
+    # Apagar o Client cascateia memberships, convites e dados de negócio do tenant
+    # (FKs CASCADE). Os usuários de teste (identidade global) são removidos à parte.
+    Client.objects.filter(name=TENANT_NAME).delete()
+    # Convites por e-mail de tenants que porventura não foram apagados.
+    TenantInvitation.objects.filter(email__in=ALL_EMAILS).delete()
+    User.objects.filter(email__in=ALL_EMAILS).delete()
 
 
 def get(http, path, token=None):
-    kwargs = {'HTTP_HOST': DOMAIN}
+    kwargs = {}
     if token:
         kwargs['HTTP_AUTHORIZATION'] = f'Bearer {token}'
     return http.get(path, **kwargs)
 
 
 def post(http, path, data, token=None):
-    kwargs = {'HTTP_HOST': DOMAIN, 'content_type': 'application/json'}
+    kwargs = {'content_type': 'application/json'}
     if token:
         kwargs['HTTP_AUTHORIZATION'] = f'Bearer {token}'
     return http.post(path, data=data, **kwargs)
 
 
 def main():
-    print('=== E2E auth multi-tenant (Fase 7: provision + convites) ===\n')
+    print('=== E2E auth multi-tenant (shared schema: provision + convites) ===\n')
     cleanup()
     try:
-        print('1) Superuser provisiona tenant + owner (provision_tenant):')
+        print('1) Superuser provisiona empresa + owner (provision_tenant):')
         call_command(
             'provision_tenant',
-            schema=SCHEMA, name='E2E Invites', domain=DOMAIN,
+            name=TENANT_NAME,
             owner_email=OWNER_EMAIL, owner_username='owner_inv',
             owner_full_name='Owner Inv', owner_password='Senha-E2E-123',
             verbosity=0,

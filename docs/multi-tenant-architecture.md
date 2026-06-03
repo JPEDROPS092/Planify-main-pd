@@ -1,216 +1,146 @@
-# Arquitetura Multi-Tenant - Backend Planify
+# Arquitetura Multi-Tenant — Backend Planify
 
-## Decisões iniciais
+> **Modelo atual (a partir de 2026-06-03): shared schema + `tenant_id`.**
+> O projeto começou com **schema-per-tenant** (`django-tenants`); a estratégia foi
+> revista nas fases **R0–R10** (plano em `docs/rearquitetura-shared-schema-plano.md`,
+> acompanhamento em `docs/backend-multitenant-audit.md`). Hoje há **um único schema
+> PostgreSQL** e cada linha de negócio carrega `tenant_id`. As referências a
+> `Domain`, `schema_name`, `migrate_schemas` e subdomínio descrevem o **modelo
+> antigo** e não valem mais. O histórico do desenho schema-per-tenant ficou
+> preservado no git.
 
-- Banco alvo: PostgreSQL.
-- Biblioteca de tenancy: `django-tenants`.
-- Estratégia de isolamento: schema por empresa.
-- Schema compartilhado: `public`.
-- App de tenants recomendado: `customers`.
-- Model de tenant recomendado: `Client`.
-- Model de domínio recomendado: `Domain`.
-- Autenticação inicial: manter `users.User`, Djoser e Simple JWT.
-- Evolução de autenticação: avaliar `django-allauth` e/ou `django-tenant-users` depois do isolamento por schema estar validado.
+## Decisões vigentes
 
-## Modelo de escopo
+- **Banco:** PostgreSQL, **um único schema** (`public`); SQLite só p/ inspeção legada.
+- **Isolamento:** `tenant_id` inteiro (FK para `customers.Client`) em **todos** os
+  26 models de negócio, com filtro **central** (não por schema).
+- **App de tenancy:** `customers`. Model de empresa: `Client` (sem `Domain`/schema).
+- **Resolução de tenant:** **sem subdomínio** — vem da `TenantMembership` ativa do
+  usuário autenticado. Superuser informa o tenant via header `X-Tenant-ID`.
+- **Identidade:** `users.User` global (login único; `email`/`username` únicos
+  globalmente). Autorização dentro do tenant por `TenantMembership.role`.
+- **Customização por empresa:** `customers.TenantSettings` (feature-flags/config);
+  schema físico separado é **exceção dura** (contrato/lei), não o caminho padrão.
+- **Autenticação:** `users.User` + Djoser + Simple JWT (ver `docs/adr-0001-auth-multitenant.md`).
 
-### `SHARED_APPS`
+## Camadas de isolamento (defesa em profundidade)
 
-Recomendação inicial:
+O isolamento por `tenant_id` é garantido em **três camadas**:
 
-```python
-SHARED_APPS = [
-    "django_tenants",
-    "customers",
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework_simplejwt",
-    "djoser",
-    "corsheaders",
-    "django_filters",
-    "drf_spectacular",
-    "users",
-    "core",
-]
-```
-
-### `TENANT_APPS`
-
-Recomendação inicial:
-
-```python
-TENANT_APPS = [
-    "projects",
-    "tasks",
-    "teams",
-    "risks",
-    "costs",
-    "documents",
-    "communications",
-]
-```
-
-`communications` deve passar por revisão detalhada: mensagens e comunicações formais são tenant; preferências de notificação podem ser públicas ou por membership.
+1. **`TenantManager` (app)** — manager default dos 26 models de negócio
+   (`customers/managers.py`). Em runtime, dentro de uma request, injeta
+   `WHERE tenant_id = <atual>` em **toda** query `.objects` automaticamente,
+   conforme o **contexto de tenant da thread** (`customers/context.py`). Cobre as
+   dezenas de `.objects` diretas (dashboards, serializers, exports, métodos de
+   model) que não passam pelo viewset. O carimbo de `tenant_id` no create é feito
+   por um `pre_save` (`customers/scoping.py`).
+2. **RLS de aplicação por papel (app)** — `customers/querysets.py`
+   (`apply_tenant_rls`/`apply_member_rls`). Aplica o limite de tenant
+   **explicitamente** na camada de viewset (o `queryset` de classe é avaliado no
+   import, sem contexto) e narrowa por papel: `owner/admin/manager/viewer` veem o
+   tenant inteiro; `member` vê só recursos ligados a ele (autoria/atribuição/
+   membership); sem membership ativa → vazio; superuser → bypass.
+3. **RLS nativo do PostgreSQL (banco)** — `ENABLE`+`FORCE ROW LEVEL SECURITY` +
+   policy `tenant_isolation` nas 26 tabelas (`customers/migrations/0006_native_rls`),
+   dirigida pela GUC `app.current_tenant` (setada por transação pelo
+   `TenantDatabaseRLSMiddleware`, `customers/rls.py`). É a rede de segurança no
+   banco: mesmo uma query sem filtro de aplicação não vaza entre tenants. Vale
+   quando a app conecta como a role **`app_user`** (sem `BYPASSRLS`, criada por
+   `manage.py setup_rls`); sob a role dona/superuser do banco o RLS é inócuo e a
+   camada de aplicação segue isolando.
 
 ## Usuário global e membership
 
-Decisão: manter `users.User` no schema `public` com **identidade global**.
+`users.User` vive na identidade global. Regra de negócio: **um usuário pertence a
+uma única empresa** (e a vários projetos dentro dela). Modelado como **no máximo
+uma `TenantMembership` ativa** por usuário em toda a plataforma:
 
-Regra de negócio confirmada: um usuário pertence a **uma única empresa**, mas a **vários projetos** dentro dela. A relação usuário ↔ muitos projetos é resolvida por `projects.MembroProjeto`/`teams.MembroEquipe` dentro do schema do tenant; não é tratada pela tenancy. A relação usuário ↔ empresa é única.
+- `customers.TenantMembership`: `UniqueConstraint(fields=['user'], condition=Q(is_active=True))`
+  + `clean()` com mensagem amigável. Vínculos **inativos** são permitidos
+  (histórico/troca de empresa).
+- Papéis: `owner`, `admin`, `manager`, `member`, `viewer`.
 
-Motivo de manter `User` global mesmo com um usuário por empresa:
-
-- Preserva o fluxo atual de login (um login para toda a plataforma).
-- `email`/`username` permanecem únicos globalmente.
-- Reduz risco e mudança em relação ao desenho atual.
-- "Um usuário por empresa" é modelado como exatamente uma `TenantMembership` ativa por usuário, não como duplicação de identidade por schema.
-
-Aplicação da regra: `customers.TenantMembership` possui `UniqueConstraint(fields=['user'], condition=Q(is_active=True))`, garantindo no máximo um vínculo **ativo** por usuário em toda a plataforma. Vínculos inativos são permitidos para histórico ou troca de empresa. O método `TenantMembership.clean()` reforça a mesma regra com mensagem amigável em admin/forms.
-
-Novo model recomendado no app `customers`:
-
-```python
-class TenantMembership(models.Model):
-    ROLE_OWNER = "owner"
-    ROLE_ADMIN = "admin"
-    ROLE_MANAGER = "manager"
-    ROLE_MEMBER = "member"
-    ROLE_VIEWER = "viewer"
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    tenant = models.ForeignKey(Client, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("user", "tenant")
-```
-
-Roles iniciais:
-
-- `owner`
-- `admin`
-- `manager`
-- `member`
-- `viewer`
+Ao listar usuários para um tenant, use `customers.querysets.tenant_users_queryset`
+(evita vazamento cross-tenant via o `User` compartilhado).
 
 ## Autorização global vs tenant
 
-Decisão formal:
+- Apenas `is_superuser=True` tem acesso operacional global (seed, provisionamento,
+  manutenção). `users.User.role` é legado/global e **não** concede acesso cross-tenant.
+- Autorização dentro do tenant usa `TenantMembership.role`.
+- Usuário autenticado sem `TenantMembership` ativa → **403** em rotas tenant-scoped.
 
-- Apenas `users.User.is_superuser=True` tem acesso operacional global.
-- Seed inicial, criação/gestão operacional de tenants e manutenção fora de contexto tenant são responsabilidade de superuser.
-- `users.User.role` é legado/global e não deve liberar acesso cross-tenant.
-- A autorização dentro de um tenant deve usar `customers.TenantMembership.role`.
-- Usuário autenticado sem `TenantMembership` ativa no tenant atual recebe `403`.
-
-Matriz inicial por papel tenant:
-
-| Papel | Permissão inicial |
+| Papel | Permissão |
 | --- | --- |
-| `owner` | Todas as ações no tenant. |
-| `admin` | Todas as ações no tenant. |
-| `manager` | Todas as ações nos módulos de negócio do tenant. |
-| `member` | Leitura geral e escrita operacional em tarefas, documentos e comunicações. |
+| `owner`/`admin` | Tudo no tenant. |
+| `manager` | Tudo nos módulos de negócio. |
+| `member` | Leitura geral + escrita operacional (tarefas, documentos, comunicações). |
 | `viewer` | Apenas leitura. |
 
-Essa matriz é deliberadamente inicial. Regras finas por entidade, propriedade do recurso e status do workflow devem ser refinadas na Fase 9, quando a suite de testes multi-tenant for reconstruída.
+## Fluxo de uma request (ordem de defesa)
 
-## Resolução de tenant
+1. **`users.middleware.PermissionMiddleware`**: autentica o JWT, resolve a
+   `TenantMembership` ativa (ou `X-Tenant-ID` p/ superuser), seta
+   `request.tenant`/`request.tenant_id` e **ativa o contexto de tenant da thread**
+   (deny-by-default; bypass p/ `/admin/` e superuser-global). Para prefixos
+   tenant-scoped (`TENANT_MEMBERSHIP_REQUIRED_PATH_PREFIXES`), sem vínculo → **403**.
+   Limpa o contexto em `process_response`/`process_exception`.
+2. **`customers.rls.TenantDatabaseRLSMiddleware`**: abre a transação e faz
+   `SET LOCAL app.current_tenant` (espelha o contexto da camada 1) p/ a RLS nativa.
+3. **DRF + Simple JWT** + permissões por view (`customers/permissions.py`:
+   `IsTenantMember`, `HasTenantRole.with_roles(...)`, `IsTenantReader`).
+4. **`TenantManager` + `apply_tenant_rls`** filtram as queries por `tenant_id` e papel.
 
-Decisão inicial: resolver tenant por subdomínio.
+Respostas: não autenticado em rota privada → **401**; autenticado sem membership →
+**403**; membro → conforme papel.
 
-Formato de produção:
+## Provisionamento e convites
 
-```text
-empresa.planify.com
+- **Provisionar empresa (superuser):** `manage.py provision_tenant --name "ACME"
+  --owner-email owner@acme.com` cria a linha `Client` (dispara o `post_save` que
+  cria as `TenantSettings`), a conta/owner e a `TenantMembership(owner)`. Não há
+  schema nem `Domain`. `create_dev_tenant` é o atalho de dev.
+- **Convidar (owner/admin):** `POST /api/tenant/invitations/` (`customers.TenantInvitation`,
+  token opaco). O e-mail leva ao **domínio único** do app (`FRONTEND_URL` +
+  `TENANT_INVITATION_ACCEPT_PATH`); o tenant é resolvido pelo **token**, não pelo host.
+- **Aceitar (público):** `GET /api/invitations/<token>/` (inspeção) e
+  `POST /api/invitations/<token>/accept/` (cria conta nova **ou** vincula conta
+  existente sem vínculo ativo, respeitando "um usuário = uma empresa").
+
+## Migração de dados legados
+
+`manage.py migrate_legacy_data` faz onboarding de um SQLite single-tenant legado
+para o shared schema: identidade global → `users` (dedup por e-mail, hash
+preservado); negócio → tabelas compartilhadas **carimbando `tenant_id`** com o
+`Client` destino (`--tenant <id|nome>`). Preserva PKs e remapeia FKs de usuário;
+idempotente; `--dry-run` simula. Ver `docs/backend-multitenant-audit.md` (R6/R8).
+
+## Comandos (shared schema)
+
+```bash
+python manage.py migrate                 # banco único (NÃO migrate_schemas)
+python manage.py create_dev_tenant --name Demo
+python manage.py provision_tenant --name "ACME" --owner-email owner@acme.com
+python manage.py setup_rls               # cria a role app_user (RLS nativo)
+python seed_data.py                      # SEED_TENANT (default "Demo")
 ```
 
-Formato local recomendado:
+## Testes e validação
 
-```text
-empresa.localhost
-```
+- **pytest** (`tests/`, base `tests/tenant_base.py`): sem `django-tenants`; cria
+  `Client` + `TenantMembership` + JWT; tenant resolvido por membership; exercita o
+  caminho HTTP real. `pytest tests/ --create-db` (1ª vez) / `--reuse-db`.
+- **e2e** (`scripts/`, PostgreSQL real, idempotentes):
+  `e2e_r4_tenant_isolation.py` (isolamento cross-tenant por `tenant_id`),
+  `e2e_r7_native_rls.py` (RLS nativo via `app_user`), `e2e_invitations.py`
+  (provisionamento + convites), `e2e_migrate_legacy.py` (migração de dados).
 
-Alternativa local caso DNS/browser gere atrito:
+## Pontos em aberto
 
-```text
-empresa.planify.local
-```
-
-Nesse caso, documentar entrada em `/etc/hosts` para cada tenant local.
-
-## Middleware e permissões
-
-Ordem conceitual:
-
-1. `django_tenants.middleware.main.TenantMainMiddleware` resolve o schema atual pelo host.
-2. Autenticação DRF/Simple JWT identifica o usuário global.
-3. Permissão customizada valida se o usuário possui `TenantMembership` ativa no tenant atual.
-4. Permissão customizada valida a ação pelo `TenantMembership.role`.
-
-Comportamento esperado:
-
-- Usuário autenticado e membro do tenant: acesso permitido conforme role.
-- Usuário autenticado sem membership no tenant atual: `403`.
-- Usuário não autenticado em endpoint privado: `401`.
-- Superuser tem acesso global para manutenção e seed inicial.
-
-## RLS de aplicação nas queries
-
-Além do isolamento físico por schema do `django-tenants`, a API deve aplicar uma camada de filtro por papel e relacionamento do usuário nas queries de negócio.
-
-Decisão atual:
-
-- `owner`, `admin`, `manager` e `viewer` podem ler o conjunto completo de dados do tenant.
-- `viewer` continua limitado a métodos seguros pela camada de permissão.
-- `member` lê apenas recursos ligados ao próprio usuário por autoria, atribuição, destinatário ou membership de projeto/equipe.
-- Usuário sem `TenantMembership` ativa no tenant recebe queryset vazio nas views protegidas.
-- `is_superuser=True` mantém bypass operacional global.
-
-Implementação inicial:
-
-- Helper central: `customers.querysets.apply_tenant_rls`.
-- Mixin para ViewSets: `customers.querysets.TenantRLSQuerysetMixin`.
-- ViewSets principais dos apps `projects`, `tasks`, `teams`, `risks`, `costs`, `documents` e `communications` aplicam RLS em `get_queryset`.
-- Queries manuais em actions e relatórios devem chamar `apply_tenant_rls` explicitamente antes de agregações, `values`, `exclude` ou serialização.
-
-Ressalva:
-
-- Esta é uma camada de RLS de aplicação, não PostgreSQL Row Level Security nativo.
-- PostgreSQL RLS nativo pode ser avaliado depois que os contratos de autorização e os relacionamentos finais estiverem estabilizados.
-
-## Ordem técnica recomendada
-
-1. Introduzir configuração de PostgreSQL via variáveis de ambiente. Status: validado localmente com Docker.
-2. Criar app `customers` com `Client`, `Domain` e `TenantMembership`. Status: concluído inicialmente.
-3. Configurar `django-tenants`, `SHARED_APPS`, `TENANT_APPS`, `TENANT_MODEL`, `TENANT_DOMAIN_MODEL` e router. Status: concluído inicialmente.
-4. Validar `migrate_schemas --shared`, `check` e fluxo básico em PostgreSQL. Status: validado localmente.
-5. Criar tenant local de desenvolvimento. Status: validado com `demo.localhost`.
-6. Rodar migrações shared e tenant. Status: validado para schemas `public` e `demo`.
-7. Revisar views/serializers para garantir que consultas executem no schema resolvido. Status: em andamento.
-8. Criar testes com dois tenants e dados homônimos para validar isolamento.
-
-## Validação local realizada
-
-- PostgreSQL local via Docker Compose em `127.0.0.1:15432`.
-- `python manage.py check` sem erros.
-- `python manage.py migrate_schemas --shared` aplicado no schema `public`.
-- `python manage.py create_dev_tenant --schema demo --name Demo --domain demo.localhost` criou o schema tenant.
-- `python manage.py migrate_schemas --tenant --schema demo --check` retornou status `0`.
-- Tabelas compartilhadas confirmadas no schema `public`: auth/admin/session, `users` e `customers`.
-- Tabelas de negócio confirmadas no schema `demo`: `projects`, `tasks`, `teams`, `risks`, `costs`, `documents` e `communications`.
-
-## Pontos de atenção antes de implementar
-
-- Resolver a divergência `Project` vs `Projeto` nos testes existentes.
-- Revisar a dependência cruzada `Projeto -> Custo` e `Custo -> Projeto`.
-- Definir se `AccessProfile` permanece global ou vira role por tenant via `TenantMembership`.
-- Definir particionamento de arquivos em `MEDIA_ROOT` por tenant.
-- Definir estratégia para dados existentes: tenant destino único ou migração por regras externas.
+- **RBAC legado** (`AccessProfile`/`Permission`/`UserAccessProfile`): segue global,
+  fora do escopo de migração automática; decisão "global vs por tenant" em aberto.
+- **`MEDIA_ROOT` por tenant**: particionamento físico de arquivos é item de
+  operação/segurança (Fase 11).
+- **Autorização a nível de objeto** (ex.: `member` editar só a tarefa atribuída a
+  ele): refinamento de produto sobre a base de isolamento já estabelecida.
+- **Refino de privilégios do `app_user`** por tabela (hardening, Fase 11).

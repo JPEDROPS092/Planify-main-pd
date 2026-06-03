@@ -1,48 +1,33 @@
+"""Cria um tenant local de desenvolvimento (conveniência).
+
+Re-arquitetura R9 (2026-06-03): **shared schema**. Um tenant é só uma linha
+``customers.Client`` (sem schema/``Domain``); o ``post_save`` cria suas
+``TenantSettings`` (R5). Para provisionar empresa + owner de forma canônica use
+``provision_tenant``; este comando é o atalho de dev e, opcionalmente, vincula um
+usuário existente como owner.
+"""
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from customers.models import Client, Domain, TenantMembership
+from customers.models import Client, TenantMembership
 
 
 class Command(BaseCommand):
-    help = 'Cria um tenant local com domínio e, opcionalmente, vincula um owner.'
+    help = 'Cria um tenant local de desenvolvimento e, opcionalmente, vincula um owner.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--schema', default='demo', help='Nome do schema PostgreSQL do tenant.')
-        parser.add_argument('--name', default='Demo', help='Nome visível do cliente.')
-        parser.add_argument('--domain', default='demo.localhost', help='Domínio/subdomínio do tenant.')
-        parser.add_argument('--owner-username', help='Username do usuário owner do tenant.')
-        parser.add_argument(
-            '--skip-schema-create',
-            action='store_true',
-            help='Cria apenas os registros no public schema, sem criar schema automaticamente.',
-        )
+        parser.add_argument('--name', default='Demo', help='Nome visível do tenant (default: Demo).')
+        parser.add_argument('--owner-username', help='Username de um usuário existente para vincular como owner.')
 
     @transaction.atomic
     def handle(self, *args, **options):
-        schema_name = options['schema']
-        domain_name = options['domain']
+        name = options['name']
 
-        if Client.objects.filter(schema_name=schema_name).exists():
-            raise CommandError(f'O tenant com schema "{schema_name}" já existe.')
+        if Client.objects.filter(name=name).exists():
+            raise CommandError(f'Já existe um tenant com o nome "{name}".')
 
-        if Domain.objects.filter(domain=domain_name).exists():
-            raise CommandError(f'O domínio "{domain_name}" já está em uso.')
-
-        tenant = Client(
-            schema_name=schema_name,
-            name=options['name'],
-        )
-        if options['skip_schema_create']:
-            tenant.auto_create_schema = False
-        tenant.save()
-
-        Domain.objects.create(
-            tenant=tenant,
-            domain=domain_name,
-            is_primary=True,
-        )
+        tenant = Client.objects.create(name=name)
 
         owner_username = options.get('owner_username')
         if owner_username:
@@ -52,6 +37,15 @@ class Command(BaseCommand):
             except User.DoesNotExist as exc:
                 raise CommandError(f'Usuário "{owner_username}" não encontrado.') from exc
 
+            if (
+                not owner.is_superuser
+                and TenantMembership.objects.filter(user=owner, is_active=True).exists()
+            ):
+                raise CommandError(
+                    f'O usuário "{owner_username}" já possui um vínculo ativo com uma empresa '
+                    '(regra: um usuário = uma empresa).'
+                )
+
             TenantMembership.objects.create(
                 user=owner,
                 tenant=tenant,
@@ -59,7 +53,5 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f'Tenant "{tenant.name}" criado: schema={tenant.schema_name}, domain={domain_name}'
-            )
+            self.style.SUCCESS(f'Tenant "{tenant.name}" criado (id={tenant.id}).')
         )

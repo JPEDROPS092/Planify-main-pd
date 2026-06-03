@@ -1,37 +1,69 @@
-"""Base de testes de API para o stack multi-tenant real.
+"""Base de testes de API para o stack multi-tenant **shared schema** (R8).
 
-Em vez de ``force_authenticate`` (que ignora o ``PermissionMiddleware`` e o
-roteamento por host), estas bases exercitam o caminho HTTP completo — o mesmo
-de ``scripts/e2e_cross_tenant.py``:
+Re-arquitetura (2026-06-03): com o ``django-tenants`` removido (R1) não há mais
+schema/host por tenant. O isolamento é por ``tenant_id`` (R2), o tenant da
+request vem da ``TenantMembership`` ativa do usuário (R3) e o filtro é central
+(``TenantManager`` + contexto de thread), dirigido pelo ``PermissionMiddleware``
+(R4). Estas bases exercitam o caminho HTTP real — o mesmo de
+``scripts/e2e_r4_tenant_isolation.py``:
 
-    TenantMainMiddleware (resolve tenant pelo HTTP_HOST/domínio)
-      -> PermissionMiddleware (exige JWT Bearer + TenantMembership ativa)
-        -> RLS por papel/queryset
+    PermissionMiddleware (JWT Bearer + resolve tenant pela membership + ativa o
+      contexto de tenant da thread)
+      -> TenantDatabaseRLSMiddleware (SET LOCAL app.current_tenant)
+        -> TenantManager + apply_tenant_rls (RLS por papel sobre o tenant)
 
-``TenantTestCase`` (do django_tenants) cria, uma vez por classe, um schema de
-tenant próprio com domínio e migra os apps tenant nele. Cada método de teste
-roda em transação revertida ao final, então usuários/memberships/dados criados
-no ``setUp`` não vazam entre testes.
+Não há ``TenantTestCase``: usa-se a ``APITestCase`` padrão (cada método roda em
+transação revertida). O tenant é uma linha ``customers.Client`` comum.
+
+**Contexto de tenant no corpo do teste.** Fora de uma request o
+``TenantManager`` não filtra (e o ``pre_save`` não carimba ``tenant_id``). Para
+que os ``Model.objects.create(...)`` feitos diretamente no ``setUp``/teste sejam
+carimbados com o tenant e as leituras fiquem escopadas, a base **mantém o
+contexto ativo** no tenant durante todo o teste. Como cada request do
+``self.client`` ativa/desativa o contexto no middleware, o cliente de teste
+**restaura** o escopo do tenant após cada chamada — assim criar objetos antes ou
+depois de uma request funciona igual.
 """
 from django.contrib.auth import get_user_model
-from django_tenants.test.cases import TenantTestCase
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from customers.models import TenantMembership
+from customers import context
+from customers.models import Client, TenantMembership
 
 User = get_user_model()
 
 
-def bearer_client(user, host):
-    """APIClient roteado para ``host`` e autenticado via JWT Bearer de ``user``."""
+class _ContextRestoringClient(APIClient):
+    """``APIClient`` que restaura o contexto de tenant da thread após cada request.
+
+    O ``PermissionMiddleware`` desativa o contexto em ``process_response``; sem
+    isto, criar objetos de negócio no corpo do teste *após* uma chamada HTTP
+    cairia fora de escopo (sem carimbo de ``tenant_id``). Restaurando o escopo,
+    o teste se comporta como se estivesse continuamente dentro do tenant.
+    """
+
+    ctx_tenant_id = None
+    ctx_bypass = False
+
+    def request(self, **kwargs):
+        try:
+            return super().request(**kwargs)
+        finally:
+            context.activate(tenant_id=self.ctx_tenant_id, bypass=self.ctx_bypass)
+
+
+def bearer_client(user, *, tenant_id=None, bypass=False):
+    """``APIClient`` autenticado via JWT Bearer de ``user`` (sem host por tenant)."""
     token = str(RefreshToken.for_user(user).access_token)
-    client = APIClient(SERVER_NAME=host)
+    client = _ContextRestoringClient()
+    client.ctx_tenant_id = tenant_id
+    client.ctx_bypass = bypass
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
     return client
 
 
-class TenantAPITestCase(TenantTestCase):
+class TenantAPITestCase(APITestCase):
     """Usuário comum com ``TenantMembership`` ativa no tenant de teste.
 
     Usar para endpoints de negócio (projetos, tarefas, equipes, etc.), onde se
@@ -44,16 +76,21 @@ class TenantAPITestCase(TenantTestCase):
 
     def setUp(self):
         super().setUp()
+        self.tenant = Client.objects.create(name='Tenant de Teste')
         self.user = self.create_member(
             email='member@planify.test',
             username='member',
             full_name='Member Tester',
             role=self.membership_role,
         )
-        self.client = bearer_client(self.user, self.get_test_tenant_domain())
+        # Mantém o contexto escopado ao tenant durante o teste (carimbo no create
+        # e leitura filtrada para os .objects diretos do setUp/teste).
+        context.activate(tenant_id=self.tenant.id, bypass=False)
+        self.addCleanup(context.deactivate)
+        self.client = bearer_client(self.user, tenant_id=self.tenant.id)
 
     def create_member(self, *, email, username, full_name, role=None, password='Senha-Teste-123'):
-        """Cria um usuário (schema público) com vínculo ativo no tenant atual."""
+        """Cria um usuário (identidade global) com vínculo ativo no tenant de teste."""
         user = User.objects.create_user(
             email=email, username=username, full_name=full_name, password=password,
         )
@@ -66,10 +103,10 @@ class TenantAPITestCase(TenantTestCase):
         return user
 
 
-class SuperuserAPITestCase(TenantTestCase):
+class SuperuserAPITestCase(APITestCase):
     """Superusuário autenticado via JWT.
 
-    Superuser tem bypass do gate de tenant (mesmo critério do RLS), adequado a
+    Superuser tem bypass do escopo de tenant (opera global), adequado a
     endpoints administrativos não escopados por tenant (ex.: ``/api/users/``)
     que exigem ``HasModulePermission``. Continua passando pelo middleware real
     (JWT obrigatório), diferente do antigo ``force_authenticate``.
@@ -83,4 +120,7 @@ class SuperuserAPITestCase(TenantTestCase):
             full_name='Administrador',
             password='Senha-Teste-123',
         )
-        self.client = bearer_client(self.admin, self.get_test_tenant_domain())
+        # Superuser sem tenant explícito opera em bypass (sem escopo).
+        context.activate(tenant_id=None, bypass=True)
+        self.addCleanup(context.deactivate)
+        self.client = bearer_client(self.admin, bypass=True)

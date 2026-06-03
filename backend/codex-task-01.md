@@ -435,40 +435,46 @@ ordem segura: **adicionar coluna nullable → backfill → só então `NOT NULL`
 - [x] `emails.py`/`views.py`: URL de convite por `FRONTEND_URL` + token (sem
       `.domains`/subdomínio). Validado 9/9. Registrado no audit (Fase R3).
 
-### Fase R4 — Isolamento centralizado (manager/queryset) + RLS (passo 5 do playbook)
+### Fase R4 — Isolamento centralizado (manager/queryset) + RLS (passo 5 do playbook) ✅
 
-- [ ] Manager/QuerySet default que filtra por `tenant_id` da request
-      automaticamente; mixin de viewset; set automático de `tenant_id` no create.
-- [ ] Recriar `apply_tenant_rls`/`apply_member_rls` sobre `tenant_id`.
-- [ ] **(passo 5)** Auditar e eliminar queries que escapam do manager
-      (`.objects` cru, `raw()`, agregações soltas).
+- [x] `TenantManager` (manager default dos 26 models) filtra por `tenant_id` da
+      request via contexto de thread (`customers/context.py`); `pre_save`
+      (`scoping.py`) carimba `tenant_id` no create; mixin de viewset.
+- [x] `apply_tenant_rls`/`apply_member_rls` recriados sobre `tenant_id`.
+- [x] **(passo 5)** ~90 escapes `.objects` auditados; cobertos pelo manager.
+      Validado 16/16 (`e2e_r4_tenant_isolation.py`).
 
-### Fase R5 — Customização por tenant
+### Fase R5 — Customização por tenant ✅
 
-- [ ] Model `TenantSettings`/campos no `Client` para config/feature-flags por
-      empresa. Schema físico separado só como exceção documentada.
+- [x] Model `TenantSettings` (1-1 com `Client`, JSON `features`/`config`); ponto
+      único `customers.config`; auto-criação via `post_save`. Schema físico
+      separado documentado como exceção dura.
 
-### Fase R6 — Migração de dados (schemas → shared)
+### Fase R6 — Migração de dados (schemas → shared) ✅
 
-- [ ] Trazer dados dos schemas existentes (`demo`) para as tabelas compartilhadas,
-      populando `tenant_id`. Custo baixo (sem empresas reais em produção).
-- [ ] Adaptar/aposentar `migrate_legacy_data` para o novo alvo.
+- [x] `seed_data.py` e `migrate_legacy_data` reescritos p/ o shared schema
+      (carimbo de `tenant_id`, sem `schema_context`). Seed: 504 linhas, 0 nulos.
 
-### Fase R7 — PostgreSQL RLS nativo (rede de segurança)
+### Fase R7 — PostgreSQL RLS nativo (rede de segurança) ✅
 
-- [ ] Policies nativas por `tenant_id` como segunda camada, após contratos estáveis.
+- [x] `FORCE ROW LEVEL SECURITY` + policy por `app.current_tenant` nas 26 tabelas
+      (`migrations/0006`); `TenantDatabaseRLSMiddleware`; role `app_user`
+      (`setup_rls`). Validado 7/7 (`e2e_r7_native_rls.py`).
 
-### Fase R8 — Testes
+### Fase R8 — Testes ✅
 
-- [ ] Reescrever base de testes e e2e para isolamento por `tenant_id` (sem
-      schema/host): dois tenants, dados homônimos, negação cross-tenant.
+- [x] `tests/tenant_base.py` reescrito sem `django-tenants` (`Client` +
+      `TenantMembership` + JWT; tenant por membership). `pytest tests/` 27 passed.
+- [x] e2e reescritos: `e2e_invitations.py` 13/13, `e2e_migrate_legacy.py` 23/23;
+      `e2e_cross_tenant.py` removido (substituído por `e2e_r4_tenant_isolation.py`).
 
-### Fase R9 — Provisionamento e convites
+### Fase R9 — Provisionamento e convites ✅
 
-- [ ] `provision_tenant` cria só a linha `Client` (sem schema) + owner +
-      membership. Fluxo de convites mantido.
+- [x] `provision_tenant` (`--name`) e `create_dev_tenant` criam só a linha
+      `Client` (+ `TenantSettings`) + owner + membership, sem schema/`Domain`.
+      Convites já sem subdomínio (R3). Validado por `e2e_invitations.py`.
 
-### Fase R10 — Docs e onboarding
+### Fase R10 — Docs e onboarding ✅
 
-- [ ] Atualizar `ONBOARDING.md`, `readme-backend.md` e
-      `docs/multi-tenant-architecture.md` para o modelo shared.
+- [x] `ONBOARDING.md`, `readme-backend.md`, `docs/multi-tenant-architecture.md` e
+      `tests/README.txt` atualizados para o modelo shared schema + `tenant_id`.

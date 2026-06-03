@@ -51,6 +51,9 @@ Para cada fase concluída, registrar:
 | **R5: Customização por tenant (config/feature-flags)** | Concluída | `customers.TenantSettings` (1-1 com `Client`, JSON `features`/`config`); ponto único de leitura `customers.config.get_tenant_settings`/`tenant_feature_enabled`; auto-criação via `post_save` em `Client`; admin. `migrations/0005`. Schema físico separado documentado como exceção dura. |
 | **R6: Migração de dados (schemas → shared)** | Concluída | `seed_data.py` e `migrate_legacy_data.py` reescritos para o shared schema (sem `schema_context`/`get_tenant_model`); tenant resolvido por `Client` (nome/id), negócio gravado no schema único carimbando `tenant_id` (seed via `context.scope`; migração via carimbo explícito + colisão de PK tenant-aware). Validado: seed → 504 linhas, 0 `tenant_id` nulo/fora do tenant; `migrate_legacy_data --users-only --dry-run` OK. |
 | **R7: RLS nativo do PostgreSQL** | Concluída | `ENABLE`+`FORCE ROW LEVEL SECURITY` + policy `tenant_isolation` (`FOR ALL`, USING+WITH CHECK por `app.current_tenant`) nas **26 tabelas de negócio** (`migrations/0006`); `TenantDatabaseRLSMiddleware` faz `SET LOCAL app.current_tenant` por transação a partir do contexto R4; `manage.py setup_rls` cria a role `app_user` (sem `BYPASSRLS`) com CRUD. Validado conectando como `app_user`: 7/7 (isolamento em query crua, `''`=global, deny/fail-closed, WITH CHECK bloqueia troca de tenant). Default segue `planify` (superuser, bypassa); RLS vale ao rodar a web como `app_user`. |
+| **R8: Testes** | Concluída | `tests/tenant_base.py` reescrito sem `django-tenants` (`APITestCase` + `Client` + `TenantMembership` + JWT; tenant por membership; cliente restaura o contexto de tenant pós-request). Suíte `pytest tests/` **27 passed**. `scripts/e2e_invitations.py` (13/13) e `scripts/e2e_migrate_legacy.py` (23/23) reescritos p/ shared schema; `e2e_cross_tenant.py` removido (substituído por `e2e_r4_tenant_isolation.py`, 16/16). `e2e_r7_native_rls.py` 7/7. |
+| **R9: Provisionamento e convites** | Concluída | `provision_tenant` e `create_dev_tenant` reescritos: criam só a linha `Client` (dispara `TenantSettings` via `post_save`) + owner + `TenantMembership`, sem `Domain`/`schema_name`/`auto_create_schema`. Convites já sem subdomínio desde a R3 (aceite por token em `FRONTEND_URL`). Validado fim-a-fim por `e2e_invitations.py` (provisionar → convidar → aceitar → acessar) e smoke de `create_dev_tenant`. |
+| **R10: Docs e onboarding** | Concluída | `ONBOARDING.md`, `backend/readme-backend.md`, `docs/multi-tenant-architecture.md` e `backend/tests/README.txt` atualizados de schema-per-tenant → shared + `tenant_id` (comandos `migrate`/`setup_rls`, sem subdomínio, role `app_user`, provisionamento por `--name`). Fases R0–R10 fechadas neste audit. |
 
 ## Registros
 
@@ -1311,3 +1314,127 @@ Pendências/ressalvas:
 
 Próximo passo: R8 (testes/e2e na nova base) e R10 (docs/onboarding) — fora do
 pedido atual (R5→R6→R7).
+
+### Fase R8: Testes
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: ressuscitar a suíte `pytest` (vermelha desde a R1, pois a base importava
+`TenantTestCase` do `django-tenants`) e reescrever os e2e para o shared schema —
+sem schema/host/`Domain`.
+
+Arquivos:
+
+- `backend/tests/tenant_base.py` (reescrito): sem `django_tenants`. Usa
+  `rest_framework.test.APITestCase` (transação revertida por teste). O tenant de
+  teste é uma linha `customers.Client`; `create_member` cria `User` +
+  `TenantMembership` ativa; o `APIClient` é autenticado por **JWT Bearer** (sem
+  host — o tenant é resolvido pela membership). A base **mantém o contexto de
+  tenant ativo** (`customers.context.activate`) durante o teste para que os
+  `Model.objects.create(...)` diretos do `setUp`/teste sejam carimbados com
+  `tenant_id`; um `_ContextRestoringClient` reativa o escopo do tenant após cada
+  request (o `PermissionMiddleware` desativa o contexto em `process_response`),
+  cobrindo criação de objetos antes **e** depois de chamadas HTTP.
+- `backend/scripts/e2e_invitations.py` (reescrito): `provision_tenant` por
+  `--name`; sem `HTTP_HOST`/schema; cleanup por `Client.name` (cascateia
+  memberships/convites/negócio) + e-mails.
+- `backend/scripts/e2e_migrate_legacy.py` (reescrito): sem `schema_context`/
+  `Domain`. Constrói o SQLite legado com o schema atual (incl. `customers_client`
+  p/ satisfazer a FK `tenant` na origem), popula carimbando um tenant de origem
+  fictício e com **PKs altos** (`PK_BASE=90_000_000`) para não colidir com o seed
+  `Demo` do banco de dev (o comando preserva PK); asserções lidas com o tenant
+  destino escopado por `context.scope`; `--tenant <nome>`.
+- `backend/scripts/e2e_cross_tenant.py` **removido** — redundante com
+  `e2e_r4_tenant_isolation.py` (isolamento cross-tenant por `tenant_id`, 16/16).
+- `backend/tests/README.txt` atualizado para o stack shared schema.
+
+Validação (PostgreSQL real):
+
+```bash
+./venv/bin/pytest tests/ --create-db          # 27 passed
+./venv/bin/python scripts/e2e_r4_tenant_isolation.py   # 16/16
+./venv/bin/python scripts/e2e_r7_native_rls.py         # 7/7
+./venv/bin/python scripts/e2e_invitations.py           # 13/13
+./venv/bin/python scripts/e2e_migrate_legacy.py        # 23/23
+```
+
+Pendências/ressalvas:
+
+- Rodar a suíte com a role **dona** do banco (não `app_user`): a RLS nativa é
+  inócua para ela e não atrapalha a criação de fixtures.
+- Autorização a nível de objeto (ex.: `member` editar só a tarefa atribuída a ele)
+  segue como refinamento de produto sobre a base de isolamento — fora da R8.
+
+### Fase R9: Provisionamento e convites
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: provisionar empresa **sem** schema/domínio. Após a R1 (remoção de
+`Domain`/`schema_name`/`auto_create_schema`), os dois management commands ainda
+referenciavam esses atributos (imports lazy — não quebravam o `check`, mas
+quebrariam em runtime).
+
+Arquivos:
+
+- `customers/management/commands/provision_tenant.py` (reescrito): args agora são
+  `--name` + `--owner-email`/`--owner-username`/`--owner-full-name`/
+  `--owner-password`. Cria `Client.objects.create(name=...)` (dispara o `post_save`
+  que cria as `TenantSettings` da R5), resolve/cria o owner e a
+  `TenantMembership(owner)`. Recusa nome de tenant duplicado (o `name` é o
+  identificador usado por `migrate_legacy_data --tenant <nome>`) e owner já
+  vinculado ("um usuário = uma empresa").
+- `customers/management/commands/create_dev_tenant.py` (reescrito): `--name`
+  (default `Demo`) + `--owner-username` opcional; sem schema/domínio.
+
+Convites: o fluxo já estava shared-schema desde a R3 — a URL de aceite usa
+`FRONTEND_URL` + `TENANT_INVITATION_ACCEPT_PATH` (token), sem subdomínio
+(`customers/emails.py`, `customers/views.py`). Nada a alterar aqui.
+
+Validação:
+
+- `manage.py check` sem issues.
+- `e2e_invitations.py` 13/13: provisionar (via `provision_tenant`) → convidar →
+  inspecionar → aceitar (conta nova + membership) → acessar `/api/projects/` →
+  negações (member cria convite 403, reaceite 400, convidar já-vinculado 400,
+  outsider 403).
+- Smoke `create_dev_tenant --name "R9 Smoke"`: `Client` criado com `TenantSettings`
+  auto-criada; removido após o teste.
+
+### Fase R10: Docs e onboarding
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: deixar a documentação coerente com o modelo **shared schema + `tenant_id`**
+(os docs ainda descreviam schema-per-tenant/subdomínio/`migrate_schemas`).
+
+Arquivos atualizados:
+
+- `docs/multi-tenant-architecture.md`: reescrito para o modelo shared — banner de
+  pivô, decisões vigentes, as **três camadas** de isolamento (`TenantManager`, RLS
+  de app, RLS nativo), resolução por membership, provisionamento/convites sem
+  schema, comandos (`migrate`/`setup_rls`/`provision_tenant --name`), testes/e2e e
+  pontos em aberto.
+- `ONBOARDING.md`: stack, seção 4 (conceito central → shared + 3 camadas), models
+  de `customers` (sem `Domain`, com `TenantSettings`/infra), fluxo de auth, fluxos
+  (provision por `--name`), "como rodar" (`migrate` + `setup_rls`, sem subdomínio),
+  testes/e2e, comandos, tabela de fases (R0–R10) e armadilhas.
+- `backend/readme-backend.md`: tecnologias, instalação/dev (`migrate`), seção
+  "PostgreSQL e Tenants (shared schema)" + RLS nativo/`app_user`, seed (`SEED_TENANT`)
+  e `migrate_legacy_data --tenant`.
+- `backend/tests/README.txt`: stack shared schema (feito junto da R8).
+
+Conclui a re-arquitetura R0–R10. Frentes seguintes (fora do escopo R): autorização
+a nível de objeto, Fase 11 (observabilidade/segurança: logs com tenant,
+`MEDIA_ROOT` por tenant, refino de privilégios do `app_user`) e Fase 12 (frontend).
