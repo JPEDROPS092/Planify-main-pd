@@ -150,6 +150,14 @@ def apply_member_rls(queryset, user):
 
 
 class TenantRLSQuerysetMixin:
+    def get_permissions(self):
+        # Acopla a autorização por objeto (escrita por papel) a todo viewset de
+        # negócio, sem repetir em cada ``permission_classes``. Import local evita
+        # ciclo (object_permissions importa ``get_request_membership`` daqui).
+        from customers.object_permissions import TenantObjectWritePermission
+
+        return [*super().get_permissions(), TenantObjectWritePermission()]
+
     def apply_rls(self, queryset):
         return apply_tenant_rls(queryset, self.request)
 

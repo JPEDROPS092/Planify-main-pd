@@ -57,8 +57,51 @@ Para cada fase concluída, registrar:
 | **R11a: Superuser sem bypass tenant-scoped** | Concluída | Superuser passa a ser admin SaaS: provisionamento/manutenção/`/admin`, sem acesso livre a projetos/tarefas/dados de tenant. APIs tenant-scoped exigem `TenantMembership` e papel; `X-Tenant-ID` legado não concede bypass. |
 | **R11b: Metadata SaaS mínima de tenant** | Concluída | `Client` ganhou `slug` único e `status` (`active`/`suspended`) para painel SaaS/admin. Plano/MRR ficam fora por enquanto. |
 | **R11c: Seeds de dev** | Concluída | `seed_initial` idempotente garante superuser SaaS, tenant `Demo` (`slug=demo`, `status=active`), owner do Demo e `TenantMembership(owner)`. `seed_demo_data` semeia dados de negócio idempotentes; `seed_data.py` fica como wrapper. |
+| **R12: Autorização a nível de objeto (escrita por papel)** | Concluída | Sobre o isolamento por tenant já estabelecido, a **escrita por objeto** afunila por papel: `owner`/`admin`/`manager` escrevem todo o tenant; `viewer` é somente-leitura (inclusive create); `member` modifica/exclui **apenas os próprios recursos** (criados/atribuídos a ele), não qualquer objeto do projeto que ele consegue *ler*. `customers/object_permissions.py` (`TenantObjectWritePermission` + `member_write_filters`, subconjunto estreito dos lookups de `apply_member_rls`) acoplado em `TenantRLSQuerysetMixin.get_permissions`. `tests/test_object_authz.py` 9/9; suíte total 36 passed. |
 
 ## Registros
+
+### Fase R12: Autorização a nível de objeto (escrita por papel)
+
+Data local: 2026-06-03
+
+Status: concluída.
+
+Objetivo: refinar a autorização *por objeto* sobre a base de isolamento por
+tenant já estabelecida (R4/R7). A leitura por papel era ampla de propósito
+(colaboração: `member` enxerga tudo dos projetos que participa), mas a escrita
+herdava essa amplitude — como `get_object()` usa o queryset de leitura, um
+`member` conseguiria editar/excluir qualquer objeto que apenas *enxerga* (ex.:
+uma tarefa do projeto não atribuída a ele). A escrita precisa ser estreita
+(responsabilidade), sem mexer no isolamento por tenant.
+
+Decisão de produto (matriz de escrita):
+
+- `owner`/`admin`/`manager`: escrita plena dentro do tenant.
+- `viewer`: somente leitura (nenhuma escrita, nem create).
+- `member`: modifica/exclui **apenas os próprios recursos** (criados/atribuídos a
+  ele, autor/responsável), não qualquer objeto do projeto que ele lê.
+
+Arquivos:
+
+- `customers/object_permissions.py`: `TenantObjectWritePermission`
+  (`has_permission` corta escrita de `viewer`/papéis fora do conjunto já na
+  coleção; `has_object_permission` afunila `member` por objeto) + mapa
+  `member_write_filters` (`model_label -> Q` de posse, subconjunto estreito dos
+  lookups de `apply_member_rls` — mantém a única fonte das relações por model).
+- `customers/querysets.py`: `TenantRLSQuerysetMixin.get_permissions` acopla a
+  permissão a todo viewset de negócio (import local evita ciclo). DRF chama
+  `check_object_permissions` em `get_object()`, então retrieve/update/destroy e as
+  `@action` de detalhe (que chamam `self.get_object()`) ficam cobertos sem
+  alteração caso a caso.
+- `tests/test_object_authz.py`: 9 casos no caminho HTTP real (member lê tarefa de
+  outro member mas não escreve/exclui; member escreve a própria; `@action`
+  `atualizar_status` barrada por objeto; viewer só lê e não cria; owner escreve
+  qualquer tarefa).
+
+Validação: `manage.py check` verde; `pytest tests/test_object_authz.py` 9/9;
+suíte total `pytest tests/` **36 passed** (27 anteriores + 9 novos), sem
+regressões.
 
 ### Fase R11c: Seeds de dev
 

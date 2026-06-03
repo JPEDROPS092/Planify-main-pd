@@ -128,11 +128,19 @@ PostgreSQL como rede de segurança no banco.
 
 ## Trabalho restante (próximas frentes)
 
-### Autorização a nível de objeto
+### Autorização a nível de objeto ✅
 
-- [ ] Refinar regras por entidade sobre a base de isolamento já estabelecida
-      (ex.: `member` editar **apenas** a tarefa atribuída a ele, não qualquer
-      tarefa do projeto que acessa). Decisão de produto, coberta por testes novos.
+- [x] Refinada a escrita por objeto sobre a base de isolamento já estabelecida.
+      Leitura permanece ampla (colaboração); a **escrita** afunila por papel:
+      `owner`/`admin`/`manager` escrevem todo o tenant, `viewer` é somente-leitura
+      (inclusive create), e `member` modifica/exclui **apenas os próprios recursos**
+      (criados/atribuídos a ele) — não qualquer objeto do projeto que ele acessa.
+      Implementado em `customers/object_permissions.py` (`TenantObjectWritePermission`
+      + mapa `member_write_filters`, subconjunto estreito dos lookups de
+      `apply_member_rls`), acoplado centralmente em
+      `TenantRLSQuerysetMixin.get_permissions` (DRF chama `has_object_permission`
+      no `get_object()`, então retrieve/update/destroy e as `@action` de detalhe
+      ficam cobertos). Coberto por `tests/test_object_authz.py` (9 casos).
 
 ### Fase 11 — Observabilidade e Segurança
 
