@@ -207,3 +207,55 @@ class TenantInvitation(models.Model):
 
     def __str__(self):
         return f'Convite {self.email} -> {self.tenant} ({self.role}, {self.status})'
+
+
+class TenantSettings(models.Model):
+    """Customização por empresa via config/feature-flags (R5).
+
+    Modelo 1-1 com ``Client`` que guarda as diferenças de comportamento de cada
+    tenant **sem** schema físico separado. Dois campos JSON livres e extensíveis:
+
+    - ``features``: liga/desliga funcionalidades (``chave -> bool``).
+    - ``config``: parâmetros de configuração arbitrários (``chave -> valor``).
+
+    Ponto único de leitura: ``customers.config.get_tenant_settings(tenant)``
+    (cria com defaults na primeira leitura). É criado automaticamente para todo
+    ``Client`` novo (``post_save`` em ``customers.config``).
+
+    Schema físico separado por empresa é **exceção dura** (contrato/lei), tratada
+    caso a caso fora deste model — não é o caminho de customização padrão.
+    """
+
+    tenant = models.OneToOneField(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='settings',
+    )
+    features = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Feature flags por empresa (chave -> booleano).',
+    )
+    config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Parâmetros de configuração por empresa (chave -> valor).',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuração do tenant'
+        verbose_name_plural = 'Configurações dos tenants'
+
+    def is_feature_enabled(self, key, default=False):
+        return bool(self.features.get(key, default))
+
+    def set_feature(self, key, enabled):
+        self.features[key] = bool(enabled)
+
+    def get_config(self, key, default=None):
+        return self.config.get(key, default)
+
+    def __str__(self):
+        return f'Configurações de {self.tenant}'

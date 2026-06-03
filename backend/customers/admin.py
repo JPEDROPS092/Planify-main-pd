@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Client, TenantInvitation, TenantMembership
+from .models import Client, TenantInvitation, TenantMembership, TenantSettings
 
 
 @admin.register(Client)
@@ -25,3 +25,11 @@ class TenantInvitationAdmin(admin.ModelAdmin):
     search_fields = ['email', 'tenant__name']
     autocomplete_fields = ['tenant', 'invited_by', 'accepted_user']
     readonly_fields = ['token', 'status', 'accepted_user', 'accepted_at', 'created_at', 'updated_at']
+
+
+@admin.register(TenantSettings)
+class TenantSettingsAdmin(admin.ModelAdmin):
+    list_display = ['tenant', 'updated_at']
+    search_fields = ['tenant__name']
+    autocomplete_fields = ['tenant']
+    readonly_fields = ['created_at', 'updated_at']

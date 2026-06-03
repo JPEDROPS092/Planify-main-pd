@@ -23,8 +23,8 @@ from risks.models import Risco, HistoricoRisco
 from costs.models import Categoria, Custo, OrcamentoProjeto, OrcamentoTarefa, Alerta
 from documents.models import Documento, HistoricoDocumento, Comentario
 from communications.models import Comunicacao, Notificacao, ConfiguracaoNotificacao, ChatMensagem, ChatMensagemLeitura
-from django_tenants.utils import schema_context, get_tenant_model
-from customers.models import TenantMembership
+from customers import context
+from customers.models import Client, TenantMembership
 
 User = get_user_model()
 
@@ -56,8 +56,8 @@ def create_memberships(tenant, users):
         )
         if was_created:
             created += 1
-            print(f"Membership criada: {user.username} -> {tenant.schema_name} ({role})")
-    print(f"{created} membership(s) criada(s) no tenant '{tenant.schema_name}'.")
+            print(f"Membership criada: {user.username} -> {tenant.name} ({role})")
+    print(f"{created} membership(s) criada(s) no tenant '{tenant.name}'.")
 
 def create_users():
     """Criar usuários de exemplo com diferentes papéis"""
@@ -679,21 +679,17 @@ def create_document_comments():
 def run_seeds():
     print("Iniciando seed do banco de dados...")
 
-    schema_name = os.environ.get('SEED_TENANT_SCHEMA', 'demo')
-    Client = get_tenant_model()
-    tenant = Client.objects.filter(schema_name=schema_name).first()
-    if tenant is None:
-        print(f"\n[ERRO] Tenant com schema '{schema_name}' não encontrado.")
-        print("Crie o tenant antes de semear, por exemplo:")
-        print(f"  python manage.py create_dev_tenant --schema {schema_name} "
-              f"--name {schema_name.capitalize()} --domain {schema_name}.localhost")
-        print("Ou defina SEED_TENANT_SCHEMA para um tenant existente.\n")
-        return
+    # Shared schema (R6): o tenant é uma linha em customers.Client (sem schema
+    # físico). Resolvido por nome (env SEED_TENANT, default 'Demo'); criado se não
+    # existir — get_or_create dispara o post_save que cria as TenantSettings (R5).
+    tenant_name = os.environ.get('SEED_TENANT', 'Demo')
+    tenant, was_created = Client.objects.get_or_create(name=tenant_name)
+    print(f"Tenant '{tenant_name}' {'criado' if was_created else 'reutilizado'} (id={tenant.id}).")
 
-    # Fase compartilhada (schema public): usuários globais e vínculos de tenant.
+    # Fase compartilhada (identidade global): usuários e vínculos de tenant.
     seeded_users = []
     try:
-        print("Criando usuários (schema public)...")
+        print("Criando usuários (identidade global)...")
         seeded_users = create_users()
         print("Usuários criados com sucesso!")
     except Exception as e:
@@ -703,7 +699,7 @@ def run_seeds():
         print("\n")
 
     try:
-        print(f"Vinculando usuários ao tenant '{schema_name}'...")
+        print(f"Vinculando usuários ao tenant '{tenant_name}'...")
         create_memberships(tenant, seeded_users)
     except Exception as e:
         print(f"\n[ERRO] Erro ao criar memberships: {str(e)}")
@@ -711,9 +707,11 @@ def run_seeds():
         traceback.print_exc()
         print("\n")
 
-    # Fase tenant: dados de negócio são gravados no schema do tenant alvo.
-    print(f"Semeando dados de negócio no schema '{schema_name}'...")
-    with schema_context(schema_name):
+    # Fase de negócio: gravada no schema único, carimbada com tenant_id pelo
+    # contexto de tenant (TenantManager escopa as leituras; o pre_save carimba o
+    # tenant_id em cada create).
+    print(f"Semeando dados de negócio do tenant '{tenant_name}'...")
+    with context.scope(tenant_id=tenant.id):
         run_tenant_seeds()
 
 

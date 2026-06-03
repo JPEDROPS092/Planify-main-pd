@@ -48,6 +48,9 @@ Para cada fase concluída, registrar:
 | **R2: `tenant_id` nos models de negócio** | Concluída | `tenant = FK(customers.Client, CASCADE)` NOT NULL nos 26 models dos 7 apps; `Projeto.titulo` reescopado por tenant; índices compostos `(tenant, …)`; 7 migrations; `check`/`migrate` verdes. **Isolamento ainda desligado até R4.** |
 | **R3: Resolução de tenant por membership** | Concluída | `request.tenant`/`tenant_id` resolvidos pela `TenantMembership` ativa (superuser via header `X-Tenant-ID`); `querysets`/`permissions`/`middleware`/`emails` sem `schema_name`/`.domains`; validado 9/9. **Filtro real por `tenant_id` ainda é R4.** |
 | **R4: Isolamento centralizado (manager/queryset) + RLS** | Concluída | `TenantManager` (contexto thread-local por request) filtra `tenant_id` em toda query `.objects` de runtime nos 26 models; `pre_save` carimba `tenant_id` no create; `apply_tenant_rls` aplica o limite duro de tenant na camada de viewset (queryset de classe não passa pelo manager) + RLS por papel preservada; middleware ativa/limpa o contexto (deny-by-default, bypass admin/superuser-global). e2e 16/16. **Isolamento restabelecido.** Rede de segurança no banco (RLS nativo) é a R7. |
+| **R5: Customização por tenant (config/feature-flags)** | Concluída | `customers.TenantSettings` (1-1 com `Client`, JSON `features`/`config`); ponto único de leitura `customers.config.get_tenant_settings`/`tenant_feature_enabled`; auto-criação via `post_save` em `Client`; admin. `migrations/0005`. Schema físico separado documentado como exceção dura. |
+| **R6: Migração de dados (schemas → shared)** | Concluída | `seed_data.py` e `migrate_legacy_data.py` reescritos para o shared schema (sem `schema_context`/`get_tenant_model`); tenant resolvido por `Client` (nome/id), negócio gravado no schema único carimbando `tenant_id` (seed via `context.scope`; migração via carimbo explícito + colisão de PK tenant-aware). Validado: seed → 504 linhas, 0 `tenant_id` nulo/fora do tenant; `migrate_legacy_data --users-only --dry-run` OK. |
+| **R7: RLS nativo do PostgreSQL** | Concluída | `ENABLE`+`FORCE ROW LEVEL SECURITY` + policy `tenant_isolation` (`FOR ALL`, USING+WITH CHECK por `app.current_tenant`) nas **26 tabelas de negócio** (`migrations/0006`); `TenantDatabaseRLSMiddleware` faz `SET LOCAL app.current_tenant` por transação a partir do contexto R4; `manage.py setup_rls` cria a role `app_user` (sem `BYPASSRLS`) com CRUD. Validado conectando como `app_user`: 7/7 (isolamento em query crua, `''`=global, deny/fail-closed, WITH CHECK bloqueia troca de tenant). Default segue `planify` (superuser, bypassa); RLS vale ao rodar a web como `app_user`. |
 
 ## Registros
 
@@ -1137,3 +1140,174 @@ Próximo passo: Fase R7 (RLS nativo do PostgreSQL: `ENABLE`+`FORCE ROW LEVEL
 SECURITY`, policies SELECT/INSERT/UPDATE/DELETE sobre `tenant_id`,
 `SET LOCAL app.current_tenant` por transação, role `app_user` sem bypass + role de
 migration com `BYPASSRLS`).
+
+> Ordem ajustada (decisão do usuário, 2026-06-03): executar **R5 → R6 → R7**.
+
+### Fase R5: Customização por tenant (config/feature-flags)
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: permitir regras de negócio diferentes por empresa **sem** schema físico
+separado, via configuração/feature-flags por tenant.
+
+Decisão de arquitetura: **um model dedicado `TenantSettings` (1-1 com `Client`)**
+com dois campos JSON livres e extensíveis (em vez de colunas fixas ou JSON no
+próprio `Client`), priorizando flexibilidade sem migration a cada nova flag:
+
+- `features` (`chave -> booleano`): liga/desliga funcionalidades.
+- `config` (`chave -> valor`): parâmetros arbitrários.
+
+Arquivos:
+
+- `customers/models.py`: model `TenantSettings` + métodos `is_feature_enabled`,
+  `set_feature`, `get_config`. `migrations/0005_tenantsettings.py`.
+- `customers/config.py` (novo): **ponto único de leitura** —
+  `get_tenant_settings(tenant)` (cria com defaults na 1ª leitura; `None`-safe) e
+  `tenant_feature_enabled(tenant, key, default)`. `register_tenant_settings()`
+  conecta um `post_save` em `Client` que cria as settings de todo tenant novo;
+  registrado em `customers/apps.py::ready()`.
+- `customers/admin.py`: `TenantSettingsAdmin`.
+
+`TenantSettings` é model de **infra de tenancy** (chaveado por `Client`), não de
+negócio: usa o `Manager` padrão (não o `TenantManager`) e não tem `tenant_id`.
+
+Validação (shell, PostgreSQL real): criar `Client` → `TenantSettings` criada
+automaticamente; `set_feature`/`get_config` persistem e são lidos pelo ponto único;
+`tenant_feature_enabled` honra default; `get_tenant_settings(None)` → `None`;
+`Client.delete()` cascateia e remove as settings. `manage.py check` sem issues;
+`migrate` aplicou `0005`.
+
+Pendências/ressalvas:
+
+- Não há flags de produto concretas ainda; a infra está pronta para consumo
+  pontual no código de negócio via o ponto único (sem espalhar regras).
+- Schema físico separado por empresa permanece **exceção dura** (contrato/lei),
+  fora deste mecanismo.
+
+Próximo passo: Fase R6 (migração de dados dos schemas legados para o shared).
+
+### Fase R6: Migração de dados (schemas → shared)
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: trazer os dados para o schema único com `tenant_id` populado e tornar o
+seed compatível com o shared schema. Como a R1 já recriou o banco de dev como
+schema único (os schemas de tenant do django-tenants não existem mais) e a base
+legada real é o SQLite single-tenant (só 1 superusuário, sem negócio), o trabalho
+foi **reescrever os dois utilitários** para o novo alvo.
+
+Arquivos:
+
+- `seed_data.py`: removido `django_tenants.utils`; tenant resolvido por
+  `Client` (env `SEED_TENANT`, default `Demo`, `get_or_create` — dispara o
+  `post_save` que cria as `TenantSettings` da R5). Identidade (usuários +
+  memberships) na fase compartilhada; dados de negócio gravados dentro de
+  `customers.context.scope(tenant_id=...)`, de modo que o `pre_save` da R4 carimba
+  `tenant_id` em cada create e o `TenantManager` escopa as leituras.
+- `customers/management/commands/migrate_legacy_data.py`: removido
+  `schema_context`/`get_public_schema_name`; tudo grava no `default`. `--schema`
+  → `--tenant` (id ou nome do `Client`). Negócio é carimbado com `tenant_id`
+  explicitamente; idempotência por PK **no tenant destino**; **colisão de PK
+  cross-tenant aborta** (no shared schema o espaço de PK é global — preservar PK
+  que já pertence a outro tenant colidiria; importar para um banco com negócio de
+  outros tenants exigiria remapear FKs de negócio, fora do escopo atual).
+  Inspeções via `_base_manager` (não-filtrado), independentes de contexto.
+
+Validação (PostgreSQL real):
+
+```bash
+./venv/bin/python manage.py check                              # sem issues
+./venv/bin/python manage.py migrate_legacy_data --users-only --dry-run \
+    --legacy-db backups/db.sqlite3.codex-task-01-baseline      # lidos=1 criados=1
+./venv/bin/python seed_data.py                                 # seed completo
+```
+
+- Seed do tenant `Demo`: **504 linhas de negócio**, **0 com `tenant_id` nulo**,
+  **0 fora do `Demo`** (carimbo correto em todos os caminhos de create); 7
+  memberships; `TenantSettings` criada automaticamente. `Projeto.objects` dentro
+  de `scope(Demo)` == `_base_manager` (consistente).
+- `migrate_legacy_data --users-only --dry-run`: 1 usuário legado, satélites 0,
+  RBAC pulado.
+
+Pendências/ressalvas:
+
+- O e2e antigo `scripts/e2e_migrate_legacy.py` ainda é django-tenants; sua
+  reescrita (e a suíte `tests/`) é a **R8**. `pytest` segue vermelho até lá.
+- Migração de **media** (arquivos) não exercida (sem binários no acervo);
+  particionamento físico de `MEDIA_ROOT` por tenant segue como item de operação.
+- RBAC legado permanece fora do escopo automático (decisão de arquitetura aberta).
+
+Próximo passo: Fase R7 (RLS nativo do PostgreSQL — rede de segurança no banco).
+
+### Fase R7: RLS nativo do PostgreSQL
+
+Data local: 2026-06-03
+
+Branch: `Dev-tenant`
+
+Status: concluída.
+
+Objetivo: segunda camada de isolamento **no banco**, independente da aplicação —
+mesmo uma query sem `WHERE tenant_id` não vaza entre tenants. Decisão do usuário:
+"backend controla identidade; banco garante isolamento".
+
+Decisões e como o ambiente moldou a solução:
+
+- A conexão padrão (`planify`) é **superuser** (`rolsuper=true`), então **ignora
+  RLS** sempre. Para o RLS valer, a app web deve conectar com uma role sem
+  privilégio: `manage.py setup_rls` cria **`app_user`** (LOGIN, NOSUPERUSER,
+  NOBYPASSRLS) com CRUD em `public`. Operação: migrations/seed/testes seguem por
+  `planify` (bypass, nada quebra); a **web** roda com `POSTGRES_USER=app_user`.
+- RLS aplicada só às **26 tabelas de negócio**. As `customers_*`
+  (`tenantmembership`/`tenantinvitation`/`tenantsettings`) têm coluna `tenant_id`
+  mas **ficam fora**: a resolução do tenant lê `TenantMembership` *antes* de a GUC
+  existir; aplicar RLS nelas travaria login/bypass.
+
+Arquivos:
+
+- `customers/migrations/0006_native_rls.py`: `RunPython` que, para cada uma das 26
+  tabelas, faz `ENABLE`+`FORCE ROW LEVEL SECURITY` e cria a policy `tenant_isolation`
+  (`FOR ALL`) com `USING` e `WITH CHECK` iguais ao predicado da GUC. Reversível.
+- `customers/rls.py`: `TenantDatabaseRLSMiddleware` (após o `PermissionMiddleware`)
+  envolve a request em `transaction.atomic()` e faz
+  `set_config('app.current_tenant', <v>, true)` (escopo de transação). Valor `<v>`
+  espelha o contexto R4: `''` (bypass superuser/admin), `str(tenant_id)`, ou `-1`
+  (deny/fail-closed). `current_guc_value()`.
+- `customers/management/commands/setup_rls.py`: cria/atualiza `app_user` + grants
+  (idempotente; roda pela conexão dona `planify`).
+- `planify/settings.py`: middleware adicionado ao `MIDDLEWARE`.
+
+Predicado da policy (GUC `app.current_tenant`, `tenant_id` bigint):
+
+```sql
+current_setting('app.current_tenant', true) = ''                 -- global (superuser/admin)
+OR tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint
+-- '' => todas; '<id>' => só o tenant; '-1'/ausente => nenhuma (fail-closed)
+```
+
+Validação (`scripts/e2e_r7_native_rls.py`, conectando como `app_user` via psycopg):
+**7/7 OK** — GUC=A vê só A (query crua sem WHERE), GUC=B só B, `''` vê todos,
+`-1` e sessão sem GUC não veem nada (fail-closed), e `UPDATE` movendo linha de A
+para B é bloqueado pelo `WITH CHECK`. `pg_policies`: 26 policies `tenant_isolation`;
+`projects_projeto` com `relrowsecurity`+`relforcerowsecurity`;
+`customers_tenantmembership` sem RLS.
+
+Pendências/ressalvas:
+
+- Para **ativar em runtime**, rodar a web com `POSTGRES_USER=app_user` (+ senha);
+  documentar em README/.env.example fica para a R10. Sob `planify` o RLS é inócuo
+  (a camada R4 segue isolando na app).
+- Toda request passa a abrir uma transação (`atomic`) para o `SET LOCAL`; aceitável.
+- `app_user` recebe CRUD em todo `public`; refino de privilégios por tabela é
+  endurecimento futuro (R11/observabilidade-segurança).
+
+Próximo passo: R8 (testes/e2e na nova base) e R10 (docs/onboarding) — fora do
+pedido atual (R5→R6→R7).

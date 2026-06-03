@@ -89,6 +89,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middleware.PermissionMiddleware',       # Middleware customizado para permissões
+    'customers.rls.TenantDatabaseRLSMiddleware',   # R7: SET LOCAL app.current_tenant (RLS nativo)
     'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug Toolbar middleware
 ]
 

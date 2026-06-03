@@ -11,3 +11,8 @@ class CustomersConfig(AppConfig):
         from customers.scoping import register
 
         register()
+
+        # R5: cria TenantSettings automaticamente para cada Client novo.
+        from customers.config import register_tenant_settings
+
+        register_tenant_settings()
