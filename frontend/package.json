@@ -8,6 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
     "generate:api": "openapi --input \"./PlanifyAPI.yaml\" --output ./lib/api-client --client axios"
   },
   "dependencies": {
@@ -16,8 +17,10 @@
     "@phosphor-icons/vue": "^2.2.1",
     "animate.css": "^4.1.1",
     "axios": "^1.9.0",
+    "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "lucide-vue-next": "^0.510.0",
     "nuxt": "^3.17.4",
     "ofetch": "^1.4.1",
@@ -50,6 +53,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3",
     "vite-tsconfig-paths": "^5.1.4",
-    "vue-eslint-parser": "^10.1.3"
+    "vue-eslint-parser": "^10.1.3",
+    "vue-tsc": "^2.2.12"
   }
 }

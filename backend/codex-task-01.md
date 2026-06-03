@@ -150,19 +150,40 @@ PostgreSQL como rede de segurança no banco.
 - [ ] Particionamento de `MEDIA_ROOT` por tenant (documentos/anexos).
 - [ ] Backup do banco único + export/delete por `tenant_id` para offboarding.
 
-### Fase 12 — Frontend e Integração
+### Fase 12 — Frontend e Integração (EM ANDAMENTO)
 
 > baseURL única (sem subdomínio): o tenant vem do JWT/membership no backend.
 
-- [ ] baseURL única do backend. Corrigir bugs em `frontend/plugins/api.ts`
-      (`os.BACKEND_URL` → `runtimeConfig`; `authStore.token` → `authStore.accessToken`).
-- [ ] Login: tenant implícito (membership ativa); tratar `403` "sem vínculo" e `401`.
-- [ ] Tela de gestão de convites (owner/admin): `/api/tenant/invitations/`.
-- [ ] Rota pública de aceite por token: `GET /api/invitations/<token>/` +
-      `POST /api/invitations/<token>/accept/`.
-- [ ] (Opcional) Painel superuser: enviar `X-Tenant-ID` para operar escopado.
-- [ ] Regenerar o cliente OpenAPI; testar convite → aceite → login → criar
-      projeto/tarefa.
+- [x] baseURL única + bugs do `frontend/plugins/api.ts` corrigidos
+      (`os.BACKEND_URL` → `runtimeConfig.public.apiBaseUrl`; `authStore.token` →
+      `authStore.accessToken`). Feito junto da migração do frontend para o cliente
+      OpenAPI gerado (`lib/api-client` + adaptadores finos em `services/api`).
+- [x] Rota pública de aceite por token **no backend** (já existe e roteada):
+      `GET /api/invitations/<token>/` (`InvitationDetailView`) +
+      `POST /api/invitations/<token>/accept/` (`InvitationAcceptView`); gestão via
+      `TenantInvitationViewSet` em `/api/tenant/invitations/`.
+- [ ] Login: tenant implícito (membership ativa); tratar `403` "sem vínculo" e `401`
+      na UX do frontend.
+- [ ] Frontend: tela de gestão de convites (owner/admin) consumindo
+      `/api/tenant/invitations/`.
+- [ ] Frontend: tela pública de aceite por token (inspeção + aceite).
+- [ ] Instalar deps de build faltantes do frontend: `chart.js` e `date-fns`
+      (importadas em reports/communication/`DateRangePicker.vue`, mas ausentes do
+      `package.json` → quebram o build dessas páginas).
+- [ ] Regenerar o cliente OpenAPI (passou a incluir os recursos recém-roteados na
+      higiene de API abaixo: `sprints`, `historico-status`, `comunicacoes`); testar
+      convite → aceite → login → criar projeto/tarefa.
+- [ ] (Opcional) Painel superuser: operações de plataforma sem acesso livre aos
+      dados de negócio do tenant.
+
+> **Higiene de API (feito 2026-06-03, habilita a regeneração do cliente):** viewsets
+> órfãos roteados — `SprintViewSet`→`/api/projects/sprints/`,
+> `HistoricoStatusProjetoViewSet`→`/api/projects/historico-status/` (ambos antes do
+> prefixo vazio do `ProjetoViewSet`), `ComunicacaoViewSet`→`/api/communications/comunicacoes/`.
+> Imports mortos removidos de `projects/urls.py` (dashboard/kanban/gantt/export
+> APIViews, duplicados pelas `@action` do `ProjetoViewSet`). **Pendente:**
+> `UserAccessProfileViewSet` exige rota aninhada (`/users/{user_pk}/access-profiles/`)
+> — decisão de design; os 3 arquivos `*_views.py` órfãos viraram código morto.
 
 ## Critérios de aceite (re-arquitetura — atingidos)
 

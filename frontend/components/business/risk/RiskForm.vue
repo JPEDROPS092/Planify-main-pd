@@ -224,9 +224,9 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { z } from 'zod';
 import { useRiskService } from '~/services/api/services/riskService';
-import { useDocumentService } from '~/services/api/documentService';
+import { useDocumentService } from '~/services/api';
 import { useTeamService } from '~/services/api/services/teamService';
-import { useUserService } from '~/services/api/userService';
+import { useUserService } from '~/services/api';
 import { useNotification } from '~/stores/composables/useNotification';
 import { useFormValidation } from '~/composables/useFormValidation';
 import { useAuth } from '~/stores/composables/useAuth';

@@ -411,12 +411,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, defineEmits } from 'vue';
-import { useTaskService } from '~/services/api/tasks';
+import { useTaskService } from '~/services/api';
 import { useNotification } from '~/stores/composables/useNotification';
 import draggable from 'vuedraggable';
 import type { Tarefa, TarefaUpdate } from '~/services/api/types';
 import type { User } from '~/services/api/types';
-import { useUserService } from '~/services/api/userService';
+import { useUserService } from '~/services/api';
 
 const props = defineProps({
   projectId: {

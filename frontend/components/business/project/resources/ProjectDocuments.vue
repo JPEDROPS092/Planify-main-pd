@@ -284,7 +284,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, watch, toRefs, computed } from 'vue';
-import { useDocumentService } from '~/services/api/documentService';
+import { useDocumentService } from '~/services/api';
 import { useAuth } from '~/stores/composables/useAuth';
 import { useNotification } from '~/stores/composables/useNotification';
 import SkeletonLoader from '~/components/SkeletonLoader.vue';

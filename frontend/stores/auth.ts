@@ -2,14 +2,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { ExtendedUserProfile, LoginCredentials, TokenObtainPair } from '~/services/utils/types';
-import { ThemePreferenceEnum } from '~/services/utils/types'; // Assuming this is still needed for mock/default user
-// Atualizar o caminho de importação para as funções da API de autenticação
-import {
-  createAuthToken,
-  retrieveAuthUsersMe,
-  refreshAuthToken as apiRefreshAuthToken
-} from '~/lib/api-client/services/AuthService';
-import { ApiError } from '~/lib/api-client/services/AuthService';
+// Cliente gerado (openapi-typescript-codegen): auth vive no ApiService.
+import { ApiService, ApiError } from '~/lib/api-client';
 import { useState } from '#app'; // For global state synchronization if needed outside Pinia
 
 // It's good practice for Pinia store IDs to be unique.
@@ -40,12 +34,12 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const tokenData: TokenObtainPair = await createAuthToken(credentials);
+      const tokenData = (await ApiService.apiAuthTokenCreate(credentials)) as TokenObtainPair;
       accessToken.value = tokenData.access;
       refreshToken.value = tokenData.refresh;
       globalNuxtAccessToken.value = tokenData.access; // Sync with Nuxt's useState
 
-      const userData: ExtendedUserProfile = await retrieveAuthUsersMe();
+      const userData = (await ApiService.apiAuthUsersMeRetrieve()) as ExtendedUserProfile;
       user.value = userData;
 
       if (process.client) {
@@ -57,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
       return true;
     } catch (e: unknown) {
       const apiError = e as ApiError;
-      error.value = apiError.friendlyMessage || 'Falha no login.';
+      error.value = (apiError?.body?.detail as string) || apiError?.message || 'Falha no login.';
       _clearAuthData(); // Helper to clear data
       return false;
     } finally {
@@ -97,7 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         // If user data is not already in store, fetch it
         if (!user.value) {
-            const userData = await retrieveAuthUsersMe();
+            const userData = (await ApiService.apiAuthUsersMeRetrieve()) as ExtendedUserProfile;
             user.value = userData;
         }
       } catch (e) {
@@ -120,7 +114,9 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const tokenData = await apiRefreshAuthToken({ refresh: refreshToken.value });
+      const tokenData = (await ApiService.apiAuthTokenRefreshCreate({
+        refresh: refreshToken.value,
+      })) as TokenObtainPair;
       accessToken.value = tokenData.access;
       globalNuxtAccessToken.value = tokenData.access; // Sync
 

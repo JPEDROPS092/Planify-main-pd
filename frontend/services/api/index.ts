@@ -13,7 +13,7 @@ export { useUserService } from './services/userService';
 export { useCostService } from './services/costService';
 export { useMessageService, useNotificationService } from './services/messageService';
 export { useRiskService } from './services/riskService';
-export { useAuthService } from './services/authService';
+export { useTeamService } from './services/teamService';
 
 // Tipos de API
 export * from './types';

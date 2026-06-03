@@ -1,33 +1,22 @@
-// plugins/api.ts (versão nova e correta)
+// plugins/api.ts
+// Configura o cliente OpenAPI gerado (openapi-typescript-codegen, client axios).
+// O cliente gerado NÃO expõe interceptors; a autenticação é feita via
+// OpenAPI.TOKEN (resolver) e a base via OpenAPI.BASE.
 import { OpenAPI } from '~/lib/api-client';
-import { useAuthStore } from '~/stores/auth'; // Supondo que você tenha uma store de auth
+import { useAuthStore } from '~/stores/auth';
 
-export default defineNuxtPlugin((nuxtApp) => {
-  // Define a URL base da sua API
-  OpenAPI.BASE = os.BACKEND_URL; // Use variáveis de ambiente aqui!
+export default defineNuxtPlugin(() => {
+  const config = useRuntimeConfig();
 
-  // Interceptor para adicionar o token de autenticação em cada requisição
-  OpenAPI.interceptors.request.use((request) => {
+  // Base da API (NUXT_PUBLIC_API_BASE_URL; default http://127.0.0.1:8000)
+  OpenAPI.BASE = config.public.apiBaseUrl as string;
+  OpenAPI.WITH_CREDENTIALS = true;
+
+  // Bearer token resolvido a cada request a partir da store de auth.
+  // O request.ts gerado injeta `Authorization: Bearer <token>` quando o
+  // resolver retorna uma string não-vazia.
+  OpenAPI.TOKEN = async () => {
     const authStore = useAuthStore();
-    const token = authStore.token; // Pega o token da sua store
-
-    if (token && request.headers) {
-      request.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return request;
-  });
-
-  // Opcional: Interceptor para tratar erros 401 (token expirado) globalmente
-  OpenAPI.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.status === 401) {
-        const authStore = useAuthStore();
-        authStore.logout(); // Ex: Forçar logout
-        // Redirecionar para a página de login
-        // return navigateTo('/auth/login');
-      }
-      return Promise.reject(error);
-    }
-  );
+    return authStore.accessToken ?? '';
+  };
 });

@@ -42,7 +42,7 @@ Para cada fase concluída, registrar:
 | Fase 9: Testes | Não iniciada | Suite será refeita após contratos multi-tenant. |
 | Fase 10: Admin, Docs e Operação | Parcial | README e comando de criação de tenant adicionados; guia completo de operação ainda pendente. |
 | Fase 11: Observabilidade e Segurança | Não iniciada | Logs com tenant, auditoria e hardening pendentes. |
-| Fase 12: Frontend e Integração | Não iniciada | Integração por subdomínio ainda pendente. |
+| Fase 12: Frontend e Integração | Em andamento | baseURL única + bugs do `plugins/api.ts` corrigidos; migração do frontend p/ cliente OpenAPI gerado (`lib/api-client`); backend de convites (aceite/inspeção por token) roteado. Pendente: telas de convite/aceite, UX `401`/`403`, deps de build (`chart.js`/`date-fns`), regenerar cliente OpenAPI, e2e convite→aceite→login→criar. |
 | **R0: Registro da decisão (shared schema)** | Concluída | Pivô schema-per-tenant → shared + `tenant_id` registrado. |
 | **R1: Desativar `django-tenants` (banco único)** | Concluída | Banco único `public`; `check`/`migrate` verdes; `Domain`/schema removidos. **Isolamento desligado até R4.** |
 | **R2: `tenant_id` nos models de negócio** | Concluída | `tenant = FK(customers.Client, CASCADE)` NOT NULL nos 26 models dos 7 apps; `Projeto.titulo` reescopado por tenant; índices compostos `(tenant, …)`; 7 migrations; `check`/`migrate` verdes. **Isolamento ainda desligado até R4.** |

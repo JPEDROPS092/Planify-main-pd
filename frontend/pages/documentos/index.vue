@@ -549,7 +549,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useDocumentService } from '~/services/api/documentService';
+import { useDocumentService } from '~/services/api';
 import { useProjectService } from '~/services/api/services/projectService';
 import { useAuth } from '~/stores/composables/useAuth';
 import { createFormData } from '~/services/api/config';
